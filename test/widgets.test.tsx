@@ -15,16 +15,6 @@ vi.mock('../src/helpers.js', () => {
     Region: ({ children, title, description }: any) => React.createElement('section', null, React.createElement('h2', null, title), React.createElement('p', null, description), children),
     Field: ({ children, label, detail }: any) => React.createElement('label', null, label, children, detail ? React.createElement('small', null, detail) : null),
     Input: (props: any) => React.createElement('input', props),
-    SegmentedControl: ({ name, value, options }: any) => React.createElement(
-      'div',
-      { role: 'radiogroup', 'aria-label': name },
-      options.map((option: any) => React.createElement('button', {
-        key: option.value,
-        type: 'button',
-        role: 'radio',
-        'aria-checked': value === option.value,
-      }, option.label)),
-    ),
     Select: ({ options, ...props }: any) => React.createElement('select', props, options.map((option: any) => React.createElement('option', { key: option.value, value: option.value }, option.label))),
     StatusBadge: ({ children }: any) => React.createElement('span', null, children),
     useCallTool: vi.fn(),
@@ -104,7 +94,11 @@ describe('TravelHome', () => {
     expect(html).toContain('Round trip');
     expect(html).toContain('One way');
     expect(html).toContain('role="radiogroup"');
-    expect(html).toContain('aria-checked="true">Round trip');
+    expect(html).toContain('type="radio"');
+    expect(html).toContain('checked="" value="round_trip"');
+    expect(html).toContain('placeholder="City or airport"');
+    for (const helper of ['City or airport name', 'Ages 2–11', 'Under 2', 'ISO code', 'Point of sale']) expect(html).not.toContain(helper);
+    expect(html).not.toContain('Use city or airport names.');
     expect(html).toMatch(/<input type="date" required="" name="returnDate"/);
     expect(html).toContain('aria-label="Swap origin and destination"');
     expect(html).toContain('>Search flights</button>');
@@ -121,7 +115,7 @@ describe('TravelHome', () => {
     };
     const html = renderToStaticMarkup(<SearchEditor context={context} title="Edit your search" onSubmit={vi.fn()} />);
     expect(html).toContain('One way');
-    expect(html).toContain('aria-checked="true">One way');
+    expect(html).toContain('checked="" value="one_way"');
     expect(html).not.toContain('name="returnDate"');
     const prompt = searchPrompt({
       ...context,

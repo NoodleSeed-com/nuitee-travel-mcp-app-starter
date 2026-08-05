@@ -114,6 +114,10 @@ The optional example has no fake customer identity provider. If you choose a
 `customers` access deployment, add your product's verified `customerAuth`
 configuration and run the current auth doctor before deployment.
 
+## Deployment CLI version mismatch
+
+If deployment reports that the CLI is older than the project's pinned `@noodleseed/one`, the command used a global Noodle installation. Re-run the documented command through the project-local binary: `pnpm exec noodle deploy src/live-server.ts --access owner-only`. Do not change the package pin to match an older global CLI.
+
 ## Agent Kit or validation failures
 
 Run:

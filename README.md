@@ -91,6 +91,8 @@ pnpm exec noodle open --print
 pnpm exec noodle connect chatgpt
 ```
 
+Always use the pinned project-local CLI through `pnpm exec noodle`. A bare `noodle deploy` may invoke an older global installation and correctly fail the deploy preflight when its CLI version does not match the project's pinned `@noodleseed/one` version.
+
 The interactive deploy preflight identifies missing cloud configuration. Configure `NUITEE_API_KEY` as the deployment's server-side secret; do not assume the local `.env` has been uploaded, and do not put the key in ChatGPT. `owner-only` is the safe initial test access. ChatGPT Developer mode uses the public HTTPS MCP endpoint printed after deployment.
 
 This starter intentionally omits a made-up widget domain. Local DevTools and generic MCP connection testing do not need one. `pnpm exec noodle check src/live-server.ts --target chatgpt --json` therefore fails its `chatgpt_widget_domain` release gate until the deployment owner configures one real, dedicated HTTPS origin for both widgets. That domain is required for reliable ChatGPT app-version discovery and becomes the widget sandbox origin; never satisfy the gate with a placeholder. Add it and make the ChatGPT target check pass before claiming ChatGPT compatibility or submitting the app.

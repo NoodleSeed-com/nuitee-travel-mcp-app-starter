@@ -101,14 +101,67 @@
 .cc-search-heading { margin-bottom: 22px; }
 .cc-search-heading > div { display: grid; gap: 5px; }
 .cc-search-heading h2 { font-size: 1.25rem; }
-.cc-search-heading p:last-child { color: var(--cc-muted); line-height: 1.45; }
 
 .cc-trip-type {
   width: min(100%, 320px);
+  padding: 0;
+  margin: 0;
+  border: 0;
 }
 
-.cc-trip-type [role='radiogroup'] {
+.cc-trip-type legend {
+  margin-bottom: 8px;
+  color: var(--cc-text);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.cc-trip-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
   width: 100%;
+  padding: 4px;
+  border: 1px solid var(--cc-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--cc-text) 5%, var(--cc-surface));
+}
+
+.cc-trip-option {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--cc-muted);
+  cursor: pointer;
+  font-weight: 650;
+  text-align: center;
+}
+
+.cc-trip-option-selected {
+  color: var(--cc-text);
+  background: var(--cc-surface);
+  box-shadow: 0 0 0 1px var(--cc-border);
+}
+
+.cc-trip-option:focus-within {
+  outline: 3px solid var(--cc-focus);
+  outline-offset: 2px;
+}
+
+.cc-search-form .cc-trip-radio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .cc-route-fields {

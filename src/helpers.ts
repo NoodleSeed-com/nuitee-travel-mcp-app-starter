@@ -10,7 +10,6 @@ export {
   Frame,
   Input,
   Region,
-  SegmentedControl,
   Select,
   StatusBadge,
 } from '@noodleseed/one/react';

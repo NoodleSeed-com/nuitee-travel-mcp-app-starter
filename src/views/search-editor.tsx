@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Action, ActionBar, Field, Flow, Input, SegmentedControl, Select } from '../helpers.js';
+import { Action, ActionBar, Field, Flow, Input, Select } from '../helpers.js';
 import type { SearchContext } from '../flight-schemas.js';
 
 type TripType = 'round_trip' | 'one_way';
@@ -75,30 +75,36 @@ export function SearchEditor({
       <header className="cc-search-heading">
         <div>
           <h2>{title}</h2>
-          <p>Use city or airport names. Cedar &amp; Cloud will clarify an ambiguous place before searching.</p>
         </div>
         {onBack ? <Action type="button" variant="quiet" onClick={onBack}>← Back</Action> : null}
       </header>
 
       <Flow variant="stack" density="comfortable">
-        <div className="cc-trip-type">
-          <Field label="Trip type" group>
-            <SegmentedControl
-              aria-label="Trip type"
-              name="tripType"
-              value={draft.tripType}
-              onValueChange={(value) => update('tripType', value as TripType)}
-              options={[
-                { value: 'round_trip', label: 'Round trip' },
-                { value: 'one_way', label: 'One way' },
-              ]}
-            />
-          </Field>
-        </div>
+        <fieldset className="cc-trip-type">
+          <legend>Trip type</legend>
+          <div className="cc-trip-tabs" role="radiogroup" aria-label="Trip type">
+            {([
+              ['round_trip', 'Round trip'],
+              ['one_way', 'One way'],
+            ] as const).map(([value, label]) => (
+              <label className={`cc-trip-option ${draft.tripType === value ? 'cc-trip-option-selected' : ''}`} key={value}>
+                <input
+                  className="cc-trip-radio"
+                  type="radio"
+                  name="tripType"
+                  value={value}
+                  checked={draft.tripType === value}
+                  onChange={() => update('tripType', value)}
+                />
+                <span>{label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
 
         <div className="cc-route-fields">
-          <Field label="From" detail="City or airport name">
-            <Input name="origin" autoComplete="off" value={draft.origin} placeholder="Toronto" required onChange={(event) => update('origin', event.currentTarget.value)} />
+          <Field label="From">
+            <Input name="origin" autoComplete="off" value={draft.origin} placeholder="City or airport" required onChange={(event) => update('origin', event.currentTarget.value)} />
           </Field>
           <Action
             type="button"
@@ -109,8 +115,8 @@ export function SearchEditor({
           >
             ⇄
           </Action>
-          <Field label="To" detail="City or airport name">
-            <Input name="destination" autoComplete="off" value={draft.destination} placeholder="Lisbon" required onChange={(event) => update('destination', event.currentTarget.value)} />
+          <Field label="To">
+            <Input name="destination" autoComplete="off" value={draft.destination} placeholder="City or airport" required onChange={(event) => update('destination', event.currentTarget.value)} />
           </Field>
         </div>
 
@@ -135,18 +141,18 @@ export function SearchEditor({
 
         <div className="cc-form-grid cc-form-grid-travellers">
           <Field label="Adults">
-            <Input name="adults" type="number" min="1" max="9" inputMode="numeric" value={draft.adults} required onChange={(event) => update('adults', event.currentTarget.value)} />
+            <Input name="adults" type="number" min="1" max="9" inputMode="numeric" value={draft.adults} placeholder="1" required onChange={(event) => update('adults', event.currentTarget.value)} />
           </Field>
-          <Field label="Children" detail="Ages 2–11">
-            <Input name="children" type="number" min="0" max="8" inputMode="numeric" value={draft.children} required onChange={(event) => update('children', event.currentTarget.value)} />
+          <Field label="Children">
+            <Input name="children" type="number" min="0" max="8" inputMode="numeric" value={draft.children} placeholder="0" required onChange={(event) => update('children', event.currentTarget.value)} />
           </Field>
-          <Field label="Infants" detail="Under 2">
-            <Input name="infants" type="number" min="0" max="9" inputMode="numeric" value={draft.infants} required onChange={(event) => update('infants', event.currentTarget.value)} />
+          <Field label="Infants">
+            <Input name="infants" type="number" min="0" max="9" inputMode="numeric" value={draft.infants} placeholder="0" required onChange={(event) => update('infants', event.currentTarget.value)} />
           </Field>
-          <Field label="Currency" detail="ISO code">
+          <Field label="Currency">
             <Input name="currency" maxLength={3} value={draft.currency} placeholder="CAD" required onChange={(event) => update('currency', event.currentTarget.value)} />
           </Field>
-          <Field label="Country" detail="Point of sale">
+          <Field label="Country">
             <Input name="country" maxLength={2} value={draft.country} placeholder="CA" required onChange={(event) => update('country', event.currentTarget.value)} />
           </Field>
         </div>
