@@ -1,0 +1,249 @@
+# Implementation plan
+
+## Status and governing decisions
+
+The implementation is complete through offline/static gates plus an owner-authorized local sandbox search/verify smoke. No deployment, publication, commit, or push is part of the executed evidence.
+
+| Decision | Resolution |
+| --- | --- |
+| Package | Pin `@noodleseed/one` exactly to `0.104.1`; regenerate the lockfile and Agent Kit on every update. |
+| Operational scope | Flights search and fare verification only. |
+| API contract | Current official Nuitee Flights OpenAPI is source of truth; prose informs workflow and ambiguity notes. |
+| Entry points | Credential-free `src/server.ts`; managed-secret live composition `src/live-server.ts`. |
+| Secret | One deployment-owner `NUITEE_API_KEY`, injected server-side as `X-API-Key`. |
+| Search | One-way and round-trip JSON `POST /flights/rates`; no streaming or multicity in v1. |
+| Airport lookup | Omit `find_airports` until the published Noodle connector can execute the verified official GET directly; require IATA codes. |
+| Selection provenance | Caller-scoped private Noodle state, 30-minute TTL, application opaque ID, provider offer ID never public. |
+| Verify | Resolve state before provider call; changed price is success; stop before prebook. |
+| Widgets | TravelHome and FlightResults only. |
+| Fixtures | Hermetic, fictional, test-only; never a production fallback. |
+| Embedded assistant | Valuable optional path that reuses the live server; not part of the default baseline. |
+| License | None until owner approval; public-release blocker. |
+
+## Phase 0 — preflight and bootstrap (complete)
+
+Dependencies: none.
+
+1. Verify repository path, exact Git remote, private/empty state, clean starting tree, and intended `main` branch.
+2. Query npm for current `@noodleseed/one`; stop for approval if it differs from the approved version.
+3. Initialize the widget scaffold using the exact approved CLI version, pnpm, and Codex/Claude instructions.
+4. Install, generate Agent Kit, run doctor, and stop if restart is required.
+5. Scope Vitest to `test/**/*.{test,spec}.{ts,tsx}`.
+6. Run the untouched baseline. Record and stop on failure.
+
+Correction outcome: the reviewed scaffold failure was narrowly corrected by pinning the approved exact package, regenerating the lock, refreshing Agent Kit, and removing the active embedded-assistant block from the default server. The repository was later upgraded to exact `0.104.1`; Agent Kit `0.60.0` is current and the corrected baseline still passes without any provider/model credential.
+
+## Phase 1 — primary-source and reference audit (complete)
+
+Dependencies: Phase 0.
+
+### Official Nuitee
+
+- Verify origin/base, auth, search, verify, airport lookup, errors, access, sandbox limitations, and booking workflow from official sources.
+- Use [openapiflights.json](https://docs.liteapi.travel/openapi/openapiflights.json), not copied schemas or sample-app behavior.
+- Record prose/OpenAPI disagreements in `docs/nuitee-flights-contract.md`.
+
+### Tribe Tourism findings
+
+Confirmed at the audited reference revision:
+
+- Skybridge and Alpic, not `@noodleseed/one`.
+- Silent sample-flight substitution on missing credentials and failed calls.
+- Direct Tribe checkout path with no separate fare verification.
+- Hardcoded Tribe branding/domains.
+- Passenger mapping and request assumptions diverge from the current documented Nuitee contract.
+- Hotel implementation is much larger than flights.
+- No hermetic public-starter test suite.
+- Fixed-width/carousel and focus/touch behavior need additional 280px/accessibility work.
+
+Retain only independent product ideas: conversational discovery, compact comparison cards, boarding-pass-inspired hierarchy, and a clear selection-to-verification step. Copy no code, assets, branding, Skybridge plumbing, Alpic config, fallback data, or checkout behavior.
+
+### TD branch lessons
+
+Retain independently implemented patterns: fixed-origin connector authority, search/verify separation, bounded normalization, hermetic connector mocks, widget state coverage, and explicit App-only behavior where useful.
+
+Do not carry over banking/rewards scope, TD branding/data/assets, real-airline fixtures, raw provider offer IDs, or historical workarounds without re-verification. The audited branch's raw `offerId` input is explicitly rejected here. Its historical response-size and host-rendering observations are treated as evidence to retest, not as current API guarantees.
+
+## Phase 2 — failing tests (complete)
+
+Dependencies: Phase 1 contract decisions.
+
+Tests were authored before their implementation modules and first failed on missing runtime, live entrypoint, and widgets. Coverage includes:
+
+- Fixed base/origin/path/method/header policy and no model-controlled transport authority.
+- Secret name only in the managed connector declaration; no raw credential in public output.
+- One-way/round-trip request construction and leg direction.
+- IATA, different airports, ISO/not-past dates, later return date.
+- Adult/child/infant counts, total cap, infant/adult rule, and exact age-array relationships.
+- Cabin, currency, and point-of-sale validation.
+- Search success, empty, partial, malformed, oversized, max ten, round-trip directional normalization, strict segment/duration/price bounds, baggage ≤4, and messages ≤6.
+- 400, 401, 403, verify 404, 429, 500, 502, 503, timeout, credential-unavailable, and oversized classification.
+- Verification success, unchanged/changed fare, unavailable response, locally expired offer, active-search mismatch, unknown/stale selection, and no provider call on failed provenance.
+- Exact three-tool catalog, connector/state policy assertions, portable home context, and absence of airport/transaction/future-domain/arbitrary-HTTP tools.
+- TravelHome and FlightResults loading, error, malformed, empty, partial, changed-price, expired, retry, and success states.
+- Three inline/ten fullscreen, no booking actions, noninteractive coming-soon items, focus/touch/280px/overflow/reduced-motion CSS safeguards.
+
+## Phase 3 — shared flight implementation (complete, offline evidence)
+
+Dependencies: Phase 2 failing tests.
+
+1. Define bounded public/private Zod schemas.
+2. Implement one self-contained compute gateway for validation, classification, normalization, and safe provider-call orchestration.
+3. Author one fixed Nuitee HTTP connector with exactly two operations and managed `X-API-Key` auth.
+4. Set compute limits to 12 seconds and one host call; reject parsed response bodies over 750,000 UTF-8 bytes.
+5. Normalize at most ten itineraries with explicit outbound/inbound legs; reject missing direction, per-leg duration, total duration, invalid code, or unbounded numeric facts rather than inventing them. Remove logos, internal fare codes, raw responses, and provider IDs.
+6. Generate opaque application selections; store upstream IDs only in caller-scoped state.
+7. Resolve selection state inside the compute gateway before verify, preventing arbitrary offer proxying.
+8. Build the two entrypoints from one server factory; do not duplicate business definitions.
+
+Stop condition: do not fake optional credentials, inject a sentinel secret, or route around managed auth. If the live composition does not statically validate through the public SDK, stop and report the package evidence.
+
+## Phase 4 — widgets (complete, SSR/static evidence)
+
+Dependencies: public schemas and tool surface from Phase 3.
+
+1. Replace scaffold preferences UI with TravelHome and FlightResults.
+2. Use public `@noodleseed/one/react` primitives plus bounded local CSS.
+3. Keep widget CSP empty; browser code calls Noodle tools only.
+4. Keep coming-soon domains static and noninteractive.
+5. Use FlightResults for search; call `verify_flight_offer` from the existing widget and update the selected card.
+6. Make “Verify fare” the only primary action.
+7. Preserve provider airport-local schedule text without converting it into the viewer's timezone; render search/offer freshness and verification messages.
+8. Validate nested structured content defensively before rendering, and test pure render components with mocked host helpers; validate bundled widgets with Noodle.
+
+Remaining UI release evidence: interactive real-browser checks at 280px/light/dark/keyboard/reduced-motion and one real host per claimed compatibility target.
+
+## Phase 5 — documentation (complete)
+
+Dependencies: resolved architecture.
+
+- `README.md`: purpose, omissions, setup, credentials, two consumption modes, commands, prompts, failures, customization, updates.
+- `SPEC.md`: authoritative product/tool/UI/security/evidence/future boundary.
+- `IMPLEMENTATION_PLAN.md`: phases, dependencies, stops, findings, release checklist.
+- `docs/architecture.md`: browser/tool/connector/provider flow and private selection state.
+- `docs/nuitee-flights-contract.md`: official endpoint/field/error contract and ambiguities.
+- `docs/customization.md`: safe extension points.
+- `docs/troubleshooting.md`: operator error taxonomy.
+- `docs/EMBEDDED_ASSISTANT.md`: optional authenticated embed path.
+- `SECURITY.md`: secrets, reporting, supported security boundary.
+- `CONTRIBUTING.md`: pnpm, test-first, offline CI, generated Agent Kit, review gates.
+
+## Phase 6 — verification (complete for offline/static evidence)
+
+Dependencies: Phases 3–5.
+
+Run in this order:
+
+```sh
+pnpm install
+pnpm exec noodle agents setup --write
+pnpm exec noodle agents doctor --json
+pnpm test
+pnpm exec noodle validate --json
+pnpm exec noodle test --json
+pnpm exec noodle tools list --json
+pnpm exec noodle check --json
+pnpm exec noodle validate src/live-server.ts --json
+pnpm exec noodle check src/live-server.ts --json
+```
+
+Then perform source/secret scans and inspect the tool catalog. Do not run provider-backed tools without an owner-provided managed key, entitlement, safe input, and explicit authorization.
+
+The repository-owned CI workflow runs only the credential-free protocol gates and static live validation. Test setup replaces global `fetch` with a failing stub so ordinary application tests cannot silently turn into provider calls.
+
+Stop and report any failing command with exit status, structured error, package version, and Agent Kit version. Use debugging guidance only for concrete failures.
+
+Executed result: the ordered credential-free baseline passes, including the hermetic Vitest suite, authoring validation, MCP protocol smoke, the exact three-tool catalog, and generic readiness. Live and embedded entrypoints pass static validation/readiness; ChatGPT target checks pass. The embedded target retains one intentional warning because the optional example cannot invent the embedding product's customer identity provider. A bounded live search and same-session verification pass; real browser/host evidence and broader provider error-shape evidence remain Phase 7.
+
+## Phase 7 — owner-authorized live and host proof (partially executed)
+
+Dependencies: owner credential, Nuitee Flights access, explicit live-call authorization, and successful Phase 6.
+
+1. Complete: owner configured a sandbox `NUITEE_API_KEY` through the managed local secret path.
+2. Complete: a bounded one-way search and a verify against its selection passed in the same local MCP session.
+3. Complete for the tested happy path: populated mappings were bounded and neither key nor upstream offer ID appeared in public output.
+4. Blocked: the official airport GET succeeds directly but fails through the published Noodle connector, so the tool is omitted.
+5. Blocked for broad routes: a representative search exceeds the fixed 1 MiB connector ceiling before application normalization.
+6. Exercise widgets in DevTools at 280px, light/dark, keyboard, reduced motion, empty/error/changed/expired states.
+7. Connect each named external host and verify fallback plus App rendering before claiming compatibility.
+8. Remove local diagnostic data according to operator policy; never commit runtime secret stores.
+
+Stop on missing entitlement, inconsistent sandbox inventory, provider ambiguity, or any secret exposure. Never replace failure with fixtures.
+
+## Phase 8 — public release (blocked)
+
+Dependencies: Phase 7 evidence and owner decisions.
+
+- [ ] Owner selects and adds a source license.
+- [ ] Owner approves public visibility and repository description.
+- [ ] Credentialed sandbox smoke passes without sanitized-data concerns.
+- [ ] Owner-authorized smoke confirms the concrete connector runtime error shape and deadline behavior used for public error categories.
+- [ ] Real-browser and claimed-host evidence passes.
+- [ ] Dependency, asset, provenance, and trademark review passes.
+- [ ] Deliberately unassigned fixture location codes are rechecked against IATA's current lookup; fictional names and the reserved computer-test carrier designator remain non-operational.
+- [ ] No private reference links, packages, code, assets, credentials, recordings, or customer data exist.
+- [ ] Secret scan and Git-history scan pass.
+- [ ] README links and clone/setup commands work in a fresh environment.
+- [ ] `@noodleseed/one` pin, lockfile, Agent Kit, and full gates agree.
+- [ ] Dependabot is enabled without auto-merge.
+- [ ] Security reporting contact is finalized.
+- [ ] Reserved `https://cedar-cloud.example` widget metadata is replaced with the real dedicated HTTPS widget domain.
+- [ ] No deployment URLs or unverified “official connector” claims appear.
+
+## Developer-experience findings
+
+Four sanitized upstream findings were submitted to the private Noodle Seed feedback tracker on 2026-08-05 and mirrored as public-starter reference issues in this repository. The private tracker references are identifiers only; there are no public tracker URLs.
+
+### Resolved application defect — ambient time in deterministic compute
+
+The first live search failed because the application gateway used JavaScript `Date` inside a deterministic compute connector, where that ambient global is unavailable. The gateway now parses the server-authoritative `context.temporal` values without `Date`, and regression tests execute search and verify with `Date` explicitly removed.
+
+Classification: application code and test-environment mismatch, not a Noodle defect. Node-only unit execution had hidden the runtime difference; the corrected suite models the compute sandbox.
+
+### Significant — initializer version drift
+
+Tracking: Noodle feedback `fb-957`; [GitHub issue #4](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/4).
+
+Running an exact-version initializer still produced a manifest containing `"latest"`. The original `0.103.1` run resolved `0.100.0`; a fresh `0.104.1` recheck on 2026-08-05 resolved `0.102.1` until the manifest was corrected manually. This repository pins `0.104.1`, regenerates the lock, and verifies manifest/installed/lock agreement.
+
+Classification: Noodle Seed developer experience, not Nuitee or application code.
+
+### Blocking baseline, corrected — default embedded-assistant credentials
+
+Tracking: Noodle feedback `fb-956`; [GitHub issue #3](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/3).
+
+The generated widget server activated an embedded assistant and made ordinary `noodle test` require assistant-model configuration. A fresh exact-`0.104.1` scaffold recheck on 2026-08-05 still failed its local smoke without the assistant model secret. Removing only the active assistant block restored a credential-free external-host baseline while preserving the capability in documentation.
+
+Classification: Noodle scaffold default for this product shape.
+
+### Significant — optional connector secret mismatch
+
+A public-API probe accepted `secret('NUITEE_API_KEY', { optional: true })` during static validation, but local `noodle test` still failed `connector_secret_unresolved`. The two-entrypoint composition avoids sentinel credentials and keeps the same business surface.
+
+Classification: Noodle managed-secret/runtime behavior. It blocks a single entrypoint that both starts credential-free and later activates a shared-key connector without regeneration.
+
+### Nice-to-have — nested authoring import packaging
+
+The authoring compiler followed `src/travel-server.ts` but failed to package its nested `src/flights/connectors.ts` import into the temporary graph. Flattening authoring modules under `src/` fixed the structured `read_error` with no product change.
+
+Classification: Noodle authoring compiler/module-layout behavior.
+
+### Blocking — HTTP body-cap configurability
+
+Tracking: Noodle feedback `fb-954`; [GitHub issue #1](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/1).
+
+The generated connector guidance exposes compute timeout/host-call limits but no authored HTTP maximum-body option. The published `0.104.1` HTTP runtime still applies a fixed 1,048,576-byte transport ceiling before response mapping or compute: a 2026-08-05 synthetic boundary check mapped a tiny field below the limit and returned only a generic connector failure above it. During owner-authorized 2026-08-04 probes, Nuitee returned `200 OK` and the documented response shape: a representative YYZ–LIS response was 2.85 MB without filters and had remained roughly 1.55 MB with documented cheapest-offer and one-stop filters. The connector failed before normalization; the composed application could return only a generic sanitized `provider_error`, not its structured `oversized_response` state.
+
+Classification: blocking Noodle connector capability, not a Nuitee authentication/entitlement failure and not an application normalizer failure. Resolution requires an authored transport-cap/pre-compute narrowing option or a documented Nuitee server-side result limit/pagination contract. It does not justify direct browser/provider access or an ungoverned fetch workaround.
+
+### Significant — direct airport GET connector incompatibility
+
+Tracking: Noodle feedback `fb-955`; [GitHub issue #2](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/2).
+
+The documented airport endpoint returned `200 OK` and 1,252 bytes with the configured key on the original probe and again on the `0.104.1` recheck. The same fixed-origin GET still failed through the published Noodle HTTP connector, while earlier synthetic GET/query and exact-response relay controls passed. Narrower response mappings and a fixed literal query did not change the failure.
+
+Classification: Noodle/Nuitee connector interoperability, not endpoint contract, credential, query construction, response size, or application normalization. The model-visible airport tool is omitted until the direct connector path passes.
+
+### Nuitee documentation ambiguities
+
+OpenAPI/prose disagree on verify pricing fields, provider offer-ID format, streaming path availability, and numeric rate limits. These are provider-documentation findings, handled conservatively in `docs/nuitee-flights-contract.md`; they are not Noodle or application failures.
