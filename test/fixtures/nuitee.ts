@@ -62,8 +62,22 @@ export const fictionalSearchResponse = {
               ],
             },
             terms: {
+              changeable: true,
+              refundable: false,
+              hasChangeFee: true,
+              hasRefundFee: false,
               summary: [{ level: 'warning', message: 'Fictional fixture fare; not live inventory.' }],
             },
+            segmentAmenities: [
+              {
+                segmentKey: 'fictional-segment-1',
+                aircraftType: 'Cedar 100',
+                amenities: [
+                  { available: true, category: 'wifi', chargeable: false, name: 'Fictional Wi-Fi', details: 'Test fixture only' },
+                  { available: true, category: 'power', chargeable: null, name: 'Seat power', details: null },
+                ],
+              },
+            ],
           },
           offers: [],
         },

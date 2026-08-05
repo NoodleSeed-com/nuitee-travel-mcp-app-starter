@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { runInNewContext } from 'node:vm';
+import { gatewayOutputSchema } from '../src/flight-connectors.js';
 import { runNuiteeGateway } from '../src/flight-runtime.js';
 import {
   fictionalSearchResponse,
@@ -99,16 +100,34 @@ describe('Nuitee gateway search preparation', () => {
 });
 
 describe('Nuitee gateway normalization', () => {
+  it('matches the complete compute connector output schema', () => {
+    const { result } = search();
+    expect('searchContext' in gatewayOutputSchema.shape).toBe(true);
+    expect(gatewayOutputSchema.safeParse(result).success).toBe(true);
+  });
+
   it('returns bounded public itineraries and private selection records', () => {
     const { result } = search();
     expect(result.itineraries).toHaveLength(1);
     expect(result.records).toHaveLength(1);
     expect(result.itineraries?.[0]).toMatchObject({
-      route: { origin: 'QZX', destination: 'QZY' },
+      route: {
+        origin: 'QZX',
+        originName: 'Cedar Bay Test Aerodrome',
+        destination: 'QZY',
+        destinationName: 'Cloud Harbour Test Aerodrome',
+      },
       carrier: { code: 'ZZ', name: 'Cedar Skies' },
-      price: { total: 284.5, currency: 'CAD' },
+      price: { total: 284.5, currency: 'CAD', base: 240, taxes: 40, fees: 4.5 },
       stops: 0,
+      fare: { family: 'Cloudlight Economy', mixedCabin: false, seatsRemaining: 4 },
+      terms: { changeable: true, refundable: false, hasChangeFee: true, hasRefundFee: false },
+      amenities: [
+        { category: 'wifi', name: 'Fictional Wi-Fi', available: true, chargeable: false, aircraftType: 'Cedar 100' },
+        { category: 'power', name: 'Seat power', available: true, aircraftType: 'Cedar 100' },
+      ],
     });
+    expect(result.searchContext).toEqual(validSearchInput);
     expect(result.itineraries?.[0]?.selectionId).toMatch(/^sel_[a-f0-9]{32}$/);
     expect(JSON.stringify(result.itineraries)).not.toContain('provider-offer-must-stay-private');
     expect(JSON.stringify(result.itineraries)).not.toContain('marketingLogo');
@@ -155,10 +174,10 @@ describe('Nuitee gateway normalization', () => {
     });
     journey.totalDuration = { minutes: 405, iso8601: 'PT6H45M' };
     const { result } = search({ returnDate: '2030-04-27' }, { data: [{ journeys: [journey] }] });
-    expect(result.itineraries?.[0]?.route).toEqual({ origin: 'QZX', destination: 'QZY' });
+    expect(result.itineraries?.[0]?.route).toEqual(expect.objectContaining({ origin: 'QZX', destination: 'QZY' }));
     expect(result.itineraries?.[0]?.legs).toEqual([
-      expect.objectContaining({ direction: 'OUTBOUND', route: { origin: 'QZX', destination: 'QZY' } }),
-      expect.objectContaining({ direction: 'INBOUND', route: { origin: 'QZY', destination: 'QZX' } }),
+      expect.objectContaining({ direction: 'OUTBOUND', route: expect.objectContaining({ origin: 'QZX', destination: 'QZY' }) }),
+      expect.objectContaining({ direction: 'INBOUND', route: expect.objectContaining({ origin: 'QZY', destination: 'QZX' }) }),
     ]);
   });
 
@@ -210,10 +229,24 @@ describe('Nuitee gateway normalization', () => {
     const journey = structuredClone(fictionalSearchResponse.data[0].journeys[0]) as any;
     journey.cheapestOffer.baggage.included = Array.from({ length: 20 }, () => journey.cheapestOffer.baggage.included[0]);
     journey.cheapestOffer.terms.summary = Array.from({ length: 20 }, () => ({ level: 'warning', message: 'x'.repeat(600) }));
+    journey.cheapestOffer.segmentAmenities = Array.from({ length: 20 }, () => ({
+      segmentKey: 'fictional-segment-1',
+      aircraftType: 'x'.repeat(300),
+      amenities: Array.from({ length: 20 }, () => ({
+        available: true,
+        category: 'wifi',
+        chargeable: false,
+        name: 'x'.repeat(300),
+        details: 'x'.repeat(600),
+      })),
+    }));
     const { result } = search({}, { data: [{ journeys: [journey] }] });
     expect(result.itineraries?.[0]?.baggage.allowances.length).toBeLessThanOrEqual(4);
     expect(result.itineraries?.[0]?.messages.length).toBeLessThanOrEqual(6);
     expect(result.itineraries?.[0]?.messages[0]?.length).toBeLessThanOrEqual(240);
+    expect(result.itineraries?.[0]?.amenities.length).toBeLessThanOrEqual(5);
+    expect(result.itineraries?.[0]?.amenities[0]?.name.length).toBeLessThanOrEqual(80);
+    expect(result.itineraries?.[0]?.amenities[0]?.details.length).toBeLessThanOrEqual(160);
   });
 });
 

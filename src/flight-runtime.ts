@@ -74,6 +74,7 @@ export type GatewayResult = {
   readonly fallback: string;
   readonly retrievedAt?: string;
   readonly searchId?: string;
+  readonly searchContext?: Readonly<Record<string, unknown>>;
   readonly itineraries?: readonly Record<string, unknown>[];
   readonly records?: readonly SelectionRecord[];
   readonly verification?: Record<string, unknown>;
@@ -398,6 +399,20 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
     currency,
     country,
   };
+  const searchContext = {
+    origin,
+    destination,
+    departureDate,
+    ...(returnDate ? { returnDate } : {}),
+    adults,
+    children,
+    infants,
+    childrenAges,
+    infantAges,
+    cabinClass,
+    currency,
+    country,
+  };
   let called: unknown;
   try {
     called = context.callOperation('search', request);
@@ -429,6 +444,7 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
       retrievedAt: requestedAt,
       itineraries: [],
       records: [],
+      searchContext,
       searchId: opaqueId(`${origin}|${destination}|${departureDate}|${returnDate ?? ''}|${requestedAt}`, 'search_'),
     };
   }
@@ -463,6 +479,8 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
       const segment = object(segmentValue);
       const segmentOrigin = text(segment?.originCode, 3)?.toUpperCase();
       const segmentDestination = text(segment?.destinationCode, 3)?.toUpperCase();
+      const segmentOriginName = text(segment?.originName, 120);
+      const segmentDestinationName = text(segment?.destinationName, 120);
       const departureTime = text(segment?.departureTime, 64);
       const arrivalTime = text(segment?.arrivalTime, 64);
       const direction = text(segment?.direction, 16)?.toUpperCase();
@@ -476,18 +494,28 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
       }
       const carrier = object(segment?.carrier);
       const flight = object(segment?.flight);
+      const marketingName = text(carrier?.marketingName, 100) ?? text(carrier?.operatingName, 100) ?? 'Carrier not provided';
+      const marketingCode = text(carrier?.marketingCode, 8)?.toUpperCase() ?? text(carrier?.operatingCode, 8)?.toUpperCase() ?? '—';
+      const operatingName = text(carrier?.operatingName, 100);
+      const operatingCode = text(carrier?.operatingCode, 8)?.toUpperCase();
       segments.push({
         origin: segmentOrigin,
+        ...(segmentOriginName ? { originName: segmentOriginName } : {}),
         destination: segmentDestination,
+        ...(segmentDestinationName ? { destinationName: segmentDestinationName } : {}),
         departureTime,
         arrivalTime,
         direction,
         durationMinutes: segmentDuration,
         carrier: {
-          name: text(carrier?.marketingName, 100) ?? text(carrier?.operatingName, 100) ?? 'Carrier not provided',
-          code: text(carrier?.marketingCode, 8)?.toUpperCase() ?? text(carrier?.operatingCode, 8)?.toUpperCase() ?? '—',
+          name: marketingName,
+          code: marketingCode,
         },
+        ...(operatingName && operatingCode && (operatingName !== marketingName || operatingCode !== marketingCode)
+          ? { operatingCarrier: { name: operatingName, code: operatingCode } }
+          : {}),
         ...(text(flight?.marketingNumber, 16) ? { flightNumber: text(flight?.marketingNumber, 16)! } : {}),
+        ...(text(flight?.operatingNumber, 16) ? { operatingFlightNumber: text(flight?.operatingNumber, 16)! } : {}),
       });
     }
     if (invalidSegment || segments.length === 0) {
@@ -503,6 +531,13 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
       partial = true;
       continue;
     }
+    const boundedPricePart = (value: unknown): number | undefined => {
+      const number = finiteNumber(value);
+      return number !== undefined && number >= 0 && number <= 100_000_000 ? number : undefined;
+    };
+    const base = boundedPricePart(pricing?.base);
+    const taxes = boundedPricePart(pricing?.taxes);
+    const fees = boundedPricePart(pricing?.fees);
     const baggage = object(offer.baggage);
     const rawAllowances = Array.isArray(baggage?.included) ? baggage.included : [];
     if (rawAllowances.length > 4) partial = true;
@@ -521,23 +556,67 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
     const messages = rawMessages.slice(0, 6)
       .map((entry: unknown) => text(object(entry)?.message, 240))
       .filter((entry: string | undefined): entry is string => Boolean(entry));
+    const fare = object(offer.fare);
+    const fareFamily = text(fare?.family, 80);
+    const seatsRemainingValue = finiteNumber(fare?.seatsRemaining);
+    const seatsRemaining = seatsRemainingValue !== undefined && Number.isInteger(seatsRemainingValue) &&
+      seatsRemainingValue >= 0 && seatsRemainingValue <= 999 ? seatsRemainingValue : undefined;
+    const rawAmenityGroups = Array.isArray(offer.segmentAmenities) ? offer.segmentAmenities : [];
+    const amenities: Array<Record<string, unknown>> = [];
+    const allowedAmenityCategories = ['wifi', 'power', 'entertainment', 'food', 'seat_comfort'];
+    for (const groupValue of rawAmenityGroups.slice(0, 8)) {
+      const group = object(groupValue);
+      const aircraftType = text(group?.aircraftType, 80);
+      const groupAmenities = Array.isArray(group?.amenities) ? group.amenities : [];
+      for (const amenityValue of groupAmenities.slice(0, 10)) {
+        if (amenities.length >= 5) {
+          partial = true;
+          break;
+        }
+        const amenity = object(amenityValue);
+        const category = text(amenity?.category, 32)?.toLowerCase();
+        const name = text(amenity?.name, 80);
+        if (!category || !allowedAmenityCategories.includes(category) || !name || typeof amenity?.available !== 'boolean') {
+          partial = true;
+          continue;
+        }
+        amenities.push({
+          category,
+          name,
+          available: amenity.available,
+          ...(typeof amenity.chargeable === 'boolean' ? { chargeable: amenity.chargeable } : {}),
+          ...(text(amenity.details, 160) ? { details: text(amenity.details, 160)! } : {}),
+          ...(aircraftType ? { aircraftType } : {}),
+        });
+      }
+      if (amenities.length >= 5) break;
+    }
+    if (rawAmenityGroups.length > 8) partial = true;
     const expectedDirections = returnDate ? ['OUTBOUND', 'INBOUND'] : ['OUTBOUND'];
     const rawLegDurations = Array.isArray(journey.legDurations) ? journey.legDurations : [];
-    const legDurationByDirection: Record<string, number> = {};
+    const legMetaByDirection: Record<string, { minutes: number; dayChange?: number; overnight?: boolean }> = {};
     for (const legValue of rawLegDurations.slice(0, 2)) {
       const legDuration = object(legValue);
       const direction = text(legDuration?.direction, 16)?.toUpperCase();
       const minutes = finiteNumber(object(legDuration?.duration)?.minutes);
       if (direction && ['OUTBOUND', 'INBOUND'].includes(direction) && minutes !== undefined &&
           Number.isInteger(minutes) && minutes >= 0 && minutes <= 10_080) {
-        legDurationByDirection[direction] = minutes;
+        const dayChangeValue = finiteNumber(legDuration?.dayChange);
+        const dayChange = dayChangeValue !== undefined && Number.isInteger(dayChangeValue) && dayChangeValue >= 0 && dayChangeValue <= 7
+          ? dayChangeValue
+          : undefined;
+        legMetaByDirection[direction] = {
+          minutes,
+          ...(dayChange !== undefined ? { dayChange } : {}),
+          ...(typeof legDuration?.overnightFlight === 'boolean' ? { overnight: legDuration.overnightFlight } : {}),
+        };
       }
     }
     const legs: Array<Record<string, any>> = [];
     for (const direction of expectedDirections) {
       const grouped = segments.filter((segment) => segment.direction === direction);
-      const legMinutes = legDurationByDirection[direction];
-      if (grouped.length === 0 || legMinutes === undefined) {
+      const legMeta = legMetaByDirection[direction];
+      if (grouped.length === 0 || !legMeta) {
         legs.length = 0;
         break;
       }
@@ -545,11 +624,18 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
       const lastInLeg = grouped[grouped.length - 1];
       legs.push({
         direction,
-        route: { origin: firstInLeg.origin, destination: lastInLeg.destination },
+        route: {
+          origin: firstInLeg.origin,
+          ...(firstInLeg.originName ? { originName: firstInLeg.originName } : {}),
+          destination: lastInLeg.destination,
+          ...(lastInLeg.destinationName ? { destinationName: lastInLeg.destinationName } : {}),
+        },
         departureTime: firstInLeg.departureTime,
         arrivalTime: lastInLeg.arrivalTime,
-        durationMinutes: legMinutes,
+        durationMinutes: legMeta.minutes,
         stops: Math.max(0, grouped.length - 1),
+        ...(legMeta.dayChange !== undefined ? { dayChange: legMeta.dayChange } : {}),
+        ...(legMeta.overnight !== undefined ? { overnight: legMeta.overnight } : {}),
       });
     }
     const totalDuration = object(journey.totalDuration);
@@ -573,7 +659,13 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
       arrivalTime: outbound.arrivalTime,
       durationMinutes,
       stops: legs.reduce((sum, leg) => sum + leg.stops, 0),
-      price: { total, currency: priceCurrency },
+      price: {
+        total,
+        currency: priceCurrency,
+        ...(base !== undefined ? { base } : {}),
+        ...(taxes !== undefined ? { taxes } : {}),
+        ...(fees !== undefined ? { fees } : {}),
+      },
       baggage: {
         carryOn: baggage?.hasCarryOnBag === true,
         checked: baggage?.hasCheckedBag === true,
@@ -582,6 +674,18 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
       ...(expiration ? { expiresAt: expiration } : {}),
       retrievedAt: text(journey.timestamp, 64) ?? requestedAt,
       isCheapest: journey.isCheapest === true,
+      fare: {
+        ...(fareFamily ? { family: fareFamily } : {}),
+        ...(typeof fare?.mixedCabin === 'boolean' ? { mixedCabin: fare.mixedCabin } : {}),
+        ...(seatsRemaining !== undefined ? { seatsRemaining } : {}),
+      },
+      terms: {
+        ...(typeof terms?.changeable === 'boolean' ? { changeable: terms.changeable } : {}),
+        ...(typeof terms?.refundable === 'boolean' ? { refundable: terms.refundable } : {}),
+        ...(typeof terms?.hasChangeFee === 'boolean' ? { hasChangeFee: terms.hasChangeFee } : {}),
+        ...(typeof terms?.hasRefundFee === 'boolean' ? { hasRefundFee: terms.hasRefundFee } : {}),
+      },
+      amenities,
       legs,
       segments,
       messages,
@@ -608,6 +712,7 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
     fallback: `${message} ${comparison}`.slice(0, 500),
     retrievedAt: requestedAt,
     searchId,
+    searchContext,
     itineraries,
     records,
   };

@@ -39,9 +39,10 @@ const configurationError = {
 };
 
 const viewPolicy = {
-  // Reserved fictional origin for static host metadata. Replace with the
-  // deployment's dedicated HTTPS widget domain before host registration.
-  domain: 'https://cedar-cloud.example',
+  // Widgets receive data through Noodle tools, so they need no browser network
+  // authority. A custom widget `domain` is intentionally omitted for local and
+  // ordinary MCP-host use. Before an app-store submission, add the same real,
+  // deployment-owned HTTPS origin here for both widgets; never ship a placeholder.
   csp: { connectDomains: [], resourceDomains: [], frameDomains: [] },
 };
 
@@ -119,6 +120,7 @@ function liveSearchFlights() {
         fallback: gateway.fallback,
         retrievedAt: gateway.retrievedAt,
         searchId: gateway.searchId,
+        searchContext: gateway.searchContext,
         itineraries: gateway.itineraries,
         error: gateway.error,
       };
@@ -177,6 +179,9 @@ function liveVerifyFlightOffer() {
 }
 
 export function createTravelServer(mode: 'credential-free' | 'live' | 'embedded') {
+  // All entrypoints share this product factory. Only the connector/model
+  // credentials differ, which prevents local tests and external MCP hosts from
+  // inheriting optional embedded-assistant requirements.
   const live = mode !== 'credential-free';
   const assistant = mode === 'embedded'
     ? embeddedAssistant({

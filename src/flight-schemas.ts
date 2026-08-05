@@ -25,6 +25,9 @@ export const errorSchema = z.object({
 export const moneySchema = z.object({
   total: z.number().nonnegative().max(100_000_000),
   currency: z.string().regex(/^[A-Z]{3}$/),
+  base: z.number().nonnegative().max(100_000_000).optional(),
+  taxes: z.number().nonnegative().max(100_000_000).optional(),
+  fees: z.number().nonnegative().max(100_000_000).optional(),
 });
 
 const iataSchema = z.string().regex(/^[A-Z]{3}$/);
@@ -36,27 +39,52 @@ const carrierSchema = z.object({
 
 export const segmentSchema = z.object({
   origin: iataSchema,
+  originName: z.string().min(1).max(120).optional(),
   destination: iataSchema,
+  destinationName: z.string().min(1).max(120).optional(),
   departureTime: z.string().max(64),
   arrivalTime: z.string().max(64),
   direction: z.enum(['OUTBOUND', 'INBOUND']),
   durationMinutes: durationMinutesSchema,
   carrier: carrierSchema,
+  operatingCarrier: carrierSchema.optional(),
   flightNumber: z.string().max(16).optional(),
+  operatingFlightNumber: z.string().max(16).optional(),
 });
 
 export const legSchema = z.object({
   direction: z.enum(['OUTBOUND', 'INBOUND']),
-  route: z.object({ origin: iataSchema, destination: iataSchema }),
+  route: z.object({
+    origin: iataSchema,
+    originName: z.string().min(1).max(120).optional(),
+    destination: iataSchema,
+    destinationName: z.string().min(1).max(120).optional(),
+  }),
   departureTime: z.string().max(64),
   arrivalTime: z.string().max(64),
   durationMinutes: durationMinutesSchema,
   stops: z.number().int().nonnegative().max(7),
+  dayChange: z.number().int().min(0).max(7).optional(),
+  overnight: z.boolean().optional(),
+});
+
+const amenitySchema = z.object({
+  category: z.enum(['wifi', 'power', 'entertainment', 'food', 'seat_comfort']),
+  name: z.string().min(1).max(80),
+  available: z.boolean(),
+  chargeable: z.boolean().optional(),
+  details: z.string().min(1).max(160).optional(),
+  aircraftType: z.string().min(1).max(80).optional(),
 });
 
 export const itinerarySchema = z.object({
   selectionId: z.string().regex(/^sel_[a-f0-9]{32}$/),
-  route: z.object({ origin: iataSchema, destination: iataSchema }),
+  route: z.object({
+    origin: iataSchema,
+    originName: z.string().min(1).max(120).optional(),
+    destination: iataSchema,
+    destinationName: z.string().min(1).max(120).optional(),
+  }),
   carrier: carrierSchema,
   departureTime: z.string().max(64),
   arrivalTime: z.string().max(64),
@@ -71,6 +99,18 @@ export const itinerarySchema = z.object({
   expiresAt: z.string().max(64).optional(),
   retrievedAt: z.string().max(64),
   isCheapest: z.boolean(),
+  fare: z.object({
+    family: z.string().min(1).max(80).optional(),
+    mixedCabin: z.boolean().optional(),
+    seatsRemaining: z.number().int().nonnegative().max(999).optional(),
+  }),
+  terms: z.object({
+    changeable: z.boolean().optional(),
+    refundable: z.boolean().optional(),
+    hasChangeFee: z.boolean().optional(),
+    hasRefundFee: z.boolean().optional(),
+  }),
+  amenities: z.array(amenitySchema).max(5),
   legs: z.array(legSchema).min(1).max(2),
   segments: z.array(segmentSchema).max(8),
   messages: z.array(z.string().max(240)).max(6),
@@ -97,6 +137,7 @@ export const searchOutputSchema = z.object({
   fallback: z.string().max(500),
   retrievedAt: z.string().max(64).optional(),
   searchId: z.string().max(39).optional(),
+  searchContext: searchInputSchema.optional(),
   itineraries: z.array(itinerarySchema).max(10),
   error: errorSchema.optional(),
 });
@@ -152,3 +193,4 @@ export type SearchOutput = z.infer<typeof searchOutputSchema>;
 export type VerifyOutput = z.infer<typeof verifyOutputSchema>;
 export type Verification = z.infer<typeof verificationSchema>;
 export type Itinerary = z.infer<typeof itinerarySchema>;
+export type SearchContext = z.infer<typeof searchInputSchema>;

@@ -36,6 +36,13 @@ describe('server contract', () => {
     expect(wire).not.toContain('preferences-card');
   });
 
+  it('does not claim a widget origin until the deployment owner configures a real one', async () => {
+    const manifest = await offlineApp.toManifest();
+    const wire = JSON.stringify(manifest);
+    expect(wire).not.toContain('cedar-cloud.example');
+    expect(wire).not.toContain('your-app.example.com');
+  });
+
   it('keeps Nuitee authority out of model input and in the live connector policy', async () => {
     const manifest = await liveApp.toManifest() as { tools: Array<Record<string, unknown>> };
     const catalog = liveApp.toConnectorCatalog();

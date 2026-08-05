@@ -3,6 +3,7 @@ import { runNuiteeGateway } from './flight-runtime.js';
 import {
   errorSchema,
   itinerarySchema,
+  searchInputSchema,
   selectionRecordSchema,
   verificationSchema,
 } from './flight-schemas.js';
@@ -75,13 +76,14 @@ const gatewayInputSchema = z.object({
   state: z.unknown().optional(),
 });
 
-const gatewayOutputSchema = z.object({
+export const gatewayOutputSchema = z.object({
   kind: z.enum(['search', 'verify']),
   status: z.enum(['success', 'empty', 'partial', 'error']),
   message: z.string().max(400),
   fallback: z.string().max(500),
   retrievedAt: z.string().max(64).optional(),
   searchId: z.string().max(39).optional(),
+  searchContext: searchInputSchema.optional(),
   itineraries: z.array(itinerarySchema).max(10).optional(),
   records: z.array(selectionRecordSchema).max(10).optional(),
   verification: verificationSchema.optional(),

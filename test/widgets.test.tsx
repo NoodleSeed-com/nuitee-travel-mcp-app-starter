@@ -13,9 +13,18 @@ vi.mock('../src/helpers.js', () => {
     Flow: ({ children, variant: _variant, density: _density, ...props }: any) => React.createElement('div', props, children),
     Frame: container,
     Region: ({ children, title, description }: any) => React.createElement('section', null, React.createElement('h2', null, title), React.createElement('p', null, description), children),
+    Field: ({ children, label, detail }: any) => React.createElement('label', null, label, children, detail ? React.createElement('small', null, detail) : null),
+    Input: (props: any) => React.createElement('input', props),
+    Select: ({ options, ...props }: any) => React.createElement('select', props, options.map((option: any) => React.createElement('option', { key: option.value, value: option.value }, option.label))),
+    StatusBadge: ({ children }: any) => React.createElement('span', null, children),
     useCallTool: vi.fn(),
+    useAppFlow: vi.fn(),
+    useBranding: vi.fn(),
     useLayout: vi.fn(),
+    useRequestDisplayMode: vi.fn(),
+    useSendFollowUpMessage: vi.fn(),
     useToolInfo: vi.fn(),
+    useUpdateModelContext: vi.fn(),
     useViewState: vi.fn(),
   };
 });
@@ -38,17 +47,27 @@ const home = {
 
 const itinerary = {
   selectionId: 'sel_0123456789abcdef0123456789abcdef',
-  route: { origin: 'QZX', destination: 'QZY' },
+  route: {
+    origin: 'QZX',
+    originName: 'Cedar Bay Test Aerodrome',
+    destination: 'QZY',
+    destinationName: 'Cloud Harbour Test Aerodrome',
+  },
   carrier: { name: 'Cedar Skies', code: 'ZZ' },
   departureTime: '2030-04-20T09:00:00Z',
   arrivalTime: '2030-04-20T12:15:00Z',
   durationMinutes: 195,
   stops: 0,
-  price: { total: 284.5, currency: 'CAD' },
+  price: { total: 284.5, currency: 'CAD', base: 240, taxes: 40, fees: 4.5 },
   baggage: { carryOn: true, checked: false, allowances: ['One fictional cabin bag'] },
   expiresAt: '2030-04-01T12:15:00Z',
   retrievedAt: '2030-04-01T12:00:00Z',
   isCheapest: true,
+  fare: { family: 'Cloudlight Economy', mixedCabin: false, seatsRemaining: 4 },
+  terms: { changeable: true, refundable: false, hasChangeFee: true, hasRefundFee: false },
+  amenities: [
+    { category: 'wifi' as const, name: 'Fictional Wi-Fi', available: true, chargeable: false, details: 'Test fixture only', aircraftType: 'Cedar 100' },
+  ],
   legs: [
     {
       direction: 'OUTBOUND' as const,
@@ -64,13 +83,15 @@ const itinerary = {
 };
 
 describe('TravelHome', () => {
-  it('shows one available domain and noninteractive coming-soon domains', () => {
-    const html = renderToStaticMarkup(<TravelHomeView data={home} theme="light" />);
+  it('shows familiar editable flight fields, one available domain, and noninteractive coming-soon domains', () => {
+    const html = renderToStaticMarkup(<TravelHomeView data={home} theme="light" onSearchPrompt={vi.fn()} />);
     expect(html).toContain('Cedar &amp; Cloud Travel');
     expect(html).toContain('Flights');
     expect(html.match(/Coming soon/g)).toHaveLength(4);
-    expect(html).not.toContain('<button');
+    for (const field of ['From', 'To', 'Departure', 'Return', 'Adults', 'Cabin', 'Currency', 'Country']) expect(html).toContain(field);
+    expect(html).toContain('>Search flights</button>');
     expect(html).not.toContain('disabled');
+    expect(html).not.toContain('airline-logo');
   });
 
   it('renders loading, malformed, and unavailable states', () => {
@@ -88,7 +109,7 @@ describe('TravelHome', () => {
 });
 
 describe('FlightResults', () => {
-  it('shows at most three inline and ten expanded, with Verify fare as the only action', () => {
+  it('shows at most three inline and ten expanded, with one selection-aware primary action', () => {
     const results = Array.from({ length: 10 }, (_, index) => ({
       ...itinerary,
       selectionId: `sel_${String(index).padStart(32, '0')}`,
@@ -107,8 +128,19 @@ describe('FlightResults', () => {
         onVerify={vi.fn()}
       />,
     );
-    expect((inline.match(/>Verify fare<\/button>/g) ?? [])).toHaveLength(3);
-    expect((fullscreen.match(/>Verify fare<\/button>/g) ?? [])).toHaveLength(10);
+    expect((inline.match(/>Select fare<\/button>/g) ?? [])).toHaveLength(3);
+    expect((fullscreen.match(/>Select fare<\/button>/g) ?? [])).toHaveLength(10);
+    expect(inline).not.toContain('Verify selected fare');
+    const selected = renderToStaticMarkup(
+      <FlightResultsView
+        result={{ status: 'success', itineraries: results, fallback: '10 flights', retrievedAt: itinerary.retrievedAt }}
+        displayMode="inline"
+        selectedSelectionId={results[1].selectionId}
+        onSelect={vi.fn()}
+        onVerify={vi.fn()}
+      />,
+    );
+    expect((selected.match(/>Verify selected fare<\/button>/g) ?? [])).toHaveLength(1);
     for (const forbidden of ['Book', 'Checkout', 'Reserve', 'Pay', 'Redeem']) expect(inline).not.toContain(forbidden);
   });
 
@@ -126,9 +158,11 @@ describe('FlightResults', () => {
       result: { status: 'success' as const, itineraries: [itinerary], fallback: 'One flight', retrievedAt: itinerary.retrievedAt },
       displayMode: 'inline' as const,
       onVerify: vi.fn(),
+      onSelect: vi.fn(),
+      selectedSelectionId: itinerary.selectionId,
     };
-    const changed = renderToStaticMarkup(<FlightResultsView {...base} verification={{ status: 'success', selectionId: itinerary.selectionId, availability: 'available', priceChanged: true, previousPrice: itinerary.price, currentPrice: { total: 299.5, currency: 'CAD' }, messages: ['Fare changed'], expiresAt: itinerary.expiresAt }} />);
-    const success = renderToStaticMarkup(<FlightResultsView {...base} verification={{ status: 'success', selectionId: itinerary.selectionId, availability: 'available', priceChanged: false, previousPrice: itinerary.price, currentPrice: itinerary.price, messages: [], expiresAt: itinerary.expiresAt }} />);
+    const changed = renderToStaticMarkup(<FlightResultsView {...base} view="review" verification={{ status: 'success', selectionId: itinerary.selectionId, availability: 'available', priceChanged: true, previousPrice: itinerary.price, currentPrice: { total: 299.5, currency: 'CAD' }, messages: ['Fare changed'], expiresAt: itinerary.expiresAt }} />);
+    const success = renderToStaticMarkup(<FlightResultsView {...base} view="review" verification={{ status: 'success', selectionId: itinerary.selectionId, availability: 'available', priceChanged: false, previousPrice: itinerary.price, currentPrice: itinerary.price, messages: [], expiresAt: itinerary.expiresAt }} />);
     const expired = renderToStaticMarkup(<FlightResultsView {...base} verificationError={{ code: 'expired_offer', message: 'This offer expired. Search again.', retryable: false }} />);
     const retry = renderToStaticMarkup(<FlightResultsView {...base} verificationError={{ code: 'timeout', message: 'Verification timed out.', retryable: true }} />);
     expect(changed).toContain('Price changed');
@@ -157,6 +191,7 @@ describe('FlightResults', () => {
         result={{ status: 'success', itineraries: [roundTrip], fallback: 'Round trip', retrievedAt: itinerary.retrievedAt }}
         displayMode="inline"
         onVerify={vi.fn()}
+        onSelect={vi.fn()}
       />,
     );
     expect(html).toContain('Outbound');
@@ -183,20 +218,67 @@ describe('FlightResults', () => {
 
   it('renders price freshness, verification messages, and distinct accessible actions', () => {
     const result = { status: 'success' as const, itineraries: [itinerary], fallback: 'One flight', message: 'One flight', retrievedAt: itinerary.retrievedAt };
-    const html = renderToStaticMarkup(<FlightResultsView
+    const actionHtml = renderToStaticMarkup(<FlightResultsView
       result={result}
       displayMode="inline"
       onVerify={vi.fn()}
+      onSelect={vi.fn()}
+      selectedSelectionId={itinerary.selectionId}
+    />);
+    const html = renderToStaticMarkup(<FlightResultsView
+      result={result}
+      displayMode="inline"
+      view="review"
+      onVerify={vi.fn()}
+      onBack={vi.fn()}
+      selectedSelectionId={itinerary.selectionId}
       verification={{
         status: 'success', selectionId: itinerary.selectionId, availability: 'available', priceChanged: false,
         previousPrice: itinerary.price, currentPrice: itinerary.price, messages: ['Fare remains available.'],
         verifiedAt: '2030-04-01T12:02:00Z', expiresAt: itinerary.expiresAt,
       }}
     />);
-    expect(html).toContain('Results retrieved');
-    expect(html).toContain('Search offer expires');
+    expect(html).toContain('Verified Apr 1');
+    expect(html).toContain('Offer expires');
     expect(html).toContain('Fare remains available.');
-    expect(html).toContain('aria-label="Verify fare for QZX to QZY with Cedar Skies"');
+    expect(actionHtml).toContain('aria-label="Verify selected fare from QZX to QZY with Cedar Skies"');
+  });
+
+  it('supports editable search, back navigation, and a boarding-pass-inspired fare review without claiming a ticket', () => {
+    const result = {
+      status: 'success' as const,
+      itineraries: [itinerary],
+      fallback: 'One flight',
+      message: 'One flight',
+      retrievedAt: itinerary.retrievedAt,
+      searchContext: {
+        origin: 'QZX', destination: 'QZY', departureDate: '2030-04-20', adults: 1, children: 0, infants: 0,
+        childrenAges: [], infantAges: [], cabinClass: 'ECONOMY' as const, currency: 'CAD', country: 'CA',
+      },
+    };
+    const editor = renderToStaticMarkup(<FlightResultsView result={result} displayMode="inline" view="search" onSearchPrompt={vi.fn()} onBack={vi.fn()} onVerify={vi.fn()} />);
+    expect(editor).toContain('Edit your search');
+    expect(editor).toContain('value="Cedar Bay Test Aerodrome"');
+    expect(editor).toContain('Back</button>');
+
+    const review = renderToStaticMarkup(<FlightResultsView
+      result={result}
+      displayMode="inline"
+      view="review"
+      selectedSelectionId={itinerary.selectionId}
+      onBack={vi.fn()}
+      onVerify={vi.fn()}
+      verification={{
+        status: 'success', selectionId: itinerary.selectionId, availability: 'available', priceChanged: false,
+        previousPrice: itinerary.price, currentPrice: itinerary.price, messages: [], verifiedAt: itinerary.retrievedAt,
+      }}
+    />);
+    expect(review).toContain('Verified fare review');
+    expect(review).toContain('Not a ticket or reservation');
+    expect(review).toContain('Cedar Bay Test Aerodrome');
+    expect(review).toContain('Cloudlight Economy');
+    expect(review).toContain('Fictional Wi-Fi');
+    for (const falseClaim of ['Boarding pass', 'Ticket number', 'Gate', 'Seat assigned', 'Book now']) expect(review).not.toContain(falseClaim);
   });
 
   it('includes keyboard focus, 280px, overflow, touch target, and reduced-motion safeguards', () => {
