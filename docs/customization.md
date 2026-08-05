@@ -53,6 +53,7 @@ TravelHome and FlightResults live in `src/views/`; `search-editor.tsx` is their 
 - Keep three cards inline and ten only when the host supplies fullscreen mode.
 - Use progressive disclosure instead of an inner scrolling pane.
 - Keep empty, partial, unavailable, malformed, retry, changed-price, expired, and success states.
+- Keep the loading skeleton structurally aligned with the result cards, label it as an offer search rather than live aircraft tracking, and preserve its reduced-motion fallback.
 - Feature-detect host behavior through public hooks; do not depend on a host global.
 - Leave widget CSP connection domains empty while all data moves through tools.
 - Do not add a default handoff. A real deployment must author an exact HTTPS domain, a server-owned short-lived deep link or session, and matching origin policy before a handoff button appears.

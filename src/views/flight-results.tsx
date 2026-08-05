@@ -204,12 +204,62 @@ function airportLabel(route: Itinerary['route'], side: 'origin' | 'destination')
   return name ? `${name} (${code})` : code;
 }
 
+function FlightSearchSkeleton() {
+  return (
+    <section className="cc-search-skeleton" role="status" aria-live="polite" aria-busy="true">
+      <header className="cc-scan-header">
+        <div>
+          <strong>Searching current flights</strong>
+          <span>Comparing routes, schedules, and fares…</span>
+        </div>
+        <span className="cc-scan-chip"><span aria-hidden="true" />Checking providers</span>
+      </header>
+
+      <div className="cc-route-scan" aria-hidden="true">
+        <span className="cc-scan-node" />
+        <span className="cc-scan-path"><span className="cc-scan-sweep" /></span>
+        <span className="cc-scan-node" />
+      </div>
+
+      <div className="cc-skeleton-list" aria-hidden="true">
+        {[0, 1, 2].map((index) => (
+          <article className="cc-skeleton-fare" key={index}>
+            <div className="cc-skeleton-row">
+              <span className="cc-skeleton-block cc-skeleton-carrier" />
+              <span className="cc-skeleton-block cc-skeleton-badge" />
+            </div>
+            <div className="cc-skeleton-route">
+              <span className="cc-skeleton-block cc-skeleton-code" />
+              <span className="cc-skeleton-line"><span /></span>
+              <span className="cc-skeleton-block cc-skeleton-code" />
+            </div>
+            <div className="cc-skeleton-times">
+              <span className="cc-skeleton-block" />
+              <span className="cc-skeleton-block" />
+              <span className="cc-skeleton-block" />
+            </div>
+            <div className="cc-skeleton-row cc-skeleton-footer">
+              <span className="cc-skeleton-block cc-skeleton-price" />
+              <span className="cc-skeleton-block cc-skeleton-action" />
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function resultStatus(state: ResultsState, theme: 'light' | 'dark', brandStyle?: CSSProperties) {
+  if (state === 'loading') {
+    return (
+      <Frame className={`cc-app ${theme === 'dark' ? 'cc-theme-dark' : ''}`} style={brandStyle} displayMode="auto" title="Flight results">
+        <FlightSearchSkeleton />
+      </Frame>
+    );
+  }
   return (
     <Frame className={`cc-app ${theme === 'dark' ? 'cc-theme-dark' : ''}`} style={brandStyle} displayMode="auto" title="Flight results">
-      <Feedback status={state === 'loading' ? 'loading' : 'error'}>
-        {state === 'loading' ? 'Searching current flights…' : 'The flight result was incomplete and could not be shown safely.'}
-      </Feedback>
+      <Feedback status="error">The flight result was incomplete and could not be shown safely.</Feedback>
     </Frame>
   );
 }

@@ -100,7 +100,7 @@ Every final combination must be measured in the rendered host. Color never carri
 - Bundle no airline/provider logos and use no third-party icon asset without license review.
 - Keep result cards information-led. Do not add an internal Cedar & Cloud logo or decorative hero; the host already presents app identity before the widget.
 - Limit motion to 100–140ms opacity or color transitions.
-- Use no parallax, sliding cards, animated countdown, or loading spectacle.
+- Use no parallax, sliding cards, animated countdown, or loading spectacle. The search state may use a restrained route scan and result-shaped placeholders, but must never imply aircraft tracking or expose invented inventory.
 - Make reduced-motion behavior effectively instant.
 
 ## TravelHome contract

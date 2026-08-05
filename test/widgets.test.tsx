@@ -186,6 +186,15 @@ describe('FlightResults', () => {
     expect(renderToStaticMarkup(<FlightResultsView displayMode="inline" onVerify={vi.fn()} {...props} />)).toContain(text);
   });
 
+  it('renders an honest route-scanning skeleton with result-card parity', () => {
+    const html = renderToStaticMarkup(<FlightResultsView state="loading" displayMode="inline" onVerify={vi.fn()} />);
+    expect(html).toContain('aria-busy="true"');
+    expect(html).toContain('Searching current flights');
+    expect(html).toContain('Comparing routes, schedules, and fares');
+    expect((html.match(/cc-skeleton-fare/g) ?? [])).toHaveLength(3);
+    expect(html).not.toContain('live radar');
+  });
+
   it('renders verification success, changed price, expired offer, and retry states', () => {
     const base = {
       result: { status: 'success' as const, itineraries: [itinerary], fallback: 'One flight', retrievedAt: itinerary.retrievedAt },
@@ -331,5 +340,7 @@ describe('FlightResults', () => {
     expect(css).toContain('overflow-wrap: anywhere');
     expect(css).toContain('repeat(auto-fit');
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(css).toContain('@keyframes cc-route-scan');
+    expect(css).toContain('.cc-search-skeleton');
   });
 });
