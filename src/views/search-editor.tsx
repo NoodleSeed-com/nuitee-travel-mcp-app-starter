@@ -1,8 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import { Action, ActionBar, Field, Flow, Input, Select } from '../helpers.js';
+import { Action, ActionBar, Field, Flow, Input, SegmentedControl, Select } from '../helpers.js';
 import type { SearchContext } from '../flight-schemas.js';
 
+type TripType = 'round_trip' | 'one_way';
+
 export type SearchDraft = {
+  readonly tripType: TripType;
   readonly origin: string;
   readonly destination: string;
   readonly departureDate: string;
@@ -17,6 +20,7 @@ export type SearchDraft = {
 
 function initialDraft(context?: SearchContext, placeLabels?: { readonly origin?: string; readonly destination?: string }): SearchDraft {
   return {
+    tripType: context ? (context.returnDate ? 'round_trip' : 'one_way') : 'round_trip',
     origin: placeLabels?.origin ?? context?.origin ?? '',
     destination: placeLabels?.destination ?? context?.destination ?? '',
     departureDate: context?.departureDate ?? '',
@@ -31,7 +35,7 @@ function initialDraft(context?: SearchContext, placeLabels?: { readonly origin?:
 }
 
 export function searchPrompt(draft: SearchDraft): string {
-  const trip = draft.returnDate ? `returning ${draft.returnDate}` : 'one way';
+  const trip = draft.tripType === 'round_trip' ? `returning ${draft.returnDate}` : 'one way';
   return [
     `Search flights from ${draft.origin.trim()} to ${draft.destination.trim()}, departing ${draft.departureDate}, ${trip}.`,
     `${draft.adults} adult(s), ${draft.children} child(ren), and ${draft.infants} infant(s), in ${draft.cabinClass.replaceAll('_', ' ').toLowerCase()}.`,
@@ -56,6 +60,11 @@ export function SearchEditor({
   const [draft, setDraft] = useState(() => initialDraft(context, placeLabels));
   const update = <Key extends keyof SearchDraft>(key: Key, value: SearchDraft[Key]) =>
     setDraft((current) => ({ ...current, [key]: value }));
+  const swapRoute = () => setDraft((current) => ({
+    ...current,
+    origin: current.destination,
+    destination: current.origin,
+  }));
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     onSubmit?.(draft);
@@ -73,23 +82,48 @@ export function SearchEditor({
       </header>
 
       <Flow variant="stack" density="comfortable">
+        <div className="cc-trip-type">
+          <Field label="Trip type" group>
+            <SegmentedControl
+              aria-label="Trip type"
+              name="tripType"
+              value={draft.tripType}
+              onValueChange={(value) => update('tripType', value as TripType)}
+              options={[
+                { value: 'round_trip', label: 'Round trip' },
+                { value: 'one_way', label: 'One way' },
+              ]}
+            />
+          </Field>
+        </div>
+
         <div className="cc-route-fields">
           <Field label="From" detail="City or airport name">
             <Input name="origin" autoComplete="off" value={draft.origin} placeholder="Toronto" required onChange={(event) => update('origin', event.currentTarget.value)} />
           </Field>
-          <span className="cc-route-glyph" aria-hidden="true">→</span>
+          <Action
+            type="button"
+            variant="quiet"
+            className="cc-route-swap"
+            aria-label="Swap origin and destination"
+            onClick={swapRoute}
+          >
+            ⇄
+          </Action>
           <Field label="To" detail="City or airport name">
             <Input name="destination" autoComplete="off" value={draft.destination} placeholder="Lisbon" required onChange={(event) => update('destination', event.currentTarget.value)} />
           </Field>
         </div>
 
-        <div className="cc-form-grid cc-form-grid-dates">
+        <div className={`cc-form-grid cc-form-grid-dates cc-trip-${draft.tripType}`}>
           <Field label="Departure">
             <Input name="departureDate" type="date" value={draft.departureDate} required onChange={(event) => update('departureDate', event.currentTarget.value)} />
           </Field>
-          <Field label="Return" detail="Leave empty for one way">
-            <Input name="returnDate" type="date" value={draft.returnDate} onChange={(event) => update('returnDate', event.currentTarget.value)} />
-          </Field>
+          {draft.tripType === 'round_trip' ? (
+            <Field label="Return">
+              <Input name="returnDate" type="date" value={draft.returnDate} required onChange={(event) => update('returnDate', event.currentTarget.value)} />
+            </Field>
+          ) : null}
           <Field label="Cabin">
             <Select name="cabinClass" value={draft.cabinClass} onChange={(event) => update('cabinClass', event.currentTarget.value as SearchDraft['cabinClass'])} options={[
               { value: 'ECONOMY', label: 'Economy' },

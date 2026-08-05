@@ -143,6 +143,14 @@
 .cc-search-heading h2 { font-size: clamp(1.3rem, 4vw, 1.75rem); }
 .cc-search-heading p:last-child { color: var(--cc-muted); line-height: 1.45; }
 
+.cc-trip-type {
+  width: min(100%, 320px);
+}
+
+.cc-trip-type [role='radiogroup'] {
+  width: 100%;
+}
+
 .cc-route-fields {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr);
@@ -150,13 +158,13 @@
   align-items: center;
 }
 
-.cc-route-glyph {
+.cc-route-swap {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
-  margin-top: 4px;
-  border: 1px solid var(--cc-border);
+  width: 44px;
+  height: 44px;
+  margin-top: 12px;
+  padding: 0;
   border-radius: 50%;
   color: var(--cc-accent);
 }
@@ -166,8 +174,13 @@
   gap: 12px;
 }
 
-.cc-form-grid-dates { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.cc-form-grid-travellers { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.cc-form-grid-dates {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+}
+
+.cc-form-grid-travellers {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 128px), 1fr));
+}
 
 .cc-search-form input,
 .cc-search-form select {
@@ -510,7 +523,6 @@
 
 @media (max-width: 720px) {
   .cc-domain-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .cc-form-grid-travellers { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .cc-review-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -518,7 +530,7 @@
   .cc-hero { grid-template-columns: 1fr; }
   .cc-hero-art { max-height: 150px; }
   .cc-route-fields { grid-template-columns: 1fr; }
-  .cc-route-glyph { transform: rotate(90deg); justify-self: center; }
+  .cc-route-swap { transform: rotate(90deg); justify-self: center; margin-top: 0; }
   .cc-form-grid-dates,
   .cc-form-grid-travellers,
   .cc-schedule { grid-template-columns: 1fr; }

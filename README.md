@@ -9,7 +9,7 @@ This repository demonstrates secure server-side API access, three bounded travel
 - Opens a credential-free travel home with Flights marked available.
 - Searches current one-way and round-trip flight offers through Nuitee.
 - Returns at most ten normalized options and shows at most three inline.
-- Provides familiar editable search controls; the host resolves natural place names and asks before resolving ambiguous airports.
+- Provides familiar editable search controls with explicit Round trip and One way choices; the host resolves natural place names and asks before resolving ambiguous airports.
 - Verifies a fare selected from the current caller-scoped search.
 - Moves from search to comparison to a boarding-pass-inspired **Verified fare review**, with Back/Edit navigation and no ticket claim.
 - Treats fare changes as a normal state and stops before prebooking.

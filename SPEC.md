@@ -70,7 +70,7 @@ Only two tool-linked React entry widgets are permitted. They share one flight-jo
 - Fictional Cedar & Cloud Travel shell.
 - Flights visibly available.
 - Stays, Loyalty, Ground travel, and Experiences visibly “Coming soon” with no buttons, tabs, or disabled actionable controls.
-- Familiar labelled route, date, traveller, cabin, currency, and point-of-sale inputs when the host supports starting a follow-up message. Natural names are handed to the host model for safe resolution; browser code never guesses an IATA code.
+- Familiar labelled route, date, traveller, cabin, currency, and point-of-sale inputs when the host supports starting a follow-up message. An explicit segmented trip-type control defaults new searches to Round trip; One way removes the return field. Natural names are handed to the host model for safe resolution; browser code never guesses an IATA code.
 - One conversational example when that host capability is unavailable.
 - Loading, unavailable, and malformed-result states.
 

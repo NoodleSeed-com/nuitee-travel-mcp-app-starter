@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../src/helpers.js', () => {
-  const container = ({ children, title, subtitle, ...props }: any) =>
+  const container = ({ children, title, subtitle, displayMode: _displayMode, ...props }: any) =>
     React.createElement('section', props, title ? React.createElement('h1', null, title) : null, subtitle ? React.createElement('p', null, subtitle) : null, children);
   return {
     Action: ({ children, pending: _pending, pendingLabel: _pendingLabel, variant: _variant, ...props }: any) => React.createElement('button', props, children),
@@ -15,6 +15,16 @@ vi.mock('../src/helpers.js', () => {
     Region: ({ children, title, description }: any) => React.createElement('section', null, React.createElement('h2', null, title), React.createElement('p', null, description), children),
     Field: ({ children, label, detail }: any) => React.createElement('label', null, label, children, detail ? React.createElement('small', null, detail) : null),
     Input: (props: any) => React.createElement('input', props),
+    SegmentedControl: ({ name, value, options }: any) => React.createElement(
+      'div',
+      { role: 'radiogroup', 'aria-label': name },
+      options.map((option: any) => React.createElement('button', {
+        key: option.value,
+        type: 'button',
+        role: 'radio',
+        'aria-checked': value === option.value,
+      }, option.label)),
+    ),
     Select: ({ options, ...props }: any) => React.createElement('select', props, options.map((option: any) => React.createElement('option', { key: option.value, value: option.value }, option.label))),
     StatusBadge: ({ children }: any) => React.createElement('span', null, children),
     useCallTool: vi.fn(),
@@ -29,6 +39,7 @@ vi.mock('../src/helpers.js', () => {
   };
 });
 import { FlightResultsView, isGatewayError, isSearchOutput, isVerification } from '../src/views/flight-results.js';
+import { SearchEditor, searchPrompt } from '../src/views/search-editor.js';
 import { isHome, TravelHomeView } from '../src/views/travel-home.js';
 
 const home = {
@@ -89,9 +100,34 @@ describe('TravelHome', () => {
     expect(html).toContain('Flights');
     expect(html.match(/Coming soon/g)).toHaveLength(4);
     for (const field of ['From', 'To', 'Departure', 'Return', 'Adults', 'Cabin', 'Currency', 'Country']) expect(html).toContain(field);
+    expect(html).toContain('Round trip');
+    expect(html).toContain('One way');
+    expect(html).toContain('role="radiogroup"');
+    expect(html).toContain('aria-checked="true">Round trip');
+    expect(html).toMatch(/<input type="date" required="" name="returnDate"/);
+    expect(html).toContain('aria-label="Swap origin and destination"');
     expect(html).toContain('>Search flights</button>');
     expect(html).not.toContain('disabled');
     expect(html).not.toContain('airline-logo');
+  });
+
+  it('hydrates a one-way search without a return-date field or stale return prompt', () => {
+    const context = {
+      origin: 'QZX', destination: 'QZY', departureDate: '2030-04-20', adults: 1, children: 0, infants: 0,
+      childrenAges: [], infantAges: [], cabinClass: 'ECONOMY' as const, currency: 'CAD', country: 'CA',
+    };
+    const html = renderToStaticMarkup(<SearchEditor context={context} title="Edit your search" onSubmit={vi.fn()} />);
+    expect(html).toContain('One way');
+    expect(html).toContain('aria-checked="true">One way');
+    expect(html).not.toContain('name="returnDate"');
+    const prompt = searchPrompt({
+      ...context,
+      tripType: 'one_way',
+      returnDate: '2030-04-27',
+      adults: '1', children: '0', infants: '0',
+    } as any);
+    expect(prompt).toContain('one way');
+    expect(prompt).not.toContain('returning 2030-04-27');
   });
 
   it('renders loading, malformed, and unavailable states', () => {
@@ -287,6 +323,7 @@ describe('FlightResults', () => {
     expect(css).toContain(':focus-visible');
     expect(css).toContain('min-height: 44px');
     expect(css).toContain('overflow-wrap: anywhere');
+    expect(css).toContain('repeat(auto-fit');
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
   });
 });

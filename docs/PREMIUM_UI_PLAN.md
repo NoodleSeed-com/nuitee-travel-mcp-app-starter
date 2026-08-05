@@ -108,7 +108,7 @@ Every final combination must be measured in the rendered host. Color never carri
 1. Compact Cedar & Cloud lockup using runtime branding.
 2. Plain `Flights available` status.
 3. One concise headline and supporting sentence.
-4. Familiar labelled route, date, traveller, cabin, currency, and country controls.
+4. Familiar labelled route, date, traveller, cabin, currency, and country controls, led by an explicit Round trip / One way segmented choice and a real route-swap action.
 5. One **Search flights** submit action only when the host reports follow-up-message support; useful conversational fallback when unsupported.
 6. An original code-native Cedar & Cloud landscape illustration with no external media request.
 7. Static capability list: Flights available; Stays, Loyalty, Ground travel, and Experiences coming soon.
