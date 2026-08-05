@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.env.noodle
+.env.*
+!.env.example
+.noodle/
+.env.local

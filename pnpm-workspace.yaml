@@ -1,0 +1,2 @@
+minimumReleaseAgeExclude:
+  - '@noodleseed/one@0.104.1'

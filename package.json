@@ -1,0 +1,34 @@
+{
+  "name": "nuitee-travel-mcp-app-starter",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.17.0",
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=11"
+  },
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "validate": "noodle validate",
+    "dev": "noodle dev",
+    "dev:live": "noodle dev src/live-server.ts",
+    "validate:live": "noodle validate src/live-server.ts",
+    "validate:embedded": "noodle validate src/embedded-server.ts",
+    "deploy": "noodle deploy",
+    "agent:check": "noodle validate --json && noodle test --json && noodle check --json",
+    "agent:check:chatgpt": "noodle validate --json && noodle test --json && noodle check --target chatgpt --json",
+    "agent:check:assistant": "noodle validate src/embedded-server.ts --json && noodle check src/embedded-server.ts --target embedded-assistant --json",
+    "agent:commands": "noodle commands --json"
+  },
+  "devDependencies": {
+    "@noodleseed/one": "0.104.1",
+    "vitest": "4.1.10",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "@vitejs/plugin-react": "6.0.5",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "vite": "8.2.0"
+  }
+}

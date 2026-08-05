@@ -1,0 +1,9 @@
+{
+  "entrypoint": "src/server.ts",
+  "name": "nuitee-travel-mcp-app-starter",
+  "template": "widget",
+  "agents": [
+    "codex",
+    "claude-code"
+  ]
+}

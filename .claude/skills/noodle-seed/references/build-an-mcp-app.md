@@ -1,0 +1,52 @@
+# Outcome
+
+Deliver an MCP App whose visual interaction gives the user a concrete benefit beyond a good text response, while preserving useful model-visible output when the widget is unavailable.
+
+## Use when
+
+- The user asks for an MCP App, widget, interactive card, visual workflow, or host-visible UI.
+- Comparison, selection, progress, editing, confirmation, or another visual interaction materially improves the conversational job.
+
+## Do not use when
+
+- A concise text or structured tool result fully serves the user. UI must earn its place.
+- The requested task is a headless server, API connector, diagnosis, deployment, or publication with no UI change; select that route.
+- The agent lacks the product inputs needed to explain who benefits, what action the UI enables, and what happens without it.
+
+## Required inputs
+
+Before implementation, capture a short design spec: target user, conversational job, explicit user benefit, information hierarchy, primary interaction, states (loading/empty/error/success), model-visible result, widget-only data, and useful text fallback. Use `references/experience-design.md` for the deeper product-design questions only when needed.
+
+## Workflow
+
+1. **Pass the UI fit check.** State why a visual interaction is better than text for this request. If there is no defensible user benefit, keep the capability headless and stop the App route.
+2. **Agree on the design spec.** Describe the smallest complete experience and its states before writing the component. Avoid recreating a full dashboard or website inside the conversation.
+3. **Define the output boundary.** Keep concise facts and action results model-visible. Put presentation-heavy or interactive widget data in the widget-only channel. The model must not depend on opaque UI state to continue the conversation.
+4. **Preserve fallback.** Every tool that launches a widget must still return useful text without the widget, so unsupported hosts and failed rendering remain usable.
+5. **Author and wire the App contract.** Follow `references/widgets-and-apps.md` for the canonical component guidance, view registration, hooks, state, CSP, tool visibility, and output shaping. Keep tool effects and confirmation semantics correct independently of the UI.
+6. **Validate the local artifact.** Run `noodle validate --json`, `noodle test --json`, and `noodle check --json`. Repair failures at the layer that produced them.
+7. **Inspect the experience.** Run `noodle devtools` and verify loading, empty, error, success, responsive layout, focus/keyboard behavior, and the text fallback.
+8. **Escalate evidence only on request.** Run a host test only when the user requested host verification. Run host-specific compliance only when preparing that host submission; select the exact host-testing or compliance entry from the router lookup catalog only after that evidence level is explicitly requested.
+
+## Verification evidence
+
+- **Product:** the design spec states the user benefit and the UI fit decision.
+- **Server:** `noodle validate --json` and `noodle test --json` succeeded.
+- **App contract:** `noodle check --json` succeeded.
+- **Local UX:** `noodle devtools` exercised the relevant states and the useful text fallback without the widget.
+- **Host/compliance:** report each requested host or compliance check with its evidence; report every unperformed higher level as not run.
+
+## Recovery paths
+
+- Weak UI fit: remove the widget and ship the stronger headless result, or narrow the visual interaction to the one decision it improves.
+- App check failure: repair the cited view, metadata, output, CSP, or accessibility issue and rerun `noodle check --json` before reopening devtools.
+- Blank or stale widget: verify the tool returns the intended widget data, the view is registered, and state derives from supported hooks rather than hidden global state.
+- Model cannot continue without UI: move the essential facts into model-visible output and keep only presentation data widget-only.
+- Host-only mismatch: record local checks as passed, isolate the host symptom, and select the host-testing lookup only for that observed host; do not rewrite a working local contract without host evidence.
+
+## Stop conditions
+
+- Stop complete at the locally requested boundary when product fit, server tests, App checks, devtools states, and text fallback are evidenced.
+- Stop before host connection, deployment, or submission unless the user requested that next evidence level.
+- Stop blocked when the required design decision, external data, credentials, or host access is unavailable; name the missing input and the exact next action.
+- Never claim host compatibility, directory compliance, or production behavior from local devtools evidence alone.
