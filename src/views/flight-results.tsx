@@ -279,7 +279,7 @@ function FareCard({ itinerary, selected, onSelect }: {
     <article className={`cc-fare-card ${selected ? 'cc-fare-selected' : ''}`} aria-label={`${itinerary.route.origin} to ${itinerary.route.destination} with ${itinerary.carrier.name}`}>
       <header className="cc-fare-header">
         <div>
-          <p className="cc-eyebrow">{itinerary.carrier.code} · {itinerary.carrier.name}</p>
+          <p className="cc-carrier">{itinerary.carrier.code} · {itinerary.carrier.name}</p>
           <h3><span>{itinerary.route.origin}</span><span aria-hidden="true">→</span><span>{itinerary.route.destination}</span></h3>
           <p className="cc-airport-names">{airportLabel(itinerary.route, 'origin')} to {airportLabel(itinerary.route, 'destination')}</p>
         </div>
@@ -324,9 +324,9 @@ function FareReview({ itinerary, verification, onBack }: {
         <StatusBadge tone={verification.priceChanged ? 'warning' : 'success'}>{verification.priceChanged ? 'Price changed' : 'Fare verified'}</StatusBadge>
       </header>
       <div className="cc-review-ticket">
-        <div className="cc-review-brand">
-          <div className="cc-mark" aria-hidden="true"><span>C</span><span>C</span></div>
-          <div><p className="cc-eyebrow">CEDAR &amp; CLOUD</p><h2 id="cc-review-title">Verified fare review</h2></div>
+        <div className="cc-review-title">
+          <h2 id="cc-review-title">Verified fare review</h2>
+          <p>{itinerary.carrier.name} · {itinerary.carrier.code}</p>
         </div>
         <p className="cc-review-disclaimer">Not a ticket or reservation</p>
         <div className="cc-review-route">
@@ -532,10 +532,6 @@ export default function FlightResults() {
   const theme = layout.theme === 'dark' ? 'dark' : 'light';
   const brandStyle = {
     '--cc-accent': branding.theme?.[layout.theme]?.accent ?? branding.accent ?? '#1E6049',
-    '--cc-surface': branding.theme?.[layout.theme]?.surface ?? (layout.theme === 'dark' ? branding.surfaceDark : branding.surface) ?? (layout.theme === 'dark' ? '#17211C' : '#FFFFFF'),
-    '--cc-text': branding.theme?.[layout.theme]?.text ?? (layout.theme === 'dark' ? '#F4F7F5' : '#17221E'),
-    '--cc-muted': branding.theme?.[layout.theme]?.textMuted ?? (layout.theme === 'dark' ? '#B4C0BA' : '#50615A'),
-    '--cc-border': branding.theme?.[layout.theme]?.border ?? (layout.theme === 'dark' ? '#3A4941' : '#D7DDD9'),
     '--cc-focus': branding.theme?.[layout.theme]?.focus ?? '#0B6B52',
   } as CSSProperties;
 

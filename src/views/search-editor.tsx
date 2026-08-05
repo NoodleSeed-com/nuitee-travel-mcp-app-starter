@@ -74,7 +74,6 @@ export function SearchEditor({
     <form className="cc-search-form" onSubmit={submit} aria-label={title}>
       <header className="cc-search-heading">
         <div>
-          <p className="cc-eyebrow">FLIGHT SEARCH</p>
           <h2>{title}</h2>
           <p>Use city or airport names. Cedar &amp; Cloud will clarify an ambiguous place before searching.</p>
         </div>

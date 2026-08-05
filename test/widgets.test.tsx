@@ -96,7 +96,8 @@ const itinerary = {
 describe('TravelHome', () => {
   it('shows familiar editable flight fields, one available domain, and noninteractive coming-soon domains', () => {
     const html = renderToStaticMarkup(<TravelHomeView data={home} theme="light" onSearchPrompt={vi.fn()} />);
-    expect(html).toContain('Cedar &amp; Cloud Travel');
+    expect(html).toContain('Flight search');
+    expect(html).toContain('Flights available');
     expect(html).toContain('Flights');
     expect(html.match(/Coming soon/g)).toHaveLength(4);
     for (const field of ['From', 'To', 'Departure', 'Return', 'Adults', 'Cabin', 'Currency', 'Country']) expect(html).toContain(field);
@@ -109,6 +110,8 @@ describe('TravelHome', () => {
     expect(html).toContain('>Search flights</button>');
     expect(html).not.toContain('disabled');
     expect(html).not.toContain('airline-logo');
+    expect(html).not.toContain('cc-mark');
+    expect(html).not.toContain('cc-hero-art');
   });
 
   it('hydrates a one-way search without a return-date field or stale return prompt', () => {
@@ -314,11 +317,20 @@ describe('FlightResults', () => {
     expect(review).toContain('Cedar Bay Test Aerodrome');
     expect(review).toContain('Cloudlight Economy');
     expect(review).toContain('Fictional Wi-Fi');
+    expect(review).not.toContain('cc-mark');
     for (const falseClaim of ['Boarding pass', 'Ticket number', 'Gate', 'Seat assigned', 'Book now']) expect(review).not.toContain(falseClaim);
   });
 
-  it('includes keyboard focus, 280px, overflow, touch target, and reduced-motion safeguards', () => {
+  it('uses host-native typography and includes responsive accessibility safeguards', () => {
     const css = readFileSync(new URL('../src/views/travel.css', import.meta.url), 'utf8');
+    expect(css).toContain('ui-sans-serif');
+    expect(css).toContain('-apple-system');
+    expect(css).toContain('BlinkMacSystemFont');
+    expect(css).toContain('"Segoe UI"');
+    expect(css).toContain('background: transparent');
+    expect(css).not.toContain('font-family: inherit;');
+    expect(css).not.toContain('2.7rem');
+    expect(css).not.toContain('4.5rem');
     expect(css).toContain('@media (max-width: 320px)');
     expect(css).toContain(':focus-visible');
     expect(css).toContain('min-height: 44px');

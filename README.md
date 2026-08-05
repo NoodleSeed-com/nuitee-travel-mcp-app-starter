@@ -144,7 +144,7 @@ See [docs/troubleshooting.md](docs/troubleshooting.md) for operator actions.
 
 ## Customization
 
-Branding, tool descriptions, normalization fields, widget composition, and future domain boundaries are documented in [docs/customization.md](docs/customization.md). The home uses an original code-native Cedar & Cloud illustration; result cards remain information-led. Keep fixture airlines fictional and do not bundle carrier logos or imply a partnership without verified usage rights. Live results may display the carrier name and code returned by Nuitee.
+Branding, tool descriptions, normalization fields, widget composition, and future domain boundaries are documented in [docs/customization.md](docs/customization.md). The widgets use the host platform's system sans-serif stack, system-neutral structural colors, and a restrained Cedar & Cloud accent. They deliberately avoid a duplicated in-widget logo or decorative hero so they remain native to ChatGPT and other MCP hosts. Keep fixture airlines fictional and do not bundle carrier logos or imply a partnership without verified usage rights. Live results may display the carrier name and code returned by Nuitee.
 
 ## Updating Noodle Seed safely
 

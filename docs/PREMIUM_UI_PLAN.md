@@ -20,6 +20,7 @@ The plan uses:
 - the current generated Noodle Agent Kit guidance in `widgets-and-apps.md` and `experience-design.md`;
 - the current public `@noodleseed/one/react` component and hook surface;
 - official MCP Apps progressive-enhancement and host-context guidance;
+- official OpenAI Apps SDK UI guidance for typography, color, spacing, and inline-card behavior;
 - official W3C/WAI accessibility guidance;
 - current official airline search and shopping patterns from Emirates, Singapore Airlines, Qatar Airways, Delta, Air Canada, and United;
 - current official Nuitee flight search and verification guidance.
@@ -28,6 +29,7 @@ Primary public references:
 
 - [MCP Apps overview](https://modelcontextprotocol.io/extensions/apps/overview)
 - [MCP Apps SDK overview](https://apps.extensions.modelcontextprotocol.io/api/documents/Overview.html)
+- [OpenAI Apps SDK UI guidelines](https://developers.openai.com/plugins/concepts/ui-guidelines)
 - [WCAG 2.2](https://www.w3.org/TR/WCAG22/)
 - [WAI disclosure pattern](https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/)
 - [Emirates flight search](https://www.emirates.com/english/book/)
@@ -41,7 +43,7 @@ Primary public references:
 Two inherited choices now disagree with current Agent Kit guidance:
 
 1. `docs/customization.md` and the current tests preserve one primary **Verify fare** button per card. The current generated rule is one inline purpose, one primary action, and at most two visible actions. The premium implementation will use selectable fare cards followed by one **Verify selected fare** action.
-2. The current CSS duplicates branding colors and uses a brand gradient. Current generated guidance requires runtime branding tokens and advises against brand gradients. The implementation will map `useBranding()` values to local semantic custom properties and use flat surfaces.
+2. The earlier concept CSS duplicated branding colors and used a brand gradient. Current OpenAI guidance requires system typography and structural colors, with partner branding reserved for accents. The implementation therefore inherits system structure and maps only the runtime accent/focus values into local properties.
 
 These are application corrections, not new Noodle feedback findings.
 
@@ -60,17 +62,17 @@ A hamburger menu is familiar when a product has hidden navigation. These focused
 
 ### Tokens
 
-Use server branding as the authority, with semantic fallbacks for local preview and hosts that omit optional values.
+Use host system colors for structure and server branding only for the restrained action accent, with semantic fallbacks for local preview and hosts that omit optional values.
 
 | Role | Light | Dark |
 | --- | --- | --- |
-| Canvas | `#F7F6F2` | `#101713` |
-| Surface | `#FFFFFF` | `#17211C` |
-| Primary text | `#17221E` | `#F4F7F5` |
-| Secondary text | `#50615A` | `#B4C0BA` |
+| Canvas | transparent host canvas | transparent host canvas |
+| Surface | CSS system `Canvas` | CSS system `Canvas` under dark `color-scheme` |
+| Primary text | CSS system `CanvasText` | CSS system `CanvasText` under dark `color-scheme` |
+| Secondary text | system-text mix | system-text mix |
 | Cedar action | `#1E6049` | `#82D1B0` |
 | On cedar | `#FFFFFF` | `#0D2B21` |
-| Strong boundary | `#68776F` | `#75847C` |
+| Strong boundary | system-text mix | system-text mix |
 | Price-change warning | `#A84A1F` | a host-adaptive warning token |
 
 Every final combination must be measured in the rendered host. Color never carries state by itself.
@@ -96,7 +98,7 @@ Every final combination must be measured in the rendered host. Color never carri
 - Use familiar route arrows, chevrons, status marks, and host-expand affordances.
 - Pair every meaningful icon with visible text or an accessible name.
 - Bundle no airline/provider logos and use no third-party icon asset without license review.
-- Keep result cards information-led. TravelHome may use the original code-native Cedar & Cloud landscape illustration; it must not imply a real destination, aircraft, or carrier partnership.
+- Keep result cards information-led. Do not add an internal Cedar & Cloud logo or decorative hero; the host already presents app identity before the widget.
 - Limit motion to 100–140ms opacity or color transitions.
 - Use no parallax, sliding cards, animated countdown, or loading spectacle.
 - Make reduced-motion behavior effectively instant.
@@ -105,13 +107,12 @@ Every final combination must be measured in the rendered host. Color never carri
 
 ### Composition
 
-1. Compact Cedar & Cloud lockup using runtime branding.
+1. Host-provided app identity, followed by a compact native flight-search title.
 2. Plain `Flights available` status.
 3. One concise headline and supporting sentence.
 4. Familiar labelled route, date, traveller, cabin, currency, and country controls, led by an explicit Round trip / One way segmented choice and a real route-swap action.
 5. One **Search flights** submit action only when the host reports follow-up-message support; useful conversational fallback when unsupported.
-6. An original code-native Cedar & Cloud landscape illustration with no external media request.
-7. Static capability list: Flights available; Stays, Loyalty, Ground travel, and Experiences coming soon.
+6. Static capability list: Flights available; Stays, Loyalty, Ground travel, and Experiences coming soon.
 
 Coming-soon rows have no hover treatment, pointer cursor, tab stop, button semantics, or disabled-control appearance.
 
@@ -260,7 +261,7 @@ Update `src/helpers.ts` to export only the public components/hooks selected abov
 
 ### Phase 3 — refine `TravelHome` (complete)
 
-Remove the gradient, implement the Quiet Canopy hierarchy, add capability-detected conversational follow-up, and preserve text fallback.
+Remove the gradient, duplicated lockup, and decorative hero; implement a compact host-native hierarchy, add capability-detected conversational follow-up, and preserve text fallback.
 
 ### Phase 4 — refactor `FlightResults` (complete)
 
@@ -268,7 +269,7 @@ Add the bounded search recap, selection state, one action dock, route timeline, 
 
 ### Phase 5 — implement the shared visual system (complete for code/static evidence)
 
-Replace raw duplicated colors with semantic variables, apply both themes, add tabular numeric alignment, refine focus, remove `overflow-x: clip` as a masking strategy, and solve any actual overflow instead.
+Replace raw duplicated colors with host-system semantic variables, reserve runtime branding for accent/focus, apply both themes, add tabular numeric alignment, refine focus, remove `overflow-x: clip` as a masking strategy, and solve any actual overflow instead.
 
 ### Phase 6 — browser and host evidence (pending release evidence)
 

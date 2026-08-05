@@ -6,9 +6,10 @@ Customize the existing flights-first product before adding scope. Keep Cedar & C
 
 Change the shared server brand in `src/travel-server.ts` and the authored shell in `src/views/travel-home.tsx` / `travel.css`.
 
-- Use your own name, accent/surface seeds, copy, and design tokens.
-- Replace the CSS letter mark with an asset only when you own it or have documented rights.
-- Keep host/native typography and light/dark support.
+- Use your own name, short copy, and restrained accent token; keep structural surfaces and text host-neutral.
+- Let the host-supplied app identity carry the logo. Do not repeat a brand mark inside a compact response widget.
+- Keep the explicit platform system-font stack, light/dark support, compact type scale, and system sizing.
+- Follow the current [OpenAI Apps SDK UI guidelines](https://developers.openai.com/plugins/concepts/ui-guidelines) when changing typography, color, spacing, actions, or navigation.
 - Do not bundle airline/provider logos merely because a live response includes a logo URL.
 - Never imply a partnership or call this an “official Nuitee connector” without authorization.
 - The starter claims no custom widget domain. Before app-store submission, add
