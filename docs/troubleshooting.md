@@ -6,14 +6,15 @@ All public errors are sanitized. Inspect structured codes and operator logs with
 
 **Symptom:** `configuration_required` or local `connector_secret_unresolved` on the live entrypoint.
 
-The default `src/server.ts` is intentionally credential-free. For live mode, put the value in your shell and use the managed path:
+The default `src/server.ts` is intentionally credential-free. For the shortest live local path, put `NUITEE_API_KEY` in the exact project-root `.env` and run:
 
 ```sh
-pnpm exec noodle secrets set NUITEE_API_KEY --runtime local --from-env NUITEE_API_KEY
 pnpm dev:live
 ```
 
-Local secret setup does not require `noodle login`. A `.env` or `.env.local` file is not automatically exported into the shell used by `--from-env`; load it explicitly first or use the interactive `read` flow in the README. The live runtime reads the ignored Noodle managed-secret store, not browser code.
+Local secret setup does not require `noodle login`. The pinned CLI reads the exact project-root `.env` as a read-only fallback for matching managed declarations; `.env.local` is not that fallback. Alternatively, export the value and run `pnpm exec noodle secrets set NUITEE_API_KEY --runtime local --from-env NUITEE_API_KEY` to write the ignored scoped `.env.noodle` store for the effective local target. The browser never reads either file.
+
+If the value was added or server code changed while DevTools was running, stop it with Ctrl+C and restart `pnpm dev:live`. A local secret does not configure the cloud deployment; hosted setup has its own preflight and managed secret.
 
 Do not add a key literal to `.env.example`, source, a tool argument, or a prompt. Verify the effective local target rather than printing the value.
 
@@ -102,6 +103,8 @@ This is normal market behavior. Show old and current displayed prices clearly. I
 5. Reproduce at 280px, light/dark, keyboard, and reduced motion.
 
 Do not claim ChatGPT, Claude, or another host works from generic metadata alone; record a real host render.
+
+For ChatGPT specifically, `noodle check src/live-server.ts --target chatgpt --json` intentionally reports `chatgpt_widget_domain` until the deployment owner adds one real, dedicated HTTPS widget origin to both widgets. The generic/local gates do not require it. Do not use a reserved or placeholder domain to make the target check green.
 
 ## Embedded assistant session errors
 

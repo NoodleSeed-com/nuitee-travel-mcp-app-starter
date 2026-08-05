@@ -48,7 +48,7 @@ Exactly three model-visible tools are allowed.
 - Defaults: one adult, zero children/infants, economy.
 - Application policy: exactly three-letter IATA-shaped codes, different endpoints, ISO dates not before the caller's server-authoritative local date, return after departure, one to nine total passengers, at least one adult, infants no greater than adults, age-array lengths equal their counts, child ages 2–11, infant ages 0–1, documented cabin enum, three-letter currency, and two-letter point of sale.
 - Provider request: `POST /flights/rates`, JSON, exact documented `legs` array.
-- Output: at most ten normalized itineraries, three inline, with opaque `selectionId`; comparison route, separate documented outbound/return legs, carrier, airport-local schedules, bounded documented duration/stops, price/currency, baggage hints/messages, retrieval time, and documented expiration.
+- Output: at most ten normalized itineraries, three inline, with opaque `selectionId`; validated search context; airport codes and documented names; comparison route; separate documented outbound/return legs; marketing/operating carrier facts; airport-local schedules; bounded documented duration/stops and overnight/day-change hints; display-price breakdown; fare family; seats remaining; bounded refund/change flags; baggage hints/messages; up to five documented amenities; retrieval time; and documented expiration.
 - Never outputs an upstream offer ID, logo URL, raw response, fare-basis code, or booking code.
 - Empty, partial, malformed, oversized, timeout, provider, and access failures remain distinct.
 
@@ -63,24 +63,27 @@ Exactly three model-visible tools are allowed.
 
 ## Widget contract
 
-Only two React widgets are permitted.
+Only two tool-linked React entry widgets are permitted. They share one flight-journey language and reusable search/editor components; no duplicate assistant-specific UI or tool set exists.
 
 ### TravelHome
 
 - Fictional Cedar & Cloud Travel shell.
 - Flights visibly available.
 - Stays, Loyalty, Ground travel, and Experiences visibly “Coming soon” with no buttons, tabs, or disabled actionable controls.
-- One conversational example for beginning a flight search.
+- Familiar labelled route, date, traveller, cabin, currency, and point-of-sale inputs when the host supports starting a follow-up message. Natural names are handed to the host model for safe resolution; browser code never guesses an IATA code.
+- One conversational example when that host capability is unavailable.
 - Loading, unavailable, and malformed-result states.
 
 ### FlightResults
 
 - Three options inline; up to ten when the host supplies fullscreen/expanded display mode.
 - Boarding-pass-inspired hierarchy without copying third-party assets or styles.
-- Route, carrier name/code, separate outbound/return airport-local dates/times, stops, duration, price/currency, baggage hints, verification messages, and freshness disclosure.
-- “Verify fare” is the only primary consequential action.
+- Named Search/Edit, Results, and Verified fare-review states with host-persisted Back navigation. A prompt may enter at Home/Search or Results; selection and verification advance within the same result widget.
+- Route and airport names/codes, carrier facts, separate outbound/return airport-local dates/times, stops, duration, fare family, bounded price breakdown, baggage, terms, documented amenities, verification messages, and freshness disclosure.
+- Result cards are explicit selection controls. One **Verify selected fare** action appears only after selection.
+- The final state is labelled **Verified fare review** and **Not a ticket or reservation**; it never invents a boarding pass, PNR, barcode, gate, seat, or ticket number.
 - Verification success, changed price, expired selection, retryable failure, partial results, empty results, malformed results, and loading are explicit.
-- No booking, checkout, reservation, payment, redemption, or handoff action.
+- No booking, checkout, reservation, payment, redemption, or handoff action. A production handoff may be added only for an exact allowlisted HTTPS domain and server-owned deep-link/session contract.
 
 Both widgets must work at 280px, adapt to light/dark host themes, use host/native typography, avoid page-horizontal overflow and nested scrolling, expose labels and visible focus, retain 44px practical targets, respect reduced motion, and provide equivalent bounded structured/text fallback.
 

@@ -11,8 +11,9 @@ Change the shared server brand in `src/travel-server.ts` and the authored shell 
 - Keep host/native typography and light/dark support.
 - Do not bundle airline/provider logos merely because a live response includes a logo URL.
 - Never imply a partnership or call this an “official Nuitee connector” without authorization.
-- Replace the reserved `https://cedar-cloud.example` widget metadata domain
-  with the deployment's dedicated HTTPS widget origin before host registration.
+- The starter claims no custom widget domain. Before app-store submission, add
+  one real, dedicated, deployment-owned HTTPS origin to the shared `viewPolicy`
+  for both widgets; never publish a placeholder origin.
 
 Search fixtures must remain clearly fictional. Live output may show the actual carrier name and code returned by Nuitee, but that is inventory attribution—not a bundled brand partnership.
 
@@ -43,14 +44,17 @@ Do not return the complete upstream journey, offers array, provider/carrier logo
 
 ## Widget composition
 
-TravelHome and FlightResults live in `src/views/`. Both use public `@noodleseed/one/react` primitives through `src/helpers.ts`.
+TravelHome and FlightResults live in `src/views/`; `search-editor.tsx` is their shared familiar form. Both use public `@noodleseed/one/react` primitives through `src/helpers.ts`.
 
-- Preserve one primary action per flight card: **Verify fare**.
+- Preserve explicit unselected/selected card states and the single result-level primary action: **Verify selected fare**.
+- Keep Search/Edit → Results → Verified fare review navigation shallow, Back-enabled, and persisted with the public app-flow helper.
+- Place-name edits must go through an explicit host follow-up until a verified airport-resolution tool exists; never ship a guessed or static production airport mapping.
 - Keep three cards inline and ten only when the host supplies fullscreen mode.
 - Use progressive disclosure instead of an inner scrolling pane.
 - Keep empty, partial, unavailable, malformed, retry, changed-price, expired, and success states.
 - Feature-detect host behavior through public hooks; do not depend on a host global.
 - Leave widget CSP connection domains empty while all data moves through tools.
+- Do not add a default handoff. A real deployment must author an exact HTTPS domain, a server-owned short-lived deep link or session, and matching origin policy before a handoff button appears.
 
 Run SSR tests and real-browser checks after visual changes. Static CSS assertions do not prove actual 280px layout or keyboard behavior.
 

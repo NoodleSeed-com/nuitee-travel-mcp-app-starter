@@ -22,7 +22,7 @@ External MCP host or optional embedded assistant
           official Nuitee Flights API
 ```
 
-The browser never calls Nuitee. Both React widgets call or consume Noodle tools through the supported host bridge. Their CSP declares no external connection, resource, or frame origin.
+The browser never calls Nuitee. Both React entry widgets call or consume Noodle tools through the supported host bridge. Their CSP declares no external connection, resource, or frame origin. TravelHome can send an explicit user-authored search follow-up to a capable host; FlightResults uses a persisted Search/Edit → Results → Verified fare-review flow and calls only `verify_flight_offer` directly.
 
 ## Entrypoints
 
@@ -46,6 +46,7 @@ The split exists because `@noodleseed/one@0.104.1` still resolves an HTTP connec
 6. Each provider offer ID becomes a private selection record. The public itinerary receives only an application-issued `sel_…` identifier.
 7. The tool replaces the caller's `flight_selections` state using revision control and a 30-minute TTL.
 8. The result exposes at most three itineraries inline; the same FlightResults component may show up to ten when the host reports fullscreen display mode.
+9. The output includes the already validated `searchContext`, allowing familiar fields to be hydrated without exposing the provider request or raw response. Submitting natural place-name edits sends a host follow-up so ambiguity is resolved conversationally.
 
 If validation or the provider fails, no fixture is consulted. The tool returns a bounded failure category and clears/replaces the current selection set with no provider IDs.
 
@@ -59,7 +60,7 @@ If validation or the provider fails, no fixture is consulted. The tool returns a
 6. The provider ID is discarded from public output. The result contains availability, old/new display price, change state, bounded messages, and expiry.
 7. A price change is success. An expired/missing offer directs the user to search again.
 
-The starter stops here. It does not preserve the provider ID for prebook, collect passenger details, or expose a transaction/handoff URL.
+The starter stops at a verified fare review. It does not preserve the provider ID for prebook, collect passenger details, or expose a transaction/handoff URL. A future handoff must be server-created, short-lived, and restricted to one exact deployment-owned HTTPS origin.
 
 ## Airport input boundary
 
@@ -69,7 +70,7 @@ Version one requires three-letter IATA codes. Although Nuitee documents `GET /da
 
 | Value | Owner/storage | Public visibility |
 | --- | --- | --- |
-| `NUITEE_API_KEY` | Noodle managed secret; deployment owner | Never browser/model/tool output/state/log/source |
+| `NUITEE_API_KEY` | Project-root ignored `.env` fallback or scoped Noodle local store during authoring; Noodle managed cloud secret after deployment | Never browser/model/tool output/state/log/source |
 | Provider `offerId` | Private caller-scoped state | Never browser/model/tool output |
 | `selectionId` | Application-issued public handle | Tool/widget/model; valid only against current private state |
 | Assistant model settings | Optional Noodle deployment variables/secret | Never browser; unrelated to Nuitee key |
@@ -80,7 +81,7 @@ Selection state is not a substitute for tenant authorization. A multi-tenant pro
 
 ## Text and widget outputs
 
-Every widget-linked tool has a typed structured output and a bounded `fallback` field. Apps-capable hosts render TravelHome or FlightResults. Other hosts can explain the same state from the structured fields and fallback text. The provider raw response is never an output schema field, and Zod bounds exist on every public list and nested list.
+Every widget-linked tool has a typed structured output and a bounded `fallback` field. Apps-capable hosts render TravelHome or FlightResults; those entry widgets share the same form, tokens, and journey semantics. Other hosts can explain the same state from the structured fields and fallback text. The provider raw response is never an output schema field, and Zod bounds exist on every public list and nested list.
 
 ## Failure layers
 

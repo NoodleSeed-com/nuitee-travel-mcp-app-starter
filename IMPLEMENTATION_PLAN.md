@@ -106,10 +106,12 @@ Dependencies: public schemas and tool surface from Phase 3.
 2. Use public `@noodleseed/one/react` primitives plus bounded local CSS.
 3. Keep widget CSP empty; browser code calls Noodle tools only.
 4. Keep coming-soon domains static and noninteractive.
-5. Use FlightResults for search; call `verify_flight_offer` from the existing widget and update the selected card.
-6. Make “Verify fare” the only primary action.
-7. Preserve provider airport-local schedule text without converting it into the viewer's timezone; render search/offer freshness and verification messages.
-8. Validate nested structured content defensively before rendering, and test pure render components with mocked host helpers; validate bundled widgets with Noodle.
+5. Use a shared labelled SearchEditor in TravelHome and FlightResults. Natural place-name submissions use an explicit host follow-up, while the browser remains provider- and credential-free.
+6. Use public app-flow state for Search/Edit → Results → Verified fare review, including Back navigation.
+7. Require explicit card selection, then expose one **Verify selected fare** action; successful verification advances to the review state.
+8. Preserve provider airport-local schedule text without converting it into the viewer's timezone; render search/offer freshness, bounded fare/term/amenity detail, and verification messages.
+9. Label the final state as a fare review and explicitly not a ticket or reservation. Expose no default handoff.
+10. Validate nested structured content defensively before rendering, and test pure render components with mocked host helpers; validate bundled widgets with Noodle.
 
 Remaining UI release evidence: interactive real-browser checks at 280px/light/dark/keyboard/reduced-motion and one real host per claimed compatibility target.
 
@@ -187,7 +189,7 @@ Dependencies: Phase 7 evidence and owner decisions.
 - [ ] `@noodleseed/one` pin, lockfile, Agent Kit, and full gates agree.
 - [ ] Dependabot is enabled without auto-merge.
 - [ ] Security reporting contact is finalized.
-- [ ] Reserved `https://cedar-cloud.example` widget metadata is replaced with the real dedicated HTTPS widget domain.
+- [ ] One real dedicated HTTPS widget domain is configured for both widgets before app-store submission; no placeholder origin is shipped.
 - [ ] No deployment URLs or unverified “official connector” claims appear.
 
 ## Developer-experience findings
@@ -199,6 +201,12 @@ Four sanitized upstream findings were submitted to the private Noodle Seed feedb
 The first live search failed because the application gateway used JavaScript `Date` inside a deterministic compute connector, where that ambient global is unavailable. The gateway now parses the server-authoritative `context.temporal` values without `Date`, and regression tests execute search and verify with `Date` explicitly removed.
 
 Classification: application code and test-environment mismatch, not a Noodle defect. Node-only unit execution had hidden the runtime difference; the corrected suite models the compute sandbox.
+
+### Resolved application defect — incomplete compute output schema
+
+The first rich live result reached the gateway but failed before the widget because the compute connector returned `searchContext` without declaring it in its strict output schema. The schema now declares the field, and a regression test parses the complete gateway result before any live smoke.
+
+Classification: application contract mismatch, not a Noodle or Nuitee defect. A representative live YQY–YHZ search now returns ten populated normalized options through the composed tool.
 
 ### Significant — initializer version drift
 

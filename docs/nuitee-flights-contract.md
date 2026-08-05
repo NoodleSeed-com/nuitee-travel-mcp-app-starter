@@ -60,12 +60,14 @@ The documented top-level shape is `{ data: [{ journeys: [...] }] }`. The normali
 3. Requires a private `offerId`, bounded nonnegative display total/currency, one to eight complete segments, documented OUTBOUND/INBOUND directions, per-direction `legDurations`, and a bounded documented `totalDuration`.
 4. Builds one explicit public leg per requested direction. A round trip keeps the outbound route as its comparison route and presents outbound and return schedules separately.
 5. Rejects a malformed journey rather than defaulting direction, duration, codes, or price. Other valid journeys can still produce a `partial` result.
-6. Creates at most ten itineraries and retains at most four baggage descriptions and six messages per itinerary.
+6. Creates at most ten itineraries and retains at most four baggage descriptions, six messages, and five documented amenities per itinerary.
 7. Stores the full provider ID verbatim only in private state.
+8. Copies the already validated application search fields into bounded `searchContext` so widgets can hydrate Edit search without receiving provider authority.
+9. Retains documented airport names, marketing and distinct operating carrier facts, flight numbers, day-change/overnight hints, display base/taxes/fees, fare family/mixed-cabin/seats, and refund/change flags only when each value passes its public bound.
 
 The public comparison duration is the sum of documented per-leg elapsed durations, each of which includes layovers. It deliberately does not count the days spent at the destination between outbound and return travel. The provider `totalDuration` is still required as a response-shape check but is not presented as flight time.
 
-The public output intentionally omits provider/carrier logo URLs, provider codes, raw responses, `segmentKey`, fare-basis and booking codes, full terms, ancillary pricing, coordinates, and every unused nested object.
+The public output intentionally omits provider/carrier logo URLs, provider IDs, raw responses, `segmentKey`, fare-basis and booking codes, fee objects and unrestricted/full terms, ancillary pricing, coordinates, and every unused nested object. The starter does not try to mirror the full provider response: it keeps only decision-useful fields with explicit caps.
 
 ## Verification
 
