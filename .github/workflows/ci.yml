@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  offline-quality-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm exec noodle validate --json
+      - run: pnpm exec noodle test --json
+      - run: pnpm exec noodle tools list --json
+      - run: pnpm exec noodle check --json
+      - run: pnpm exec noodle validate src/live-server.ts --json
+      - run: pnpm exec noodle check src/live-server.ts --json
