@@ -7,6 +7,7 @@ export {
   Feedback,
   Field,
   Flow,
+  Form,
   Frame,
   Input,
   Region,
@@ -24,5 +25,6 @@ export const {
   useToolInfo,
   useUpdateModelContext,
   useViewState,
+  useWidgetReady,
 } =
   generateHelpers<ServerDefinition>();

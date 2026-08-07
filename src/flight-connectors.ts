@@ -39,6 +39,7 @@ export const nuiteeHttp = connector('nuitee_flights_http')
       search: {
         type: 'read',
         method: 'POST',
+        limits: { maxResponseBytes: 3 * 1024 * 1024 },
         path: '/flights/rates',
         input: searchRequestSchema,
         output: z.object({ raw: z.unknown() }),

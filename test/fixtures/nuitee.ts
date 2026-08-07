@@ -34,7 +34,9 @@ export const fictionalSearchResponse = {
                 marketingName: 'Cedar Skies',
                 operatingCode: 'ZZ',
                 operatingName: 'Cedar Skies',
-                marketingLogo: 'https://assets.invalid/never-use-this-logo.svg',
+                // Fictional carrier code on Nuitee's documented airline-image origin.
+                // Tests never fetch this URL.
+                marketingLogo: 'https://sandbox.nuitee.flights/static/images/airlines/ZZ.png',
               },
               flight: { marketingNumber: 'ZZ101', operatingNumber: 'ZZ101' },
             },

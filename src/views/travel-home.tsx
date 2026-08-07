@@ -1,11 +1,20 @@
 import '@noodleseed/one/react/styles.css';
 import type { CSSProperties } from 'react';
-import { Feedback, Flow, Frame, Region, StatusBadge, useBranding, useLayout, useSendFollowUpMessage, useToolInfo } from '../helpers.js';
+import { Feedback, Flow, Frame, Region, StatusBadge, useBranding, useLayout, useSendFollowUpMessage, useToolInfo, useWidgetReady } from '../helpers.js';
 import type { HomeOutput } from '../flight-schemas.js';
+import { BedIcon, CarIcon, CompassIcon, PlaneIcon, StarIcon } from './icons.js';
 import { SearchEditor, searchPrompt, type SearchDraft } from './search-editor.js';
 import './travel.css';
 
 type HomeState = 'loading' | 'error' | 'malformed';
+
+const domainIcons = {
+  Flights: PlaneIcon,
+  Stays: BedIcon,
+  Loyalty: StarIcon,
+  'Ground travel': CarIcon,
+  Experiences: CompassIcon,
+} as const;
 
 export function isHome(value: unknown): value is HomeOutput {
   if (value === null || typeof value !== 'object') return false;
@@ -71,7 +80,7 @@ export function TravelHomeView({
     >
       <Flow variant="stack" density="comfortable">
         <section className="cc-home-intro" aria-label="Flight availability">
-          <StatusBadge tone="success">Flights available</StatusBadge>
+          <StatusBadge tone="success"><PlaneIcon />Flights available</StatusBadge>
           <p>{data.message}</p>
         </section>
 
@@ -79,14 +88,18 @@ export function TravelHomeView({
 
         <Region title="Travel capabilities" description="Only Flights is connected in version one.">
           <ul className="cc-domain-grid" aria-label="Travel capability availability">
-            {data.domains.map((domain) => (
+            {data.domains.map((domain) => {
+              const DomainIcon = domainIcons[domain.name];
+              return (
               <li className={domain.availability === 'available' ? 'cc-domain cc-domain-available' : 'cc-domain'} key={domain.name}>
+                <span className="cc-domain-icon"><DomainIcon /></span>
                 <span className="cc-domain-name">{domain.name}</span>
                 <span className="cc-domain-status">
                   {domain.availability === 'available' ? 'Available' : 'Coming soon'}
                 </span>
               </li>
-            ))}
+              );
+            })}
           </ul>
         </Region>
 
@@ -96,18 +109,19 @@ export function TravelHomeView({
 }
 
 export default function TravelHome() {
+  const ready = useWidgetReady();
   const layout = useLayout();
   const branding = useBranding();
   const sendFollowUp = useSendFollowUpMessage();
   const toolInfo = useToolInfo('open_travel_starter');
-  const pending = Object.keys(toolInfo).length === 0;
+  const pending = !ready || Object.keys(toolInfo).length === 0;
   const data = isHome(toolInfo.structuredContent) ? toolInfo.structuredContent : undefined;
   return (
     <TravelHomeView
       data={data}
       state={pending ? 'loading' : toolInfo.isError ? 'error' : data ? undefined : 'malformed'}
       theme={layout.theme === 'dark' ? 'dark' : 'light'}
-      onSearchPrompt={layout.supports?.followUpMessage ? (draft) => {
+      onSearchPrompt={ready && layout.supports?.followUpMessage ? (draft) => {
         void sendFollowUp({ prompt: searchPrompt(draft) });
       } : undefined}
       brandStyle={{

@@ -43,6 +43,14 @@ describe('server contract', () => {
     expect(wire).not.toContain('your-app.example.com');
   });
 
+  it('allows airline images only from the documented Nuitee Flights asset origins', async () => {
+    const manifest = await liveApp.toManifest() as any;
+    const wire = JSON.stringify(manifest);
+    expect(wire).toContain('https://sandbox.nuitee.flights');
+    expect(wire).toContain('https://production.nuitee.flights');
+    expect(wire).not.toContain('images.example');
+  });
+
   it('keeps Nuitee authority out of model input and in the live connector policy', async () => {
     const manifest = await liveApp.toManifest() as { tools: Array<Record<string, unknown>> };
     const catalog = liveApp.toConnectorCatalog();
@@ -56,11 +64,16 @@ describe('server contract', () => {
         auth: { kind: 'apiKey', header: 'X-API-Key', secret: 'NUITEE_API_KEY' },
       },
       operations: {
-        search: { method: 'POST', path: '/flights/rates' },
+        search: {
+          method: 'POST',
+          path: '/flights/rates',
+          limits: { maxResponseBytes: 3 * 1024 * 1024 },
+        },
         verify: { method: 'POST', path: '/flights/verify' },
       },
     });
     expect(Object.keys(http?.operations ?? {})).toEqual(['search', 'verify']);
+    expect((http?.operations as Record<string, any> | undefined)?.verify?.limits?.maxResponseBytes).toBeUndefined();
     expect(gateway).toMatchObject({
       operations: {
         execute: {

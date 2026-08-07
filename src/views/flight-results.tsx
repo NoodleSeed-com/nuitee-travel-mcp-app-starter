@@ -17,9 +17,20 @@ import {
   useToolInfo,
   useUpdateModelContext,
   useViewState,
+  useWidgetReady,
 } from '../helpers.js';
 import type { Itinerary, SearchContext, SearchOutput, Verification } from '../flight-schemas.js';
 import type { GatewayError } from '../flight-runtime.js';
+import {
+  ArrowLeftIcon,
+  CarryOnIcon,
+  CheckIcon,
+  CheckedBagIcon,
+  ClockIcon,
+  PlaneIcon,
+  RouteIcon,
+  TagIcon,
+} from './icons.js';
 import { SearchEditor, searchPrompt, type SearchDraft } from './search-editor.js';
 import './travel.css';
 
@@ -66,7 +77,9 @@ function isRoute(value: unknown): value is Itinerary['route'] {
 
 function isCarrier(value: unknown): value is Itinerary['carrier'] {
   const candidate = record(value);
-  return Boolean(candidate && boundedText(candidate.name, 100) && typeof candidate.code === 'string' && /^(?:[A-Z0-9]{2,3}|—)$/.test(candidate.code));
+  return Boolean(candidate && boundedText(candidate.name, 100) && typeof candidate.code === 'string' && /^(?:[A-Z0-9]{2,3}|—)$/.test(candidate.code) &&
+    (candidate.logoUrl === undefined || (typeof candidate.logoUrl === 'string' &&
+      /^https:\/\/(?:sandbox|production)\.nuitee\.flights\/static\/images\/airlines\/[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.(?:png|svg|webp)$/.test(candidate.logoUrl))));
 }
 
 function isSearchContext(value: unknown): value is SearchContext {
@@ -141,7 +154,9 @@ function isItinerary(value: unknown): value is Itinerary {
 export function isSearchOutput(value: unknown): value is SearchOutput {
   const candidate = record(value);
   if (!candidate || typeof candidate.status !== 'string' || !['success', 'empty', 'partial', 'error'].includes(candidate.status) ||
-      !boundedText(candidate.fallback, 500) || (candidate.message !== undefined && !boundedText(candidate.message, 400)) ||
+      !boundedText(candidate.fallback, 500) || !boundedText(candidate.message, 400) ||
+      !isOptionalText(candidate.retrievedAt, 64) ||
+      (candidate.searchId !== undefined && (typeof candidate.searchId !== 'string' || !/^search_[a-f0-9]{32}$/.test(candidate.searchId))) ||
       !isSearchContext(candidate.searchContext) || !Array.isArray(candidate.itineraries) || candidate.itineraries.length > 10 ||
       !candidate.itineraries.every(isItinerary)) return false;
   const hasError = isGatewayError(candidate.error);
@@ -204,6 +219,35 @@ function airportLabel(route: Itinerary['route'], side: 'origin' | 'destination')
   return name ? `${name} (${code})` : code;
 }
 
+function carrierInitials(carrier: Itinerary['carrier']) {
+  if (carrier.code !== '—') return carrier.code.slice(0, 3);
+  return carrier.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+}
+
+function CarrierIdentity({ carrier, compact = false }: { readonly carrier: Itinerary['carrier']; readonly compact?: boolean }) {
+  return (
+    <span className={`cc-carrier-identity ${compact ? 'cc-carrier-identity-compact' : ''}`}>
+      <span className="cc-carrier-mark" aria-hidden="true">
+        <span className="cc-carrier-initials">{carrierInitials(carrier)}</span>
+        {carrier.logoUrl ? (
+          <img
+            alt=""
+            decoding="async"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            src={carrier.logoUrl}
+            onError={(event) => { event.currentTarget.hidden = true; }}
+          />
+        ) : null}
+      </span>
+      <span className="cc-carrier-copy">
+        <strong>{carrier.name}</strong>
+        <small>{carrier.code}</small>
+      </span>
+    </span>
+  );
+}
+
 function FlightSearchSkeleton() {
   return (
     <section className="cc-search-skeleton" role="status" aria-live="polite" aria-busy="true">
@@ -212,35 +256,31 @@ function FlightSearchSkeleton() {
           <strong>Searching current flights</strong>
           <span>Comparing routes, schedules, and fares…</span>
         </div>
-        <span className="cc-scan-chip"><span aria-hidden="true" />Checking providers</span>
       </header>
-
-      <div className="cc-route-scan" aria-hidden="true">
-        <span className="cc-scan-node" />
-        <span className="cc-scan-path"><span className="cc-scan-sweep" /></span>
-        <span className="cc-scan-node" />
-      </div>
 
       <div className="cc-skeleton-list" aria-hidden="true">
         {[0, 1, 2].map((index) => (
           <article className="cc-skeleton-fare" key={index}>
             <div className="cc-skeleton-row">
-              <span className="cc-skeleton-block cc-skeleton-carrier" />
-              <span className="cc-skeleton-block cc-skeleton-badge" />
+              <span className="cc-skeleton-carrier-group">
+                <span className="cc-skeleton-block cc-shimmer cc-skeleton-logo" />
+                <span className="cc-skeleton-block cc-shimmer cc-skeleton-carrier" />
+              </span>
+              <span className="cc-skeleton-block cc-shimmer cc-skeleton-badge" />
             </div>
             <div className="cc-skeleton-route">
-              <span className="cc-skeleton-block cc-skeleton-code" />
-              <span className="cc-skeleton-line"><span /></span>
-              <span className="cc-skeleton-block cc-skeleton-code" />
+              <span className="cc-skeleton-block cc-shimmer cc-skeleton-code" />
+              <span className="cc-skeleton-line" />
+              <span className="cc-skeleton-block cc-shimmer cc-skeleton-code" />
             </div>
             <div className="cc-skeleton-times">
-              <span className="cc-skeleton-block" />
-              <span className="cc-skeleton-block" />
-              <span className="cc-skeleton-block" />
+              <span className="cc-skeleton-block cc-shimmer" />
+              <span className="cc-skeleton-block cc-shimmer" />
+              <span className="cc-skeleton-block cc-shimmer" />
             </div>
             <div className="cc-skeleton-row cc-skeleton-footer">
-              <span className="cc-skeleton-block cc-skeleton-price" />
-              <span className="cc-skeleton-block cc-skeleton-action" />
+              <span className="cc-skeleton-block cc-shimmer cc-skeleton-price" />
+              <span className="cc-skeleton-block cc-shimmer cc-skeleton-action" />
             </div>
           </article>
         ))}
@@ -270,13 +310,13 @@ function RouteTimeline({ itinerary }: { readonly itinerary: Itinerary }) {
       {itinerary.legs.map((leg) => (
         <section className="cc-leg" aria-label={`${leg.direction === 'OUTBOUND' ? 'Outbound' : 'Return'} ${leg.route.origin} to ${leg.route.destination}`} key={leg.direction}>
           <div className="cc-leg-heading">
-            <strong>{leg.direction === 'OUTBOUND' ? 'Outbound' : 'Return'}</strong>
+            <strong><PlaneIcon />{leg.direction === 'OUTBOUND' ? 'Outbound' : 'Return'}</strong>
             <span>{airportLabel(leg.route, 'origin')} → {airportLabel(leg.route, 'destination')}</span>
           </div>
           <div className="cc-schedule">
-            <div><span>Departs</span><strong>{flightTime(leg.departureTime)}</strong></div>
-            <div><span>Arrives</span><strong>{flightTime(leg.arrivalTime)}{leg.dayChange ? ` · +${leg.dayChange} day` : ''}</strong></div>
-            <div><span>Journey</span><strong>{duration(leg.durationMinutes)} · {leg.stops === 0 ? 'Nonstop' : `${leg.stops} stop${leg.stops === 1 ? '' : 's'}`}{leg.overnight ? ' · Overnight' : ''}</strong></div>
+            <div><span><ClockIcon />Departs</span><strong>{flightTime(leg.departureTime)}</strong></div>
+            <div><span><ClockIcon />Arrives</span><strong>{flightTime(leg.arrivalTime)}{leg.dayChange ? ` · +${leg.dayChange} day` : ''}</strong></div>
+            <div><span><RouteIcon />Journey</span><strong>{duration(leg.durationMinutes)} · {leg.stops === 0 ? 'Nonstop' : `${leg.stops} stop${leg.stops === 1 ? '' : 's'}`}{leg.overnight ? ' · Overnight' : ''}</strong></div>
           </div>
         </section>
       ))}
@@ -287,7 +327,7 @@ function RouteTimeline({ itinerary }: { readonly itinerary: Itinerary }) {
 function FareDetails({ itinerary }: { readonly itinerary: Itinerary }) {
   return (
     <details className="cc-details">
-      <summary>Flight and fare details</summary>
+      <summary><TagIcon />Flight and fare details</summary>
       <div className="cc-details-grid">
         {itinerary.fare.family ? <div><span>Fare family</span><strong>{itinerary.fare.family}</strong></div> : null}
         {itinerary.fare.mixedCabin !== undefined ? <div><span>Cabin</span><strong>{itinerary.fare.mixedCabin ? 'Mixed cabin' : 'Same cabin throughout'}</strong></div> : null}
@@ -299,7 +339,7 @@ function FareDetails({ itinerary }: { readonly itinerary: Itinerary }) {
         <ul className="cc-amenities" aria-label="Documented amenities">
           {itinerary.amenities.map((amenity, index) => (
             <li key={`${amenity.category}-${index}`}>
-              <span aria-hidden="true">{amenity.available ? '✓' : '—'}</span>
+              <span aria-hidden="true">{amenity.available ? <CheckIcon /> : '—'}</span>
               <span><strong>{amenity.name}</strong>{amenity.chargeable ? ' · Fee applies' : ''}{amenity.details ? ` · ${amenity.details}` : ''}</span>
             </li>
           ))}
@@ -328,18 +368,18 @@ function FareCard({ itinerary, selected, onSelect }: {
   return (
     <article className={`cc-fare-card ${selected ? 'cc-fare-selected' : ''}`} aria-label={`${itinerary.route.origin} to ${itinerary.route.destination} with ${itinerary.carrier.name}`}>
       <header className="cc-fare-header">
-        <div>
-          <p className="cc-carrier">{itinerary.carrier.code} · {itinerary.carrier.name}</p>
-          <h3><span>{itinerary.route.origin}</span><span aria-hidden="true">→</span><span>{itinerary.route.destination}</span></h3>
+        <div className="cc-fare-heading">
+          <CarrierIdentity carrier={itinerary.carrier} />
+          <h3><span>{itinerary.route.origin}</span><PlaneIcon /><span>{itinerary.route.destination}</span></h3>
           <p className="cc-airport-names">{airportLabel(itinerary.route, 'origin')} to {airportLabel(itinerary.route, 'destination')}</p>
         </div>
         {itinerary.isCheapest ? <StatusBadge tone="info">Lowest shown</StatusBadge> : null}
       </header>
       <RouteTimeline itinerary={itinerary} />
       <div className="cc-fare-meta">
-        <span>{itinerary.baggage.carryOn ? 'Carry-on included' : 'Carry-on not confirmed'}</span>
-        <span>{itinerary.baggage.checked ? 'Checked bag included' : 'Checked bag not confirmed'}</span>
-        {itinerary.fare.family ? <span>{itinerary.fare.family}</span> : null}
+        <span><CarryOnIcon />{itinerary.baggage.carryOn ? 'Carry-on included' : 'Carry-on not confirmed'}</span>
+        <span><CheckedBagIcon />{itinerary.baggage.checked ? 'Checked bag included' : 'Checked bag not confirmed'}</span>
+        {itinerary.fare.family ? <span><TagIcon />{itinerary.fare.family}</span> : null}
       </div>
       {itinerary.messages.length > 0 ? <ul className="cc-messages">{itinerary.messages.map((message, index) => <li key={`${index}-${message}`}>{message}</li>)}</ul> : null}
       <FareDetails itinerary={itinerary} />
@@ -350,7 +390,7 @@ function FareCard({ itinerary, selected, onSelect }: {
           <small>Search price · must be verified</small>
         </div>
         <Action
-          variant={selected ? 'primary' : 'secondary'}
+          variant="secondary"
           aria-pressed={selected}
           aria-label={`${selected ? 'Selected fare' : 'Select fare'} from ${itinerary.route.origin} to ${itinerary.route.destination} with ${itinerary.carrier.name}`}
           onClick={() => onSelect?.(itinerary.selectionId)}
@@ -370,18 +410,18 @@ function FareReview({ itinerary, verification, onBack }: {
   return (
     <section className="cc-review" aria-labelledby="cc-review-title">
       <header className="cc-review-header">
-        <Action type="button" variant="quiet" onClick={onBack}>← Back to results</Action>
+        <Action type="button" variant="quiet" onClick={onBack}><ArrowLeftIcon />Back to results</Action>
         <StatusBadge tone={verification.priceChanged ? 'warning' : 'success'}>{verification.priceChanged ? 'Price changed' : 'Fare verified'}</StatusBadge>
       </header>
       <div className="cc-review-ticket">
         <div className="cc-review-title">
           <h2 id="cc-review-title">Verified fare review</h2>
-          <p>{itinerary.carrier.name} · {itinerary.carrier.code}</p>
+          <CarrierIdentity carrier={itinerary.carrier} compact />
         </div>
         <p className="cc-review-disclaimer">Not a ticket or reservation</p>
         <div className="cc-review-route">
           <div><strong>{itinerary.route.origin}</strong><span>{itinerary.route.originName ?? 'Origin airport'}</span></div>
-          <span className="cc-review-line" aria-hidden="true">✦</span>
+          <span className="cc-review-line" aria-hidden="true"><PlaneIcon /></span>
           <div><strong>{itinerary.route.destination}</strong><span>{itinerary.route.destinationName ?? 'Destination airport'}</span></div>
         </div>
         <RouteTimeline itinerary={itinerary} />
@@ -561,6 +601,7 @@ export function FlightResultsView({
 }
 
 export default function FlightResults() {
+  const ready = useWidgetReady();
   const layout = useLayout();
   const branding = useBranding();
   const toolInfo = useToolInfo('search_flights');
@@ -571,7 +612,7 @@ export default function FlightResults() {
   const updateModelContext = useUpdateModelContext();
   const [selected, setSelected] = useViewState<string | undefined>('selected_fare', undefined);
   const [savedVerification, setSavedVerification] = useViewState<Verification | undefined>('verified_fare', undefined);
-  const pending = Object.keys(toolInfo).length === 0;
+  const pending = !ready || Object.keys(toolInfo).length === 0;
   const result = isSearchOutput(toolInfo.structuredContent) ? toolInfo.structuredContent : undefined;
   const verifyContent = verify.data?.structuredContent as Record<string, unknown> | undefined;
   const verification = isVerification(verifyContent?.verification) ? verifyContent.verification : savedVerification;
@@ -604,11 +645,12 @@ export default function FlightResults() {
       }}
       onEdit={() => flow.navigate('search')}
       onBack={() => flow.back()}
-      onExpand={layout.supports?.fullscreen ? () => { void requestDisplayMode('fullscreen'); } : undefined}
-      onSearchPrompt={layout.supports?.followUpMessage ? (draft) => {
+      onExpand={ready && layout.supports?.fullscreen ? () => { void requestDisplayMode('fullscreen'); } : undefined}
+      onSearchPrompt={ready && layout.supports?.followUpMessage ? (draft) => {
         void sendFollowUp({ prompt: searchPrompt(draft) });
       } : undefined}
       onVerify={(selectionId) => {
+        if (!ready) return;
         setSelected(selectionId);
         void verify.callToolAsync({ selectionId }).then((response) => {
           const content = record(response.structuredContent);

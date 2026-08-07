@@ -38,12 +38,25 @@ const configurationError = {
   retryable: false,
 };
 
-const viewPolicy = {
-  // Widgets receive data through Noodle tools, so they need no browser network
-  // authority. A custom widget `domain` is intentionally omitted for local and
-  // ordinary MCP-host use. Before an app-store submission, add the same real,
-  // deployment-owned HTTPS origin here for both widgets; never ship a placeholder.
+const homeViewPolicy = {
+  // A custom widget `domain` is intentionally omitted for local and ordinary
+  // MCP-host use. Before an app-store submission, add the same real,
+  // deployment-owned HTTPS origin to both widgets; never ship a placeholder.
   csp: { connectDomains: [], resourceDomains: [], frameDomains: [] },
+};
+
+const flightViewPolicy = {
+  // The widget never calls Nuitee. These origins are resource-only so it can
+  // display a bounded marketingLogo returned by the official Flights contract.
+  // Runtime normalization rejects every other image origin and path.
+  csp: {
+    connectDomains: [],
+    resourceDomains: [
+      'https://sandbox.nuitee.flights',
+      'https://production.nuitee.flights',
+    ],
+    frameDomains: [],
+  },
 };
 
 function openTravelStarter() {
@@ -61,7 +74,7 @@ function openTravelStarter() {
     invoking: 'Opening Cedar & Cloud Travel…',
     invoked: 'Travel starter ready',
     view: { component: 'travel-home', entry: './views/travel-home.tsx' },
-    ...viewPolicy,
+    ...homeViewPolicy,
   });
 }
 
@@ -85,7 +98,7 @@ function offlineSearchFlights() {
     invoking: 'Searching current flights…',
     invoked: 'Flight search complete',
     view: { component: 'flight-results', entry: './views/flight-results.tsx' },
-    ...viewPolicy,
+    ...flightViewPolicy,
   });
 }
 
@@ -130,7 +143,7 @@ function liveSearchFlights() {
     invoking: 'Searching current flights…',
     invoked: 'Flight search complete',
     view: { component: 'flight-results', entry: './views/flight-results.tsx' },
-    ...viewPolicy,
+    ...flightViewPolicy,
   });
 }
 

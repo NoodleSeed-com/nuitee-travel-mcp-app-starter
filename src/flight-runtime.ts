@@ -166,6 +166,13 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
     return cleaned ? cleaned.slice(0, max) : undefined;
   };
 
+  const nuiteeAirlineLogo = (value: unknown): string | undefined => {
+    const candidate = text(value, 2_048);
+    return candidate && /^https:\/\/(?:sandbox|production)\.nuitee\.flights\/static\/images\/airlines\/[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.(?:png|svg|webp)$/.test(candidate)
+      ? candidate
+      : undefined;
+  };
+
   const finiteNumber = (value: unknown): number | undefined =>
     typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 
@@ -186,12 +193,12 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
     return bytes;
   };
 
-  const responseBody = (operationResult: unknown): { body?: unknown; tooLarge: boolean } => {
+  const responseBody = (operationResult: unknown, maxBytes: number): { body?: unknown; tooLarge: boolean } => {
     const wrapper = object(operationResult);
     const body = wrapper && Object.prototype.hasOwnProperty.call(wrapper, 'raw') ? wrapper.raw : operationResult;
     try {
       const serialized = JSON.stringify(body);
-      return { body, tooLarge: typeof serialized !== 'string' || utf8Bytes(serialized) > 750_000 };
+      return { body, tooLarge: typeof serialized !== 'string' || utf8Bytes(serialized) > maxBytes };
     } catch {
       return { tooLarge: false };
     }
@@ -316,7 +323,7 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
     } catch (caught) {
       return fail('verify', classify(caught, 'verify'));
     }
-    const inspected = responseBody(called);
+    const inspected = responseBody(called, 750_000);
     if (inspected.tooLarge) return fail('verify', 'oversized_response');
     const root = object(inspected.body);
     if (!root || !Array.isArray(root.data)) return fail('verify', 'malformed_response');
@@ -419,7 +426,7 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
   } catch (caught) {
     return fail('search', classify(caught, 'search'));
   }
-  const inspected = responseBody(called);
+  const inspected = responseBody(called, 3 * 1024 * 1024);
   if (inspected.tooLarge) return fail('search', 'oversized_response');
   const root = object(inspected.body);
   if (!root || !Array.isArray(root.data)) return fail('search', 'malformed_response');
@@ -496,8 +503,10 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
       const flight = object(segment?.flight);
       const marketingName = text(carrier?.marketingName, 100) ?? text(carrier?.operatingName, 100) ?? 'Carrier not provided';
       const marketingCode = text(carrier?.marketingCode, 8)?.toUpperCase() ?? text(carrier?.operatingCode, 8)?.toUpperCase() ?? '—';
+      const marketingLogo = nuiteeAirlineLogo(carrier?.marketingLogo);
       const operatingName = text(carrier?.operatingName, 100);
       const operatingCode = text(carrier?.operatingCode, 8)?.toUpperCase();
+      const operatingLogo = nuiteeAirlineLogo(carrier?.operatingLogo);
       segments.push({
         origin: segmentOrigin,
         ...(segmentOriginName ? { originName: segmentOriginName } : {}),
@@ -510,9 +519,10 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
         carrier: {
           name: marketingName,
           code: marketingCode,
+          ...(marketingLogo ? { logoUrl: marketingLogo } : {}),
         },
         ...(operatingName && operatingCode && (operatingName !== marketingName || operatingCode !== marketingCode)
-          ? { operatingCarrier: { name: operatingName, code: operatingCode } }
+          ? { operatingCarrier: { name: operatingName, code: operatingCode, ...(operatingLogo ? { logoUrl: operatingLogo } : {}) } }
           : {}),
         ...(text(flight?.marketingNumber, 16) ? { flightNumber: text(flight?.marketingNumber, 16)! } : {}),
         ...(text(flight?.operatingNumber, 16) ? { operatingFlightNumber: text(flight?.operatingNumber, 16)! } : {}),

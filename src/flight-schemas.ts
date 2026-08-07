@@ -32,9 +32,13 @@ export const moneySchema = z.object({
 
 const iataSchema = z.string().regex(/^[A-Z]{3}$/);
 const durationMinutesSchema = z.number().int().nonnegative().max(10_080);
+const airlineLogoSchema = z.string().max(2048).regex(
+  /^https:\/\/(?:sandbox|production)\.nuitee\.flights\/static\/images\/airlines\/[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.(?:png|svg|webp)$/,
+);
 const carrierSchema = z.object({
   name: z.string().min(1).max(100),
   code: z.string().regex(/^(?:[A-Z0-9]{2,3}|—)$/),
+  logoUrl: airlineLogoSchema.optional(),
 });
 
 export const segmentSchema = z.object({

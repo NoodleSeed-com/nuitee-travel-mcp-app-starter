@@ -117,7 +117,11 @@ describe('Nuitee gateway normalization', () => {
         destination: 'QZY',
         destinationName: 'Cloud Harbour Test Aerodrome',
       },
-      carrier: { code: 'ZZ', name: 'Cedar Skies' },
+      carrier: {
+        code: 'ZZ',
+        name: 'Cedar Skies',
+        logoUrl: 'https://sandbox.nuitee.flights/static/images/airlines/ZZ.png',
+      },
       price: { total: 284.5, currency: 'CAD', base: 240, taxes: 40, fees: 4.5 },
       stops: 0,
       fare: { family: 'Cloudlight Economy', mixedCabin: false, seatsRemaining: 4 },
@@ -133,6 +137,16 @@ describe('Nuitee gateway normalization', () => {
     expect(JSON.stringify(result.itineraries)).not.toContain('marketingLogo');
     expect(result.fallback).toContain('QZX→QZY');
     expect(result.fallback).toContain(result.itineraries?.[0]?.selectionId);
+  });
+
+  it('keeps only documented Nuitee-hosted airline image URLs', () => {
+    const journey = structuredClone(fictionalSearchResponse.data[0].journeys[0]) as any;
+    journey.segments[0].carrier.marketingLogo = 'https://images.example.test/airline.png';
+    journey.segments[0].carrier.operatingLogo = 'javascript:alert(1)';
+    const { result } = search({}, { data: [{ journeys: [journey] }] });
+    expect(result.itineraries?.[0]?.carrier).toEqual({ code: 'ZZ', name: 'Cedar Skies' });
+    expect(JSON.stringify(result.itineraries)).not.toContain('images.example.test');
+    expect(JSON.stringify(result.itineraries)).not.toContain('javascript:');
   });
 
   it('caps results at ten and reports partial provider data', () => {
@@ -198,10 +212,14 @@ describe('Nuitee gateway normalization', () => {
     expect(result.itineraries?.[0]?.durationMinutes).toBe(405);
   });
 
-  it('distinguishes empty, malformed, and oversized responses', () => {
+  it('distinguishes empty and malformed responses', () => {
     expect(search({}, { data: [{ journeys: [] }] }).result.status).toBe('empty');
     expect(search({}, { unexpected: [] }).result.error?.code).toBe('malformed_response');
-    expect(search({}, { data: [{ journeys: [] }], padding: 'x'.repeat(800_000) }).result.error?.code).toBe('oversized_response');
+  });
+
+  it('normalizes a representative 2.85 MB search response and rejects responses over 3 MiB', () => {
+    expect(search({}, { ...fictionalSearchResponse, padding: 'x'.repeat(2_850_000) }).result.status).toBe('success');
+    expect(search({}, { ...fictionalSearchResponse, padding: 'x'.repeat(3 * 1024 * 1024) }).result.error?.code).toBe('oversized_response');
   });
 
   it.each([

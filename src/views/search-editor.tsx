@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from 'react';
-import { Action, ActionBar, Field, Flow, Input, Select } from '../helpers.js';
+import { useState } from 'react';
+import { Action, ActionBar, Field, Flow, Form, Input, Select } from '../helpers.js';
 import type { SearchContext } from '../flight-schemas.js';
+import { ArrowLeftIcon, SearchIcon, SwapIcon } from './icons.js';
 
 type TripType = 'round_trip' | 'one_way';
 
@@ -65,18 +66,15 @@ export function SearchEditor({
     origin: current.destination,
     destination: current.origin,
   }));
-  const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    onSubmit?.(draft);
-  };
+  const submit = () => onSubmit?.(draft);
 
   return (
-    <form className="cc-search-form" onSubmit={submit} aria-label={title}>
+    <Form className="cc-search-form" onSubmit={submit} aria-label={title}>
       <header className="cc-search-heading">
         <div>
           <h2>{title}</h2>
         </div>
-        {onBack ? <Action type="button" variant="quiet" onClick={onBack}>← Back</Action> : null}
+        {onBack ? <Action type="button" variant="quiet" onClick={onBack}><ArrowLeftIcon />Back</Action> : null}
       </header>
 
       <Flow variant="stack" density="comfortable">
@@ -113,7 +111,7 @@ export function SearchEditor({
             aria-label="Swap origin and destination"
             onClick={swapRoute}
           >
-            ⇄
+            <SwapIcon />
           </Action>
           <Field label="To">
             <Input name="destination" autoComplete="off" value={draft.destination} placeholder="City or airport" required onChange={(event) => update('destination', event.currentTarget.value)} />
@@ -159,12 +157,12 @@ export function SearchEditor({
 
         {onSubmit ? (
           <ActionBar>
-            <Action type="submit" variant="primary">Search flights</Action>
+            <Action type="submit" variant="primary"><SearchIcon />Search flights</Action>
           </ActionBar>
         ) : (
           <p className="cc-form-fallback">Ask in the conversation to search these details. This host does not support starting a follow-up from the widget.</p>
         )}
       </Flow>
-    </form>
+    </Form>
   );
 }

@@ -7,10 +7,11 @@ vi.mock('../src/helpers.js', () => {
   const container = ({ children, title, subtitle, displayMode: _displayMode, ...props }: any) =>
     React.createElement('section', props, title ? React.createElement('h1', null, title) : null, subtitle ? React.createElement('p', null, subtitle) : null, children);
   return {
-    Action: ({ children, pending: _pending, pendingLabel: _pendingLabel, variant: _variant, ...props }: any) => React.createElement('button', props, children),
+    Action: ({ children, pending: _pending, pendingLabel: _pendingLabel, variant = 'secondary', ...props }: any) => React.createElement('button', { ...props, 'data-variant': variant }, children),
     ActionBar: ({ children }: any) => React.createElement('div', null, children),
     Feedback: ({ children, status }: any) => React.createElement('div', { 'data-status': status }, children),
     Flow: ({ children, variant: _variant, density: _density, ...props }: any) => React.createElement('div', props, children),
+    Form: ({ children, ...props }: any) => React.createElement('form', props, children),
     Frame: container,
     Region: ({ children, title, description }: any) => React.createElement('section', null, React.createElement('h2', null, title), React.createElement('p', null, description), children),
     Field: ({ children, label, detail }: any) => React.createElement('label', null, label, children, detail ? React.createElement('small', null, detail) : null),
@@ -26,6 +27,7 @@ vi.mock('../src/helpers.js', () => {
     useToolInfo: vi.fn(),
     useUpdateModelContext: vi.fn(),
     useViewState: vi.fn(),
+    useWidgetReady: vi.fn(),
   };
 });
 import { FlightResultsView, isGatewayError, isSearchOutput, isVerification } from '../src/views/flight-results.js';
@@ -54,7 +56,11 @@ const itinerary = {
     destination: 'QZY',
     destinationName: 'Cloud Harbour Test Aerodrome',
   },
-  carrier: { name: 'Cedar Skies', code: 'ZZ' },
+  carrier: {
+    name: 'Cedar Skies',
+    code: 'ZZ',
+    logoUrl: 'https://sandbox.nuitee.flights/static/images/airlines/ZZ.png',
+  },
   departureTime: '2030-04-20T09:00:00Z',
   arrivalTime: '2030-04-20T12:15:00Z',
   durationMinutes: 195,
@@ -174,6 +180,7 @@ describe('FlightResults', () => {
       />,
     );
     expect((selected.match(/>Verify selected fare<\/button>/g) ?? [])).toHaveLength(1);
+    expect((selected.match(/data-variant="primary"/g) ?? [])).toHaveLength(1);
     for (const forbidden of ['Book', 'Checkout', 'Reserve', 'Pay', 'Redeem']) expect(inline).not.toContain(forbidden);
   });
 
@@ -186,13 +193,44 @@ describe('FlightResults', () => {
     expect(renderToStaticMarkup(<FlightResultsView displayMode="inline" onVerify={vi.fn()} {...props} />)).toContain(text);
   });
 
-  it('renders an honest route-scanning skeleton with result-card parity', () => {
+  it('renders three familiar shimmer cards without a route-scanning animation', () => {
     const html = renderToStaticMarkup(<FlightResultsView state="loading" displayMode="inline" onVerify={vi.fn()} />);
     expect(html).toContain('aria-busy="true"');
     expect(html).toContain('Searching current flights');
     expect(html).toContain('Comparing routes, schedules, and fares');
     expect((html.match(/cc-skeleton-fare/g) ?? [])).toHaveLength(3);
-    expect(html).not.toContain('live radar');
+    expect(html).toContain('cc-shimmer');
+    expect(html).not.toContain('cc-route-scan');
+    expect(html).not.toContain('Checking providers');
+  });
+
+  it('shows Nuitee-provided airline imagery with carrier text and a safe fallback', () => {
+    const withLogo = renderToStaticMarkup(
+      <FlightResultsView
+        result={{ status: 'success', itineraries: [itinerary], fallback: 'One flight', retrievedAt: itinerary.retrievedAt }}
+        displayMode="inline"
+        onVerify={vi.fn()}
+      />,
+    );
+    expect(withLogo).toContain('src="https://sandbox.nuitee.flights/static/images/airlines/ZZ.png"');
+    expect(withLogo).toContain('referrerPolicy="no-referrer"');
+    expect(withLogo).toContain('Cedar Skies');
+    expect(withLogo).toContain('cc-carrier-initials');
+
+    const withoutLogo = renderToStaticMarkup(
+      <FlightResultsView
+        result={{
+          status: 'success',
+          itineraries: [{ ...itinerary, carrier: { name: 'Cedar Skies', code: 'ZZ' } }],
+          fallback: 'One flight',
+          retrievedAt: itinerary.retrievedAt,
+        }}
+        displayMode="inline"
+        onVerify={vi.fn()}
+      />,
+    );
+    expect(withoutLogo).not.toContain('<img');
+    expect(withoutLogo).toContain('cc-carrier-initials');
   });
 
   it('renders verification success, changed price, expired offer, and retry states', () => {
@@ -249,6 +287,9 @@ describe('FlightResults', () => {
     expect(isSearchOutput({ ...validResult, itineraries: [] })).toBe(false);
     expect(isSearchOutput({ ...validResult, status: 'empty' })).toBe(false);
     expect(isSearchOutput({ ...validResult, status: 'error', itineraries: [] })).toBe(false);
+    expect(isSearchOutput({ ...validResult, message: undefined })).toBe(false);
+    expect(isSearchOutput({ ...validResult, retrievedAt: 'x'.repeat(65) })).toBe(false);
+    expect(isSearchOutput({ ...validResult, searchId: 'provider-controlled-id' })).toBe(false);
     expect(isVerification({
       status: 'success', selectionId: itinerary.selectionId, availability: 'available', priceChanged: false,
       previousPrice: itinerary.price, currentPrice: itinerary.price, messages: [],
@@ -340,7 +381,18 @@ describe('FlightResults', () => {
     expect(css).toContain('overflow-wrap: anywhere');
     expect(css).toContain('repeat(auto-fit');
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
-    expect(css).toContain('@keyframes cc-route-scan');
+    expect(css).toContain('@keyframes cc-shimmer');
+    expect(css).not.toContain('@keyframes cc-route-scan');
     expect(css).toContain('.cc-search-skeleton');
+  });
+
+  it('uses the portable Noodle Form and gates bridge-backed controls on widget readiness', () => {
+    const editorSource = readFileSync(new URL('../src/views/search-editor.tsx', import.meta.url), 'utf8');
+    const homeSource = readFileSync(new URL('../src/views/travel-home.tsx', import.meta.url), 'utf8');
+    const resultsSource = readFileSync(new URL('../src/views/flight-results.tsx', import.meta.url), 'utf8');
+    expect(editorSource).toContain('<Form');
+    expect(editorSource).not.toContain('<form');
+    expect(homeSource).toContain('useWidgetReady()');
+    expect(resultsSource).toContain('useWidgetReady()');
   });
 });
