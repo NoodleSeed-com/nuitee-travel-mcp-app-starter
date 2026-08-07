@@ -2,11 +2,11 @@
 
 ## Status and governing decisions
 
-The implementation is complete through offline/static gates plus an owner-authorized local sandbox search/verify smoke. No deployment, publication, commit, or push is part of the executed evidence.
+The implementation is complete through offline/static gates plus prior owner-authorized local sandbox search/verify evidence. Deployment, publication, and public-release claims remain outside the completed evidence.
 
 | Decision | Resolution |
 | --- | --- |
-| Package | Pin `@noodleseed/one` exactly to `0.104.1`; regenerate the lockfile and Agent Kit on every update. |
+| Package | Pin `@noodleseed/one` exactly to `0.107.1`; regenerate the lockfile and Agent Kit on every update. |
 | Operational scope | Flights search and fare verification only. |
 | API contract | Current official Nuitee Flights OpenAPI is source of truth; prose informs workflow and ambiguity notes. |
 | Entry points | Credential-free `src/server.ts`; managed-secret live composition `src/live-server.ts`. |
@@ -31,7 +31,7 @@ Dependencies: none.
 5. Scope Vitest to `test/**/*.{test,spec}.{ts,tsx}`.
 6. Run the untouched baseline. Record and stop on failure.
 
-Correction outcome: the reviewed scaffold failure was narrowly corrected by pinning the approved exact package, regenerating the lock, refreshing Agent Kit, and removing the active embedded-assistant block from the default server. The repository was later upgraded to exact `0.104.1`; Agent Kit `0.60.0` is current and the corrected baseline still passes without any provider/model credential.
+Correction outcome: the reviewed scaffold failure was narrowly corrected by pinning the approved exact package, regenerating the lock, refreshing Agent Kit, and removing the active embedded-assistant block from the default server. The repository now resolves exact `0.107.1`; the generated Codex and Claude instructions identify Agent Kit `0.62.0`, and `noodle agents doctor --json` reports both targets current with no restart required. The corrected baseline requires neither a provider nor assistant-model credential.
 
 ## Phase 1 — primary-source and reference audit (complete)
 
@@ -90,8 +90,8 @@ Dependencies: Phase 2 failing tests.
 1. Define bounded public/private Zod schemas.
 2. Implement one self-contained compute gateway for validation, classification, normalization, and safe provider-call orchestration.
 3. Author one fixed Nuitee HTTP connector with exactly two operations and managed `X-API-Key` auth.
-4. Set compute limits to 12 seconds and one host call; reject parsed response bodies over 750,000 UTF-8 bytes.
-5. Normalize at most ten itineraries with explicit outbound/inbound legs; reject missing direction, per-leg duration, total duration, invalid code, or unbounded numeric facts rather than inventing them. Remove logos, internal fare codes, raw responses, and provider IDs.
+4. Set compute limits to 12 seconds and one host call. Apply a 3 MiB connector/application cap only to search; retain the 750,000-byte application cap for verification.
+5. Normalize at most ten itineraries with explicit outbound/inbound legs; reject missing direction, per-leg duration, total duration, invalid code, or unbounded numeric facts rather than inventing them. Remove arbitrary logos, internal fare codes, raw responses, and provider IDs; retain only an optional exact-allowlisted Nuitee-hosted carrier image.
 6. Generate opaque application selections; store upstream IDs only in caller-scoped state.
 7. Resolve selection state inside the compute gateway before verify, preventing arbitrary offer proxying.
 8. Build the two entrypoints from one server factory; do not duplicate business definitions.
@@ -155,7 +155,7 @@ The repository-owned CI workflow runs only the credential-free protocol gates an
 
 Stop and report any failing command with exit status, structured error, package version, and Agent Kit version. Use debugging guidance only for concrete failures.
 
-Executed result: the ordered credential-free baseline passes, including the hermetic Vitest suite, authoring validation, MCP protocol smoke, the exact three-tool catalog, and generic readiness. Live and embedded entrypoints pass static validation/readiness; ChatGPT target checks pass. The embedded target retains one intentional warning because the optional example cannot invent the embedding product's customer identity provider. A bounded live search and same-session verification pass; real browser/host evidence and broader provider error-shape evidence remain Phase 7.
+Executed result: the ordered credential-free baseline passes, including the hermetic Vitest suite, authoring validation, MCP protocol smoke, the exact three-tool catalog, and generic readiness. Live and embedded entrypoints pass static validation/readiness. The ChatGPT target remains intentionally blocked until an owner supplies one real widget domain; the embedded target cannot invent the embedding product's customer identity provider. Prior bounded live search and same-session verification evidence exists; real browser/host evidence and broader provider error-shape evidence remain Phase 7.
 
 ## Phase 7 — owner-authorized live and host proof (partially executed)
 
@@ -164,8 +164,8 @@ Dependencies: owner credential, Nuitee Flights access, explicit live-call author
 1. Complete: owner configured a sandbox `NUITEE_API_KEY` through the managed local secret path.
 2. Complete: a bounded one-way search and a verify against its selection passed in the same local MCP session.
 3. Complete for the tested happy path: populated mappings were bounded and neither key nor upstream offer ID appeared in public output.
-4. Blocked: the official airport GET succeeds directly but fails through the published Noodle connector, so the tool is omitted.
-5. Blocked for broad routes: a representative search exceeds the fixed 1 MiB connector ceiling before application normalization.
+4. Pending: the latest airport direct/connector comparison was inconclusive because the direct control redirected to HTML; keep the tool omitted until equivalent current requests both pass.
+5. Partially complete: the former 1 MiB connector blocker now has a supported 3 MiB search-only configuration and hermetic 2.85 MiB mapping proof. A successful representative large live response still requires recheck after a sanitized `invalid_request` result.
 6. Exercise widgets in DevTools at 280px, light/dark, keyboard, reduced motion, empty/error/changed/expired states.
 7. Connect each named external host and verify fallback plus App rendering before claiming compatibility.
 8. Remove local diagnostic data according to operator policy; never commit runtime secret stores.
@@ -212,7 +212,7 @@ Classification: application contract mismatch, not a Noodle or Nuitee defect. A 
 
 Tracking: Noodle feedback `fb-957`; [GitHub issue #4](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/4).
 
-Running an exact-version initializer still produced a manifest containing `"latest"`. The original `0.103.1` run resolved `0.100.0`; a fresh `0.104.1` recheck on 2026-08-05 resolved `0.102.1` until the manifest was corrected manually. This repository pins `0.104.1`, regenerates the lock, and verifies manifest/installed/lock agreement.
+Running an exact-version initializer historically produced a manifest containing `"latest"`. The original `0.103.1` run resolved `0.100.0`; a `0.104.1` recheck on 2026-08-05 resolved `0.102.1`. On 2026-08-06, an exact `npx @noodleseed/one@0.105.0 init` still wrote `"@noodleseed/one": "latest"`; the untouched pnpm install resolved `0.104.2` under the active minimum-release-age policy even though npm's `latest` dist-tag was `0.105.0`. The current repository independently pins exact `0.107.1`, regenerated the lockfile, and verifies manifest/installed/lock agreement instead of assuming the historical initializer behavior is fixed.
 
 Classification: Noodle Seed developer experience, not Nuitee or application code.
 
@@ -220,13 +220,13 @@ Classification: Noodle Seed developer experience, not Nuitee or application code
 
 Tracking: Noodle feedback `fb-956`; [GitHub issue #3](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/3).
 
-The generated widget server activated an embedded assistant and made ordinary `noodle test` require assistant-model configuration. A fresh exact-`0.104.1` scaffold recheck on 2026-08-05 still failed its local smoke without the assistant model secret. Removing only the active assistant block restored a credential-free external-host baseline while preserving the capability in documentation.
+The generated widget server activated an embedded assistant and made ordinary `noodle test` require assistant-model configuration. After correcting the fresh scaffold's drift to exact `0.105.0`, its 2026-08-06 local smoke still failed `connector_secret_unresolved` for `ASSISTANT_MODEL_API_KEY` with all three assistant-model settings absent. Removing only the active assistant block restores a credential-free external-host baseline while preserving the capability in documentation.
 
 Classification: Noodle scaffold default for this product shape.
 
 ### Significant — optional connector secret mismatch
 
-A public-API probe accepted `secret('NUITEE_API_KEY', { optional: true })` during static validation, but local `noodle test` still failed `connector_secret_unresolved`. The two-entrypoint composition avoids sentinel credentials and keeps the same business surface.
+A public-API probe accepted `secret('NUITEE_API_KEY', { optional: true })` during static validation, but local `noodle test` still failed `connector_secret_unresolved`. An isolated exact-`0.105.0` recheck on 2026-08-06 reproduced the same failure with an absent optional secret. The two-entrypoint composition avoids sentinel credentials and keeps the same business surface.
 
 Classification: Noodle managed-secret/runtime behavior. It blocks a single entrypoint that both starts credential-free and later activates a shared-key connector without regeneration.
 
@@ -236,21 +236,21 @@ The authoring compiler followed `src/travel-server.ts` but failed to package its
 
 Classification: Noodle authoring compiler/module-layout behavior.
 
-### Blocking — HTTP body-cap configurability
+### Resolved capability, live recheck pending — HTTP body-cap configurability
 
 Tracking: Noodle feedback `fb-954`; [GitHub issue #1](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/1).
 
-The generated connector guidance exposes compute timeout/host-call limits but no authored HTTP maximum-body option. The published `0.104.1` HTTP runtime still applies a fixed 1,048,576-byte transport ceiling before response mapping or compute: a 2026-08-05 synthetic boundary check mapped a tiny field below the limit and returned only a generic connector failure above it. During owner-authorized 2026-08-04 probes, Nuitee returned `200 OK` and the documented response shape: a representative YYZ–LIS response was 2.85 MB without filters and had remained roughly 1.55 MB with documented cheapest-offer and one-stop filters. The connector failed before normalization; the composed application could return only a generic sanitized `provider_error`, not its structured `oversized_response` state.
+The exact-`0.105.0` HTTP runtime applied a 1,048,576-byte transport ceiling before response mapping or compute: a 2026-08-06 synthetic check mapped a 1.04 MB JSON response to one tiny field, while a 1.06 MB response returned only `connector failed for operation`. During owner-authorized 2026-08-04 probes, Nuitee returned `200 OK` and the documented response shape for a representative 2.85 MB response. `@noodleseed/one` 0.107 added `limits.maxResponseBytes`; this starter now applies 3 MiB only to search and proves that an approximately 2.85 MiB synthetic response completes bounded mapping. Verification is not widened. A post-fix live attempt returned sanitized `invalid_request`, so successful live mapping of the representative large route remains pending.
 
-Classification: blocking Noodle connector capability, not a Nuitee authentication/entitlement failure and not an application normalizer failure. Resolution requires an authored transport-cap/pre-compute narrowing option or a documented Nuitee server-side result limit/pagination contract. It does not justify direct browser/provider access or an ungoverned fetch workaround.
+Classification: the reported Noodle connector capability is available in 0.107 and the application-side cap mismatch is corrected. Remaining live evidence concerns request/provider behavior, not proof that the response-size fix failed. It does not justify direct browser/provider access or an ungoverned fetch workaround.
 
-### Significant — direct airport GET connector incompatibility
+### Inconclusive on current version — direct airport GET connector incompatibility
 
 Tracking: Noodle feedback `fb-955`; [GitHub issue #2](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/2).
 
-The documented airport endpoint returned `200 OK` and 1,252 bytes with the configured key on the original probe and again on the `0.104.1` recheck. The same fixed-origin GET still failed through the published Noodle HTTP connector, while earlier synthetic GET/query and exact-response relay controls passed. Narrower response mappings and a fixed literal query did not change the failure.
+The documented airport endpoint returned `200 OK` in earlier controls, while the exact-`0.105.0` fixed-origin connector returned only `connector failed for operation "search"`. The 0.107 read-only reproduction did not confirm that earlier connector-only result: the direct control followed one redirect and returned 69 bytes of HTML rather than valid JSON; the connector produced no mapped output or observable public upstream cause.
 
-Classification: Noodle/Nuitee connector interoperability, not endpoint contract, credential, query construction, response size, or application normalization. The model-visible airport tool is omitted until the direct connector path passes.
+Classification: current result is inconclusive and should be investigated first as endpoint/redirect/request behavior. Because the direct control did not succeed, the prescribed rubric does not reproduce FB-955 on 0.107. The model-visible airport tool remains omitted until equivalent current direct and connector requests both pass.
 
 ### Nuitee documentation ambiguities
 

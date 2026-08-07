@@ -2,7 +2,7 @@
 
 A flights-first Noodle Seed reference application for building polished conversational travel experiences with the official Nuitee Connect Flights API. The fictional customer-facing brand is **Cedar & Cloud Travel**.
 
-This repository demonstrates secure server-side API access, three bounded travel tools, two responsive MCP Apps entry widgets sharing one unified flight journey, opaque fare-selection state, defensive normalization, and fully offline tests. It is an independent starter—not an official Nuitee connector, airline partnership, booking product, or endorsement.
+This repository demonstrates secure server-side API access, three bounded travel tools, two MCP Apps entry widgets designed for responsive hosts and one unified flight journey, opaque fare-selection state, defensive normalization, and fully offline tests. It is an independent starter—not an official Nuitee connector, airline partnership, booking product, or endorsement.
 
 ## What it does
 
@@ -30,6 +30,7 @@ See Nuitee's [authentication](https://docs.liteapi.travel/reference/authenticati
 ```sh
 git clone https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter.git
 cd nuitee-travel-mcp-app-starter
+corepack enable
 pnpm install
 pnpm test
 pnpm dev
@@ -75,9 +76,9 @@ Hosts without MCP Apps support still receive bounded structured data and a reada
 
 With `pnpm dev:live` running, send this in DevTools Chat:
 
-> Find a one-way flight from Sydney, Nova Scotia to Halifax on September 18, 2026 for one adult in economy, priced in CAD from Canada.
+> Find a one-way flight from Sydney, Nova Scotia to Halifax two months from today for one adult in economy, priced in CAD from Canada.
 
-The host resolves the place names to YQY and YHZ before calling the typed tool. A successful call shows current normalized provider options; a `partial` result is valid when malformed provider entries were safely dropped. Select one option and choose **Verify selected fare** to exercise same-session verification. If the widget still shows an earlier schema error after a source change, stop the running process with Ctrl+C, run `pnpm dev:live` again, and start a fresh DevTools conversation.
+The host should resolve the place names to YQY and YHZ before calling the typed tool. A successful call shows current normalized provider options; a `partial` result is valid when malformed provider entries were safely dropped. Select one option and choose **Verify selected fare** to exercise same-session verification. If the widget still shows an earlier schema error after a source change, stop the running process with Ctrl+C, run `pnpm dev:live` again, and start a fresh DevTools conversation.
 
 ### Test the deployed server in ChatGPT
 
@@ -120,11 +121,20 @@ Ordinary tests and the default Noodle baseline are fully offline and need neithe
 ## Example prompts
 
 - “Open Cedar & Cloud Travel.”
-- “Find a one-way flight from Sydney, Nova Scotia to Halifax on 2026-09-18 for one adult, economy, priced in CAD from Canada.”
-- “Find a round trip from San Francisco to Tokyo, returning a week later, for two adults in premium economy, priced in USD from the US.”
+- “Find a one-way flight from Sydney, Nova Scotia to Halifax on `<future YYYY-MM-DD>` for one adult, economy, priced in CAD from Canada.”
+- “Find a round trip from San Francisco to Tokyo next month, returning a week later, for two adults in premium economy, priced in USD from the US.”
 - “Verify the fare I selected.”
 
 Users do not need to know IATA codes. The host model resolves clear city or airport names to the tool's validated internal codes, restates the selected airports, and asks for region/country clarification when a name is ambiguous. The official live airport-search tool remains omitted until the published Noodle HTTP connector can execute that GET reliably, so the model must never guess an unfamiliar code.
+
+## Widget tour
+
+| Widget | When it appears | What the user can do |
+| --- | --- | --- |
+| `TravelHome` | Opening the starter or beginning a flight search | See Flights as available, view future domains as noninteractive “Coming soon” items, and start a familiar one-way or round-trip search through the host conversation. |
+| `FlightResults` | After search or fare verification | Compare three offers inline (up to ten in fullscreen), edit the search, select one fare, verify its current price, and return through the unified Search → Results → Verified fare-review flow. |
+
+Both widgets use host-native typography, light/dark themes, visible keyboard focus, practical touch targets, reduced-motion-safe loading skeletons, and bounded text fallback for hosts without MCP Apps. The final review is explicitly not a ticket, booking, or reservation. Browser-level 280px and named-host evidence remains a release gate, so clone authors should run the checks in [CONTRIBUTING.md](CONTRIBUTING.md) before making compatibility claims.
 
 ## Expected failure behavior
 
@@ -146,11 +156,11 @@ See [docs/troubleshooting.md](docs/troubleshooting.md) for operator actions.
 
 ## Customization
 
-Branding, tool descriptions, normalization fields, widget composition, and future domain boundaries are documented in [docs/customization.md](docs/customization.md). The widgets use the host platform's system sans-serif stack, system-neutral structural colors, and a restrained Cedar & Cloud accent. They deliberately avoid a duplicated in-widget logo or decorative hero so they remain native to ChatGPT and other MCP hosts. Keep fixture airlines fictional and do not bundle carrier logos or imply a partnership without verified usage rights. Live results may display the carrier name and code returned by Nuitee.
+Branding, tool descriptions, normalization fields, widget composition, and future domain boundaries are documented in [docs/customization.md](docs/customization.md). The widgets use the host platform's system sans-serif stack, system-neutral structural colors, and a restrained Cedar & Cloud accent. They deliberately avoid a duplicated in-widget brand logo or decorative hero so they remain native to ChatGPT and other MCP hosts. Keep fixture airlines fictional and do not bundle carrier assets. Live results may display the carrier name, code, and documented `marketingLogo` supplied by Nuitee, but only when the image uses an allowlisted Nuitee Flights asset origin; carrier text remains the fallback. Inventory attribution does not by itself imply an airline partnership or make this an official Nuitee connector.
 
 ## Updating Noodle Seed safely
 
-`@noodleseed/one` is pinned exactly to `0.104.1`. Dependabot opens reviewable dependency pull requests monthly; nothing auto-merges. For a manual Noodle update:
+`@noodleseed/one` is pinned exactly to `0.107.1`. Dependabot opens reviewable dependency pull requests monthly; nothing auto-merges. For a manual Noodle update:
 
 1. Compare the registry version and release guidance.
 2. Update the exact package pin and regenerate `pnpm-lock.yaml`.
@@ -163,9 +173,9 @@ Branding, tool descriptions, normalization fields, widget composition, and futur
 
 No source license has been selected. Public distribution is blocked until the owner approves and adds one. Host-specific browser evidence, a credentialed sandbox/error-shape smoke by the repository owner, a recheck of deliberately unassigned fixture codes, and dependency/license review are also required before calling a release production-ready.
 
-Live one-way search and same-session fare verification passed for a bounded sandbox route. Reliability remains blocked for routes whose Nuitee response exceeds the published Noodle HTTP connector's fixed 1 MiB transport ceiling: an owner-authorized 2026-08-04 YYZ–LIS response was 2.85 MB without filters and had previously remained about 1.55 MB with documented cheapest-offer and one-stop filters. The connector rejects it before normalization, and the composed tool can only return a generic sanitized provider error. Nuitee documents no result limit or pagination contract.
+Live one-way search and same-session fare verification previously passed for a bounded sandbox route. `@noodleseed/one` 0.107 added an operation-specific response-size limit; this starter applies 3 MiB only to flight search and now proves with hermetic tests that an approximately 2.85 MiB response reaches bounded normalization. Fare verification keeps the smaller 750,000-byte application limit. A later owner-authorized live attempt returned a sanitized `invalid_request`, so the representative large live route still needs a successful recheck before its mapping is claimed as live evidence. Nuitee documents no result limit or pagination contract.
 
-The official airport-search endpoint also returned `200 OK` and 1,252 bytes directly, but the same fixed-origin GET failed through the published Noodle connector. Synthetic GET/query and exact-response relay controls passed, so `find_airports` is not exposed until that direct connector incompatibility is resolved.
+The 0.107 airport recheck was inconclusive: the direct control received one redirect and a small HTML response rather than the expected JSON, while the connector produced no mapped result or observable public upstream cause. That does not reproduce a connector-only defect because the direct control did not succeed. `find_airports` remains omitted until the current official endpoint and equivalent direct/connector requests both pass safely.
 
 No custom widget domain is claimed by default. Configure one real, dedicated,
 deployment-owned HTTPS origin for both widgets before app-store submission.

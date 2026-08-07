@@ -1,8 +1,10 @@
 # Optional embedded assistant
 
-This starter supports two consumption paths that share one Noodle server, one
-set of travel tools, the same Nuitee connector and normalization logic, and the
-same MCP App widgets.
+This starter supports two consumption paths built from one shared Noodle
+product factory: one set of travel tools, the same Nuitee connector and
+normalization logic, and the same MCP App widgets. Separate entrypoints select
+credential-free, live external-host, or optional embedded configuration without
+duplicating business behavior.
 
 The optional composition is `src/embedded-server.ts`. It selects the same
 `createTravelServer(...)` factory as `src/live-server.ts`; its illustrative
@@ -19,8 +21,8 @@ their text fallback.
 ## Embedded website mode
 
 An application developer may optionally add the Noodle assistant to an
-authenticated website or SaaS product. The same server can be given an
-`embeddedAssistant(...)` configuration; do not create assistant-specific
+authenticated website or SaaS product. The shared product factory can be given
+an `embeddedAssistant(...)` configuration; do not create assistant-specific
 copies of the flight tools, schemas, connector, normalizers, or widgets.
 
 Embedded mode requires these Noodle deployment settings:

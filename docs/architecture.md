@@ -22,7 +22,7 @@ External MCP host or optional embedded assistant
           official Nuitee Flights API
 ```
 
-The browser never calls Nuitee. Both React entry widgets call or consume Noodle tools through the supported host bridge. Their CSP declares no external connection, resource, or frame origin. TravelHome can send an explicit user-authored search follow-up to a capable host; FlightResults uses a persisted Search/Edit → Results → Verified fare-review flow and calls only `verify_flight_offer` directly.
+The browser never calls the Nuitee API. Both React entry widgets call or consume Noodle tools through the supported host bridge. Their CSP declares no external connection or frame origin. TravelHome has no external resource origin; FlightResults allows images only from the exact Nuitee Flights sandbox and production asset origins so it can display a validated `marketingLogo` supplied in search results. TravelHome can send an explicit user-authored search follow-up to a capable host; FlightResults uses a persisted Search/Edit → Results → Verified fare-review flow and calls only `verify_flight_offer` directly.
 
 ## Entrypoints
 
@@ -34,7 +34,7 @@ The browser never calls Nuitee. Both React entry widgets call or consume Noodle 
 
 All three call `createTravelServer(...)`. Tool names, schemas, output bounds, normalizers, state rules, and widgets are shared; there is no assistant-specific business tool set.
 
-The split exists because `@noodleseed/one@0.104.1` still resolves an HTTP connector's managed secret before local `noodle test`. A public-API probe with an optional secret argument still failed `connector_secret_unresolved`. The split keeps the supported external-host baseline credential-free without a dummy key, raw environment read, fake endpoint, or fixture fallback.
+The split exists because an active HTTP connector resolves its managed secret before local protocol smoke. The split keeps the supported external-host baseline credential-free without a dummy key, raw environment read, fake endpoint, or fixture fallback. The live and embedded entrypoints reuse the same product factory once their respective server-side configuration is present.
 
 ## Search data flow
 
@@ -42,7 +42,7 @@ The split exists because `@noodleseed/one@0.104.1` still resolves an HTTP connec
 2. The compute gateway applies relationship validation using the server-authoritative local date.
 3. The gateway calls the allowlisted `search` operation once. It cannot accept an origin, URL, path, method, or header.
 4. The HTTP connector sends the exact JSON `legs` request to `POST /flights/rates`, injecting `X-API-Key` from the managed secret.
-5. The gateway checks serialized UTF-8 response size, flattens bounded `data[].journeys[]`, accepts one valid offer per itinerary, and normalizes at most ten.
+5. Search alone permits up to 3 MiB at the connector and application parsing boundaries. The gateway then flattens bounded `data[].journeys[]`, accepts one valid offer per itinerary, normalizes at most ten, and keeps an optional airline image only from the exact Nuitee Flights asset allowlist.
 6. Each provider offer ID becomes a private selection record. The public itinerary receives only an application-issued `sel_…` identifier.
 7. The tool replaces the caller's `flight_selections` state using revision control and a 30-minute TTL.
 8. The result exposes at most three itineraries inline; the same FlightResults component may show up to ten when the host reports fullscreen display mode.
@@ -64,7 +64,7 @@ The starter stops at a verified fare review. It does not preserve the provider I
 
 ## Airport input boundary
 
-Version one requires three-letter IATA codes. Although Nuitee documents `GET /data/flights/airports?q=...`, the current published Noodle HTTP connector failed the direct live GET after direct-provider, synthetic-query, and exact-response relay controls succeeded. No broken lookup tool or fixture-backed substitute is exposed.
+Version one requires three-letter IATA codes at the typed tool boundary. The latest airport lookup comparison did not establish a current connector-only defect: the direct control redirected to HTML rather than returning valid JSON, and the connector produced no mapped result. No unverified lookup tool or fixture-backed substitute is exposed; capable host models may resolve clear names conversationally and must ask when ambiguous.
 
 ## Secret boundaries
 

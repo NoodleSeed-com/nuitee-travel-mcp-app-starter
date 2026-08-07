@@ -1,6 +1,6 @@
 # Nuitee Flights contract
 
-Reviewed against official Nuitee sources on 2026-08-04. Nuitee's [OpenAPI specifications index](https://docs.liteapi.travel/reference/openapi-specifications) identifies the machine-readable specs as the integration source of truth. This starter uses the current [Flights OpenAPI document](https://docs.liteapi.travel/openapi/openapiflights.json).
+Reviewed against official Nuitee sources on 2026-08-05. Nuitee's [OpenAPI specifications index](https://docs.liteapi.travel/reference/openapi-specifications) identifies the machine-readable specs as the integration source of truth. This starter uses the current [Flights OpenAPI document](https://docs.liteapi.travel/openapi/openapiflights.json).
 
 The contract was derived from official documentation. Later owner-authorized local smokes inspected only bounded public tool output or sanitized status/size/shape metadata; no credential or raw provider response was recorded in the repository.
 
@@ -17,7 +17,7 @@ Flights uses the normal Nuitee authentication method. See [authentication](https
 
 | Intent | Method/path | Inputs used | Public fields retained |
 | --- | --- | --- | --- |
-| Search | `POST /flights/rates` | `legs`, `adults`, `children`, `infants`, `childrenAges`, `infantAges`, `cabinClass`, `currency`, `country` | Bounded journey/segments, carrier name/code, times, duration/stops, display total/currency, baggage hints, messages, expiry/timestamp |
+| Search | `POST /flights/rates` | `legs`, `adults`, `children`, `infants`, `childrenAges`, `infantAges`, `cabinClass`, `currency`, `country` | Bounded journey/segments, carrier name/code and optional Nuitee-hosted marketing image, times, duration/stops, display total/currency, baggage hints, messages, expiry/timestamp |
 | Verify | `POST /flights/verify` | `offerId` resolved privately | Availability, previous/current display total/currency, price-change state, messages, expiry/timestamp |
 | Airports (documented, not active) | `GET /data/flights/airports?q=...` | `q` | Tool omitted pending direct Noodle connector compatibility |
 
@@ -64,10 +64,11 @@ The documented top-level shape is `{ data: [{ journeys: [...] }] }`. The normali
 7. Stores the full provider ID verbatim only in private state.
 8. Copies the already validated application search fields into bounded `searchContext` so widgets can hydrate Edit search without receiving provider authority.
 9. Retains documented airport names, marketing and distinct operating carrier facts, flight numbers, day-change/overnight hints, display base/taxes/fees, fare family/mixed-cabin/seats, and refund/change flags only when each value passes its public bound.
+10. Retains `carrier.marketingLogo` only when it is an exact HTTPS airline-image URL on `sandbox.nuitee.flights` or `production.nuitee.flights`; arbitrary schemes, hosts, and paths are discarded. The UI always renders the carrier name/code and falls back to bounded initials if the image is absent or fails.
 
 The public comparison duration is the sum of documented per-leg elapsed durations, each of which includes layovers. It deliberately does not count the days spent at the destination between outbound and return travel. The provider `totalDuration` is still required as a response-shape check but is not presented as flight time.
 
-The public output intentionally omits provider/carrier logo URLs, provider IDs, raw responses, `segmentKey`, fare-basis and booking codes, fee objects and unrestricted/full terms, ancillary pricing, coordinates, and every unused nested object. The starter does not try to mirror the full provider response: it keeps only decision-useful fields with explicit caps.
+The public output intentionally omits provider logos, arbitrary carrier image URLs, provider IDs, raw responses, `segmentKey`, fare-basis and booking codes, fee objects and unrestricted/full terms, ancillary pricing, coordinates, and every unused nested object. The optional Nuitee-hosted marketing-carrier image is the only image exception. The starter does not try to mirror the full provider response: it keeps only decision-useful fields with explicit caps.
 
 ## Verification
 
@@ -99,13 +100,13 @@ Search endpoint-specific docs list 200/400/401/502/503. Verify lists 200/400/401
 
 The application mapping for thrown connector statuses/messages is covered hermetically at the gateway boundary. The generated public connector guidance does not currently document the exact thrown error object for every transport/runtime failure, so a credentialed owner-authorized smoke must confirm 400/401/403/404/429/502/503 and deadline behavior before those mappings are claimed as live-runtime evidence.
 
-### Observed live evidence and response-size blocker
+### Observed live evidence and response-size follow-up
 
 An owner-authorized 2026-08-04 live MCP session successfully searched a bounded YQY–YHZ sandbox route, returned ten normalized itineraries, and verified one application selection without exposing its upstream offer ID. This proves the corrected deterministic compute path, state handoff, and both POST operations for that bounded case only.
 
-A YYZ–LIS request returned `200 OK`, the documented `data[].journeys[]` shape, and 2.85 MB without filters; an earlier filtered probe remained about 1.55 MB with `filters.showCheapestOfferOnly`, `filters.maxStops: 1`, and ascending price sort. The published Noodle `0.104.1` HTTP transport still rejects those payloads at its fixed 1 MiB pre-mapping ceiling before this starter can select ten itineraries; a 2026-08-05 synthetic below/above-boundary check reconfirmed the cutoff and generic failure. The composed tool returns a sanitized `provider_error` because the connector does not expose the body-size cause to compute. Nuitee's current OpenAPI documents filters and sort but no search result-count limit or pagination contract, so the repository does not invent one.
+A YYZ–LIS request returned `200 OK`, the documented `data[].journeys[]` shape, and 2.85 MB without filters; an earlier filtered probe remained about 1.55 MB with `filters.showCheapestOfferOnly`, `filters.maxStops: 1`, and ascending price sort. `@noodleseed/one` 0.107 added an authored per-operation response-size limit. This starter sets search to 3 MiB at both connector and application parsing boundaries and proves with a hermetic approximately 2.85 MiB response that bounded normalization completes. Verification retains its smaller application cap. A post-fix owner-authorized live attempt returned the sanitized category `invalid_request`, so a successful large live route still requires recheck. Nuitee's current OpenAPI documents filters and sort but no search result-count limit or pagination contract, so the repository does not invent one.
 
-The official airport GET returned `200 OK` and 1,252 bytes directly on both 2026-08-04 and the `0.104.1` recheck on 2026-08-05. The same fixed-origin operation still failed through the published Noodle connector while returning only a generic operation error. Earlier synthetic GET/query and exact-response relay controls passed. Because no safe application correction remains, the active connector and model tool omit airport lookup and require IATA codes.
+The latest airport comparison did not isolate a connector defect: the direct control followed one redirect and returned 69 bytes of HTML rather than valid JSON, while the connector returned no mapped output or observable public upstream cause. Because the direct control also failed its JSON-shape requirement, the result is inconclusive and points first to endpoint/redirect/request verification. The active connector and model tool continue to omit airport lookup until equivalent current direct and connector requests both succeed.
 
 ## Known ambiguities
 

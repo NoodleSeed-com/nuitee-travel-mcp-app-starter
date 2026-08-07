@@ -10,13 +10,13 @@ Change the shared server brand in `src/travel-server.ts` and the authored shell 
 - Let the host-supplied app identity carry the logo. Do not repeat a brand mark inside a compact response widget.
 - Keep the explicit platform system-font stack, light/dark support, compact type scale, and system sizing.
 - Follow the current [OpenAI Apps SDK UI guidelines](https://developers.openai.com/plugins/concepts/ui-guidelines) when changing typography, color, spacing, actions, or navigation.
-- Do not bundle airline/provider logos merely because a live response includes a logo URL.
+- Do not bundle airline/provider logos. FlightResults may render the documented `marketingLogo` from a live result only after the runtime accepts its exact Nuitee Flights asset origin/path; keep carrier text and initials as the failure fallback. A remote image request still reveals normal network metadata to the Nuitee asset host, so disable the image path if that tradeoff does not fit the deployment's privacy policy.
 - Never imply a partnership or call this an “official Nuitee connector” without authorization.
 - The starter claims no custom widget domain. Before app-store submission, add
-  one real, dedicated, deployment-owned HTTPS origin to the shared `viewPolicy`
-  for both widgets; never publish a placeholder origin.
+  one real, dedicated, deployment-owned HTTPS origin consistently to
+  `homeViewPolicy` and `flightViewPolicy`; never publish a placeholder origin.
 
-Search fixtures must remain clearly fictional. Live output may show the actual carrier name and code returned by Nuitee, but that is inventory attribution—not a bundled brand partnership.
+Search fixtures must remain clearly fictional. Live output may show the actual carrier name, code, and allowlisted Nuitee-hosted airline image returned by Nuitee, but that is inventory attribution—not a bundled brand partnership.
 
 ## Tool descriptions and inputs
 
@@ -41,7 +41,7 @@ To add a field:
 5. Add it to the public schema only after the runtime produces a bounded value.
 6. Update text fallback and widget presentation only if it remains clear at 280px.
 
-Do not return the complete upstream journey, offers array, provider/carrier logos, internal booking/fare codes, coordinates, or any provider identifier used for a downstream transaction.
+Do not return the complete upstream journey, offers array, provider logos, arbitrary carrier image URLs, internal booking/fare codes, coordinates, or any provider identifier used for a downstream transaction. If the Nuitee asset hosts change, verify the current official contract and review CSP/privacy implications before changing the exact allowlist.
 
 ## Widget composition
 
@@ -53,9 +53,9 @@ TravelHome and FlightResults live in `src/views/`; `search-editor.tsx` is their 
 - Keep three cards inline and ten only when the host supplies fullscreen mode.
 - Use progressive disclosure instead of an inner scrolling pane.
 - Keep empty, partial, unavailable, malformed, retry, changed-price, expired, and success states.
-- Keep the loading skeleton structurally aligned with the result cards, label it as an offer search rather than live aircraft tracking, and preserve its reduced-motion fallback.
+- Keep the shimmer loading skeleton structurally aligned with the result cards, label it as an offer search rather than live aircraft tracking, and preserve its reduced-motion fallback. Do not add a route scanner, spinner spectacle, or implied live-radar movement.
 - Feature-detect host behavior through public hooks; do not depend on a host global.
-- Leave widget CSP connection domains empty while all data moves through tools.
+- Leave widget CSP connection domains empty while all data moves through tools. Keep resource origins empty for TravelHome and restricted to the two Nuitee Flights image origins for FlightResults.
 - Do not add a default handoff. A real deployment must author an exact HTTPS domain, a server-owned short-lived deep link or session, and matching origin policy before a handoff button appears.
 
 Run SSR tests and real-browser checks after visual changes. Static CSS assertions do not prove actual 280px layout or keyboard behavior.

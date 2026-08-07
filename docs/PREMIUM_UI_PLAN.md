@@ -8,10 +8,9 @@ Adopt one coherent **Quiet Canopy** visual system for Cedar & Cloud Travel, usin
 
 The result should feel like a calm premium concierge, not a miniature airline website. Familiar controls and interaction patterns remain standard; distinctiveness comes from hierarchy, spacing, precise language, and the Cedar & Cloud palette.
 
-The temporary concept files are intentionally outside the repository:
-
-- `/tmp/cedar-cloud-premium-ui-concepts/recommended.html` — recommended interactive direction.
-- `/tmp/cedar-cloud-premium-ui-concepts/index.html` — three visual directions for comparison.
+The exploratory HTML concepts were temporary design-review artifacts and are not
+part of the cloneable starter. This document records the selected direction;
+the maintained implementation in `src/views/` is the source of truth.
 
 ## Evidence and resolved disagreements
 
@@ -97,10 +96,10 @@ Every final combination must be measured in the rendered host. Color never carri
 
 - Use familiar route arrows, chevrons, status marks, and host-expand affordances.
 - Pair every meaningful icon with visible text or an accessible name.
-- Bundle no airline/provider logos and use no third-party icon asset without license review.
+- Bundle no airline/provider logos and use no third-party icon asset without license review. A documented live `marketingLogo` may render only from the exact Nuitee Flights asset allowlist, with carrier text/initials as fallback.
 - Keep result cards information-led. Do not add an internal Cedar & Cloud logo or decorative hero; the host already presents app identity before the widget.
 - Limit motion to 100–140ms opacity or color transitions.
-- Use no parallax, sliding cards, animated countdown, or loading spectacle. The search state may use a restrained route scan and result-shaped placeholders, but must never imply aircraft tracking or expose invented inventory.
+- Use no parallax, sliding cards, animated countdown, route scanner, spinner spectacle, or implied aircraft tracking. Use result-shaped shimmer placeholders only.
 - Make reduced-motion behavior effectively instant.
 
 ## TravelHome contract

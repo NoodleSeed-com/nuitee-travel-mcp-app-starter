@@ -71,15 +71,15 @@ The compute gateway has a 12-second deadline and one provider host call. Retry o
 
 **Symptom:** the host cannot confidently resolve a city/airport name to one code.
 
-Version one intentionally exposes no `find_airports` tool. The official endpoint returned `200 OK` directly, but the published Noodle connector failed that same small fixed-origin GET while synthetic GET/query and exact-response relay controls passed. The host may translate well-known, unambiguous names internally, but must restate the selected airports and ask for city/region/country clarification when uncertain. Do not guess, substitute test fixtures, call the provider from the browser, or add an arbitrary HTTP tool.
+Version one intentionally exposes no `find_airports` tool. The latest equivalent comparison was inconclusive: the direct control followed one redirect to a small HTML response instead of valid JSON, while the connector produced no mapped output or public upstream cause. Because the control did not succeed, this did not reproduce a connector-only defect. Reconfirm the current official endpoint and equivalent request before changing the connector. The host may translate well-known, unambiguous names internally, but must restate the selected airports and ask for city/region/country clarification when uncertain. Do not guess, substitute test fixtures, call the provider from the browser, or add an arbitrary HTTP tool.
 
 ## Oversized response
 
 **Symptom:** `oversized_response` or a connector-level size error.
 
-The gateway rejects parsed responses above 750,000 UTF-8 bytes. The published Noodle `0.104.1` HTTP transport separately rejects responses above 1,048,576 bytes before response mapping or compute. A synthetic boundary check on 2026-08-05 confirmed that a response just below the limit mapped successfully while one just above it returned only a generic connector failure. The composed application receives no usable size cause and therefore returns a generic sanitized `provider_error` rather than its structured `oversized_response`.
+`@noodleseed/one` 0.107 added an authored `limits.maxResponseBytes` operation setting. This starter applies 3 MiB only to `search`; its application parser uses the same search cap and hermetic coverage proves an approximately 2.85 MiB response reaches bounded normalization. Verification retains a 750,000-byte application cap and no widened connector limit.
 
-Owner-authorized 2026-08-04 probes confirmed a representative YYZ–LIS request returned `200 OK` and the documented Nuitee shape but measured 2.85 MB without filters and had remained about 1.55 MB after documented cheapest-offer and one-stop filters. Smaller search and same-session verification smokes pass; this is a route-dependent reliability blocker. Do not expose raw responses, weaken secret boundaries, bypass the fixed connector with browser fetch, or add undocumented provider parameters. Resolution requires a public Noodle pre-compute size/narrowing control or a documented Nuitee result-limit/pagination contract.
+Owner-authorized 2026-08-04 probes confirmed a representative YYZ–LIS request returned `200 OK` and the documented Nuitee shape but measured 2.85 MB without filters. A post-fix live attempt returned the sanitized category `invalid_request`, so live response mapping for that representative large route remains unproven even though the former connector-size blocker has a supported application configuration and offline regression. Do not expose raw responses, weaken secret boundaries, bypass the fixed connector with browser fetch, or add undocumented provider parameters.
 
 ## Malformed or partial response
 

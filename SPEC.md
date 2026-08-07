@@ -2,7 +2,7 @@
 
 ## Product contract
 
-Nuitee Travel MCP App Starter is a public-ready reference implementation for conversational flight discovery and fare verification using the published `@noodleseed/one` package and official Nuitee Connect APIs. The sample experience uses the wholly fictional brand **Cedar & Cloud Travel**.
+Nuitee Travel MCP App Starter is a public-oriented reference implementation for conversational flight discovery and fare verification using the published `@noodleseed/one` package and official Nuitee Connect APIs. The sample experience uses the wholly fictional brand **Cedar & Cloud Travel**. Owner-selected licensing, browser/host evidence, and the remaining release checks are required before public release.
 
 Success means a developer can clone the repository, run the credential-free home, configure their own server-side Nuitee key, search live one-way or round-trip flights, select an application-issued result, verify the fare, and identify every customization and security boundary.
 
@@ -27,7 +27,7 @@ Version one has no multicity search, prebooking, booking, inventory hold, passen
 1. **External MCP host:** ChatGPT, Claude, or another host supplies the conversational model. No assistant-model key is required.
 2. **Optional embedded assistant:** an authenticated website backend creates a short-lived assistant session. The same travel server, connector, tools, schemas, state, and widgets are reused. Model configuration is separate from `NUITEE_API_KEY`.
 
-The default `src/server.ts` remains credential-free because `@noodleseed/one@0.104.1` still resolves a connector secret before local `noodle test`, including a probed `secret(..., { optional: true })`. It exposes the complete product surface but returns explicit `configuration_required` results for live-only tools. `src/live-server.ts` composes the same product with the managed Nuitee connector after an owner configures the key. No fixture can activate the live tool path.
+The default `src/server.ts` remains credential-free because the supported connector composition resolves its managed secret when the connector is active. It exposes the complete product surface but returns explicit `configuration_required` results for live-only tools. `src/live-server.ts` composes the same product with the managed Nuitee connector after an owner configures the key. No fixture can activate the live tool path.
 
 ## Model-visible tools
 
@@ -48,8 +48,8 @@ Exactly three model-visible tools are allowed.
 - Defaults: one adult, zero children/infants, economy.
 - Application policy: exactly three-letter IATA-shaped codes, different endpoints, ISO dates not before the caller's server-authoritative local date, return after departure, one to nine total passengers, at least one adult, infants no greater than adults, age-array lengths equal their counts, child ages 2–11, infant ages 0–1, documented cabin enum, three-letter currency, and two-letter point of sale.
 - Provider request: `POST /flights/rates`, JSON, exact documented `legs` array.
-- Output: at most ten normalized itineraries, three inline, with opaque `selectionId`; validated search context; airport codes and documented names; comparison route; separate documented outbound/return legs; marketing/operating carrier facts; airport-local schedules; bounded documented duration/stops and overnight/day-change hints; display-price breakdown; fare family; seats remaining; bounded refund/change flags; baggage hints/messages; up to five documented amenities; retrieval time; and documented expiration.
-- Never outputs an upstream offer ID, logo URL, raw response, fare-basis code, or booking code.
+- Output: at most ten normalized itineraries, three inline, with opaque `selectionId`; validated search context; airport codes and documented names; comparison route; separate documented outbound/return legs; marketing/operating carrier facts and an optional allowlisted Nuitee-hosted airline image; airport-local schedules; bounded documented duration/stops and overnight/day-change hints; display-price breakdown; fare family; seats remaining; bounded refund/change flags; baggage hints/messages; up to five documented amenities; retrieval time; and documented expiration.
+- Never outputs an upstream offer ID, arbitrary logo URL, raw response, fare-basis code, or booking code.
 - Empty, partial, malformed, oversized, timeout, provider, and access failures remain distinct.
 
 ### `verify_flight_offer`
@@ -79,7 +79,7 @@ Only two tool-linked React entry widgets are permitted. They share one flight-jo
 - Three options inline; up to ten when the host supplies fullscreen/expanded display mode.
 - Boarding-pass-inspired hierarchy without copying third-party assets or styles.
 - Named Search/Edit, Results, and Verified fare-review states with host-persisted Back navigation. A prompt may enter at Home/Search or Results; selection and verification advance within the same result widget.
-- Route and airport names/codes, carrier facts, separate outbound/return airport-local dates/times, stops, duration, fare family, bounded price breakdown, baggage, terms, documented amenities, verification messages, and freshness disclosure.
+- Route and airport names/codes, carrier facts, optional Nuitee-provided airline imagery with text fallback, separate outbound/return airport-local dates/times, stops, duration, fare family, bounded price breakdown, baggage, terms, documented amenities, verification messages, and freshness disclosure.
 - Result cards are explicit selection controls. One **Verify selected fare** action appears only after selection.
 - The final state is labelled **Verified fare review** and **Not a ticket or reservation**; it never invents a boarding pass, PNR, barcode, gate, seat, or ticket number.
 - Verification success, changed price, expired selection, retryable failure, partial results, empty results, malformed results, and loading are explicit.
@@ -98,8 +98,8 @@ Browser widget → Noodle tool → compute gateway → fixed Nuitee HTTP connect
 - Only `POST /flights/rates` and `POST /flights/verify` are authored in the active connector.
 - Method, origin, base URL, path, headers, and provider offer ID are not model inputs.
 - `NUITEE_API_KEY` is a server-side managed secret injected only as `X-API-Key`.
-- Widgets have empty `connectDomains`, `resourceDomains`, and `frameDomains`; they call Noodle tools only.
-- Compute calls have one-host-call and 12-second ceilings. Parsed bodies above 750,000 UTF-8 bytes are rejected before normalization; the Noodle transport may enforce a smaller upstream hard ceiling.
+- Widgets have empty `connectDomains` and `frameDomains`; FlightResults allows resource loads only from `https://sandbox.nuitee.flights` and `https://production.nuitee.flights` for validated airline images. Browser code never calls the Nuitee API.
+- Compute calls have one-host-call and 12-second ceilings. Search alone permits up to 3 MiB at both connector transport and application parsing so representative large responses can reach bounded normalization; verification retains a 750,000-byte application cap.
 - Raw provider errors and bodies are never returned. Public errors are bounded categories.
 - Selection state is caller-scoped, revisioned, private, and expires after 1,800 seconds.
 - Fixture data is test-only, fictional, and unreachable from production tool fulfilment.
@@ -118,9 +118,9 @@ Claims require the following evidence:
 - Authoring: default and live `noodle validate --json`.
 - Local protocol: default `noodle test --json` and `noodle tools list --json` without credentials.
 - Readiness: `noodle check --json`; target-specific checks where available.
-- Live provider: owner-authorized sandbox smokes prove a bounded one-way search and same-session verification. They also preserve route-dependent response-size and airport-GET blockers as explicit limits, not application success claims.
+- Live provider: prior owner-authorized sandbox smokes prove a bounded one-way search and same-session verification. A hermetic 2.85 MiB regression proves the new search-size path, but a successful large live response still requires recheck; airport lookup remains omitted pending equivalent direct/connector success.
 
-The official airport-search contract is verified, but `find_airports` is deliberately omitted from version one because the current published Noodle connector fails that direct GET while direct provider, synthetic query, and exact-response relay controls pass. Users may still speak in names: the host resolves clear cases and asks for region/country clarification instead of guessing unfamiliar or ambiguous codes.
+The airport-search route remains deliberately omitted from version one. The latest direct/connector comparison was inconclusive because the direct control redirected to HTML rather than returning valid JSON, so it did not isolate a connector defect. Users may still speak in names: the host resolves clear cases and asks for region/country clarification instead of guessing unfamiliar or ambiguous codes.
 - Host UI: real ChatGPT/Claude/other-host render evidence before making a compatibility claim.
 - Deployment: hosted health only after explicit authorization; local proof is not hosted proof.
 
