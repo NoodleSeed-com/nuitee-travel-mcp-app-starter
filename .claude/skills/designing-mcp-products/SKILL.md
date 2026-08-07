@@ -3,7 +3,7 @@ name: designing-mcp-products
 description: "Use when a Noodle Seed MCP product idea needs conversational fit, user benefit, scope, interaction, or evidence design before implementation."
 ---
 
-<!-- noodle-skill version:0.60.0 hash:76cce86729cffbee -->
+<!-- noodle-skill version:0.62.0 hash:76cce86729cffbee -->
 
 # designing-mcp-products
 

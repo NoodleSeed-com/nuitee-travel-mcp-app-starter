@@ -10,6 +10,7 @@ export {
   DataList,
   Feedback,
   Field,
+  Form,
   HandoffButton,
   QuantityStepper,
   ShellNav,
@@ -34,4 +35,5 @@ export const {
   useUpdateModelContext,
   useViewState,
   useWidgetLifecycle,
+  useWidgetReady,
 } = generateHelpers<AppType>();

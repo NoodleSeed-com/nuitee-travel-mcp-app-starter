@@ -9,6 +9,7 @@ import {
   DataList,
   Feedback,
   Field,
+  Form,
   HandoffButton,
   QuantityStepper,
   ShellNav,
@@ -23,6 +24,7 @@ import {
   useUpdateModelContext,
   useViewState,
   useWidgetLifecycle,
+  useWidgetReady,
   View,
   ViewStack,
 } from '../helpers.js';
@@ -74,9 +76,10 @@ function modifierLabel(value: string): string {
 }
 
 export default function OrderingFlow() {
+  const ready = useWidgetReady();
   const { displayMode, supports, theme } = useLayout();
   const toolInfo = useToolInfo('open_ordering');
-  const isPending = Object.keys(toolInfo).length === 0;
+  const isPending = !ready || Object.keys(toolInfo).length === 0;
   const entry = isOrderingEntryResult(toolInfo.structuredContent)
     ? toolInfo.structuredContent
     : undefined;
@@ -338,51 +341,55 @@ export default function OrderingFlow() {
       <div className="nw-body">
         <ViewStack flow={flow}>
           <View name="stores">
-            <div className="nw-field-grid">
-              <Field className="nw-field" label="Customer">
-                <input
-                  className="nw-input"
-                  value={customer}
-                  onChange={(event) => setCustomer(event.currentTarget.value)}
-                />
-              </Field>
-              <Field className="nw-field" label="Search">
-                <input
-                  className="nw-input"
-                  value={query}
-                  placeholder="Noodles"
-                  onChange={(event) => setQuery(event.currentTarget.value)}
-                />
-              </Field>
-            </div>
-            <ActionBar className="nw-actions">
-              <SubmitButton
-                className="nw-button nw-button-primary"
-                pending={searchStores.isPending}
-                pendingLabel="Searching..."
-                onClick={() => searchStores.callTool({ query, openOnly: false })}
-              >
-                <SearchIcon />
-                Search stores
-              </SubmitButton>
-              <SubmitButton
-                className="nw-button"
-                pending={readCart.isPending}
-                pendingLabel="Loading..."
-                onClick={async () => {
-                  const result = await readCart.callTool({});
-                  const stored = structured<{
-                    readonly value?: CartState;
-                    readonly revision?: number;
-                  }>(result);
-                  if (stored?.value?.lines) setCart(stored.value);
-                  setRevision(stored?.revision ?? revision);
-                }}
-              >
-                <RefreshIcon />
-                Load cart
-              </SubmitButton>
-            </ActionBar>
+            <Form onSubmit={() => void searchStores.callTool({ query, openOnly: false })}>
+              <div className="nw-field-grid">
+                <Field className="nw-field" label="Customer">
+                  <input
+                    className="nw-input"
+                    value={customer}
+                    onChange={(event) => setCustomer(event.currentTarget.value)}
+                  />
+                </Field>
+                <Field className="nw-field" label="Search">
+                  <input
+                    className="nw-input"
+                    value={query}
+                    placeholder="Noodles"
+                    onChange={(event) => setQuery(event.currentTarget.value)}
+                  />
+                </Field>
+              </div>
+              <ActionBar className="nw-actions">
+                <SubmitButton
+                  type="submit"
+                  className="nw-button nw-button-primary"
+                  disabled={!ready}
+                  pending={searchStores.isPending}
+                  pendingLabel="Searching..."
+                >
+                  <SearchIcon />
+                  Search stores
+                </SubmitButton>
+                <SubmitButton
+                  type="button"
+                  className="nw-button"
+                  pending={readCart.isPending}
+                  pendingLabel="Loading..."
+                  onClick={async () => {
+                    const result = await readCart.callTool({});
+                    const stored = structured<{
+                      readonly value?: CartState;
+                      readonly revision?: number;
+                    }>(result);
+                    if (stored?.value?.lines) setCart(stored.value);
+                    setRevision(stored?.revision ?? revision);
+                  }}
+                >
+                  <RefreshIcon />
+                  Load cart
+                </SubmitButton>
+              </ActionBar>
+            </Form>
             <AsyncBoundary
               state={searchStores}
               isEmpty={displayedStores.length === 0}
@@ -427,6 +434,7 @@ export default function OrderingFlow() {
                 />
                 <ActionBar className="nw-actions">
                   <SubmitButton
+                    type="button"
                     className="nw-button nw-button-primary"
                     pending={syncCart.isPending}
                     pendingLabel="Adding..."
@@ -459,6 +467,7 @@ export default function OrderingFlow() {
             </Field>
             <ActionBar className="nw-actions">
               <SubmitButton
+                type="button"
                 className="nw-button"
                 pending={syncCart.isPending}
                 pendingLabel="Saving..."
@@ -468,6 +477,7 @@ export default function OrderingFlow() {
                 Save cart
               </SubmitButton>
               <SubmitButton
+                type="button"
                 className="nw-button nw-button-primary"
                 disabled={cart.lines.length === 0}
                 pending={prepareCheckout.isPending}
@@ -491,6 +501,7 @@ export default function OrderingFlow() {
                 Edit cart
               </button>
               <SubmitButton
+                type="button"
                 className="nw-button nw-button-primary"
                 disabled={cart.lines.length === 0}
                 pending={prepareCheckout.isPending}

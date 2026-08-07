@@ -5,7 +5,7 @@ keys**. The `weather_briefing` tool takes a city name and runs a **three-step fl
 
 Capability slots: HTTP connector authoring, ordered fulfilment flows, query/response mapping,
 **list-returning connector output** (a connector that returns a live, variable-length array), and
-sandboxed compute.
+sandboxed compute, including an explicit least-privilege per-operation response-size bound.
 
 1. **`geo.search`** → geocode the city to coordinates (Open-Meteo Geocoding API)
 2. **`forecast.current`** → fetch current weather for those coordinates (Open-Meteo Forecast API)
@@ -30,6 +30,9 @@ It exercises, in one TypeScript-authored app:
 - **A list-returning connector + compute narrowing** — `geo.search_list` binds the whole `results`
   array; `places.narrow` reduces each element to `{ id, label }` and normalizes the no-results case
   to `[]`.
+- **A per-operation transport bound** — `search_list` sets
+  `limits: { maxResponseBytes: 256 * 1024 }`, tightening this known-small endpoint below the 1 MiB default.
+  Raise a limit only when representative evidence proves the required raw response is larger.
 - **Sandboxed compute** (no network/fs/env/clock) turning raw numbers into conditions + advice.
 - **Typed input/output schemas** emitted as JSON Schema 2020-12.
 

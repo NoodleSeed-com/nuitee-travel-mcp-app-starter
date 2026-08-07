@@ -111,6 +111,24 @@ pagination: {
 response: { tasks: '${response.items}' },
 ```
 
+### Bound exceptional response sizes
+
+HTTP operations default to a 1 MiB decoded-response limit. Narrow the upstream query, paginate, or
+reduce the requested dataset before raising it; a `response` mapping runs only after the raw body is
+buffered. When representative evidence proves one operation legitimately needs more, grant only that
+operation the required bytes, up to the 3 MiB authoring maximum:
+
+```ts
+search: {
+  type: 'read', method: 'GET', path: '/search',
+  limits: { maxResponseBytes: 3 * 1024 * 1024 },
+  // input / output / response omitted
+},
+```
+
+The inclusive limit counts decoded streamed bytes. `response_too_large` is a safe structured reason;
+never copy a response body, header, URL, credential, or upstream error prose into user-visible output.
+
 ### Create, update, delete
 
 Pair the read/list with the mutations your intent tools need:

@@ -26,4 +26,15 @@ describe('weather example', () => {
     expect(wire).toContain('search_list');
     expect(wire).toContain('narrow');
   });
+
+  it('demonstrates an explicit least-privilege response-size bound', () => {
+    const catalog = app.toConnectorCatalog();
+    const geocoding = catalog?.connectors.find(
+      (candidate) => candidate.id === 'open_meteo_geocoding',
+    );
+
+    expect(geocoding?.operations.search_list?.limits).toEqual({
+      maxResponseBytes: 256 * 1024,
+    });
+  });
 });

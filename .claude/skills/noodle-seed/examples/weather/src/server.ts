@@ -44,6 +44,8 @@ const geocoding = connector('open_meteo_geocoding')
         method: 'GET',
         path: '/v1/search',
         query: ['name', 'count'],
+        // This endpoint is intentionally small; tighten its allowance below the 1 MiB default.
+        limits: { maxResponseBytes: 256 * 1024 },
         input: z.object({ name: z.string(), count: z.number().optional() }),
         output: z.object({ results: z.array(z.unknown()).optional() }),
         response: {

@@ -38,6 +38,7 @@ vi.mock('../src/helpers.js', async () => {
     Feedback: ({ children, status }: { readonly children?: unknown; readonly status?: string }) =>
       createElement('div', { 'data-status': status }, children),
     Field: container,
+    Form: ({ children }: { readonly children?: unknown }) => createElement('form', null, children),
     HandoffButton: button,
     QuantityStepper: container,
     ShellNav: container,
@@ -71,6 +72,7 @@ vi.mock('../src/helpers.js', async () => {
     useUpdateModelContext: () => () => Promise.resolve(),
     useViewState: <T>(_key: string, initial: T) => [initial, () => undefined] as const,
     useWidgetLifecycle: () => () => Promise.resolve(),
+    useWidgetReady: () => true,
     View: container,
     ViewStack: container,
   };
@@ -183,5 +185,6 @@ describe('food-ordering invoking result states', () => {
     });
     expect(text).toContain('Search stores');
     expect(text).toContain('Harbor Noodles');
+    expect(document.querySelector('form')).not.toBeNull();
   });
 });

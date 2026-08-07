@@ -3,7 +3,7 @@ name: embedding-mcp-assistants
 description: "Use when embedding a Noodle assistant into an existing SaaS or web application with browser, identity, session, and credential boundaries."
 ---
 
-<!-- noodle-skill version:0.60.0 hash:cc54a67f21c0ecdb -->
+<!-- noodle-skill version:0.62.0 hash:cc54a67f21c0ecdb -->
 
 # embedding-mcp-assistants
 

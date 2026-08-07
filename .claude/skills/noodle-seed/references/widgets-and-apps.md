@@ -34,6 +34,7 @@ Author views as React components. `generateHelpers<ServerDefinition>()` (from `@
 
 | Hook | Use for |
 | :-- | :-- |
+| `useWidgetReady` | Report when the standard MCP Apps bridge has connected; keep tool-backed controls disabled (or render loading) until this returns `true`. |
 | `useToolInfo` | Read the complete invoking tool result: treat `{}` as pending, handle `isError`, validate every required `structuredContent` field and identifier, reject malformed success data, and render dependent actions only after validation succeeds. |
 | `useCallTool` | Call a tool from the widget — returns `{ status, callTool, callToolAsync, data, structuredContent, error, reset }`; target a model-visible tool or a hidden `tool` helper. |
 | `useViewState` | Persist per-widget UI state across re-renders and restores: `const [value, setValue] = useViewState("key", initial)`. |
@@ -47,7 +48,7 @@ Author views as React components. `generateHelpers<ServerDefinition>()` (from `@
 | `useAppFlow` | Manage named widget views with persisted params and back-stack state: `const flow = useAppFlow({ initialView, views })`. |
 | `useHandoff` | Open server-created HTTP(S) handoff URLs through the host with status/error state; domain policy still comes from `handoff.allowedDomains`. |
 
-Bind interactive elements to tools (`useCallTool("place_order")`), drive named views with `useAppFlow(...)`, open server-created handoffs with `useHandoff()`, and publish one compact, safe, cohesive snapshot with `useUpdateModelContext()` when `useLayout().supports?.modelContext` is true. Every model-context or lifecycle publication replaces the prior snapshot rather than merging fields, so include everything the model should still know. Calling `useWidgetLifecycle("name")` automatically publishes `mounted`, listens for host `cancelled` and `dismissed`, and returns a publisher for author-owned `submitted` or app-specific milestones; `mounted` is not proof that the host presented pixels. Both hooks use the standard MCP Apps model-context channel, not a host-specific API. These updates affect future model context but do not start a model turn. When an explicit user submit/cancel should receive an immediate reply, also call `useSendFollowUpMessage()` from that user action. `data-llm` may remain a DOM inspection hint, but it is not the bidirectional model-state contract. Use `createViewStore("key", initial)` for multi-component widget state such as carts, filters, or drafts. Use the domain-neutral React components from `@noodleseed/one/react` (`AppShell`, `ShellNav`, `ViewStack`, `AsyncBoundary`, `ActionBar`, `Field`, `QuantityStepper`, `ChoiceGroup`, `HandoffButton`, and related state components) for rich apps before inventing local shell/control scaffolding. Adapt to the host with `useLayout()` — style for both `theme` values, and keep the inline `displayMode` compact (content fits the space; no internal scrolling). Trigger `useOpenExternal()`, `useHandoff()`, and `useSendFollowUpMessage()` only from explicit user actions. A raw `html` escape hatch exists for self-contained widgets (declarative `data-bind`/`data-action`; no inline `<script>`).
+Bind interactive elements to tools (`useCallTool("place_order")`), keep bridge-backed controls disabled until `useWidgetReady()` is true, drive named views with `useAppFlow(...)`, open server-created handoffs with `useHandoff()`, and publish one compact, safe, cohesive snapshot with `useUpdateModelContext()` when `useLayout().supports?.modelContext` is true. Generated form workflows use the portable `<Form onSubmit={() => void submit()}>` component with a submit button; never use an intrinsic React `<form>` or add browser-navigation `action`, `method`, or `target` attributes. A sandbox can block native activation before React receives `onSubmit`, so `preventDefault()` inside an intrinsic handler is not a portability fix. Standalone actions use an explicit `type="button"` and call the tool from their click handler. In every case the widget calls the standard MCP Apps tool bridge itself — never rely on a host to translate native form submission into a tool call, and never branch on a host name. Every model-context or lifecycle publication replaces the prior snapshot rather than merging fields, so include everything the model should still know. Calling `useWidgetLifecycle("name")` automatically publishes `mounted`, listens for host `cancelled` and `dismissed`, and returns a publisher for author-owned `submitted` or app-specific milestones; `mounted` is not proof that the host presented pixels. Both hooks use the standard MCP Apps model-context channel, not a host-specific API. These updates affect future model context but do not start a model turn. When an explicit user submit/cancel should receive an immediate reply, also call `useSendFollowUpMessage()` from that user action. `data-llm` may remain a DOM inspection hint, but it is not the bidirectional model-state contract. Use `createViewStore("key", initial)` for multi-component widget state such as carts, filters, or drafts. Use the domain-neutral React components from `@noodleseed/one/react` (`AppShell`, `ShellNav`, `ViewStack`, `AsyncBoundary`, `ActionBar`, `Form`, `Field`, `QuantityStepper`, `ChoiceGroup`, `HandoffButton`, and related state components) for rich apps before inventing local shell/control scaffolding. Adapt to the host with `useLayout()` — style for both `theme` values, and keep the inline `displayMode` compact (content fits the space; no internal scrolling). Trigger `useOpenExternal()`, `useHandoff()`, and `useSendFollowUpMessage()` only from explicit user actions. A raw `html` escape hatch exists for self-contained widgets (declarative `data-bind`/`data-action`; no inline `<script>`); use a `data-action` button with `type="button"` instead of native form submission.
 
 ## Worked widget recipe
 
@@ -63,7 +64,7 @@ import type { ServerDefinition } from '@noodleseed/one';
 import { Action, ActionBar, AsyncBoundary, Feedback, Field, Flow, Frame, Region, Select, generateHelpers } from '@noodleseed/one/react';
 
 // One call wires the typed host bridge; destructure only the hooks this view uses.
-const { useToolInfo, useCallTool, useViewState, useLayout, useOpenExternal, useSendFollowUpMessage, useUpdateModelContext, useWidgetLifecycle } =
+const { useToolInfo, useCallTool, useViewState, useLayout, useOpenExternal, useSendFollowUpMessage, useUpdateModelContext, useWidgetLifecycle, useWidgetReady } =
   generateHelpers<ServerDefinition>();
 
 type OrderResult = {
@@ -85,8 +86,9 @@ function isOrderResult(value: unknown): value is OrderResult {
 }
 
 export default function OrderStatus() {
+  const ready = useWidgetReady();
   const toolInfo = useToolInfo('show_order');
-  const isPending = Object.keys(toolInfo).length === 0;
+  const isPending = !ready || Object.keys(toolInfo).length === 0;
   const shown = isOrderResult(toolInfo.structuredContent) ? toolInfo.structuredContent : undefined;
   const placeOrder = useCallTool('place_order'); // calls the widget-only helper tool
   const { supports } = useLayout();
@@ -138,7 +140,7 @@ export default function OrderStatus() {
       </Region>
       {confirmed?.status ? <Feedback status="success">{confirmed.status}</Feedback> : null}
       <ActionBar>
-      <Action variant="primary" pending={placeOrder.isPending} pendingLabel="Placing…"
+      <Action type="button" variant="primary" disabled={!ready} pending={placeOrder.isPending} pendingLabel="Placing…"
         onClick={submitOrder}
       >
         Place order
