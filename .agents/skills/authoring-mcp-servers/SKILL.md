@@ -3,7 +3,7 @@ name: authoring-mcp-servers
 description: "Use when creating or extending a headless Noodle Seed MCP server, tool, resource, prompt, or typed model-facing capability."
 ---
 
-<!-- noodle-skill version:0.62.0 hash:0b2fd8c7e43fc69f -->
+<!-- noodle-skill version:0.63.1 hash:11523cb33b9473c0 -->
 
 # authoring-mcp-servers
 
@@ -33,7 +33,7 @@ Load `references/sdk-surface.md` at `../noodle-seed/references/sdk-surface.md` o
 
 ## Verification evidence
 
-The TypeScript behavior validates and passes local smoke; connector reads also have real-output proof.
+The TypeScript behavior and explicit product-guide decision validate and pass local smoke; connector reads also have real-output proof.
 
 ## Recovery paths
 

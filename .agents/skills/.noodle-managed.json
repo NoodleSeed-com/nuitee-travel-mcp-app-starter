@@ -1,655 +1,667 @@
 {
   "schemaVersion": 1,
-  "packageVersion": "0.62.0",
+  "packageVersion": "0.63.1",
   "target": "codex",
   "files": [
     {
       "path": ".agents/skills/noodle-seed/SKILL.md",
-      "sha256": "b5f5f79e0a0d2fc99fc49ecf9cff83f1e510c2fedf6033fac846b707141feb8c",
+      "sha256": "394e049ed3f0c59deeea4f6289425ac713834832d69e91605a140a9dcaa03d45",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
+    },
+    {
+      "path": ".agents/skills/noodle-seed/references/product-agent-guides.md",
+      "sha256": "fcf503832fa6373822b7aac1ca98649040be675d7b13653ba978a098e371c3bf",
+      "skill": "noodle-seed",
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/sdk-surface.md",
       "sha256": "195d823b972b067e3b10ff86a20a7c616946e9dd229931b505c2ca96050e8b9f",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/cli-commands.md",
       "sha256": "d6ce8eaaa361d58a325bda43f0491450848d067cc4a0a42ab738e463b1249d3d",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/agent-contract.md",
       "sha256": "86169a4ec1cbca09cfadc64b12535db58b373fe3ae19f93dfc1fcced003c98e1",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/compile-errors.md",
-      "sha256": "3d57d504b1872a9fab48569f5b0806bfbaef2fe9df357c62fb76d5efd318420f",
+      "sha256": "70cb2e5027430595c36f66b98aca911679bb2172e0a0c513805d348be02e5314",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/build-an-mcp-server.md",
-      "sha256": "9eaee6a03ac52ea05b08e3270d14f9f1462b381ddd59a8ee4e710ad019f86672",
+      "sha256": "7b785fe464f7daf45fa216d47f6b7a217086759da1a5f8e9c1cbf972fb329b88",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/authoring-workflow.md",
-      "sha256": "515f85308184fa9dd7cc643d3197f119653817ee4a4cfe2611a2673866eac875",
+      "sha256": "4c9fbd2427fc2af3b2048594469fd0f9c94f94f3b1f97f80ceef0e0a40b2a960",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/tool-design.md",
       "sha256": "af21fe6cf2c14dba7c64933fcbda69a1f25d6cf1bbb1eaf44df6afb492d9cfe8",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/embedded-assistant.md",
       "sha256": "8571367d2ec6d1c75dd2cf837ff1f4f7b1e0cb3953c6c8cdf97fd82b653a1281",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/connect-an-api.md",
       "sha256": "436768eb4a2de28443d1e07586ed65949e6012a8c59e883f930b25f7d98d23d8",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/wrap-existing-app.md",
       "sha256": "81bf030c90d461f3912b0984be2e35bba1ecb9187ffb40abebea3a69d56a96bf",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/build-an-mcp-app.md",
-      "sha256": "71b80632a2f87b63849ff44a86ce03f883aaedf2c52441ea1030f343c160dbd3",
+      "sha256": "d03ed9ba8d18f108c63224511e932bdae0f12ebe8fabe84bcb0bbb6b4a6ca16d",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/experience-design.md",
-      "sha256": "1c1708fbefbe720c21d3dabed3e686c8b89e6fc82c8d8ae6f1824b9b7d131701",
+      "sha256": "e2dfc2d8c6f6847f5bc934fb75e18e4e0d5dfaa7dcd237c574118c9d8bdc3cd7",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/widgets-and-apps.md",
       "sha256": "4ca193aaca5c0c39dc183384255ee75556d3988641aeb6f8dd6643e6a4d2c2e7",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/test-in-hosts.md",
       "sha256": "08e44784a0d838c322d443eae6b35d5c75b4252a0975db835ef504535e25584a",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/verify-and-recover.md",
       "sha256": "bf934da69e8989bcdfdd69d232d2e4b5b5b68a4a34f76d75b4b79e935fb53719",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/troubleshooting.md",
       "sha256": "1c202a672eef9c7b86326f841f5a3cc89c9c1bf670e75c286a74076a4ad0d613",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/inspect-hosted.md",
       "sha256": "944ea95b9e9e65c7ff9027b47bbc0c21ca1a81806d4126774cf869eb4b206b93",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/deploy-and-ops.md",
       "sha256": "a027564f5711de6ce903f0d2840aec7d75257e6ae5be8fc4057678c5e2b74f4c",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/publishing.md",
       "sha256": "b8e2ef715b51f70154e1210086cccb9e7165d95cd40a374546482679f355cff8",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/app-directory-compliance.md",
       "sha256": "77a30c9af09c05502c2245795d49e3487a6b1b0c7a70e26aa0996b7d670dfce8",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/examples.md",
       "sha256": "bbb803d792acd7a6129446581de596f46c4945a06e690d5461e18cdc48a8b0a1",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/references/feedback.md",
       "sha256": "f35bf584d6715fcfbb33333fdebaf6a92aa0a57a42f0695e3484e794f0453c2b",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-bistro/README.md",
       "sha256": "b364c7db64afad1788ad321681f7e41bcc5f1c328829adeb12c78601d1522fbb",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-bistro/design/UX-Document.md",
       "sha256": "b4627bbd31764f2432a408efdad3ffeba138ac5bac3ac483afbd97d33f0c37f3",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-bistro/design/api-contract.md",
       "sha256": "52b3a77db550ceb4126f0c3742b23606414a6b75f532f41f56c12d907949e744",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-bistro/design/wireframe.html",
       "sha256": "25bb48e8f2634b6c7fc0a773ca2d5c4678f11f813e96784ac4cf99cb34b84d49",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-bistro/noodle.json",
       "sha256": "02739d45f2a3e4194998c9cfc989a1ba6e8b8d22060b8f5632b1db4aa901cbfa",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-bistro/package.json",
       "sha256": "88c1cd9479b7495466db8aafa6f05eac7a37225439b35e6d68b5e4abec500758",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-bistro/src/helpers.ts",
       "sha256": "14eb08ed1e08d3491fbd8d4974fb2d8c1ffce3ab43c6299abd770fcf464a43f4",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-bistro/src/server.ts",
       "sha256": "9fdb1f4f5eb79024f696f21d3b22c9093f91dfc727ecf5fd9a7b7b585aa80e7a",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-bistro/src/views/menu-cart.tsx",
       "sha256": "0ddece2061805473c6e68e288b33d014d264fc28f82271fa80a443f1aff52d67",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-bistro/src/views/widget-style.css",
       "sha256": "937d4203fd93a0c0ce7038567169110c11f30168d8a81f3c998e1990847b6cf5",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-bistro/test/server.test.ts",
       "sha256": "c56208940de72adeca4a46126e9c4fae557a52144ab567fcdb984774e00869d7",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-bistro/vitest.config.ts",
       "sha256": "c486293ce4a0d38450f61533da17e419ca9fa490ef9577e8404f4fd700797747",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-discovery/README.md",
       "sha256": "c909d5d18a0889b44ce63cb9e02c969243be1bba85454f1181c64809b1160b97",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-discovery/design/UX-Document.md",
       "sha256": "186be2e58210f7dc76a3305b5b7b47357236586a8f5648c3a88f5367933dfa56",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-discovery/design/wireframe.html",
       "sha256": "6b1098c755c0a4bb8d477cec40b6dbf34e12e236dc6b1a7b438ff069bd84ea18",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-discovery/noodle.json",
       "sha256": "aa2a7e03a095b3be9f84834973b620b47f239c541fe2ee3aa816a7a6de95d855",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-discovery/package.json",
       "sha256": "2400d6153c252f209ff685faafb4f3f9648fdbc12a56e3dd8afa14289f8ef4dd",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-discovery/src/helpers.ts",
       "sha256": "f1bc80189424b47a57ab34a9563f28a6512cdab2882d57054dbb2878b5225061",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-discovery/src/server.ts",
       "sha256": "79ec7c32a51021e92827c94f835bb722537716680e34d22ed5115a9ee6126a96",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-discovery/src/views/discovery-carousel.tsx",
       "sha256": "e096b54659b9465151f8d24980eaeac8a7b3eae415b6da6c7df1c3cbf4530447",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-discovery/src/views/widget-style.css",
       "sha256": "e80d9ad956af6c770806314603cdf053992a7eb9b5cf38de3016367ad3c95629",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-discovery/test/server.test.ts",
       "sha256": "046dfcdde513fa867b659c0a1d816c64ef627c79877fccb1ba8d384f8ccd9967",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-discovery/vitest.config.ts",
       "sha256": "c486293ce4a0d38450f61533da17e419ca9fa490ef9577e8404f4fd700797747",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-tasks/README.md",
       "sha256": "3fbc0821badfea43af4aab131d09f7c953095e0d241de7ea5cfcc3491b70fce5",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-tasks/design/UX-Document.md",
       "sha256": "9eb6fda14200bb7a2f67a2b2bb8b2e0b7914c98a7da8e272dc2707110f0ef027",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-tasks/design/wireframe.html",
       "sha256": "be5a9803eaaff93ee0ceb8afadc5dedf1df0c0712fc32b226c441b6d310af39e",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-tasks/noodle.json",
       "sha256": "9db97bc40b40ac9a8367a3ba224dd6484f00429559b46555ef2318dcc68dd628",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-tasks/package.json",
       "sha256": "7b3a7a39e4ac7a741800da00feb4c2d3ad6e2bea2512819b29cac4dfd6c5b7d5",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
+    },
+    {
+      "path": ".agents/skills/noodle-seed/examples/acme-tasks/src/agent-guide.ts",
+      "sha256": "b8641a99cc2f2b7068ed7d2dd8f3770b072cf7c6defc739701bf3534014b4a1e",
+      "skill": "noodle-seed",
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-tasks/src/helpers.ts",
       "sha256": "46d068b09a5d277ddddbac9662779656fe91b2132fad9bf3efb60e6de7336a82",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-tasks/src/server.ts",
-      "sha256": "1569f405e5717df695a09e24e1263c2b645bb4adf65cec338c751e3e436c2341",
+      "sha256": "ecbbca4db06983395069bf0a2851fb29e705709d77d8926f48020b12eecc6ebf",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-tasks/src/views/task-list.tsx",
       "sha256": "7545c47b19e3c000b2f8916b6fa0366c5dae80ef84674ee033633f7c3495dcc7",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-tasks/src/views/widget-style.css",
       "sha256": "6fbfe086d3a3aa9ad0d6f4803cafb52b36b892d7ae0df46206d1678d7e01b0a4",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-tasks/test/server.test.ts",
-      "sha256": "1a6c729cceae3cf5ac5fea9081eb61c686a0a72c8a90539e5b0dee4307a4ff81",
+      "sha256": "9497d0c949002838679df91389fb29c62c25f2d906c970d08370a1af8aa0e303",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/acme-tasks/vitest.config.ts",
       "sha256": "c486293ce4a0d38450f61533da17e419ca9fa490ef9577e8404f4fd700797747",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/customer-auth/README.md",
-      "sha256": "73e04fba20ae34e8b4d9de244c92c91e80731d5f520a29ab53b27d703f4a9bf0",
+      "sha256": "64cd9132380a10b480bde937ddf39d71d9b09fcedc714cce40f4f6ad1b018d42",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/customer-auth/noodle.json",
       "sha256": "15824af8846e8da4f9d14c28216ff95076dfc9f9964fcf127f441d44517d0eea",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/customer-auth/package.json",
       "sha256": "bfbc1e9aa5f3c7f5449a6ade8ff78876f46ce77b7b867f26bdb556edee3171db",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/customer-auth/src/server.ts",
       "sha256": "8d131db5452ea84c4018e48631e4f63f4285043284b7b38b943fe68887054a4c",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/customer-auth/test/server.test.ts",
       "sha256": "1b8df77bdeb4e3fa74c1a11e984a2e86975972907fb505cde5f2f75c40db3d33",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/food-ordering/README.md",
       "sha256": "194ff96f0c168eda14802acf14f164499e4c1f51c66bd5b12c9d2de1be12fd71",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/food-ordering/noodle.json",
       "sha256": "d347e372b767ace863014fdebce1264eef482960b3aca49fdcd9e05cce53f615",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/food-ordering/package.json",
       "sha256": "70fcf7b9f85b8c75eeb52281e495b9810fdf13fa1d70203ed2df730c1fcaff71",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/food-ordering/src/helpers.ts",
       "sha256": "d2f5dedbe1c7e3b8f2d9cfd5b468c62a48c2db534c638f1cf718cdd6957123e5",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/food-ordering/src/server.ts",
       "sha256": "4b05ef02ad6af2bef29465e691aec0bbb0a2bb00f8d59ed188f38d511bed5e19",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/food-ordering/src/views/capabilities-card.tsx",
       "sha256": "972e4b0a41164b0859ec1e910e59ee300f5534b62c71bc2e698e5ed5c5ad5a18",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/food-ordering/src/views/ordering-flow.tsx",
       "sha256": "6b8cd06cb312d88c2114596313efd224b1b79c9f5db548e7bfd68d9fa6c08029",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/food-ordering/src/views/ordering-result.ts",
       "sha256": "1573c9b48fecd57f8e9d71021e402636fa7735baa192bb8c7041a21f703bc1a9",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/food-ordering/src/views/widget-style.css",
       "sha256": "8cea9bbf7f29a7a67a9e9f12011582f137b54fbdfd4f80f2d9c2707d8cc5c8ca",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/food-ordering/test/ordering-flow.test.ts",
       "sha256": "66d7486a507f33dab113220b49d7a157b65dba72ff40a68dd98cae3bb3ed14a6",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/food-ordering/test/server.test.ts",
       "sha256": "6819457eed88b302d8369a24dc22581066d25c9092dca3a1141366665e246e52",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/food-ordering/vitest.config.ts",
       "sha256": "d1c579d0987aeb67fc08a351f81c619eb02cadbd664ed77b8bab00573acc768a",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/gmail-multi-account/README.md",
       "sha256": "eeee6f15435702d24131f7d7e64b05e41fe65cd467bd7b37d97a0c6aa2af46a6",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/gmail-multi-account/noodle.json",
       "sha256": "9f3c9cb28f0ff26757e022fecdc9bcaa008e77bbccc6949df0cc879af5ebf166",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/gmail-multi-account/package.json",
       "sha256": "d0fb8fd281954915e105d1949e079ff9919e04204da520fd7b41c6320750e467",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/gmail-multi-account/src/server.ts",
       "sha256": "6049de32933531888955b36808d97ef51289667826482aae25ec6404981c30b9",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/gmail-multi-account/test/server.test.ts",
       "sha256": "b248a6fbda6e7d30aadd316e4e244aff963ca4a31fcd08977675ef6653ad0ff5",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/gmail-multi-account/vitest.config.ts",
       "sha256": "29acd34abc3452647c912d06b55a27f6600a4fe42b68d94b3ea822d34bfe3842",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/google-bigquery/README.md",
       "sha256": "44322fca7c50e43bbc67a9cffa985e7918dde87b0ba99ee39c64f0869f71e9d5",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/google-bigquery/noodle.json",
       "sha256": "66b26e70d81f3aa8330d2aef30a356f1b911db029eba5441aeca3911fa1e6b36",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/google-bigquery/package.json",
       "sha256": "a0c6bd5dea7c579285b8ab737d6c893d960451ef75d26546c5d393eade87e118",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/google-bigquery/src/server.ts",
       "sha256": "e7497ec6f45020367e2b11874e19a5f749317bfdc2acfe5b24d6c3401745e937",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/google-bigquery/test/server.test.ts",
       "sha256": "feb43be4a59b25f16f984095e3df7b930f6a6730147eed01d6bdd1cfdf63d5a7",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/google-bigquery/vitest.config.ts",
       "sha256": "5f03aa24fa3d1e014a82ab8d4cbd3c1267f9e2848c79632b3a21780e193f2765",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/hello/README.md",
       "sha256": "3708759190695344a8b907d3b8ae6d5f19ffb28163697fcbd0386d28a55b65d3",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/hello/noodle.json",
       "sha256": "2ef3943687fc17169a69a2386d8409ff54b7dc74747bc31d3e33dc2ffb1ea2d6",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/hello/package.json",
       "sha256": "422a2b86ee49b166fd9183b7133b4c0115ed01cfb10c124ab5718cf6132fd3b1",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/hello/src/server.ts",
       "sha256": "59d3a37ed0d0c1b28c04e30b9abd957604d62975aafab17c82af65e8a545aa5a",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/hello/test/server.test.ts",
       "sha256": "4de4932d95a920f4e5fd78fc58f3583285aab3c3a97a3c1417f8a863ee05aa98",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/weather/README.md",
       "sha256": "5fe82d3633927e8310c4fb2e7b8d7377832ed89c643b44dc4a92d08b91fcf5a1",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/weather/noodle.json",
       "sha256": "39d12536ede4cb5d4ed2bda559d9dcb40168b8a106ecafc25b35fa3c407191a2",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/weather/package.json",
       "sha256": "1e662adec53c6af347bdd1e94d235106e815b02304ab3278b00b81f9b11e7859",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/weather/src/server.ts",
       "sha256": "710ae6a06accef0441c3cd8c05691a13ad2a98b2c933369d896826698b7b5003",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/noodle-seed/examples/weather/test/server.test.ts",
       "sha256": "1b1762725f852859506519012dfa2af1e4ca2b5317d0db1e097032ab01b93da1",
       "skill": "noodle-seed",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/designing-mcp-products/SKILL.md",
-      "sha256": "1d5b3fbfd4856eac7cc79671601c1f94a8b8ece643349246309906dc9d14b130",
+      "sha256": "58bec36cf44bbe173eaee1dce71110765b706df2ca87ae182a84590bc8e45681",
       "skill": "designing-mcp-products",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/wrapping-existing-applications/SKILL.md",
-      "sha256": "d7c03ea1d1a8accb5fa8c6d4903fceac9e60b4286e1af0b4de285a7ab6f489cd",
+      "sha256": "246cc7675ac9d5c0eb317fa67ca5cd812c500e56357a9e1b94d3c6f3de661d21",
       "skill": "wrapping-existing-applications",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/authoring-mcp-servers/SKILL.md",
-      "sha256": "83cfd6f6c96b35432dc68ef42fd5a67c380d77d7390b4a18daa9c5a8635ad1c4",
+      "sha256": "4b3aca002c7e8afbe53aef0aadb4c1f6a550e7ad08ab83fcde61454e267acb1c",
       "skill": "authoring-mcp-servers",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/connecting-apis-to-mcp/SKILL.md",
-      "sha256": "96a24f2d8222166b05aa0a16d8db30a267b9e4c8a9e1ac4b94b9dcbb191db8ae",
+      "sha256": "b6a09e540f182e2b5be3d07f4f5f5181156fc1ff425209e8448cac066f74caa3",
       "skill": "connecting-apis-to-mcp",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/building-mcp-apps/SKILL.md",
-      "sha256": "599af680c216787e76ed674380e8f83a8482b76962ed5039cac1a8a86f9e09c9",
+      "sha256": "a86971032d0c3e056befb25354ac3eeb8069cd63697a729e88840d19efa44ab6",
       "skill": "building-mcp-apps",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/embedding-mcp-assistants/SKILL.md",
-      "sha256": "387df6dba7e682db52683408e070e33d3ef4c839e14b5782f902de7d747b11e8",
+      "sha256": "b689d1712321e45a338c7ea49fb05c4558cfb3b091f7dd94e8b2cf8f5bb0d74a",
       "skill": "embedding-mcp-assistants",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/verifying-mcp-delivery/SKILL.md",
-      "sha256": "bb2ae606b7d8ed7517f0fa5c8295215ff67295f611fe75da354638224a52fb06",
+      "sha256": "b9ab98e64ac1d38578db2abe94f982b8b5f65f089d757c9b8324b5cdef99dd86",
       "skill": "verifying-mcp-delivery",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/debugging-mcp-delivery/SKILL.md",
-      "sha256": "f010ada568e34f0fbdeb75fb9e3a235642352dff20dedd37c2f8e0aceccc1430",
+      "sha256": "fed177b8db2d7cb4aa68382435e357619cb54c877289e8708a60a89577e2d800",
       "skill": "debugging-mcp-delivery",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/deploying-mcp-services/SKILL.md",
-      "sha256": "ae3a1f2ec225cf2fbae7114e0294f65ccef27990e49871e1b23b040ece5a4e87",
+      "sha256": "119485bec22d8a4464b36b5d2e2ede4d22de32c1e6e5949ae9a5eb2fcbd1b7c0",
       "skill": "deploying-mcp-services",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/publishing-mcp-integrations/SKILL.md",
-      "sha256": "c20f0772c9dfa0308004d536e84ddf9abdce1a7a80e5fc643309b06306ff5e28",
+      "sha256": "81ed9d40fc689d2b308296c480b817c61ee1bda96887c6a2e72d0eb6369a93d4",
       "skill": "publishing-mcp-integrations",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/reporting-noodle-feedback/SKILL.md",
-      "sha256": "82b1513f4b49e9146dd921ad30981f34dee7b1343c2330eeee7e843dc5358d72",
+      "sha256": "963981129d2cf73ef7fbecf085b669f73bb6c5865c6fd6724c11672bd2a355a7",
       "skill": "reporting-noodle-feedback",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     },
     {
       "path": ".agents/skills/executing-noodle-plans/SKILL.md",
-      "sha256": "c415a1220e74328899ea1354b2c210a275f54738fae09a090895626b1b8bf3b9",
+      "sha256": "2a2a4e21ea0091975a8f35211aaa527a570d94e296883ea9499e90de9bf80513",
       "skill": "executing-noodle-plans",
-      "skillVersion": "0.62.0"
+      "skillVersion": "0.63.1"
     }
   ]
 }

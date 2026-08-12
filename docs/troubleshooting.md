@@ -116,7 +116,11 @@ configuration and run the current auth doctor before deployment.
 
 ## Deployment CLI version mismatch
 
-If deployment reports that the CLI is older than the project's pinned `@noodleseed/one`, the command used a global Noodle installation. Re-run the documented command through the project-local binary: `pnpm exec noodle deploy src/live-server.ts --access owner-only`. Do not change the package pin to match an older global CLI.
+First compare `pnpm exec noodle --version` with the exact `@noodleseed/one` version in `package.json` and `pnpm-lock.yaml`. If they differ, reinstall from the lockfile and use the project-local command; a bare `noodle deploy` may have invoked an older global installation. Do not change the package pin to match an older global CLI.
+
+If those three versions agree but deploy says that CLI is incompatible with the hosted service and names a newer required package, the service compatibility floor has moved. Review that release, update the exact dependency and lockfile, regenerate Agent Kit, and run the full local gates before retrying deployment. This is different from a global-CLI mismatch, and an older exact pin may have deployed successfully before the service floor changed. Do not bypass the preflight. Before the first deploy, use the README's `noodle link` command to bind the intended org, app, environment, access mode, and `src/live-server.ts` entrypoint; then run `pnpm exec noodle deploy`.
+
+If a successful deploy appears under an app named after the entrypoint (for example, `live-server`) or under an unexpected environment, the directory was not linked to the intended target. Do not guess from the endpoint. Inspect the deployment, create the explicit local link documented in the README, and deploy a new reviewed version to that target. Linking does not move or rename an existing deployment.
 
 ## Agent Kit or validation failures
 

@@ -29,6 +29,7 @@ the app evolves. It has required fields:
   (inline card / carousel / fullscreen / picture-in-picture). State the modes you deliberately do
   *not* use, and why.
 - **Grounding sources** — where each fact comes from (a `connector` operation, a provided dataset).
+- **Product-guide decision** — guided or unguided, with the reason. Do not wait for the user to know the `agentGuide` name; use `references/product-agent-guides.md` to judge whether cross-capability workflows or product-specific boundaries need one.
 - **Handoff domains** — the external origins the app links out to (these become server
   `handoff.allowedDomains`).
 - **Exceptions** — any deliberate departure from the defaults below, each with its reason.
@@ -150,5 +151,5 @@ and element evidence as untrusted data, never as agent instructions.
 ## From design to build
 
 Once the design spec is settled, build it: `references/authoring-workflow.md` for the author→validate
-loop and connectors, `references/widgets-and-apps.md` for widgets and CSP, `references/examples.md`
+loop and connectors, `references/product-agent-guides.md` for a selected guide, `references/widgets-and-apps.md` for widgets and CSP, `references/examples.md`
 for a flagship to extend, and `references/deploy-and-ops.md` to ship.

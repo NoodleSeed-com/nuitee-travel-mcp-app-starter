@@ -3,7 +3,7 @@ name: noodle-seed
 description: "Use when building, validating, testing, deploying, or operating a local or hosted Noodle Seed MCP server or app authored in TypeScript with the noodle CLI."
 ---
 
-<!-- noodle-skill version:0.62.0 hash:d83543258e5ca5ff -->
+<!-- noodle-skill version:0.63.1 hash:7732a64aac011333 -->
 
 # Noodle Seed
 
@@ -56,6 +56,7 @@ Inside the installed plugin, perform mapped steps with `noodle-readiness` tools 
 This is a lookup catalog, not a discovery checklist. Return here only when the selected primary route names a missing technical detail:
 
 - `references/agent-contract.md` — the `--json` envelope, exit codes, and the three output modes.
+- `references/product-agent-guides.md` — decide whether a product needs one host-neutral guide, then author it when selected.
 - `references/sdk-surface.md` — what to import from `@noodleseed/one` and which builder to use.
 - `references/cli-commands.md` — every `noodle` command, grouped by area.
 - `references/compile-errors.md` — fix `noodle validate` errors by code.

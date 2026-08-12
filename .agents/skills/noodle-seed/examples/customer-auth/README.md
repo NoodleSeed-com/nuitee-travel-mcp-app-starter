@@ -60,6 +60,13 @@ const api = connector('noodleseed_app_api')
   });
 ```
 
+`delegatedTokenExchange` consumes a verified customer caller; an MCP access mode does not create one. The
+server must declare `customerAuth.*(...)` or `embeddedAssistant(...)` so Noodle Seed can establish the caller
+subject, issuer, and audience. Otherwise `noodle validate`, `noodle auth doctor`, and deploy fail early with
+`delegated_token_exchange_identity_required`, before secrets are resolved or any connector egress. A
+successful local Devtools exchange is not evidence that the hosted server has an identity source. Devtools
+supplies a separate, loopback-only local identity context that is never accepted by hosted deployment.
+
 At both connector and operation level, auth must be omitted or use `delegatedTokenExchange`. The compiler
 validates the concrete connector definition emitted from TypeScript, including connector defaults and
 operation overrides, and reports the exact failing auth path and kind. Do not keep a bearer, API-key,

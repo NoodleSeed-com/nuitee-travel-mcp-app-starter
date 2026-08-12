@@ -1,4 +1,5 @@
 import { annotations, server, tool, z } from '@noodleseed/one';
+import { ACME_TASKS_AGENT_GUIDE } from './agent-guide.js';
 
 // Acme Tasks is a fictional productivity app. It is a two-way (read + write) experience rather than a
 // top-of-funnel handoff: the top-3 prioritized user flows all complete in chat — Capture, Prioritize,
@@ -43,6 +44,7 @@ export default server(
   {
     title: 'Acme Tasks',
     version: '1.0.0',
+    agentGuide: ACME_TASKS_AGENT_GUIDE,
     // ChatGPT's stateless MCP lane cannot carry Noodle's standard confirmation form. Keep
     // confirm:true for capable/embedded hosts, but explicitly trust native host approval there.
     interactions: { confirmationFallback: 'host' },

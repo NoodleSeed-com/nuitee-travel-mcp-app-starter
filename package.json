@@ -22,7 +22,7 @@
     "agent:commands": "noodle commands --json"
   },
   "devDependencies": {
-    "@noodleseed/one": "0.107.1",
+    "@noodleseed/one": "0.114.0",
     "vitest": "4.1.10",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",

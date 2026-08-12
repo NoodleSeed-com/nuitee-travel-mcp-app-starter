@@ -87,12 +87,24 @@ Local proof and hosted proof are separate. After local search and verification p
 ```sh
 pnpm exec noodle validate src/live-server.ts --json
 pnpm exec noodle login
-pnpm exec noodle deploy src/live-server.ts --access owner-only
+
+# One-time local link. Replace YOUR_ORG_SLUG with the slug shown by Noodle.
+pnpm exec noodle link \
+  --org YOUR_ORG_SLUG \
+  --app nuitee-travel-mcp-app-starter \
+  --env dev \
+  --access owner-only \
+  --entrypoint src/live-server.ts \
+  --save local
+
+pnpm exec noodle deploy
 pnpm exec noodle open --print
 pnpm exec noodle connect chatgpt
 ```
 
-Always use the pinned project-local CLI through `pnpm exec noodle`. A bare `noodle deploy` may invoke an older global installation and correctly fail the deploy preflight when its CLI version does not match the project's pinned `@noodleseed/one` version.
+Always use the pinned project-local CLI through `pnpm exec noodle`. A bare `noodle deploy` may invoke an older global installation and correctly fail the deploy preflight when its CLI version does not match the project's pinned `@noodleseed/one` version. The hosted service can also raise its minimum compatible CLI version; in that case even the correctly pinned local CLI fails closed and names the required version. Treat that as a reviewed dependency update: inspect the release guidance, update the exact pin and lockfile, regenerate Agent Kit, and rerun every gate below. Do not bypass the compatibility check.
+
+The local link is deliberate: without an explicit link or deploy target, the CLI may infer the app slug from the entrypoint filename (for example, `live-server`) and use a different environment than intended. Confirm the printed org, app, environment, access mode, and entrypoint before approving a deploy.
 
 The interactive deploy preflight identifies missing cloud configuration. Configure `NUITEE_API_KEY` as the deployment's server-side secret; do not assume the local `.env` has been uploaded, and do not put the key in ChatGPT. `owner-only` is the safe initial test access. ChatGPT Developer mode uses the public HTTPS MCP endpoint printed after deployment.
 
@@ -160,7 +172,7 @@ Branding, tool descriptions, normalization fields, widget composition, and futur
 
 ## Updating Noodle Seed safely
 
-`@noodleseed/one` is pinned exactly to `0.107.1`. Dependabot opens reviewable dependency pull requests monthly; nothing auto-merges. For a manual Noodle update:
+`@noodleseed/one` is pinned exactly to `0.114.0`. Dependabot opens reviewable dependency pull requests monthly; nothing auto-merges. For a manual Noodle update:
 
 1. Compare the registry version and release guidance.
 2. Update the exact package pin and regenerate `pnpm-lock.yaml`.

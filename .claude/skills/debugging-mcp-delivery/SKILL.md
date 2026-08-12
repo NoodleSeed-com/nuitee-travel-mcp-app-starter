@@ -3,7 +3,7 @@ name: debugging-mcp-delivery
 description: "Use when an existing Noodle Seed MCP project has a concrete validation, runtime, connector, App, host, deployment, or production failure."
 ---
 
-<!-- noodle-skill version:0.62.0 hash:aa715bae12041d7c -->
+<!-- noodle-skill version:0.63.1 hash:aa715bae12041d7c -->
 
 # debugging-mcp-delivery
 

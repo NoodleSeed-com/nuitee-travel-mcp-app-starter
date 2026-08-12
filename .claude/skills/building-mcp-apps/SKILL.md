@@ -3,7 +3,7 @@ name: building-mcp-apps
 description: "Use when a Noodle Seed MCP App, widget, interactive card, visual interaction, or host-visible UI is the primary requested outcome."
 ---
 
-<!-- noodle-skill version:0.62.0 hash:f7fa54992c8d7692 -->
+<!-- noodle-skill version:0.63.1 hash:9fd67d4d24328e15 -->
 
 # building-mcp-apps
 
@@ -33,7 +33,7 @@ Load `references/widgets-and-apps.md` at `../noodle-seed/references/widgets-and-
 
 ## Verification evidence
 
-The App passes validation, local smoke, app checks, and the requested preview or host evidence level.
+The App records its product-guide decision and passes validation, local smoke, app checks, and the requested preview or host evidence level.
 
 ## Recovery paths
 

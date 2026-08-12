@@ -24,8 +24,37 @@ describe('acme-tasks example', () => {
     const manifest = await app.toManifest();
     const completeTask = manifest.tools.find((candidate) => candidate.name === 'complete_task');
     const addTask = manifest.tools.find((candidate) => candidate.name === 'add_task');
+    const setPriority = manifest.tools.find((candidate) => candidate.name === 'set_priority');
 
     expect(completeTask?.annotations?.confirm).toBe(true);
     expect(addTask?.annotations).not.toHaveProperty('confirm');
+    expect(setPriority?.visibility).toEqual(['app']);
+  });
+
+  it('teaches its three product workflows through one host-neutral agent guide', async () => {
+    const manifest = await app.toManifest();
+    const guide = manifest.server.agentGuide;
+
+    expect(guide?.workflows.map((workflow) => workflow.id)).toEqual([
+      'review_tasks',
+      'capture_task',
+      'complete_task',
+    ]);
+    expect(
+      guide?.workflows.flatMap((workflow) => workflow.steps.map((step) => step.capability.name)),
+    ).toEqual(expect.arrayContaining(['list_today', 'set_priority', 'add_task', 'complete_task']));
+    expect(
+      guide?.workflows
+        .find((workflow) => workflow.id === 'review_tasks')
+        ?.steps.map((step) => step.capability.name),
+    ).toContain('set_priority');
+    expect(
+      guide?.examples.every((example) =>
+        guide.workflows.some((workflow) => workflow.id === example.workflow),
+      ),
+    ).toBe(true);
+    expect(guide?.boundaries.some((boundary) => boundary.toLowerCase().includes('confirm'))).toBe(
+      true,
+    );
   });
 });

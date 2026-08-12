@@ -74,3 +74,10 @@ Run `noodle validate` (add `--json` for the machine-readable envelope, `--fix-pr
 | `customer_endpoint_routing_inconsistent` | Regenerate the connector catalog so every action route includes all of its ordinary customer endpoint dependencies. |
 | `unused_connector_alias` | A declared connector alias is never called; remove the unused `use` entry or wire it into a tool. |
 | `arg_mismatch` | A connector call is missing or adds arguments; match the operation signature under `expected`/`got`. |
+| `agent_guide_invalid` | Correct the product guide shape in `server(..., { agentGuide })` using non-empty bounded prose and symbolic references. |
+| `agent_guide_duplicate_workflow` | Give every `agentGuide.workflows` entry a unique lowercase underscore id. |
+| `agent_guide_duplicate_example` | Keep each agent-guide prompt and workflow pairing unique. |
+| `agent_guide_example_workflow_missing` | Point the example workflow at an existing `agentGuide.workflows` id. |
+| `agent_guide_capability_missing` | Correct the capability kind/name in `server(..., { agentGuide })` to a declared MCP capability. |
+| `agent_guide_capability_kind` | Correct the capability kind/name in `server(..., { agentGuide })` to match its declared MCP capability. |
+| `app_package_sensitive_content` | Remove the credential value; reference managed config by name only. |

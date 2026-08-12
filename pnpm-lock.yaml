@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@noodleseed/one':
-        specifier: 0.107.1
-        version: 0.107.1
+        specifier: 0.114.0
+        version: 0.114.0
       '@types/react':
         specifier: 19.2.18
         version: 19.2.18
@@ -38,8 +38,8 @@ packages:
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
 
-  '@noodleseed/one@0.107.1':
-    resolution: {integrity: sha512-5jRp0WvrQkG2I/6910rzpJ2SpgUez9aqHygaE42VPBw4/RH09S4OztkjRu9jrXoHvVP8lKmE3h2TZ3l8CCMYfg==}
+  '@noodleseed/one@0.114.0':
+    resolution: {integrity: sha512-bx2alE2KycjSd0CxDPG63ANlyW8/JHM8b5NG+Ga/Xtw4jlEzlzn3jLjPgOM6A4GP7ROX0bcaHOefucyCBnAZ4A==}
     engines: {node: '>=24'}
     hasBin: true
     bundledDependencies:
@@ -58,6 +58,7 @@ packages:
       - '@modelcontextprotocol/sdk'
       - '@modelcontextprotocol/server'
       - '@noodle-borg/agent-kit'
+      - '@noodle-borg/app-package'
       - '@noodle-borg/auth'
       - '@noodle-borg/authoring'
       - '@noodle-borg/capabilities'
@@ -65,7 +66,9 @@ packages:
       - '@noodle-borg/compute'
       - '@noodle-borg/connector-defs'
       - '@noodle-borg/connector-http'
+      - '@noodle-borg/control-plane'
       - '@noodle-borg/developer-mcp'
+      - '@noodle-borg/devtools-ui'
       - '@noodle-borg/external-credential-provider'
       - '@noodle-borg/module'
       - '@noodle-borg/module-audit'
@@ -453,8 +456,8 @@ packages:
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
-  nanoid@3.3.17:
-    resolution: {integrity: sha512-xQLf0A3HOMlgHq0n247/LRuAOYmB7dXJ/DvAxGvsSBij45XtBSmQycu+F8ODbHwns/XyFZagyL1+J0Offw1E0g==}
+  nanoid@3.3.18:
+    resolution: {integrity: sha512-DTg4MJbGMWkfi6VZFdNt2/caMbQy4Ou+Op/hJQvGEWcnVfoA1QA+xzRKAzw9jD6+GVOOeYr/mIcuDSdug6F6+w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
@@ -614,7 +617,7 @@ snapshots:
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
 
-  '@noodleseed/one@0.107.1': {}
+  '@noodleseed/one@0.114.0': {}
 
   '@oxc-project/types@0.143.0': {}
 
@@ -805,7 +808,7 @@ snapshots:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  nanoid@3.3.17: {}
+  nanoid@3.3.18: {}
 
   obug@2.1.4: {}
 
@@ -817,7 +820,7 @@ snapshots:
 
   postcss@8.5.26:
     dependencies:
-      nanoid: 3.3.17
+      nanoid: 3.3.18
       picocolors: 1.1.1
       source-map-js: 1.2.1
 

@@ -23,14 +23,15 @@ Before implementation, capture a short design spec: target user, conversational 
 2. **Agree on the design spec.** Describe the smallest complete experience and its states before writing the component. Avoid recreating a full dashboard or website inside the conversation.
 3. **Define the output boundary.** Keep concise facts and action results model-visible. Put presentation-heavy or interactive widget data in the widget-only channel. The model must not depend on opaque UI state to continue the conversation.
 4. **Preserve fallback.** Every tool that launches a widget must still return useful text without the widget, so unsupported hosts and failed rendering remain usable.
-5. **Author and wire the App contract.** Follow `references/widgets-and-apps.md` for the canonical component guidance, view registration, hooks, state, CSP, tool visibility, and output shaping. Keep tool effects and confirmation semantics correct independently of the UI.
-6. **Validate the local artifact.** Run `noodle validate --json`, `noodle test --json`, and `noodle check --json`. Repair failures at the layer that produced them.
-7. **Inspect the experience.** Run `noodle devtools` and verify loading, empty, error, success, responsive layout, focus/keyboard behavior, and the text fallback.
-8. **Escalate evidence only on request.** Run a host test only when the user requested host verification. Run host-specific compliance only when preparing that host submission; select the exact host-testing or compliance entry from the router lookup catalog only after that evidence level is explicitly requested.
+5. **Decide product-guide coverage.** Record the required product-guide decision and its reason, then use `references/product-agent-guides.md` as the canonical selection and authoring guidance.
+6. **Author and wire the App contract.** Follow `references/widgets-and-apps.md` for the canonical component guidance, view registration, hooks, state, CSP, tool visibility, and output shaping. Keep tool effects and confirmation semantics correct independently of the UI.
+7. **Validate the local artifact.** Run `noodle validate --json`, `noodle test --json`, and `noodle check --json`. Repair failures at the layer that produced them.
+8. **Inspect the experience.** Run `noodle devtools` and verify loading, empty, error, success, responsive layout, focus/keyboard behavior, and the text fallback.
+9. **Escalate evidence only on request.** Run a host test only when the user requested host verification. Run host-specific compliance only when preparing that host submission; select the exact host-testing or compliance entry from the router lookup catalog only after that evidence level is explicitly requested.
 
 ## Verification evidence
 
-- **Product:** the design spec states the user benefit and the UI fit decision.
+- **Product:** the design spec states the user benefit, UI fit decision, and product-guide decision with its reason.
 - **Server:** `noodle validate --json` and `noodle test --json` succeeded.
 - **App contract:** `noodle check --json` succeeded.
 - **Local UX:** `noodle devtools` exercised the relevant states and the useful text fallback without the widget.

@@ -6,7 +6,7 @@ The implementation is complete through offline/static gates plus prior owner-aut
 
 | Decision | Resolution |
 | --- | --- |
-| Package | Pin `@noodleseed/one` exactly to `0.107.1`; regenerate the lockfile and Agent Kit on every update. |
+| Package | Pin `@noodleseed/one` exactly to `0.114.0`; regenerate the lockfile and Agent Kit on every update. |
 | Operational scope | Flights search and fare verification only. |
 | API contract | Current official Nuitee Flights OpenAPI is source of truth; prose informs workflow and ambiguity notes. |
 | Entry points | Credential-free `src/server.ts`; managed-secret live composition `src/live-server.ts`. |
@@ -31,7 +31,7 @@ Dependencies: none.
 5. Scope Vitest to `test/**/*.{test,spec}.{ts,tsx}`.
 6. Run the untouched baseline. Record and stop on failure.
 
-Correction outcome: the reviewed scaffold failure was narrowly corrected by pinning the approved exact package, regenerating the lock, refreshing Agent Kit, and removing the active embedded-assistant block from the default server. The repository now resolves exact `0.107.1`; the generated Codex and Claude instructions identify Agent Kit `0.62.0`, and `noodle agents doctor --json` reports both targets current with no restart required. The corrected baseline requires neither a provider nor assistant-model credential.
+Correction outcome: the reviewed scaffold failure was narrowly corrected by pinning the approved exact package, regenerating the lock, refreshing Agent Kit, and removing the active embedded-assistant block from the default server. The repository now resolves exact `0.114.0`; the generated Codex and Claude instructions identify Agent Kit `0.63.1`, and `noodle agents doctor --json` reports both targets current with no restart required. The corrected baseline requires neither a provider nor assistant-model credential.
 
 ## Phase 1 — primary-source and reference audit (complete)
 
@@ -212,7 +212,7 @@ Classification: application contract mismatch, not a Noodle or Nuitee defect. A 
 
 Tracking: Noodle feedback `fb-957`; [GitHub issue #4](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/4).
 
-Running an exact-version initializer historically produced a manifest containing `"latest"`. The original `0.103.1` run resolved `0.100.0`; a `0.104.1` recheck on 2026-08-05 resolved `0.102.1`. On 2026-08-06, an exact `npx @noodleseed/one@0.105.0 init` still wrote `"@noodleseed/one": "latest"`; the untouched pnpm install resolved `0.104.2` under the active minimum-release-age policy even though npm's `latest` dist-tag was `0.105.0`. The current repository independently pins exact `0.107.1`, regenerated the lockfile, and verifies manifest/installed/lock agreement instead of assuming the historical initializer behavior is fixed.
+Running an exact-version initializer historically produced a manifest containing `"latest"`. The original `0.103.1` run resolved `0.100.0`; a `0.104.1` recheck on 2026-08-05 resolved `0.102.1`. On 2026-08-06, an exact `npx @noodleseed/one@0.105.0 init` still wrote `"@noodleseed/one": "latest"`; the untouched pnpm install resolved `0.104.2` under the active minimum-release-age policy even though npm's `latest` dist-tag was `0.105.0`. The current repository independently pins exact `0.114.0`, regenerated the lockfile, and verifies manifest/installed/lock agreement instead of assuming the historical initializer behavior is fixed.
 
 Classification: Noodle Seed developer experience, not Nuitee or application code.
 

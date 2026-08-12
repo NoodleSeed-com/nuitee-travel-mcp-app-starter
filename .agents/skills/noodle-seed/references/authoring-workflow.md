@@ -4,6 +4,7 @@
 
 - Input paths
 - Fit check
+- Product-guide decision
 - Repair loop
 - Connectors
 - HTTP connector example (full server)
@@ -27,6 +28,10 @@
 ## Fit check
 
 Before building, confirm the idea fits a conversational surface: 1–3 focused actions where saying it beats clicking, plus data or actions the model lacks on its own. Poor fits — long-form or static content, dashboards, deep multi-step navigation, or a full app port. When an idea does not fit, narrow the scope to the actions that do.
+
+## Product-guide decision
+
+Before authoring, record whether the product is guided or unguided and why. Do not wait for the user to name `agentGuide`; load `references/product-agent-guides.md` for the canonical decision criteria and TypeScript shape whenever product-level workflow guidance may add value.
 
 ## Repair loop
 
@@ -229,6 +234,8 @@ Role values are trusted only from the explicitly configured claim path (or the p
 ## Delegated downstream auth (call your API as the signed-in user)
 
 Use delegated connector auth when the downstream API must enforce its own per-user authorization — a shared service credential plus a forwarded user id would bypass it. Three shapes exist; pick by who owns the downstream:
+
+`delegatedTokenExchange` consumes a verified customer caller; an MCP access mode does not create one. The server must declare `customerAuth.*(...)` or `embeddedAssistant(...)` so Noodle can establish the caller subject, issuer, and audience. Otherwise `noodle validate`, `noodle auth doctor`, and deploy fail early with `delegated_token_exchange_identity_required`, before secrets are resolved or any connector egress. A successful local Devtools exchange is not evidence that the hosted server has an identity source. Devtools supplies a separate, loopback-only local identity context that is never accepted by hosted deployment.
 
 - **`delegatedTokenExchange`** — your own API. The platform signs a short-lived, verifiable assertion of the signed-in user and exchanges it at a token endpoint you implement (RFC 8693). It works with verified customer OIDC identities and the built-in Firebase/Microsoft adapters; no per-user OAuth enrollment. Embedded-assistant sessions can bind customer-routed connectors when the authenticated embedding backend resolves each route from server-owned tenancy data and passes it during session exchange. Browser input, page context, session claims, and tool arguments cannot supply or override that private route authority.
 - **`delegatedOAuth` with `provider: "firebase" | "microsoft"`** — Noodle-managed bridge providers using stored per-user refresh tokens. Requires the matching `customerAuth` bridge; any other provider string is the compile error `unsupported_delegated_provider`.
