@@ -280,6 +280,103 @@ describe('FlightResults', () => {
     expect(html).toContain('16:00');
   });
 
+  it('makes round-trip direction and stop details scannable without opening fare details', () => {
+    const roundTripWithStop = {
+      ...itinerary,
+      arrivalTime: '2030-04-20T14:20:00+02:00',
+      durationMinutes: 530,
+      stops: 1,
+      legs: [
+        {
+          direction: 'OUTBOUND' as const,
+          route: { origin: 'QZX', destination: 'QZY' },
+          departureTime: '2030-04-20T09:00:00+02:00',
+          arrivalTime: '2030-04-20T14:20:00+02:00',
+          durationMinutes: 320,
+          stops: 1,
+        },
+        {
+          direction: 'INBOUND' as const,
+          route: { origin: 'QZY', destination: 'QZX' },
+          departureTime: '2030-04-27T16:00:00+02:00',
+          arrivalTime: '2030-04-27T19:30:00+02:00',
+          durationMinutes: 210,
+          stops: 0,
+        },
+      ],
+      segments: [
+        {
+          origin: 'QZX',
+          destination: 'QZH',
+          destinationName: 'Cedar Junction Test Airport',
+          departureTime: '2030-04-20T09:00:00+02:00',
+          arrivalTime: '2030-04-20T11:00:00+02:00',
+          direction: 'OUTBOUND' as const,
+          durationMinutes: 120,
+          carrier: itinerary.carrier,
+          flightNumber: '101',
+        },
+        {
+          origin: 'QZH',
+          originName: 'Cedar Junction Test Airport',
+          destination: 'QZY',
+          departureTime: '2030-04-20T12:20:00+02:00',
+          arrivalTime: '2030-04-20T14:20:00+02:00',
+          direction: 'OUTBOUND' as const,
+          durationMinutes: 120,
+          carrier: itinerary.carrier,
+          flightNumber: '202',
+        },
+        {
+          origin: 'QZY',
+          destination: 'QZX',
+          departureTime: '2030-04-27T16:00:00+02:00',
+          arrivalTime: '2030-04-27T19:30:00+02:00',
+          direction: 'INBOUND' as const,
+          durationMinutes: 210,
+          carrier: itinerary.carrier,
+          flightNumber: '303',
+        },
+      ],
+    };
+    const html = renderToStaticMarkup(
+      <FlightResultsView
+        result={{ status: 'success', itineraries: [roundTripWithStop], fallback: 'Round trip', message: 'Round trip', retrievedAt: itinerary.retrievedAt }}
+        displayMode="inline"
+        onVerify={vi.fn()}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    expect(html).toMatch(/<h4[^>]*>.*Outbound.*<\/h4>/);
+    expect(html).toMatch(/<h4[^>]*>.*Return.*<\/h4>/);
+    expect(html).toContain('1 stop');
+    expect(html).toContain('Nonstop');
+    expect(html).toContain('Layover at <strong>Cedar Junction Test Airport (QZH)</strong>');
+    expect(html).toContain('1h 20m');
+    expect(html.indexOf('Cedar Junction Test Airport (QZH)')).toBeLessThan(html.indexOf('Return'));
+    expect(html.indexOf('1 stop')).toBeLessThan(html.indexOf('Flight and fare details'));
+  });
+
+  it('shows that layover detail is unavailable instead of inventing a stop location', () => {
+    const stoppedWithoutSegments = {
+      ...itinerary,
+      stops: 1,
+      legs: [{ ...itinerary.legs[0], stops: 1 }],
+    };
+    const html = renderToStaticMarkup(
+      <FlightResultsView
+        result={{ status: 'success', itineraries: [stoppedWithoutSegments], fallback: 'One stop', message: 'One stop', retrievedAt: itinerary.retrievedAt }}
+        displayMode="inline"
+        onVerify={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain('1 stop');
+    expect(html).toContain('Layover details were not provided.');
+    expect(html).not.toContain('Layover at');
+  });
+
   it('fails closed on malformed nested tool results and verification data', () => {
     const validResult = { status: 'success', itineraries: [itinerary], fallback: 'One flight', message: 'One flight', retrievedAt: itinerary.retrievedAt };
     expect(isSearchOutput(validResult)).toBe(true);
