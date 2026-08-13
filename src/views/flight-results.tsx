@@ -219,6 +219,29 @@ function airportLabel(route: Itinerary['route'], side: 'origin' | 'destination')
   return name ? `${name} (${code})` : code;
 }
 
+function stopLabel(stops: number) {
+  if (stops === 0) return 'Nonstop';
+  return `${stops} stop${stops === 1 ? '' : 's'}`;
+}
+
+function layoverDuration(arrivalTime: string, departureTime: string) {
+  const arrival = Date.parse(arrivalTime);
+  const departure = Date.parse(departureTime);
+  const minutes = Math.round((departure - arrival) / 60_000);
+  return Number.isFinite(minutes) && minutes >= 0 && minutes <= 10_080 ? duration(minutes) : undefined;
+}
+
+function layoversForDirection(itinerary: Itinerary, direction: Itinerary['legs'][number]['direction']) {
+  const segments = itinerary.segments.filter((segment) => segment.direction === direction);
+  return segments.slice(1).flatMap((segment, index) => {
+    const previous = segments[index];
+    if (!previous || previous.destination !== segment.origin) return [];
+    const airport = segment.originName ? `${segment.originName} (${segment.origin})` : segment.origin;
+    const wait = layoverDuration(previous.arrivalTime, segment.departureTime);
+    return [{ airport, wait }];
+  });
+}
+
 function carrierInitials(carrier: Itinerary['carrier']) {
   if (carrier.code !== '—') return carrier.code.slice(0, 3);
   return carrier.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
@@ -307,19 +330,36 @@ function resultStatus(state: ResultsState, theme: 'light' | 'dark', brandStyle?:
 function RouteTimeline({ itinerary }: { readonly itinerary: Itinerary }) {
   return (
     <div className="cc-leg-list">
-      {itinerary.legs.map((leg) => (
-        <section className="cc-leg" aria-label={`${leg.direction === 'OUTBOUND' ? 'Outbound' : 'Return'} ${leg.route.origin} to ${leg.route.destination}`} key={leg.direction}>
-          <div className="cc-leg-heading">
-            <strong><PlaneIcon />{leg.direction === 'OUTBOUND' ? 'Outbound' : 'Return'}</strong>
-            <span>{airportLabel(leg.route, 'origin')} → {airportLabel(leg.route, 'destination')}</span>
-          </div>
-          <div className="cc-schedule">
-            <div><span><ClockIcon />Departs</span><strong>{flightTime(leg.departureTime)}</strong></div>
-            <div><span><ClockIcon />Arrives</span><strong>{flightTime(leg.arrivalTime)}{leg.dayChange ? ` · +${leg.dayChange} day` : ''}</strong></div>
-            <div><span><RouteIcon />Journey</span><strong>{duration(leg.durationMinutes)} · {leg.stops === 0 ? 'Nonstop' : `${leg.stops} stop${leg.stops === 1 ? '' : 's'}`}{leg.overnight ? ' · Overnight' : ''}</strong></div>
-          </div>
-        </section>
-      ))}
+      {itinerary.legs.map((leg) => {
+        const direction = leg.direction === 'OUTBOUND' ? 'Outbound' : 'Return';
+        const layovers = layoversForDirection(itinerary, leg.direction);
+        return (
+          <section className="cc-leg" aria-label={`${direction} ${leg.route.origin} to ${leg.route.destination}`} key={leg.direction}>
+            <div className="cc-leg-heading">
+              <div>
+                <h4><PlaneIcon />{direction}</h4>
+                <p>{airportLabel(leg.route, 'origin')} → {airportLabel(leg.route, 'destination')}</p>
+              </div>
+              <strong className={`cc-stop-badge ${leg.stops === 0 ? 'cc-stop-badge-direct' : ''}`}>{stopLabel(leg.stops)}</strong>
+            </div>
+            <div className="cc-schedule">
+              <div><span><ClockIcon />Departs</span><strong>{flightTime(leg.departureTime)}</strong></div>
+              <div><span><ClockIcon />Arrives</span><strong>{flightTime(leg.arrivalTime)}{leg.dayChange ? ` · +${leg.dayChange} day` : ''}</strong></div>
+              <div><span><RouteIcon />Travel time</span><strong>{duration(leg.durationMinutes)}{leg.overnight ? ' · Overnight' : ''}</strong></div>
+            </div>
+            {leg.stops > 0 ? (
+              <div className="cc-layover-summary" aria-label={`${direction} layover details`}>
+                {layovers.length > 0 ? layovers.map((layover, index) => (
+                  <p key={`${leg.direction}-${index}-${layover.airport}`}>
+                    <span>Layover at <strong>{layover.airport}</strong></span>
+                    {layover.wait ? <span className="cc-layover-duration">{layover.wait}</span> : null}
+                  </p>
+                )) : <p><span>Layover details were not provided.</span></p>}
+              </div>
+            ) : null}
+          </section>
+        );
+      })}
     </div>
   );
 }
