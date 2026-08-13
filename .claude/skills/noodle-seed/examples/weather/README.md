@@ -32,7 +32,8 @@ It exercises, in one TypeScript-authored app:
   to `[]`.
 - **A per-operation transport bound** — `search_list` sets
   `limits: { maxResponseBytes: 256 * 1024 }`, tightening this known-small endpoint below the 1 MiB default.
-  Raise a limit only when representative evidence proves the required raw response is larger.
+  The authoring ceiling is 6 MiB, but grant only the bytes representative evidence proves this operation
+  needs.
 - **Sandboxed compute** (no network/fs/env/clock) turning raw numbers into conditions + advice.
 - **Typed input/output schemas** emitted as JSON Schema 2020-12.
 

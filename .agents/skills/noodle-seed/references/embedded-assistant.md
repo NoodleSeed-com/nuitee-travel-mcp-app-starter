@@ -39,7 +39,9 @@ Before choosing code, ask the user which experience belongs in the existing prod
 
 ## Author and validate
 
-Use the same server tools in the embed; do not create a second tool set. Declare one server-level brand kit and an assistant configuration:
+`noodle init` and `noodle init --template widget` deliberately produce credential-free MCP Apps. Add an assistant declaration only when the product explicitly includes a customer-hosted assistant; do not make ordinary external-host widgets depend on model-provider settings.
+
+Use the same server tools in the embed; do not create a second tool set. Declare one server-level brand kit and an assistant configuration. `access` decides who may open a session, so choose it before anything else — `authenticatedWebsite(...)` for an in-app embed, `publicWebsite(...)` for a marketing page, or both:
 
 ```ts
 branding: { name: "Acme", accent: "#3157D5" },
@@ -50,12 +52,55 @@ assistant: embeddedAssistant({
     model: variable("ASSISTANT_MODEL"),
     apiKey: secret("ASSISTANT_MODEL_API_KEY"),
   }),
-  allowedOrigins: ["http://localhost:3000", "https://app.example.com"],
+  access: authenticatedWebsite({
+    origins: ["http://localhost:3000", "https://app.example.com"],
+  }),
   layout: { mode: "floating", position: "bottom-right" },
 }),
 ```
 
-`allowedOrigins` are exact origins: scheme, host, and optional port, with no path, trailing slash, or wildcard. Production origins must be HTTPS; plain HTTP is accepted only for loopback development origins (`http://localhost:<port>`, `http://127.0.0.1:<port>`). `noodle dev` serves the MCP project, not the embedding SaaS.
+Origins are exact: scheme, host, and optional port, with no path, trailing slash, or wildcard. Production origins must be HTTPS; plain HTTP is accepted only for loopback development origins (`http://localhost:<port>`, `http://127.0.0.1:<port>`). `noodle dev` serves the MCP project, not the embedding SaaS.
+
+### Surfaces: one assistant, every front door
+
+A product usually has more than one front door — a marketing site and a signed-in app. One assistant (one brand, one model, one UI) projects onto both; pass `access` an array and each surface owns its own origins and allowlist:
+
+```ts
+access: [
+  publicWebsite({
+    origins: ["https://www.example.com"],
+    capabilities: [answerProductQuestion, requestDemo],
+  }),
+  authenticatedWebsite({
+    origins: ["https://app.example.com"],
+    sessionClaims: { plan: { exposeToModel: true } },
+  }),
+],
+```
+
+At most one public surface (`public` or `mixed`) and at most one authenticated surface, and no origin may appear on two surfaces — otherwise "which projection is this request?" would be ambiguous. Each gets its own embed snippet, budget, and kill switch.
+
+`publicWebsite` is for a page with no signed-in user. The visitor is an **anonymous principal**, not an empty user: there is no `${user}`, no roles, no scopes, no customer routing, and no delegated credentials. A tool that needs identity — because it reads `${user}` or declares an `authorization` requirement — cannot be projected to a `public` surface, and the compiler says so.
+
+A public surface **must** declare `capabilities`: the exact positive allowlist it may reach. It is required by the type, and it is the whole externally reachable surface — a reviewer should read it in one screenful. Anything absent stays private, and a capability added to the server later is excluded until someone lists it. `authenticatedWebsite` may also take `capabilities` to narrow the in-app surface; omitted, it projects the whole server.
+
+### Mixed surfaces: let a visitor sign in mid-conversation
+
+Add `signIn: true` to a public surface when some capabilities need a signed-in user. The surface becomes `mixed`: anonymous visitors start immediately, and an identity-dependent capability becomes a **sign-in trigger** rather than a compile error — the same shape ChatGPT and Claude use for connectors that work with or without a linked account.
+
+```ts
+access: publicWebsite({
+  origins: ["https://www.example.com"],
+  capabilities: [answerProductQuestion, requestDemo, myOrders],
+  signIn: true,   // `myOrders` reads ${user}; visitors sign in to reach it
+}),
+```
+
+Elevation runs through the **host application’s own login**, never a Noodle-operated one: the page signs the visitor in and its backend exchanges that verified user for an elevated session on the same conversation. Do not build a second identity provider for this.
+
+A connector-backed side effect needs **two** independent declarations to be reachable from a public or mixed surface: inclusion in `capabilities` **and** `{ confirm: true }` on the operation. Signing in proves who the visitor is; it does not pre-authorize an effect, so confirmation still applies on a mixed surface. Confirmation is never authentication or business authorization — the customer backend still owns payload validation, abuse controls, and idempotency. Local or session-only widget state needs no confirmation.
+
+Origin is a browser boundary, never bot authentication — scripts can reproduce an allowed `Origin` header. Do not tell a user that origins protect a public embed; the real controls are the capability allowlist, confirmation, admission limits, and the per-surface daily budget.
 
 Run:
 
@@ -278,6 +323,25 @@ To make the *downstream API call itself* run as the signed-in user (your API enf
 ## The session response
 
 The exchange returns the versioned Embedded Assistant v1 contract. `token`, `expiresAt`, and `endpoints.turns` / legacy `endpoints.toolConfirmations` (absolute URLs) are always present; current services add `endpoints.interactions` for accept/decline/cancel. `configuration` is optional theming data. Forward the body unchanged; browser clients choose the advertised endpoint. Do not rebuild, filter, or rewrite the response.
+
+## Mount a public website surface
+
+A `publicWebsite` surface has no backend exchange, because it has no embed secret to protect. `noodle deploy` provisions a non-secret embed id and prints the snippet; the page presents that id directly and receives an anonymous session. Do not build a session route for a public surface — there is nothing for it to hold.
+
+```html
+<script src="https://cloud.noodleseed.dev/v1/assistant/embed.js"
+        data-embed-id="pub_7f2q4k9x" async></script>
+```
+
+The script derives its service origin from its own `src`, so one snippet works unchanged in every environment. In a React application, mount `<NoodleAssistant embedId="pub_7f2q4k9x" />` instead. `embedId` and `sessionEndpoint` are mutually exclusive: an embed id beside a backend endpoint is a mistake, and the client refuses rather than guessing which transport was meant.
+
+The embed id is safe in page source and stable across deploys — paste it once; redeploy and rollback swap the projection under a page that never changes. Never treat it as a credential, and never put a client secret on a public page.
+
+Tell the operator the two commands that matter: `noodle assistant embeds list` shows each surface with its live origins, capabilities, and today's spend against its cap; `noodle assistant budget set --turns-per-day 0` is the kill switch and stops conversations already under way. Raising the cap serves visitors again. Prefer it to revoking an embed, which destroys the pasted id.
+
+A public surface is capped per day, so a visitor can meet an exhausted budget. The widget renders that calmly and offers no retry; do not add one. If the embedding page sets a Content-Security-Policy, it must allow the Noodle service origin in `script-src` (the embed script), `connect-src` (session and turns), and `frame-src` (widget sandbox) — a blocked `script-src` runs no widget code at all, so nothing can report it from the page.
+
+Run `noodle check --target embedded-assistant` before deploying a public surface: it lists exactly what a stranger can reach and warns when no `privacyUrl` is declared.
 
 ## Choose a browser renderer
 

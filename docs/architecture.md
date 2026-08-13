@@ -42,7 +42,7 @@ The split exists because an active HTTP connector resolves its managed secret be
 2. The compute gateway applies relationship validation using the server-authoritative local date.
 3. The gateway calls the allowlisted `search` operation once. It cannot accept an origin, URL, path, method, or header.
 4. The HTTP connector sends the exact JSON `legs` request to `POST /flights/rates`, injecting `X-API-Key` from the managed secret.
-5. Search alone permits up to 3 MiB at the connector and application parsing boundaries. The gateway then flattens bounded `data[].journeys[]`, accepts one valid offer per itinerary, normalizes at most ten, and keeps an optional airline image only from the exact Nuitee Flights asset allowlist.
+5. Search alone permits up to 6 MiB at the connector and application parsing boundaries. The gateway then flattens bounded `data[].journeys[]`, accepts one valid offer per itinerary, normalizes at most ten, and keeps an optional airline image only from the exact Nuitee Flights asset allowlist.
 6. Each provider offer ID becomes a private selection record. The public itinerary receives only an application-issued `sel_…` identifier.
 7. The tool replaces the caller's `flight_selections` state using revision control and a 30-minute TTL.
 8. The result exposes at most three itineraries inline; the same FlightResults component may show up to ten when the host reports fullscreen display mode.

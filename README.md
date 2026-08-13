@@ -172,7 +172,7 @@ Branding, tool descriptions, normalization fields, widget composition, and futur
 
 ## Updating Noodle Seed safely
 
-`@noodleseed/one` is pinned exactly to `0.114.0`. Dependabot opens reviewable dependency pull requests monthly; nothing auto-merges. For a manual Noodle update:
+`@noodleseed/one` is pinned exactly to `0.116.0`. Dependabot opens reviewable dependency pull requests monthly; nothing auto-merges. For a manual Noodle update:
 
 1. Compare the registry version and release guidance.
 2. Update the exact package pin and regenerate `pnpm-lock.yaml`.
@@ -185,7 +185,7 @@ Branding, tool descriptions, normalization fields, widget composition, and futur
 
 No source license has been selected. Public distribution is blocked until the owner approves and adds one. Host-specific browser evidence, a credentialed sandbox/error-shape smoke by the repository owner, a recheck of deliberately unassigned fixture codes, and dependency/license review are also required before calling a release production-ready.
 
-Live one-way search and same-session fare verification previously passed for a bounded sandbox route. `@noodleseed/one` 0.107 added an operation-specific response-size limit; this starter applies 3 MiB only to flight search and now proves with hermetic tests that an approximately 2.85 MiB response reaches bounded normalization. Fare verification keeps the smaller 750,000-byte application limit. A later owner-authorized live attempt returned a sanitized `invalid_request`, so the representative large live route still needs a successful recheck before its mapping is claimed as live evidence. Nuitee documents no result limit or pagination contract.
+Live one-way search and same-session fare verification previously passed for a bounded sandbox route. A complete owner-authorized round-trip response later measured 4,960,533 decoded bytes, above the former 3 MiB operation ceiling. `@noodleseed/one` 0.116 raises the opt-in per-operation maximum to 6 MiB; this starter applies that ceiling only to flight search and proves the measured response class reaches bounded normalization hermetically. Fare verification keeps the smaller 750,000-byte application limit and no widened connector limit. The 6 MiB configuration still needs a successful live mapping recheck after deployment. Nuitee documents no result limit or pagination contract.
 
 The 0.107 airport recheck was inconclusive: the direct control received one redirect and a small HTML response rather than the expected JSON, while the connector produced no mapped result or observable public upstream cause. That does not reproduce a connector-only defect because the direct control did not succeed. `find_airports` remains omitted until the current official endpoint and equivalent direct/connector requests both pass safely.
 

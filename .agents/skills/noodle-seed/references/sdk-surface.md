@@ -53,6 +53,7 @@ Platform helper connectors are explicit subpath imports from `@noodleseed/one/pl
 
 ### Other
 
+- `authenticatedWebsite`
 - `clientCredentials`
 - `customerEndpoint`
 - `embeddedAssistant`
@@ -60,6 +61,7 @@ Platform helper connectors are explicit subpath imports from `@noodleseed/one/pl
 - `gmailConnector`
 - `managedSecret`
 - `openAICompatible`
+- `publicWebsite`
 
 ## Authoring signatures
 

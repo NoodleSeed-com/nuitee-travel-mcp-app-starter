@@ -116,12 +116,12 @@ response: { tasks: '${response.items}' },
 HTTP operations default to a 1 MiB decoded-response limit. Narrow the upstream query, paginate, or
 reduce the requested dataset before raising it; a `response` mapping runs only after the raw body is
 buffered. When representative evidence proves one operation legitimately needs more, grant only that
-operation the required bytes, up to the 3 MiB authoring maximum:
+operation the required bytes, up to the 6 MiB authoring maximum:
 
 ```ts
 search: {
   type: 'read', method: 'GET', path: '/search',
-  limits: { maxResponseBytes: 3 * 1024 * 1024 },
+  limits: { maxResponseBytes: 6 * 1024 * 1024 },
   // input / output / response omitted
 },
 ```

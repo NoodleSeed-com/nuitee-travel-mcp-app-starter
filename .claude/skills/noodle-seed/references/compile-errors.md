@@ -67,6 +67,9 @@ Run `noodle validate` (add `--json` for the machine-readable envelope, `--fix-pr
 | `customer_endpoint_mapping_required` | Add the endpoint key at the cited auth routing path; every direct/federated issuer must map every customer endpoint used by the app. |
 | `customer_endpoint_unknown_mapping` | Remove the unknown or unused auth routing key, or use that exact declared `customerEndpoint` key from a reachable connector operation. |
 | `customer_endpoint_bridge_unsupported` | Replace the Firebase/Microsoft bridge with direct or federated OIDC before using auth-derived customer connector endpoints. |
+| `assistant_capability_unknown` | Name a tool, resource, or prompt this server declares in `embeddedAssistant({ capabilities })`, or remove the entry; capabilities reference declared components, not arbitrary names. |
+| `assistant_public_user_reference` | Remove the `${user...}` reference from this tool or drop it from the public assistant `capabilities`; a public website visitor is anonymous, so there is no signed-in user to read. |
+| `assistant_public_effect_unconfirmed` | Add `annotations.readOnly()` if this projected tool only reads, or `{ confirm: true }` if it causes an external effect; a public assistant never reaches an unconfirmed side effect. |
 | `customer_endpoint_action_unsupported` | Set exact `annotations.confirm: true` on the enclosing tool, or keep the customer-routed operation read-only; action hints alone do not enable confirmation. |
 | `customer_endpoint_surface_unsupported` | Move the customer-routed call into a tool fulfilment; routed resources, prompts, and ambient providers are unsupported. |
 | `customer_endpoint_credential_source_unsupported` | Remove the manifest connection binding; a customer-routed connector uses its declared delegated token exchange auth or no auth. |

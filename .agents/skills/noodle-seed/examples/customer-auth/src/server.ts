@@ -1,5 +1,6 @@
 import {
   annotations,
+  authenticatedWebsite,
   connector,
   customerAuth,
   customerEndpoint,
@@ -113,11 +114,13 @@ export default server(
         apiKey: secret('ASSISTANT_MODEL_API_KEY'),
       }),
       // Production origins are exact HTTPS; http://localhost:<port> is allowed for local development.
-      allowedOrigins: [
-        'https://app.noodleseed.com',
-        'https://dev.noodleseed.com',
-        'http://localhost:3000',
-      ],
+      access: authenticatedWebsite({
+        origins: [
+          'https://app.noodleseed.com',
+          'https://dev.noodleseed.com',
+          'http://localhost:3000',
+        ],
+      }),
       layout: { mode: 'floating', position: 'bottom-right', panelWidth: 420 },
       labels: {
         welcomeHeading: 'How can I help with Noodle Seed?',

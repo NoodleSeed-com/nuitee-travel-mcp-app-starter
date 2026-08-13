@@ -3,7 +3,7 @@ name: noodle-seed
 description: "Use when building, validating, testing, deploying, or operating a local or hosted Noodle Seed MCP server or app authored in TypeScript with the noodle CLI."
 ---
 
-<!-- noodle-skill version:0.63.1 hash:7732a64aac011333 -->
+<!-- noodle-skill version:0.65.0 hash:13ddce01769caae4 -->
 
 # Noodle Seed
 
@@ -19,13 +19,14 @@ If the request is unrelated to the Noodle MCP surface, stop here: follow the pro
 
 Choose exactly one primary route from the user outcome below, then load the selected sibling skill and hand off the request. Read that primary reference in full; read supporting references only when the sibling or observed evidence requires them. Do not reread the corpus or restart discovery after the handoff.
 
-Apply this precedence when wording overlaps: concrete failure evidence takes the debugging route; an MCP App/UI outcome takes the App route; an existing application with no stable, usable API or specification takes `wrapping-existing-applications`; only when all four API-evidence inputs exist—an API base URL, authentication scheme, representative safe read, and observed response—use `connecting-apis-to-mcp`; missing, stale, inaccessible, undocumented-only, or otherwise unusable evidence remains in `wrapping-existing-applications`; both integration routes take precedence over generic server building; hosted inspection is debugging read-only; hosted mutation requires the explicitly requested deployment route.
+Apply this precedence when wording overlaps: concrete failure evidence takes the debugging route; an explicit request to create, revise, regenerate, or recover an app product skill takes `creating-product-agent-guides`; an MCP App/UI outcome takes the App route; an existing application with no stable, usable API or specification takes `wrapping-existing-applications`; only when all four API-evidence inputs exist—an API base URL, authentication scheme, representative safe read, and observed response—use `connecting-apis-to-mcp`; missing, stale, inaccessible, undocumented-only, or otherwise unusable evidence remains in `wrapping-existing-applications`; both integration routes take precedence over generic server building; hosted inspection is debugging read-only; hosted mutation requires the explicitly requested deployment route.
 
 Negative routing examples: “Inspect hosted logs/status” → `inspect-hosted` (read-only). “Prepare for deployment” → the applicable build or verification route and stop with a handoff; preparation does not authorize `link`, hosted config, deployment, rollback, host writes, or submission. “Keep this local” → a build or verification route, never a hosted route.
 
 | User outcome | Load sibling skill | Canonical playbook | Done when |
 | :--- | :--- | :--- | :--- |
 | Turn a vague MCP product idea into a bounded design before implementation | `designing-mcp-products` | `references/experience-design.md` (`references/authoring-workflow.md`) | The product contract identifies the user benefit, model boundary, evidence, and next implementation skill. |
+| Create, revise, regenerate, or recover the product skill for this MCP server | `creating-product-agent-guides` | `references/product-agent-guides.md` (None) | The grounded TypeScript guide and generated-file plan are proven, with each approved write applied explicitly or left pending. |
 | Plan how to wrap an existing application that has no stable usable public API | `wrapping-existing-applications` | `references/wrap-existing-app.md` (`references/authoring-workflow.md`, `references/tool-design.md`) | A sanitized identity-first capability map and repository-scoped implementation plan are presented for approval before mutation. |
 | Create or extend a headless MCP server whose external API contract is already modeled | `authoring-mcp-servers` | `references/build-an-mcp-server.md` (`references/authoring-workflow.md`, `references/sdk-surface.md`) | The requested server behavior is locally validated and tested; connector reads have real-output evidence. |
 | Connect a real API only when all four API-evidence inputs exist: API base URL, authentication scheme, representative safe read, and observed response | `connecting-apis-to-mcp` | `references/connect-an-api.md` (`references/authoring-workflow.md`) | A representative live read returns populated, intentionally mapped fields without exposing credentials. |
@@ -56,7 +57,7 @@ Inside the installed plugin, perform mapped steps with `noodle-readiness` tools 
 This is a lookup catalog, not a discovery checklist. Return here only when the selected primary route names a missing technical detail:
 
 - `references/agent-contract.md` — the `--json` envelope, exit codes, and the three output modes.
-- `references/product-agent-guides.md` — decide whether a product needs one host-neutral guide, then author it when selected.
+- `references/product-agent-guides.md` — decide, interview, propose, prove, preview, and explicitly install one host-neutral product guide.
 - `references/sdk-surface.md` — what to import from `@noodleseed/one` and which builder to use.
 - `references/cli-commands.md` — every `noodle` command, grouped by area.
 - `references/compile-errors.md` — fix `noodle validate` errors by code.

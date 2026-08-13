@@ -82,8 +82,9 @@ noodle open
 
 ## Optional in-product assistant
 
-The same task tools can also sit inside Acme's authenticated web app. Add an `assistant` option to this
-server without creating a second tool set:
+The default SaaS and widget scaffolds are credential-free. When the product deliberately includes an
+assistant, use the existing server tools and add an `assistant` option to the same `server.ts` instead of
+creating a second entrypoint or tool set:
 
 ```ts
 assistant: embeddedAssistant({

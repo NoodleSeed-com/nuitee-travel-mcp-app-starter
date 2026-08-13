@@ -1,4 +1,14 @@
-import { annotations, server, tool, z } from '@noodleseed/one';
+import {
+  annotations,
+  embeddedAssistant,
+  openAICompatible,
+  publicWebsite,
+  secret,
+  server,
+  tool,
+  variable,
+  z,
+} from '@noodleseed/one';
 
 // Acme Getaways is a fictional travel brand. This app is deliberately top-of-funnel: discovery and
 // configuration happen inside ChatGPT; the booking/transaction happens off-app on Acme's own site,
@@ -95,6 +105,97 @@ const destinationOutput = z.object({
   why: z.string(),
 });
 
+const discoverGetaways = tool('discover_getaways', {
+  title: 'Discover getaways',
+  description:
+    'Suggest Acme Getaways destinations for a vibe and month and render a discovery carousel.',
+  annotations: readOnly,
+  input: discoverInput,
+  output: z.object({
+    status: z.string(),
+    vibe: z.string(),
+    month: z.string(),
+    travelers: z.number(),
+    // Bounded list: the curated catalog is fixed and small, and the declared ceiling tells the
+    // model and host the payload cannot grow. `noodle check` reports `tool_design_output_bounds`.
+    options: z.array(destinationOutput).max(20),
+  }),
+  // The carousel presents Acme's curated catalog; the model narrates which fit the stated vibe.
+  // (A tool cannot filter on an input value — that is connector/flow work — so all are returned.)
+  fulfil: ({ input }) => ({
+    status: `Acme Getaways for a ${input.vibe} trip in ${input.month}, ${input.travelers} traveler(s).`,
+    vibe: input.vibe,
+    month: input.month,
+    travelers: input.travelers,
+    options: catalog,
+  }),
+  viewTitle: 'Discover getaways',
+  // ChatGPT host status copy (openai/toolInvocation/*) — required for widget-opening tools.
+  invoking: 'Finding getaways…',
+  invoked: 'Getaways ready',
+  domain: 'https://getaways.acme.example',
+  view: {
+    component: 'discovery-carousel',
+    entry: './views/discovery-carousel.tsx',
+  },
+  viewDescription:
+    'A top-of-funnel discovery carousel: pick a destination, then hand off to Acme to book.',
+  csp: {
+    connectDomains: ['https://acme.example'],
+    resourceDomains: ['https://acme.example'],
+    frameDomains: ['https://acme.example'],
+  },
+});
+
+const createHandoff = tool('create_handoff', {
+  title: 'Create booking handoff',
+  description:
+    'Create the Acme booking deep link for a chosen destination, carrying the configured trip. ' +
+    'Pass the destination id (url-safe slug, e.g. "coral_bay") and its display name.',
+  annotations: openLink,
+  input: z.object({
+    destination: destinationId,
+    destinationName: z.string().min(1),
+    month: monthEnum,
+    travelers: z.number().int().min(1).default(2),
+  }),
+  output: z.object({
+    status: z.string(),
+    destination: z.string(),
+    summary: z.string(),
+    handoffUrl: z.string(),
+  }),
+  // Inline the inputs directly so they substitute at runtime; every value is already url-safe
+  // (id slug, month enum, integer), and `src=chatgpt` is the attribution the partner measures
+  // ChatGPT-sourced conversions on.
+  fulfil: ({ input }) => ({
+    status: `Ready to continue on Acme for ${input.destinationName}.`,
+    destination: input.destination,
+    summary: `${input.destinationName} · ${input.month} · ${input.travelers} traveler(s)`,
+    handoffUrl: `https://book.acme.example/plan?dest=${input.destination}&month=${input.month}&pax=${input.travelers}&src=chatgpt`,
+  }),
+});
+
+const shortlistGetaway = tool('shortlist_getaway', {
+  visibility: ['app'],
+  description: 'Record the traveler’s shortlisted destination from the discovery widget.',
+  annotations: localWrite,
+  input: z.object({
+    destination: z.string(),
+    note: z.string().default(''),
+  }),
+  output: z.object({
+    status: z.string(),
+    destination: z.string(),
+    note: z.string(),
+  }),
+  fulfil: ({ input }) => ({
+    status: `Shortlisted ${input.destination}.`,
+    destination: input.destination,
+    note: input.note,
+  }),
+});
+
 export default server(
   'acme_discovery',
   {
@@ -113,95 +214,23 @@ export default server(
     handoff: {
       allowedDomains: ['https://book.acme.example', 'https://acme.example'],
     },
+    // The same three tools also serve Acme's own marketing site, with no second tool set and no
+    // session backend: a visitor with no account gets the discovery carousel and the booking
+    // handoff. `capabilities` is the whole externally reachable surface — short enough to review in
+    // one glance, and closed by default when a tool is added to the server later.
+    assistant: embeddedAssistant({
+      model: openAICompatible({
+        baseUrl: variable('ASSISTANT_MODEL_BASE_URL'),
+        model: variable('ASSISTANT_MODEL'),
+        apiKey: secret('ASSISTANT_MODEL_API_KEY'),
+      }),
+      access: publicWebsite({
+        origins: ['https://getaways.acme.example'],
+        capabilities: [discoverGetaways, createHandoff, shortlistGetaway],
+      }),
+      layout: { mode: 'floating', position: 'bottom-right' },
+      labels: { welcomeHeading: 'Where would you like to go?' },
+    }),
   },
-  [
-    tool('discover_getaways', {
-      title: 'Discover getaways',
-      description:
-        'Suggest Acme Getaways destinations for a vibe and month and render a discovery carousel.',
-      annotations: readOnly,
-      input: discoverInput,
-      output: z.object({
-        status: z.string(),
-        vibe: z.string(),
-        month: z.string(),
-        travelers: z.number(),
-        // Bounded list: the curated catalog is fixed and small, and the declared ceiling tells the
-        // model and host the payload cannot grow. `noodle check` reports `tool_design_output_bounds`.
-        options: z.array(destinationOutput).max(20),
-      }),
-      // The carousel presents Acme's curated catalog; the model narrates which fit the stated vibe.
-      // (A tool cannot filter on an input value — that is connector/flow work — so all are returned.)
-      fulfil: ({ input }) => ({
-        status: `Acme Getaways for a ${input.vibe} trip in ${input.month}, ${input.travelers} traveler(s).`,
-        vibe: input.vibe,
-        month: input.month,
-        travelers: input.travelers,
-        options: catalog,
-      }),
-      viewTitle: 'Discover getaways',
-      // ChatGPT host status copy (openai/toolInvocation/*) — required for widget-opening tools.
-      invoking: 'Finding getaways…',
-      invoked: 'Getaways ready',
-      domain: 'https://getaways.acme.example',
-      view: {
-        component: 'discovery-carousel',
-        entry: './views/discovery-carousel.tsx',
-      },
-      viewDescription:
-        'A top-of-funnel discovery carousel: pick a destination, then hand off to Acme to book.',
-      csp: {
-        connectDomains: ['https://acme.example'],
-        resourceDomains: ['https://acme.example'],
-        frameDomains: ['https://acme.example'],
-      },
-    }),
-    tool('create_handoff', {
-      title: 'Create booking handoff',
-      description:
-        'Create the Acme booking deep link for a chosen destination, carrying the configured trip. ' +
-        'Pass the destination id (url-safe slug, e.g. "coral_bay") and its display name.',
-      annotations: openLink,
-      input: z.object({
-        destination: destinationId,
-        destinationName: z.string().min(1),
-        month: monthEnum,
-        travelers: z.number().int().min(1).default(2),
-      }),
-      output: z.object({
-        status: z.string(),
-        destination: z.string(),
-        summary: z.string(),
-        handoffUrl: z.string(),
-      }),
-      // Inline the inputs directly so they substitute at runtime; every value is already url-safe
-      // (id slug, month enum, integer), and `src=chatgpt` is the attribution the partner measures
-      // ChatGPT-sourced conversions on.
-      fulfil: ({ input }) => ({
-        status: `Ready to continue on Acme for ${input.destinationName}.`,
-        destination: input.destination,
-        summary: `${input.destinationName} · ${input.month} · ${input.travelers} traveler(s)`,
-        handoffUrl: `https://book.acme.example/plan?dest=${input.destination}&month=${input.month}&pax=${input.travelers}&src=chatgpt`,
-      }),
-    }),
-    tool('shortlist_getaway', {
-      visibility: ['app'],
-      description: 'Record the traveler’s shortlisted destination from the discovery widget.',
-      annotations: localWrite,
-      input: z.object({
-        destination: z.string(),
-        note: z.string().default(''),
-      }),
-      output: z.object({
-        status: z.string(),
-        destination: z.string(),
-        note: z.string(),
-      }),
-      fulfil: ({ input }) => ({
-        status: `Shortlisted ${input.destination}.`,
-        destination: input.destination,
-        note: input.note,
-      }),
-    }),
-  ],
+  [discoverGetaways, createHandoff, shortlistGetaway],
 );

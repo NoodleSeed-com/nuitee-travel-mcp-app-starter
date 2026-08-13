@@ -3,7 +3,7 @@ name: verifying-mcp-delivery
 description: "Use when proving a Noodle Seed MCP project works at a named compile, local, connector, App, host, deployment, or production evidence level."
 ---
 
-<!-- noodle-skill version:0.63.1 hash:6ef6ef551e26b78e -->
+<!-- noodle-skill version:0.65.0 hash:6ef6ef551e26b78e -->
 
 # verifying-mcp-delivery
 

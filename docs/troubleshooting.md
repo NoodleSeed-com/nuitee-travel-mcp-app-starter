@@ -77,9 +77,15 @@ Version one intentionally exposes no `find_airports` tool. The latest equivalent
 
 **Symptom:** `oversized_response` or a connector-level size error.
 
-`@noodleseed/one` 0.107 added an authored `limits.maxResponseBytes` operation setting. This starter applies 3 MiB only to `search`; its application parser uses the same search cap and hermetic coverage proves an approximately 2.85 MiB response reaches bounded normalization. Verification retains a 750,000-byte application cap and no widened connector limit.
+`@noodleseed/one` 0.116 supports an opt-in per-operation maximum of 6 MiB. This starter applies 6 MiB only to `search`; its application parser uses the same search cap and hermetic coverage proves the measured 4,960,533-byte response class reaches bounded normalization. Verification retains a 750,000-byte application cap and no widened connector limit.
 
-Owner-authorized 2026-08-04 probes confirmed a representative YYZ–LIS request returned `200 OK` and the documented Nuitee shape but measured 2.85 MB without filters. A post-fix live attempt returned the sanitized category `invalid_request`, so live response mapping for that representative large route remains unproven even though the former connector-size blocker has a supported application configuration and offline regression. Do not expose raw responses, weaken secret boundaries, bypass the fixed connector with browser fetch, or add undocumented provider parameters.
+Owner-authorized probes confirmed one representative request returned `200 OK` and the documented Nuitee shape at 2.85 MB, while a complete round-trip response reached 4,960,533 decoded bytes. Live response mapping under the new 6 MiB configuration remains unproven even though the application now has matching connector/parser limits and an offline regression. Do not expose raw responses, weaken secret boundaries, bypass the fixed connector with browser fetch, or add undocumented provider parameters.
+
+## Expired selection state
+
+**Symptom:** flight search worked after deployment, then later returned `connector_error (patch_state)`.
+
+The live `flight_selections` handle is caller-scoped and expires after 30 minutes. A fresh deployment currently creates a new state namespace and may temporarily restore the flow, but that is a testing mitigation rather than a fix. Track the starter evidence in [issue #5](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/5) and the platform correction in [Noodle Borg issue #1033](https://github.com/NoodleSeed-com/noodle-borg/issues/1033). Do not extend or remove the TTL and do not bypass expected-revision protection. After a fixed package is released, prove write → expire → fresh write using a hosted short-TTL smoke without redeployment.
 
 ## Malformed or partial response
 
