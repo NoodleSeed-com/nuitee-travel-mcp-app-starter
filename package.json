@@ -22,13 +22,13 @@
     "agent:commands": "noodle commands --json"
   },
   "devDependencies": {
-    "@noodleseed/one": "0.114.0",
-    "vitest": "4.1.10",
+    "@noodleseed/one": "0.116.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "@vitejs/plugin-react": "6.0.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "vite": "8.2.0"
+    "vite": "8.2.0",
+    "vitest": "4.1.10"
   }
 }

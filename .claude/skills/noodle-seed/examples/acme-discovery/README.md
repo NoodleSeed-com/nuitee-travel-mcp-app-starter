@@ -7,9 +7,28 @@ deep link. It pairs a `tool` discovery carousel with a model-visible `create_han
 server-level `handoff.allowedDomains`.
 
 Capability slots: top-of-funnel funnel discipline, discovery carousel widget, `create_handoff` deep-link
-handoff with attribution, `handoff.allowedDomains`, and a worked **design-first** artifact (the UX spec +
-wireframe below). It shows the "design the experience, then build it" flow the `noodle-seed` skill's
-`references/experience-design.md` teaches.
+handoff with attribution, `handoff.allowedDomains`, the **public website assistant surface**, and a worked
+**design-first** artifact (the UX spec + wireframe below). It shows the "design the experience, then build
+it" flow the `noodle-seed` skill's `references/experience-design.md` teaches.
+
+## The same tools on Acme's own website
+
+The funnel does not only start in ChatGPT. The `assistant` block projects these same three tools onto
+Acme's marketing site for a visitor with **no account and no session backend**:
+
+```ts
+access: publicWebsite({
+  origins: ['https://getaways.acme.example'],
+  capabilities: [discoverGetaways, createHandoff, shortlistGetaway],
+}),
+```
+
+There is no second tool set and no second app — one `server.ts`, projected onto another front door.
+`capabilities` is the entire externally reachable surface, so it stays short enough to review at a glance
+and closed by default: a tool added to this server later is unreachable from the website until someone
+lists it. A tool that needed a signed-in user could not be listed here at all (the compiler rejects it);
+serving those to visitors means `publicWebsite({ ..., signIn: true })`, which lets a visitor sign in
+mid-conversation through Acme's own login.
 
 ## Design spec (write this before the code)
 

@@ -25,6 +25,12 @@ function search(overrides: Record<string, unknown> = {}, response: unknown = fic
   return { result, callOperation };
 }
 
+function searchResponseWithEncodedBytes(bytes: number) {
+  const response = { ...fictionalSearchResponse, padding: '' };
+  const fixedBytes = new TextEncoder().encode(JSON.stringify(response)).byteLength;
+  return { ...response, padding: 'x'.repeat(bytes - fixedBytes) };
+}
+
 describe('Nuitee gateway search preparation', () => {
   it('runs in the deterministic compute sandbox without a Date global', () => {
     const sandboxed = gatewayWithoutDate();
@@ -217,9 +223,10 @@ describe('Nuitee gateway normalization', () => {
     expect(search({}, { unexpected: [] }).result.error?.code).toBe('malformed_response');
   });
 
-  it('normalizes a representative 2.85 MB search response and rejects responses over 3 MiB', () => {
-    expect(search({}, { ...fictionalSearchResponse, padding: 'x'.repeat(2_850_000) }).result.status).toBe('success');
-    expect(search({}, { ...fictionalSearchResponse, padding: 'x'.repeat(3 * 1024 * 1024) }).result.error?.code).toBe('oversized_response');
+  it('normalizes a representative 4.96 MB search response and rejects responses over 6 MiB', () => {
+    expect(search({}, searchResponseWithEncodedBytes(4_960_533)).result.status).toBe('success');
+    expect(search({}, searchResponseWithEncodedBytes(6 * 1024 * 1024)).result.status).toBe('success');
+    expect(search({}, searchResponseWithEncodedBytes(6 * 1024 * 1024 + 1)).result.error?.code).toBe('oversized_response');
   });
 
   it.each([

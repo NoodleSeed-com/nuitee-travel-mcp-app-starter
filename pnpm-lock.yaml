@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@noodleseed/one':
-        specifier: 0.114.0
-        version: 0.114.0
+        specifier: 0.116.0
+        version: 0.116.0
       '@types/react':
         specifier: 19.2.18
         version: 19.2.18
@@ -38,11 +38,14 @@ packages:
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
 
-  '@noodleseed/one@0.114.0':
-    resolution: {integrity: sha512-bx2alE2KycjSd0CxDPG63ANlyW8/JHM8b5NG+Ga/Xtw4jlEzlzn3jLjPgOM6A4GP7ROX0bcaHOefucyCBnAZ4A==}
+  '@noodleseed/one@0.116.0':
+    resolution: {integrity: sha512-L7RAmspseWW4PCr4178PZQg2CP/uffFgC6X/ozwu8h1Hbx+1JkR/wVXIyR1wpXo6Jw7ANofKVQofT2EQssQAIw==}
     engines: {node: '>=24'}
     hasBin: true
     bundledDependencies:
+      - '@ai-sdk/gateway'
+      - '@ai-sdk/provider'
+      - '@ai-sdk/provider-utils'
       - '@floating-ui/core'
       - '@floating-ui/dom'
       - '@floating-ui/react-dom'
@@ -55,10 +58,14 @@ packages:
       - '@jitl/quickjs-wasmfile-release-sync'
       - '@modelcontextprotocol/client'
       - '@modelcontextprotocol/core'
+      - '@modelcontextprotocol/ext-apps'
       - '@modelcontextprotocol/sdk'
       - '@modelcontextprotocol/server'
+      - '@noodle-borg/admission-limits'
       - '@noodle-borg/agent-kit'
+      - '@noodle-borg/app-audit'
       - '@noodle-borg/app-package'
+      - '@noodle-borg/assistant-gateway'
       - '@noodle-borg/auth'
       - '@noodle-borg/authoring'
       - '@noodle-borg/capabilities'
@@ -78,6 +85,8 @@ packages:
       - '@noodle-borg/service'
       - '@noodle-borg/transport-http'
       - '@noodle-borg/wire-contracts'
+      - '@noodleseed/assistant'
+      - '@opentelemetry/api'
       - '@radix-ui/primitive'
       - '@radix-ui/react-arrow'
       - '@radix-ui/react-collection'
@@ -108,7 +117,11 @@ packages:
       - '@radix-ui/react-use-size'
       - '@radix-ui/react-visually-hidden'
       - '@radix-ui/rect'
+      - '@standard-schema/spec'
+      - '@types/trusted-types'
+      - '@vercel/oidc'
       - '@workos-inc/node'
+      - ai
       - ajv
       - ajv-formats
       - aria-hidden
@@ -122,6 +135,7 @@ packages:
       - define-lazy-prop
       - depd
       - detect-node-es
+      - dompurify
       - eventsource
       - eventsource-parser
       - fast-deep-equal
@@ -138,8 +152,10 @@ packages:
       - is-wsl
       - isexe
       - jose
+      - json-schema
       - json-schema-traverse
       - json-schema-typed
+      - marked
       - object-assign
       - open
       - path-key
@@ -617,7 +633,7 @@ snapshots:
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
 
-  '@noodleseed/one@0.114.0': {}
+  '@noodleseed/one@0.116.0': {}
 
   '@oxc-project/types@0.143.0': {}
 

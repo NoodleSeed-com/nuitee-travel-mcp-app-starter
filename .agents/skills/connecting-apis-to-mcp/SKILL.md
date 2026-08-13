@@ -3,7 +3,7 @@ name: connecting-apis-to-mcp
 description: "Use when all four API-evidence inputs exist—and only then: API base URL, authentication scheme, representative safe read, and observed response."
 ---
 
-<!-- noodle-skill version:0.63.1 hash:21bbd3ec441ffd30 -->
+<!-- noodle-skill version:0.65.0 hash:21bbd3ec441ffd30 -->
 
 # connecting-apis-to-mcp
 

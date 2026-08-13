@@ -1,5 +1,6 @@
 import {
   annotations,
+  authenticatedWebsite,
   embeddedAssistant,
   openAICompatible,
   secret,
@@ -204,7 +205,7 @@ export function createTravelServer(mode: 'credential-free' | 'live' | 'embedded'
           apiKey: secret('ASSISTANT_MODEL_API_KEY'),
         }),
         // Replace this illustrative exact origin before any deployment.
-        allowedOrigins: ['https://app.example.com'],
+        access: authenticatedWebsite({ origins: ['https://app.example.com'] }),
         layout: { mode: 'floating', position: 'bottom-right' },
       })
     : undefined;

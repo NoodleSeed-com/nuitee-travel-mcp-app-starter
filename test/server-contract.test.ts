@@ -67,7 +67,7 @@ describe('server contract', () => {
         search: {
           method: 'POST',
           path: '/flights/rates',
-          limits: { maxResponseBytes: 3 * 1024 * 1024 },
+          limits: { maxResponseBytes: 6 * 1024 * 1024 },
         },
         verify: { method: 'POST', path: '/flights/verify' },
       },
@@ -121,12 +121,18 @@ describe('server contract', () => {
   });
 
   it('keeps embedding optional while reusing the same travel tools', async () => {
-    const manifest = await embeddedApp.toManifest() as { tools: Array<{ name: string }> };
+    const manifest = await embeddedApp.toManifest() as {
+      server: { assistant: { surfaces: Array<{ mode: string; origins: string[] }> } };
+      tools: Array<{ name: string }>;
+    };
     expect(manifest.tools.map((tool) => tool.name)).toEqual(expectedTools);
     const wire = JSON.stringify(manifest);
     expect(wire).toContain('ASSISTANT_MODEL_BASE_URL');
     expect(wire).toContain('ASSISTANT_MODEL');
     expect(wire).toContain('ASSISTANT_MODEL_API_KEY');
     expect(wire).toContain('https://app.example.com');
+    expect(manifest.server.assistant.surfaces).toEqual([
+      { mode: 'authenticated', origins: ['https://app.example.com'] },
+    ]);
   });
 });

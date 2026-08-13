@@ -1,2 +1,2 @@
 minimumReleaseAgeExclude:
-  - '@noodleseed/one@0.107.1'
+  - '@noodleseed/one@0.107.1 || 0.116.0'

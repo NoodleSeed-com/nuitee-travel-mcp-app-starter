@@ -426,7 +426,7 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
   } catch (caught) {
     return fail('search', classify(caught, 'search'));
   }
-  const inspected = responseBody(called, 3 * 1024 * 1024);
+  const inspected = responseBody(called, 6 * 1024 * 1024);
   if (inspected.tooLarge) return fail('search', 'oversized_response');
   const root = object(inspected.body);
   if (!root || !Array.isArray(root.data)) return fail('search', 'malformed_response');

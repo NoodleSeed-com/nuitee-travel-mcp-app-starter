@@ -90,7 +90,7 @@ Dependencies: Phase 2 failing tests.
 1. Define bounded public/private Zod schemas.
 2. Implement one self-contained compute gateway for validation, classification, normalization, and safe provider-call orchestration.
 3. Author one fixed Nuitee HTTP connector with exactly two operations and managed `X-API-Key` auth.
-4. Set compute limits to 12 seconds and one host call. Apply a 3 MiB connector/application cap only to search; retain the 750,000-byte application cap for verification.
+4. Set compute limits to 12 seconds and one host call. Apply a 6 MiB connector/application cap only to search; retain the 750,000-byte application cap for verification.
 5. Normalize at most ten itineraries with explicit outbound/inbound legs; reject missing direction, per-leg duration, total duration, invalid code, or unbounded numeric facts rather than inventing them. Remove arbitrary logos, internal fare codes, raw responses, and provider IDs; retain only an optional exact-allowlisted Nuitee-hosted carrier image.
 6. Generate opaque application selections; store upstream IDs only in caller-scoped state.
 7. Resolve selection state inside the compute gateway before verify, preventing arbitrary offer proxying.
@@ -165,7 +165,7 @@ Dependencies: owner credential, Nuitee Flights access, explicit live-call author
 2. Complete: a bounded one-way search and a verify against its selection passed in the same local MCP session.
 3. Complete for the tested happy path: populated mappings were bounded and neither key nor upstream offer ID appeared in public output.
 4. Pending: the latest airport direct/connector comparison was inconclusive because the direct control redirected to HTML; keep the tool omitted until equivalent current requests both pass.
-5. Partially complete: the former 1 MiB connector blocker now has a supported 3 MiB search-only configuration and hermetic 2.85 MiB mapping proof. A successful representative large live response still requires recheck after a sanitized `invalid_request` result.
+5. Partially complete: the former 1 MiB connector blocker now has a supported 6 MiB search-only configuration and hermetic 4.96 MB mapping proof. A successful representative large live response still requires recheck after deployment.
 6. Exercise widgets in DevTools at 280px, light/dark, keyboard, reduced motion, empty/error/changed/expired states.
 7. Connect each named external host and verify fallback plus App rendering before claiming compatibility.
 8. Remove local diagnostic data according to operator policy; never commit runtime secret stores.
@@ -194,7 +194,7 @@ Dependencies: Phase 7 evidence and owner decisions.
 
 ## Developer-experience findings
 
-Four sanitized upstream findings were submitted to the private Noodle Seed feedback tracker on 2026-08-05 and mirrored as public-starter reference issues in this repository. The private tracker references are identifiers only; there are no public tracker URLs.
+Four sanitized upstream findings were submitted to the private Noodle Seed feedback tracker on 2026-08-05 and mirrored as public-starter reference issues in this repository. A fifth hosted state-expiry finding was submitted and mirrored on 2026-08-12. The private tracker references are identifiers only; there are no public tracker URLs.
 
 ### Resolved application defect — ambient time in deterministic compute
 
@@ -220,7 +220,7 @@ Classification: Noodle Seed developer experience, not Nuitee or application code
 
 Tracking: Noodle feedback `fb-956`; [GitHub issue #3](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/3).
 
-The generated widget server activated an embedded assistant and made ordinary `noodle test` require assistant-model configuration. After correcting the fresh scaffold's drift to exact `0.105.0`, its 2026-08-06 local smoke still failed `connector_secret_unresolved` for `ASSISTANT_MODEL_API_KEY` with all three assistant-model settings absent. Removing only the active assistant block restores a credential-free external-host baseline while preserving the capability in documentation.
+The generated widget server activated an embedded assistant and made ordinary `noodle test` require assistant-model configuration. After correcting the fresh scaffold's drift to exact `0.105.0`, its 2026-08-06 local smoke still failed `connector_secret_unresolved` for `ASSISTANT_MODEL_API_KEY` with all three assistant-model settings absent. Noodle 0.116 removes that block from new default scaffolds. This existing starter keeps its separately selected embedded entrypoint as an explicit authenticated-surface opt-in while the credential-free default remains assistant-free.
 
 Classification: Noodle scaffold default for this product shape.
 
@@ -240,9 +240,17 @@ Classification: Noodle authoring compiler/module-layout behavior.
 
 Tracking: Noodle feedback `fb-954`; [GitHub issue #1](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/1).
 
-The exact-`0.105.0` HTTP runtime applied a 1,048,576-byte transport ceiling before response mapping or compute: a 2026-08-06 synthetic check mapped a 1.04 MB JSON response to one tiny field, while a 1.06 MB response returned only `connector failed for operation`. During owner-authorized 2026-08-04 probes, Nuitee returned `200 OK` and the documented response shape for a representative 2.85 MB response. `@noodleseed/one` 0.107 added `limits.maxResponseBytes`; this starter now applies 3 MiB only to search and proves that an approximately 2.85 MiB synthetic response completes bounded mapping. Verification is not widened. A post-fix live attempt returned sanitized `invalid_request`, so successful live mapping of the representative large route remains pending.
+The exact-`0.105.0` HTTP runtime applied a 1,048,576-byte transport ceiling before response mapping or compute: a 2026-08-06 synthetic check mapped a 1.04 MB JSON response to one tiny field, while a 1.06 MB response returned only `connector failed for operation`. Owner-authorized probes later measured a complete round-trip response at 4,960,533 decoded bytes, above the exact 3 MiB ceiling. `@noodleseed/one` 0.116 raises the opt-in per-operation maximum to 6 MiB; this starter applies 6 MiB only to search and proves that the measured response class completes bounded normalization hermetically. Verification is not widened. Successful live mapping under the 6 MiB configuration remains pending.
 
 Classification: the reported Noodle connector capability is available in 0.107 and the application-side cap mismatch is corrected. Remaining live evidence concerns request/provider behavior, not proof that the response-size fix failed. It does not justify direct browser/provider access or an ungoverned fetch workaround.
+
+### Open — expired caller-scoped state blocks later searches
+
+Tracking: [GitHub issue #5](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/5) and upstream [Noodle Borg issue #1033](https://github.com/NoodleSeed-com/noodle-borg/issues/1033).
+
+The hosted `flight_selections` handle uses a 30-minute caller-scoped TTL. A fresh deployment restored flight searches, but the same deployment later returned `connector_error (patch_state)` after the state expired; repeating the deployment produced the same temporary recovery and later failure. Source and existing store tests show expired rows reject writes until explicitly pruned, while reliable hosted pruning has not yet been demonstrated.
+
+Classification: upstream state-lifecycle behavior with a temporary deployment-reset mitigation. Do not remove the TTL or weaken revision checks. Keep this finding open until a released fix passes a hosted short-TTL write-expire-write smoke without redeployment.
 
 ### Inconclusive on current version — direct airport GET connector incompatibility
 
