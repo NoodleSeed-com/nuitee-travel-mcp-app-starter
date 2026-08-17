@@ -56,6 +56,8 @@ Run `noodle validate` (add `--json` for the machine-readable envelope, `--fix-pr
 | `invalid_asset` | Fix the `asset("./path")` reference; the file must exist and be a supported asset type. |
 | `invalid_capability_requirement` | Correct the declared capability/permission requirement to a supported value. |
 | `state_secret_field` | Remove the secret-shaped field from widget/handle state; secrets must never be stored in state or sent to widgets. |
+| `invalid_knowledge` | Fix the `knowledge()` declaration: documents must be existing UTF-8 `.md`/`.txt` files inside the project root (no symlinks), within the 100-file / 1 MiB / 25 MiB bounds, and sites need an exact HTTPS origin plus at least one include glob. |
+| `knowledge_unhashed` | Compile from the project root (`noodle validate`/`noodle dev`) so declared knowledge documents can be read and hashed. |
 | `unknown_connector_alias` | The tool calls a connector alias not declared in `use`/`provides`; add it or fix the alias (see `suggestions`). |
 | `connector_not_in_catalog` | The referenced connector is not in the resolved catalog; add it to the project connectors or correct the reference. |
 | `unknown_operation` | The connector has no such operation; use an operation declared on that connector (see `didYouMean`/`suggestions`). |

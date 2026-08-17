@@ -405,6 +405,26 @@ Author managed config as `secret("NAME")` / `variable("NAME")` and operate it wi
 
 To place the same server tools inside a SaaS web app, declare `assistant: embeddedAssistant(...)` alongside the one server-level brand kit. Read `embedded-assistant.md` before integrating: it owns the HTTPS-origin rule, managed model configuration, required deploy-before-client sequence, customer-backend exchange, browser mount, and verification checklist.
 
+## Knowledge components
+
+Ground an assistant in controlled documents and the customer's live public site with one declaration — never a handwritten `search`/`fetch` tool pair, a provider name, a sync job, or an index manifest. Declare `knowledge(...)` with `file(...)` documents (UTF-8 `.md`/`.txt`, project-root relative, ≤100 files, ≤1 MiB each, ≤25 MiB per component) and `site(...)` live scopes (exact HTTPS origin plus positive path globs), pass the declaration in the server's `knowledge` array, and include it in a public website surface's `capabilities` to project the generated `search_<name>` capability:
+
+```ts
+const product = knowledge('product', {
+  title: 'Product knowledge',
+  description: 'Public product, pricing, and support information.',
+  documents: [
+    file('./knowledge/product.md', { title: 'Product guide' }),
+    file('./knowledge/faq.txt', { title: 'FAQ' }),
+  ],
+  sites: [
+    site({ origin: 'https://www.acme.example', include: ['/docs/**', '/pricing'] }),
+  ],
+});
+```
+
+The compiler validates and hashes every document at build time (bad extensions, root escapes, symlinks, oversize, and non-UTF-8 fail `noodle validate` with the exact path); deployment publishes versioned files transactionally with the app and the provider keeps live-site content current. Component names are lowercase snake-case; each component implies exactly one generated bounded search capability with cited results.
+
 ## Boundaries
 
 Do not hand-author manifest JSON/YAML, runtime artifacts, connector IR, or hosted asset metadata. Do not read or copy secrets, bearer tokens, refresh tokens, static access keys, `.env`, `.env.noodle`, or `~/.noodle/config.json`. Hosted access is identity-based — do not add static data-plane credential paths.

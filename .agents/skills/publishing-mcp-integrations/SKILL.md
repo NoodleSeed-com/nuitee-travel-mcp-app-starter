@@ -3,7 +3,7 @@ name: publishing-mcp-integrations
 description: "Use when preparing, reviewing, or submitting a Noodle Seed MCP integration to a host or app directory."
 ---
 
-<!-- noodle-skill version:0.65.0 hash:efffbf82007f935d -->
+<!-- noodle-skill version:0.70.0 hash:efffbf82007f935d -->
 
 # publishing-mcp-integrations
 

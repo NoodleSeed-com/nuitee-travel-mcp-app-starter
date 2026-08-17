@@ -8,13 +8,19 @@ Do not wait for the user to name `agentGuide`. During every MCP server or App bu
 
 Author a guide when any of these conditions applies:
 
-- A request for an App Package, product skill, plugin, or agent distribution requires one.
+- A request for an App Package or app product skill requires one. A marketplace plugin or customer-agent distribution also needs this product source in addition to separate listing metadata.
 - Multiple capabilities participate in one user workflow, especially when order or purpose matters.
 - Safe or useful operation depends on product-specific ordering, grounding, clarification, boundaries, or representative examples that capability descriptions cannot express.
 
 A product with a single self-explanatory capability may omit the guide when its description, schema, and annotations fully communicate safe use and there is no product-specific workflow or boundary to add. Tool count is a signal, not a rule: one ambiguous or consequential capability can still require a guide, while several independent self-explanatory capabilities may not.
 
 Make the judgment from the user’s stated outcome and grounded product evidence. If a guide is warranted but a decision-changing workflow or boundary is unknown, ask only for that missing product input; never fabricate it. The user should not need to know this feature name to receive the benefit.
+
+## Scope boundaries
+
+Noodle workflow skills teach a coding agent how to build and operate Noodle projects. The generated app product skill is team-local guidance for using one product. A marketplace plugin is a separate host distribution bundle.
+
+A host-neutral distribution metadata and archive framework now exists, but per-app marketplace plugin generation is not available until a target adapter lands, and customer-agent distribution is not available. If the user asks for either, explain the boundary and stop at the proven local App Package, product-skill, and metadata work. Do not claim a target bundle, submission, hosted distribution, or customer-agent projection.
 
 ## Creation workflow
 

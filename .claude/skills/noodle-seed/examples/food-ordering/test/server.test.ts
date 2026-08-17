@@ -10,6 +10,7 @@ describe('food-ordering example', () => {
     const manifest = (await app.toManifest()) as {
       server: {
         name: string;
+        agentGuide?: unknown;
         context?: {
           defaults?: { locale?: string; timeZone?: string };
           ambient?: {
@@ -23,6 +24,7 @@ describe('food-ordering example', () => {
       connectors?: Record<string, { id: string; version: string }>;
       tools: Array<{
         name: string;
+        title?: string;
         visibility?: string[];
         annotations?: Record<string, unknown>;
         output?: unknown;
@@ -36,6 +38,8 @@ describe('food-ordering example', () => {
     };
 
     expect(manifest.server.name).toBe('food_ordering');
+    expect(manifest.server.agentGuide).toBeDefined();
+    expect(manifest.server).not.toHaveProperty('distribution');
     expect(manifest.server.context).toMatchObject({
       defaults: { locale: 'en-US', timeZone: 'America/New_York' },
       ambient: {
@@ -100,5 +104,49 @@ describe('food-ordering example', () => {
       },
     });
     expect(manifest.widgets?.map((widget) => widget.name)).toContain('capabilities_card');
+    expect(manifest.tools.every((tool) => typeof tool.title === 'string')).toBe(true);
+  });
+
+  it('projects host distribution metadata separately from the runtime manifest', () => {
+    const distribution = app.toDistributionMetadata();
+    expect(distribution).toMatchObject({
+      schemaVersion: 1,
+      listing: { summary: expect.stringContaining('Browse local food') },
+      assets: {
+        icon: { alt: 'Food Ordering noodle bowl' },
+        screenshots: [
+          expect.objectContaining({
+            alt: 'Food Ordering MCP App showing nearby stores',
+            prompt: 'Help me build a noodle order for pickup.',
+          }),
+          expect.objectContaining({
+            alt: 'Food Ordering MCP App showing the Harbor Noodles menu',
+            prompt: 'Show me the Harbor Noodles menu.',
+          }),
+          expect.objectContaining({
+            alt: 'Food Ordering MCP App reviewing a checkout handoff',
+            prompt: 'Review my spicy miso bowl order before checkout.',
+          }),
+        ],
+      },
+    });
+    const scenarios = distribution?.review.scenarios ?? [];
+    expect(scenarios.filter(({ shouldInvoke }) => shouldInvoke).map(({ id }) => id)).toEqual([
+      'build_order',
+      'browse_menu',
+      'compare_options',
+      'plan_pickup',
+      'review_checkout',
+    ]);
+    expect(scenarios.filter(({ shouldInvoke }) => !shouldInvoke).map(({ id }) => id)).toEqual([
+      'unrelated_weather',
+      'unrelated_email',
+      'unrelated_travel',
+    ]);
+    expect(
+      scenarios
+        .filter(({ shouldInvoke }) => !shouldInvoke)
+        .every((scenario) => !('tools' in scenario)),
+    ).toBe(true);
   });
 });

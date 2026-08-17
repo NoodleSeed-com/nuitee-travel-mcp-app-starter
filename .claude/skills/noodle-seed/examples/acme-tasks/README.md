@@ -72,6 +72,29 @@ noodle tools call complete_task --args '{"task":"review_pr","title":"Review the 
 noodle check --target chatgpt
 ```
 
+## Product agent guide
+
+[`src/agent-guide.ts`](src/agent-guide.ts) expresses the same three prioritized workflows as one host-neutral
+`agentGuide`. It supplies product judgment such as grounding and confirmation while the compiler derives
+capability schemas, annotations, visibility, and widget relationships from `server.ts`. The guide does not
+weaken `complete_task` confirmation or make the app-only `set_priority` tool model-visible.
+
+Preview the generated Codex and Claude Code product skills before installing them:
+
+```sh
+noodle agents setup --json
+noodle agents setup --write
+```
+
+After changing a workflow or capability, regeneration is explicit so a normal Noodle workflow-skill update
+cannot overwrite the app product skill or local modifications:
+
+```sh
+noodle agents setup --regenerate-app-skill --json
+noodle agents setup --write --regenerate-app-skill
+noodle agents doctor --json
+```
+
 ## Deploy
 
 ```sh

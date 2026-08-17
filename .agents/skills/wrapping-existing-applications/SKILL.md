@@ -3,7 +3,7 @@ name: wrapping-existing-applications
 description: "Use when an existing application has no stable usable API and needs a read-only, identity-first Noodle Seed integration plan before implementation."
 ---
 
-<!-- noodle-skill version:0.65.0 hash:eccc3c158dcafba8 -->
+<!-- noodle-skill version:0.70.0 hash:eccc3c158dcafba8 -->
 
 # wrapping-existing-applications
 

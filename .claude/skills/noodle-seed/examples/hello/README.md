@@ -13,6 +13,10 @@ When an installed Noodle Developer plugin drives this example, its skill perform
 steps through the supported `noodle-readiness` tools and reports only stable public `noodle ...`
 commands as recovery text. Do not install or update a global CLI: the coding agent writes and tests
 this source while Noodle guides and operates the validate, preview, deploy, inspect, and debug workflow.
+Plugin sign-in uses one compact consent for the Developer MCP resource; it does not ask the user to
+choose organizations or environments. For remote inspection, the agent calls `get_context`, resolves
+the intended organization from the request or this project, and passes that explicit `org` to every
+scoped tool. The local CLI may keep its own default organization for command convenience.
 For an approved implementation plan, the installed `executing-noodle-plans` skill owns the
 test-first task, review, recovery, and final-verification loop.
 If that agent discovers a Noodle Seed product gap while working, the installed skill prepares a

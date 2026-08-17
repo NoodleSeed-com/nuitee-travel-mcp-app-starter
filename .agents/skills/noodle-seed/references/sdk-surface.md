@@ -58,14 +58,17 @@ Platform helper connectors are explicit subpath imports from `@noodleseed/one/pl
 - `customerEndpoint`
 - `embeddedAssistant`
 - `externalExchange`
+- `file`
 - `gmailConnector`
+- `knowledge`
 - `managedSecret`
 - `openAICompatible`
 - `publicWebsite`
+- `site`
 
 ## Authoring signatures
 
-- `server(name, options, definitions)` — `options` commonly includes `title`, `version`, `instructions`, `branding`, `auth`, `use`, `provides`, `state`, and `handoff`; `definitions` is the array of tools/resources/prompts.
+- `server(name, options, definitions)` — `options` commonly includes `title`, `version`, `instructions`, `agentGuide`, `distribution`, `branding`, `auth`, `use`, `provides`, `state`, and `handoff`; `definitions` is the array of tools/resources/prompts.
 - `tool(name, { description, input, output, annotations?, visibility?, view?, fulfil })` — `input`/`output` are Zod schemas; `fulfil({ input, connectors, user })` returns data matching `output`. Add `view: { component, entry }` for a React widget; use `visibility: ["app"]` for an app-only helper.
 - `resource(name, { uri, description?, mimeType?, fulfil })` and `prompt(name, { description?, arguments?, fulfil })` expose MCP resources/prompts.
 - View metadata (`viewTitle`, `viewDescription`, `csp`, `domain`, `permissions`) belongs on the tool that renders it; `asset("./path")` packages local files.

@@ -1,10 +1,13 @@
 import {
   annotations,
   embeddedAssistant,
+  file,
+  knowledge,
   openAICompatible,
   publicWebsite,
   secret,
   server,
+  site,
   tool,
   variable,
   z,
@@ -196,6 +199,27 @@ const shortlistGetaway = tool('shortlist_getaway', {
   }),
 });
 
+// Grounding beyond the catalog: two controlled files answer policy/pricing/support questions with
+// citations, and Acme's live public site stays current through its search provider — no sync job,
+// no handwritten search tool. One declaration, one generated `search_destinations` capability.
+const destinations = knowledge('destinations', {
+  title: 'Acme Getaways destinations',
+  description: 'Public destination, pricing, cancellation, and support information.',
+  documents: [
+    file('./knowledge/product.md', {
+      title: 'Product guide',
+      sourceUrl: 'https://getaways.acme.example/product',
+    }),
+    file('./knowledge/faq.txt', { title: 'FAQ' }),
+  ],
+  sites: [
+    site({
+      origin: 'https://getaways.acme.example',
+      include: ['/destinations/**', '/pricing', '/support'],
+    }),
+  ],
+});
+
 export default server(
   'acme_discovery',
   {
@@ -217,7 +241,8 @@ export default server(
     // The same three tools also serve Acme's own marketing site, with no second tool set and no
     // session backend: a visitor with no account gets the discovery carousel and the booking
     // handoff. `capabilities` is the whole externally reachable surface — short enough to review in
-    // one glance, and closed by default when a tool is added to the server later.
+    // one glance, and closed by default when a tool is added to the server later. The knowledge
+    // component projects its generated search capability the same way a tool does.
     assistant: embeddedAssistant({
       model: openAICompatible({
         baseUrl: variable('ASSISTANT_MODEL_BASE_URL'),
@@ -226,11 +251,12 @@ export default server(
       }),
       access: publicWebsite({
         origins: ['https://getaways.acme.example'],
-        capabilities: [discoverGetaways, createHandoff, shortlistGetaway],
+        capabilities: [destinations, discoverGetaways, createHandoff, shortlistGetaway],
       }),
       layout: { mode: 'floating', position: 'bottom-right' },
       labels: { welcomeHeading: 'Where would you like to go?' },
     }),
+    knowledge: [destinations],
   },
   [discoverGetaways, createHandoff, shortlistGetaway],
 );

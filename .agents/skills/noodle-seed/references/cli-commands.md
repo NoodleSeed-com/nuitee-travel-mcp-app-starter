@@ -25,7 +25,7 @@ Developer-facing `noodle` commands, grouped by area. Local authoring commands (`
 | `noodle docs` | Export docs in an LLM-readable format. |
 | `noodle connect` | Print connection setup for an agent host (Claude Code, Codex, Cursor, etc.). |
 | `noodle import` | Import an OpenAPI spec into a starter `server.ts`. |
-| `noodle export` | Compile locally and write the portable manifest JSON (no service). |
+| `noodle export` | Compile locally and write a portable manifest or target host-plugin archive (no service). |
 | `noodle validate` | Author-time compile/schema/connector check; no service (`--json`, `--fix-prompt`). |
 | `noodle check` | Check tool design (`tool_design_*`) and MCP Apps/widget readiness; no service. `--min-severity warn` shows only what needs fixing. |
 | `noodle test` | Local compile plus a loopback MCP smoke. |
