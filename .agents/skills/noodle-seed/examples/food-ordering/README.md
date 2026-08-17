@@ -3,7 +3,7 @@
 **Owns:** The flagship consumer ordering MCP App example: React view authoring, app-only helper tools,
 caller-scoped cart state handles, invocation context, model-visible widget state/lifecycle, packaged image
 assets, portable structured elicitation, checkout handoff policy, host actions, CSP/permissions metadata,
-and widget preview coverage.
+product-agent guidance, host-neutral distribution metadata, and widget preview coverage.
 
 Food Ordering is a generic, synthetic version of a live marketplace ordering app. It lets a user search
 stores, browse menus, customize an item, build a multi-line cart, review the order, and hand off checkout to
@@ -15,6 +15,7 @@ private customer data.
 | Capability | Example |
 | :--- | :--- |
 | Public entry tool | `open_ordering` returns structured fallback content and renders the React widget |
+| Product and distribution projections | `agentGuide` supplies grounded cross-capability guidance; `distribution` supplies listing, publisher, legal, image, and review facts separately from the runtime manifest |
 | App-only helper tools | `search_stores`, `load_menu`, `load_item`, `read_cart`, `sync_cart`, `prepare_checkout`; mutating widget-owned helpers use `confirm: false` (equivalent to omission) and execute directly because action hints alone never gate |
 | Durable cart state | `server(..., { state: { handles: { cart } }, use: { state } })` with caller scope and revision checks |
 | React app runtime kit | `@noodleseed/one/react` supplies app flow, shell/nav/view, async state, form, quantity, choice, and handoff primitives |
@@ -47,6 +48,11 @@ noodle test
 noodle dev
 ```
 
+The same `server.ts` declares `distribution` metadata for host adapters. It references real packaged images
+and keeps listing copy, support/legal URLs, and positive/negative review scenarios outside the canonical App
+Package and Runtime Artifact. Explicit OpenAI and Claude adapters project those facts with the generated
+product skill; installable plugin archives and directory-submission dossiers remain separate outputs.
+
 In another terminal:
 
 ```sh
@@ -70,6 +76,65 @@ For Apps metadata conformance, start `noodle dev`, copy the loopback MCP endpoin
 ```sh
 npx @mcpjam/cli@latest apps conformance --url http://127.0.0.1:<port>/o/demo/food-ordering/mcp --quiet --format json
 ```
+
+## Export an OpenAI plugin
+
+This flagship includes the guided workflows, listing metadata, review cases, and image assets needed to test
+OpenAI export. See the public [product-agent guide](https://docs.noodleseed.dev/docs/guides/product-agent-guides#export-an-openai-package)
+for the current package workflow and boundaries.
+
+Against its deployed MCP URL, generate the Food Ordering submission candidate with:
+
+```sh
+noodle export plugin openai \
+  --state submission \
+  --mcp-url https://food-ordering.noodleseed.app/mcp \
+  --category "Food & Drink" \
+  --output food-ordering-openai.zip
+```
+
+Extract `food-ordering-openai.zip` before using the portal. Upload
+`submission/chatgpt-app-submission.json` to the Codex-assisted import field and
+`submission/food-ordering-skill.zip` to **With MCP → Skills**. The outer ZIP is the complete review kit and
+is not itself a valid skill upload; `submission/README.md` repeats the portal steps.
+
+After registering that same URL in ChatGPT developer mode, substitute its real technical ID to generate the
+Food Ordering local test package:
+
+```sh
+noodle export plugin openai \
+  --state local \
+  --mcp-url https://food-ordering.noodleseed.app/mcp \
+  --category "Food & Drink" \
+  --registered-app-id plugin_asdk_app_0123456789abcdef0123456789abcdef \
+  --output food-ordering-openai-local.zip
+```
+
+## Export for Claude
+
+Claude Code plugin packaging and Anthropic Connector Directory review are separate outputs. Generate the
+installable plugin repository with:
+
+```sh
+noodle export plugin claude \
+  --mcp-url https://food-ordering.noodleseed.app/mcp \
+  --output food-ordering-claude.zip
+```
+
+Generate the credential-free operator dossier for the remote Connector Directory with:
+
+```sh
+noodle export connector claude \
+  --mcp-url https://food-ordering.noodleseed.app/mcp \
+  --auth none \
+  --category "Food & Drink" \
+  --output food-ordering-anthropic-connector.zip
+```
+
+The dossier is deliberately marked `portalUploadable: false`: it gathers the listing, tool annotations,
+use cases, allowed-link candidates, test-account guidance, and MCP App screenshot evidence, but a human must
+verify ownership/compliance and enter the final answers in Anthropic's portal. The plugin ZIP does not
+contain this dossier.
 
 ## Client Setup
 
@@ -95,17 +160,21 @@ connector secrets and does not include tokens, caller-key mechanisms, or `.env.n
 
 ## Demo Assets
 
-The packaged demo images live under `assets/` and are public web assets when deployed. The current app uses
-`assets/noodle-bowl.jpg` as the server branding image.
+The packaged demo images live under `assets/`. The current app uses `assets/noodle-bowl.jpg` as the server
+branding image. Its three distribution screenshots are real, response-only MCP App captures from Noodle
+Devtools at 2× device scale; each is 1640×970 PNG and has the producing user prompt next to its `asset(...)`
+reference in `server.ts`.
 
 Image sources:
 
 - `assets/noodle-bowl.jpg` — Unsplash photo
   [`IRv8V9Hb8gI`](https://unsplash.com/photos/IRv8V9Hb8gI), downloaded from Unsplash.
-- `assets/lentil-soup.jpg` — Unsplash image
-  [`photo-1510431198580-7727c9fa1e3a`](https://images.unsplash.com/photo-1510431198580-7727c9fa1e3a), downloaded from Unsplash.
-- `assets/mint-lemonade.jpg` — Unsplash photo
-  [`X7Nx327NtuA`](https://unsplash.com/photos/X7Nx327NtuA) by Imad 786.
+- `assets/food-ordering-stores.png` — store-discovery state produced by “Help me build a noodle order for
+  pickup.”
+- `assets/food-ordering-menu.png` — Harbor Noodles menu state produced by “Show me the Harbor Noodles
+  menu.”
+- `assets/food-ordering-handoff.png` — checkout-handoff state produced by “Review my spicy miso bowl order
+  before checkout.”
 
-Unsplash photos are free to use under the [Unsplash License](https://unsplash.com/license); attribution is
-not required, but source notes are kept here for provenance.
+The Unsplash branding photo is free to use under the [Unsplash License](https://unsplash.com/license);
+attribution is not required, but the source note is kept here for provenance.

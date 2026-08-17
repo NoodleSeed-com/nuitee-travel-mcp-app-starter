@@ -86,7 +86,7 @@ A public surface **must** declare `capabilities`: the exact positive allowlist i
 
 ### Mixed surfaces: let a visitor sign in mid-conversation
 
-Add `signIn: true` to a public surface when some capabilities need a signed-in user. The surface becomes `mixed`: anonymous visitors start immediately, and an identity-dependent capability becomes a **sign-in trigger** rather than a compile error — the same shape ChatGPT and Claude use for connectors that work with or without a linked account.
+Add `signIn: true` to a public surface when some capabilities need a signed-in visitor. The surface becomes `mixed`: anonymous visitors start immediately, an identity-dependent capability stays **visible** so the assistant can offer it, and reaching for it raises a sign-in prompt instead of executing.
 
 ```ts
 access: publicWebsite({
@@ -96,7 +96,9 @@ access: publicWebsite({
 }),
 ```
 
-Elevation runs through the **host application’s own login**, never a Noodle-operated one: the page signs the visitor in and its backend exchanges that verified user for an elevated session on the same conversation. Do not build a second identity provider for this.
+Elevation runs through the **host application own login**, never a Noodle-operated one. The widget raises `assistant-sign-in-requested` with a single-use `continuation`; the page signs the visitor in as it already does, then its backend POSTs that continuation to the session exchange **with its own client credentials**. Possession of the continuation alone elevates nothing, and the service checks the client tenant owns that conversation.
+
+The conversation is kept: same history, new token, the anonymous one dead. Do not build a second identity provider for this.
 
 A connector-backed side effect needs **two** independent declarations to be reachable from a public or mixed surface: inclusion in `capabilities` **and** `{ confirm: true }` on the operation. Signing in proves who the visitor is; it does not pre-authorize an effect, so confirmation still applies on a mixed surface. Confirmation is never authentication or business authorization — the customer backend still owns payload validation, abuse controls, and idempotency. Local or session-only widget state needs no confirmation.
 

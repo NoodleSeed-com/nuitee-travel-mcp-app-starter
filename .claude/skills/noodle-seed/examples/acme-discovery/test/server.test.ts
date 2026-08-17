@@ -21,4 +21,14 @@ describe('acme-discovery example', () => {
     expect(text).toContain('create_handoff');
     expect(text).toContain('shortlist_getaway');
   });
+
+  it('declares the grounded knowledge component and its live site scope', async () => {
+    const manifest = (await app.toManifest()) as { server: { knowledge?: unknown[] } };
+    // One declaration: controlled files plus the live public site, compiled later into the
+    // generated `search_destinations` capability with citations.
+    expect(manifest.server.knowledge).toHaveLength(1);
+    const text = JSON.stringify(manifest);
+    expect(text).toContain('knowledge/product.md');
+    expect(text).toContain('https://getaways.acme.example');
+  });
 });

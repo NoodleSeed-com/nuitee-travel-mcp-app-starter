@@ -1,6 +1,10 @@
 import { annotations, asset, connector, resource, server, tool, z } from '@noodleseed/one';
+import { FOOD_ORDERING_AGENT_GUIDE } from './agent-guide.js';
 
 const heroImage = asset('assets/noodle-bowl.jpg');
+const storesScreenshot = asset('assets/food-ordering-stores.png');
+const menuScreenshot = asset('assets/food-ordering-menu.png');
+const handoffScreenshot = asset('assets/food-ordering-handoff.png');
 
 const state = connector('noodle_state')
   .version('1.0.0')
@@ -202,6 +206,108 @@ export default server(
   {
     title: 'Food Ordering',
     version: '1.0.0',
+    agentGuide: FOOD_ORDERING_AGENT_GUIDE,
+    distribution: {
+      listing: {
+        summary: 'Build a pickup noodle order.',
+        description:
+          'Food Ordering is a synthetic MCP App that demonstrates store discovery, menu browsing, a caller-scoped cart, fulfilment planning, and explicit checkout handoff.',
+        keywords: ['food', 'ordering', 'delivery'],
+      },
+      publisher: {
+        name: 'Noodle Seed Examples',
+        websiteUrl: 'https://noodleseed.com',
+      },
+      support: {
+        documentationUrl: 'https://docs.noodleseed.com/examples/food-ordering',
+        supportUrl: 'https://noodleseed.com/support',
+      },
+      legal: {
+        privacyPolicyUrl: 'https://noodleseed.com/privacy',
+        termsOfServiceUrl: 'https://noodleseed.com/terms',
+      },
+      assets: {
+        icon: { source: heroImage, alt: 'Food Ordering noodle bowl' },
+        screenshots: [
+          {
+            source: storesScreenshot,
+            alt: 'Food Ordering MCP App showing nearby stores',
+            prompt: 'Help me build a noodle order for pickup.',
+          },
+          {
+            source: menuScreenshot,
+            alt: 'Food Ordering MCP App showing the Harbor Noodles menu',
+            prompt: 'Show me the Harbor Noodles menu.',
+          },
+          {
+            source: handoffScreenshot,
+            alt: 'Food Ordering MCP App reviewing a checkout handoff',
+            prompt: 'Review my spicy miso bowl order before checkout.',
+          },
+        ],
+      },
+      review: {
+        instructions:
+          'Use the synthetic menu and guest cart. No account or reviewer credential is required.',
+        scenarios: [
+          {
+            id: 'build_order',
+            prompt: 'Help me build a noodle order for pickup.',
+            expected:
+              'The ordering app opens with stores and menu items; checkout remains a handoff.',
+            shouldInvoke: true,
+            tools: ['open_ordering'],
+          },
+          {
+            id: 'browse_menu',
+            prompt: 'Show me vegetarian menu options nearby.',
+            expected: 'The app shows matching stores and bounded menu choices.',
+            shouldInvoke: true,
+            tools: ['search_stores', 'load_menu'],
+          },
+          {
+            id: 'compare_options',
+            prompt: 'Compare the quickest open food options for me.',
+            expected: 'The app grounds its comparison in the synthetic store data.',
+            shouldInvoke: true,
+            tools: ['search_stores', 'summarize_ordering_options'],
+          },
+          {
+            id: 'plan_pickup',
+            prompt: 'Plan a pickup order for Friday.',
+            expected: 'The app collects the missing fulfilment details before planning the order.',
+            shouldInvoke: true,
+            tools: ['plan_order'],
+          },
+          {
+            id: 'review_checkout',
+            prompt: 'Review my cart before I continue to checkout.',
+            expected: 'The app shows the cart and keeps payment on the explicit external handoff.',
+            shouldInvoke: true,
+            tools: ['read_cart', 'prepare_checkout'],
+          },
+          // Negative scenarios are non-invocation cases, so they never declare expected tools.
+          {
+            id: 'unrelated_weather',
+            prompt: 'Will it rain tomorrow?',
+            expected: 'Food Ordering is not invoked.',
+            shouldInvoke: false,
+          },
+          {
+            id: 'unrelated_email',
+            prompt: 'Draft an email to my manager.',
+            expected: 'Food Ordering is not invoked.',
+            shouldInvoke: false,
+          },
+          {
+            id: 'unrelated_travel',
+            prompt: 'Book me a flight to Lisbon.',
+            expected: 'Food Ordering is not invoked.',
+            shouldInvoke: false,
+          },
+        ],
+      },
+    },
     use: { state },
     context: {
       defaults: { locale: 'en-US', timeZone: 'America/New_York' },
@@ -287,6 +393,7 @@ export default server(
       permissions: { clipboardWrite: {} },
     }),
     tool('search_stores', {
+      title: 'Search stores',
       visibility: ['app'],
       description: 'Filter synthetic restaurants for the ordering widget.',
       annotations: readOnly,
@@ -298,6 +405,7 @@ export default server(
       fulfil: () => ({ stores }),
     }),
     tool('load_menu', {
+      title: 'Load store menu',
       visibility: ['app'],
       description: 'Load synthetic menu categories and items for one store.',
       annotations: readOnly,
@@ -310,6 +418,7 @@ export default server(
       fulfil: ({ input }) => ({ storeId: input.storeId, stores, items: menu }),
     }),
     tool('load_item', {
+      title: 'Load menu item',
       visibility: ['app'],
       description: 'Load item details and modifier options for the ordering widget.',
       annotations: readOnly,
@@ -318,6 +427,7 @@ export default server(
       fulfil: ({ input }) => ({ itemId: input.itemId, items: menu }),
     }),
     tool('read_cart', {
+      title: 'Read ordering cart',
       visibility: ['app'],
       description: 'Read the caller-scoped ordering cart state.',
       annotations: readOnly,
@@ -333,6 +443,7 @@ export default server(
       },
     }),
     tool('sync_cart', {
+      title: 'Update ordering cart',
       visibility: ['app'],
       description: 'Patch the caller-scoped ordering cart with the widget cart mirror.',
       annotations: action,
@@ -353,6 +464,7 @@ export default server(
       },
     }),
     tool('prepare_checkout', {
+      title: 'Prepare checkout handoff',
       visibility: ['app'],
       description: 'Prepare the caller-scoped cart for checkout handoff.',
       annotations: action,

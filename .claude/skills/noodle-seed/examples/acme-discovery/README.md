@@ -27,8 +27,8 @@ There is no second tool set and no second app — one `server.ts`, projected ont
 `capabilities` is the entire externally reachable surface, so it stays short enough to review at a glance
 and closed by default: a tool added to this server later is unreachable from the website until someone
 lists it. A tool that needed a signed-in user could not be listed here at all (the compiler rejects it);
-serving those to visitors means `publicWebsite({ ..., signIn: true })`, which lets a visitor sign in
-mid-conversation through Acme's own login.
+serve those from `authenticatedWebsite({ origins })` instead, where Acme's own backend proves who the
+visitor is, or add `signIn: true` so visitors sign in mid-conversation through Acme own login.
 
 ## Design spec (write this before the code)
 

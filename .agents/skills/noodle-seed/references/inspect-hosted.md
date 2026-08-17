@@ -16,7 +16,7 @@ This route is read-only. It never authorizes `login`, `logout`, `link`, `target 
 1. Resolve the requested org, app, environment, and deployment from existing non-secret context. Do not change the effective target to make inspection easier.
 2. Choose the narrowest read-only command: `noodle target show`, `noodle status`, `noodle inspect`, `noodle smoke`, `noodle metrics --agent-output`, `noodle events --json`, `noodle logs`, or `noodle audit`.
 3. Prefer machine output when the selected command supports it. Record the target, revision/deployment ID, timestamp, result, and any request ID without exposing secrets or customer payloads.
-4. When the installed Developer MCP is available, use its deployment inspection or diagnosis tool only for the selected org/app/env. Treat it as evidence gathering, not mutation authority.
+4. When the installed Developer MCP is available, call `get_context` to read the signed-in user’s current organizations and roles. Resolve the intended organization from the request or project context, then pass that explicit `org` to every scoped inspection or diagnosis tool. Never infer a remote default, and never ask the user to preselect organizations during OAuth. Treat the connection as live evidence gathering, not mutation authority.
 5. If a command fails, distinguish missing authentication/access from unhealthy application behavior. Do not repair, relink, redeploy, rotate config, or roll back under this route.
 
 ## Stop conditions
