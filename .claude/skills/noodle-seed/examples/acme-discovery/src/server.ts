@@ -200,8 +200,12 @@ const shortlistGetaway = tool('shortlist_getaway', {
 });
 
 // Grounding beyond the catalog: two controlled files answer policy/pricing/support questions with
-// citations, and Acme's live public site stays current through its search provider — no sync job,
-// no handwritten search tool. One declaration, one generated `search_destinations` capability.
+// citations, and Acme's live public site is crawled on deploy and re-crawled on the declared
+// refresh cadence — no sync job, no handwritten search tool. One declaration, one generated
+// `search_destinations` capability. The managed crawler and index are the defaults; a component
+// can instead bring its own via `crawler: firecrawl({ apiKey: secret('FIRECRAWL_API_KEY') })`
+// and `index: algolia({ appId: variable('ALGOLIA_APP_ID'), apiKey: secret('ALGOLIA_API_KEY') })`
+// — the code names the config, `noodle secrets|variables set` supplies the values.
 const destinations = knowledge('destinations', {
   title: 'Acme Getaways destinations',
   description: 'Public destination, pricing, cancellation, and support information.',
@@ -216,6 +220,7 @@ const destinations = knowledge('destinations', {
     site({
       origin: 'https://getaways.acme.example',
       include: ['/destinations/**', '/pricing', '/support'],
+      refresh: '12h',
     }),
   ],
 });

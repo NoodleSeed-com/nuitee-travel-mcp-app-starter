@@ -5,6 +5,7 @@
 - Architecture
 - Choose the host experience
 - Author and validate
+- Product workflow guidance
 - Customize the presentation
 - Configure and deploy
 - Access modes and customer auth
@@ -61,6 +62,14 @@ assistant: embeddedAssistant({
 
 Origins are exact: scheme, host, and optional port, with no path, trailing slash, or wildcard. Production origins must be HTTPS; plain HTTP is accepted only for loopback development origins (`http://localhost:<port>`, `http://127.0.0.1:<port>`). `noodle dev` serves the MCP project, not the embedding SaaS.
 
+## Product workflow guidance
+
+Decide whether the product needs `agentGuide` even when the builder does not name it. Multiple permission-gated capabilities, ordered multi-tool work, product-specific grounding, and consequential boundaries are strong signals. Keep `server.instructions` concise and global; put workflow triggers, ordering, and permission-specific prose in the guide. Global guide description, use cases, and boundaries must be safe for every exposed assistant surface.
+
+After deployment, the embedded assistant automatically projects the typed guide into compact server-side model context on every turn. It keeps only complete workflows supported by that session surface and by the exact model-visible tools allowed for the backend-verified roles and scopes. A member and an administrator can therefore receive different workflow guidance from the same deployment. Mixed anonymous sessions retain only the explicitly selected surface and sign-in workflows; the next turn is reprojected after successful elevation.
+
+No renderer prop, browser package field, or second skill installation is required. The managed Web Component, React component, headless hook, and public client all share the same server-side turn path. Raw guide content and generated skill files never enter session responses or browser events. Missing, incompatible, empty, or oversize guidance is omitted without changing the tool surface or breaking an otherwise valid turn.
+
 ### Surfaces: one assistant, every front door
 
 A product usually has more than one front door — a marketing site and a signed-in app. One assistant (one brand, one model, one UI) projects onto both; pass `access` an array and each surface owns its own origins and allowlist:
@@ -84,6 +93,8 @@ At most one public surface (`public` or `mixed`) and at most one authenticated s
 
 A public surface **must** declare `capabilities`: the exact positive allowlist it may reach. It is required by the type, and it is the whole externally reachable surface — a reviewer should read it in one screenful. Anything absent stays private, and a capability added to the server later is excluded until someone lists it. `authenticatedWebsite` may also take `capabilities` to narrow the in-app surface; omitted, it projects the whole server.
 
+A public `embedId` Web Component automatically attaches bounded anonymous same-origin Markdown page context, never DOM text. It is untrusted and nonpersistent, falls back to the URL alone on failure, yields to explicit `pageContext`, and never runs for authenticated or headless clients.
+
 ### Mixed surfaces: let a visitor sign in mid-conversation
 
 Add `signIn: true` to a public surface when some capabilities need a signed-in visitor. The surface becomes `mixed`: anonymous visitors start immediately, an identity-dependent capability stays **visible** so the assistant can offer it, and reaching for it raises a sign-in prompt instead of executing.
@@ -96,9 +107,11 @@ access: publicWebsite({
 }),
 ```
 
-Elevation runs through the **host application own login**, never a Noodle-operated one. The widget raises `assistant-sign-in-requested` with a single-use `continuation`; the page signs the visitor in as it already does, then its backend POSTs that continuation to the session exchange **with its own client credentials**. Possession of the continuation alone elevates nothing, and the service checks the client tenant owns that conversation.
+Elevation runs through the **host application own login**, never a Noodle-operated one. The widget raises `assistant-sign-in-requested` with a single-use `signInTicket` in its detail; the page signs the visitor in as it already does, then its backend spends the ticket with `createAssistantSession({ ..., signInTicket })` from `@noodleseed/assistant/server` — the same session exchange, its own client credentials. A refused spend throws a typed `AssistantSessionExchangeError`: branch on `elevationRefusal` (`elevation_ticket_expired` re-prompt; `elevation_tenant_mismatch` alert, never retry). Possession of the ticket alone elevates nothing, and the service checks the client tenant owns that conversation. The ticket is not the server-held interaction continuation — that value never reaches browser code; this one exists to travel through the page.
 
-The conversation is kept: same history, new token, the anonymous one dead. Do not build a second identity provider for this.
+The conversation is kept server-side: same session, new token, the anonymous one dead. By default the pending request also completes itself: the service re-attempts the intercepted tool under the new principal and streams it as the elevated session first turn (one-shot; mooted if the visitor types first; confirm-gated tools stop at their confirmation card; pass `resume: false` beside the ticket to disable). Set honest expectations in UI copy — the assistant **remembers** the conversation and finishes the pending request, but no transcript is replayed to the browser, so after a full-page navigation earlier messages do not repaint. Say "the assistant remembers", never "your conversation will reappear". Do not build a second identity provider or client-side resume scaffolding for this.
+
+When the login lives on a different origin (marketing site + app), the flow is: the visitor signs in via full-page redirect as the site already does; the backend spends the ticket presenting the **origin the conversation will continue on** (any origin in the deployment allowlist — elevation re-pins the session there, and CORS follows); the token reaches the widget through the customer own **same-origin** session endpoint on that origin. The redirect handoff is mandatory, not stylistic: the widget calls the session endpoint with `credentials: "same-origin"`, so pointing a marketing page at a cross-origin endpoint is a guaranteed cookie-less 401. Persist the ticket across the login redirect (single-use, expires in minutes); a refused origin does not burn it.
 
 A connector-backed side effect needs **two** independent declarations to be reachable from a public or mixed surface: inclusion in `capabilities` **and** `{ confirm: true }` on the operation. Signing in proves who the visitor is; it does not pre-authorize an effect, so confirmation still applies on a mixed surface. Confirmation is never authentication or business authorization — the customer backend still owns payload validation, abuse controls, and idempotency. Local or session-only widget state needs no confirmation.
 
@@ -181,7 +194,7 @@ Validate the active deployment, backend credential, exact origin, and delegated 
 noodle assistant doctor --origin "$PUBLIC_APP_ORIGIN" --org <org> --app <app> --env <env>
 ```
 
-The doctor reads `NOODLE_ASSISTANT_CLIENT_ID` / `NOODLE_ASSISTANT_CLIENT_SECRET` or the saved mode-0600 client file and never prints the secret. Pass `--user-id <real-test-user>` only when the downstream exchange requires an existing application user. The assistant doctor does not supply application-specific routes; after the backend mints a routed session, invoke one representative safe read to verify its route-bound exchange and connector together.
+The doctor reads `NOODLE_ASSISTANT_CLIENT_ID` / `NOODLE_ASSISTANT_CLIENT_SECRET` or the saved mode-0600 client file and never prints the secret. Pass `--user-id <real-test-user>` only when the downstream exchange requires an existing application user. On a deployment with a mixed surface it also runs a synthetic sign-in round trip (`elevation` check): issue, claim, and elevate against a throwaway anonymous session on the same code path a real sign-in takes, proving the store is configured and that elevation rebinds the issuer basis to the backend client — so a green doctor now certifies the sign-in leg too, not just the authenticated exchange. The assistant doctor does not supply application-specific routes; after the backend mints a routed session, invoke one representative safe read to verify its route-bound exchange and connector together.
 
 ## Integrate the customer backend
 
@@ -584,7 +597,7 @@ noodle assistant embed --check --json
 noodle assistant embed --check --json --require-env EXAMPLE_DELEG_CLIENT_SECRET
 ```
 
-The check reports only required and missing environment names, never their values. It checks both `connect-src` and `frame-src` when a common static host CSP is determinable, fails on missing directives, and marks a dynamic expression unverified instead of guessing. Additional `--require-env` names are application-owned; use them for the customer side of delegated exchange or other backend-only integration requirements.
+The check reports only required and missing environment names, never their values. Pass `--surface public|mixed|authenticated` to match the deployment: `public` drops the backend client id/secret requirement (a public embed has neither), and `public`/`mixed` additionally require `script-src` — the one directive whose failure runs no widget code at all, so nothing can report it from inside the page. CSP directives verify against the service origin exactly, via the env placeholder, or through a covering wildcard (`https://*.example.com`); a dynamic expression is marked unverified instead of guessed. Additional `--require-env` names are application-owned; `--env-alias NAME=HOST_NAME` follows a host repo that names an env var differently.
 
 Inspect the host repository for generated environment bindings after adding names. Run its existing generator, review the diff, commit generated types only when that repository requires them, then run the production-equivalent host build. Do not invent a framework command or add a second generator.
 

@@ -18,7 +18,7 @@ Run `noodle validate` (add `--json` for the machine-readable envelope, `--fix-pr
 | `invalid_shape` | A field has the wrong type or structure; match the shape the compiler reports under `path` against the SDK builder you used. |
 | `invalid_name` | Rename the identifier to match the allowed pattern (lowercase, no spaces/reserved characters) cited at `path`. |
 | `duplicate_name` | Two tools/components share a name; give each a unique name at the cited `path`. |
-| `reserved_name` | Rename the reserved identifier and use one explicit zero-input tool with `contextProvider: true` when the model needs application context. |
+| `reserved_name` | Rename the reserved identifier; `__noodleIntent` is platform-owned, while application context uses one explicit zero-input tool with `contextProvider: true`. |
 | `unsupported_manifest_version` | Update the SDK/CLI so the emitted manifest version is supported; do not pin an old manifest shape. |
 | `reserved_for_future_version` | The verb at `path` (currently `compute` as a flow step) is reserved for a future core version; express the step with `use` (a connector operation), `map` (a pure mapping), or the shipped `ctx.elicit` input primitive instead. |
 | `invalid_operation_ref` | Fix the connector operation reference to `alias.operation` for an operation that exists on that connector. |

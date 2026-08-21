@@ -366,6 +366,10 @@ export default server(
         featuredItems: z.array(menuItemShape).max(20),
         localDate: z.string(),
         serviceArea: z.string(),
+        location: z.object({
+          latitude: z.number().optional(),
+          longitude: z.number().optional(),
+        }),
         fallback: z.string(),
       }),
       fulfil: ({ input, context }) => ({
@@ -375,6 +379,10 @@ export default server(
         featuredItems: menu,
         localDate: context.temporal.localDate,
         serviceArea: context.ambient.serviceArea,
+        location: {
+          latitude: context.location.latitude.optional(),
+          longitude: context.location.longitude.optional(),
+        },
         fallback: 'Open stores: Harbor Noodles (Noodles), Garden Wraps (Vegetarian).',
       }),
       viewTitle: 'Food ordering',

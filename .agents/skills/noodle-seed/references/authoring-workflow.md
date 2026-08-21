@@ -341,6 +341,8 @@ context: {
 
 Ambient providers are recorded as fulfilment data at author time, may call read-only connector operations only, and have a declared output schema. Later fulfilments read `${context.temporal.localDate}`, `${context.temporal.timeZone}`, `${context.ambient.defaultTeamId}`, and `${context.ambientStatus}`. If ambient resolution fails, the status is `unavailable`; never invent the missing business facts. Ambient/model-visible context is capped at 16 KiB serialized JSON, depth 8, and 128 entries per container; credential-shaped keys are rejected.
 
+Direct MCP tool calls may also expose an optional, untrusted client hint as `${context.location.latitude}` and `${context.location.longitude}`, with optional `${context.location.city}`, `${context.location.region}`, `${context.location.country}`, and `${context.location.timeZone}`. Noodle exposes location only when the host supplies one complete, finite, in-range coordinate pair. Treat it as a proximity convenience only: never use it for authentication, authorization, policy, compliance, or delivery-address proof. An explicit tool input must override the hint. When location is absent and the operation needs it, ask the user or return a structured location-required result; never substitute a fixed default location.
+
 ## Ask for structured missing input
 
 Use `ctx.elicit` inside a tool fulfilment when execution needs one bounded value from the user. The call records an `elicit` flow step and returns its symbolic scope; it does not prompt at author time:
@@ -418,12 +420,14 @@ const product = knowledge('product', {
     file('./knowledge/faq.txt', { title: 'FAQ' }),
   ],
   sites: [
-    site({ origin: 'https://www.acme.example', include: ['/docs/**', '/pricing'] }),
+    site({ origin: 'https://www.acme.example', include: ['/docs/**', '/pricing'], refresh: '6h' }),
   ],
 });
 ```
 
-The compiler validates and hashes every document at build time (bad extensions, root escapes, symlinks, oversize, and non-UTF-8 fail `noodle validate` with the exact path); deployment publishes versioned files transactionally with the app and the provider keeps live-site content current. Component names are lowercase snake-case; each component implies exactly one generated bounded search capability with cited results.
+The compiler validates and hashes every document at build time (bad extensions, root escapes, symlinks, oversize, and non-UTF-8 fail `noodle validate` with the exact path); deployment publishes versioned files transactionally with the app, crawls declared sites, and re-crawls them on the `refresh` cadence (`15m`–`7d`, default daily; `noodle knowledge refresh <name>` crawls on demand). Component names are lowercase snake-case; each component implies exactly one generated bounded search capability with cited results.
+
+The managed crawler and managed index are the defaults and need no configuration. A component may instead bring its own crawler (`crawler: firecrawl({ apiKey: secret('FIRECRAWL_API_KEY') })` or `tavily(...)`) and/or its own index (`index: algolia({ appId: variable('ALGOLIA_APP_ID'), apiKey: secret('ALGOLIA_API_KEY') })` or `meilisearch({ host: variable(...), apiKey: secret(...) })`). The code declares only config names; operators supply values with `noodle secrets set` / `noodle variables set`, and deploy preflight fails closed naming any unset reference.
 
 ## Boundaries
 

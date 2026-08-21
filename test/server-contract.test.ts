@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFile } from 'node:fs/promises';
 import embeddedApp from '../src/embedded-server.js';
 import liveApp from '../src/live-server.js';
 import offlineApp from '../src/server.js';
@@ -125,14 +126,32 @@ describe('server contract', () => {
       server: { assistant: { surfaces: Array<{ mode: string; origins: string[] }> } };
       tools: Array<{ name: string }>;
     };
+    const liveManifest = await liveApp.toManifest() as { tools: Array<{ name: string }> };
+    expect(manifest.tools.map((tool) => tool.name)).toEqual(liveManifest.tools.map((tool) => tool.name));
     expect(manifest.tools.map((tool) => tool.name)).toEqual(expectedTools);
     const wire = JSON.stringify(manifest);
     expect(wire).toContain('ASSISTANT_MODEL_BASE_URL');
     expect(wire).toContain('ASSISTANT_MODEL');
     expect(wire).toContain('ASSISTANT_MODEL_API_KEY');
+    expect(wire).toContain('http://localhost:5173');
     expect(wire).toContain('https://app.example.com');
     expect(manifest.server.assistant.surfaces).toEqual([
-      { mode: 'authenticated', origins: ['https://app.example.com'] },
+      {
+        mode: 'authenticated',
+        origins: ['http://localhost:5173', 'https://app.example.com'],
+      },
     ]);
+  });
+
+  it('keeps the companion website free of assistant-specific business tools', async () => {
+    const files = ['App.tsx', 'AssistantMount.tsx', 'auth.ts', 'main.tsx', 'server.ts'];
+    const source = (await Promise.all(files.map((file) => readFile(
+      new URL(`../examples/embedded-assistant-host/src/${file}`, import.meta.url),
+      'utf8',
+    )))).join('\n');
+    expect(source).not.toMatch(/\btool\s*\(/);
+    expect(source).not.toContain('createTravelServer');
+    expect(source).not.toContain('search_flights');
+    expect(source).not.toContain('verify_flight_offer');
   });
 });

@@ -112,7 +112,7 @@ This starter intentionally omits a made-up widget domain. Local DevTools and gen
 
 ### B. Optional embedded assistant
 
-A developer may place the same MCP server inside an authenticated website or SaaS application. Embedded mode adds separate server-side model configuration and a short-lived backend session exchange; it does not duplicate the travel connector, schemas, normalizers, tools, or widgets. See [docs/EMBEDDED_ASSISTANT.md](docs/EMBEDDED_ASSISTANT.md).
+A developer may place the same MCP server inside an authenticated website or SaaS application. The companion at `examples/embedded-assistant-host/` demonstrates this without duplicating the travel connector, schemas, normalizers, tools, or widgets. See [docs/EMBEDDED_ASSISTANT.md](docs/EMBEDDED_ASSISTANT.md).
 
 ## Useful commands
 
@@ -172,7 +172,7 @@ Branding, tool descriptions, normalization fields, widget composition, and futur
 
 ## Updating Noodle Seed safely
 
-`@noodleseed/one` is pinned exactly to `0.116.0`. Dependabot opens reviewable dependency pull requests monthly; nothing auto-merges. For a manual Noodle update:
+`@noodleseed/one` is pinned exactly to `0.132.1`. Dependabot opens reviewable dependency pull requests monthly; nothing auto-merges. For a manual Noodle update:
 
 1. Compare the registry version and release guidance.
 2. Update the exact package pin and regenerate `pnpm-lock.yaml`.

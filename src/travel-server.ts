@@ -204,8 +204,12 @@ export function createTravelServer(mode: 'credential-free' | 'live' | 'embedded'
           model: variable('ASSISTANT_MODEL'),
           apiKey: secret('ASSISTANT_MODEL_API_KEY'),
         }),
-        // Replace this illustrative exact origin before any deployment.
-        access: authenticatedWebsite({ origins: ['https://app.example.com'] }),
+        // The loopback origin is only for this repository's companion demo.
+        // Replace the illustrative HTTPS origin and remove localhost for a
+        // production-only deployment.
+        access: authenticatedWebsite({
+          origins: ['http://localhost:5173', 'https://app.example.com'],
+        }),
         layout: { mode: 'floating', position: 'bottom-right' },
       })
     : undefined;

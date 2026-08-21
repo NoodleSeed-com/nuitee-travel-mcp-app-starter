@@ -59,6 +59,7 @@ Developer-facing `noodle` commands, grouped by area. Local authoring commands (`
 | `noodle apps` | List or inspect hosted apps for an org (`apps list`/`apps inspect <app>`). |
 | `noodle envs` | List or inspect environments for an app (`envs list`/`envs inspect <env>`). |
 | `noodle deployments` | List or inspect individual deployments (`deployments list`/`deployments inspect <id>`). |
+| `noodle distributions` | Publish immutable host archives, record their lifecycle, and operate bounded delivery. |
 | `noodle service` | Query hosted service capabilities. |
 | `noodle login` | Authenticate with Noodle Seed Cloud. |
 | `noodle logout` | Clear saved credentials. |
@@ -86,10 +87,12 @@ Developer-facing `noodle` commands, grouped by area. Local authoring commands (`
 | Command | What it does |
 | :-- | :-- |
 | `noodle audit` | Operator governance audit status and event queries. |
+| `noodle knowledge` | Operator-only knowledge components: list, status, and refresh (ADR 0202). |
 | `noodle logs` | View service/deployment logs. |
 | `noodle metrics` | MCP analytics for a deployed server (volume, sessions, latency percentiles, two-tier errors, tools, clients). Agents: `noodle metrics --agent-output` for a health verdict + next actions. |
 | `noodle events` | The per-request MCP event stream with status/tool/client filters; `--session <id>` replays one session in order. Agents: add `--json` and filter (`--status tool_error\|mcp_error`) when debugging. |
 | `noodle alerts` | Analytics alert rules (`add\|list\|remove\|test`): an edge-triggered webhook fires when error share, error count, calls, or p95 latency breaches. Webhook URLs are stored server-side and shown redacted. |
+| `noodle intents` | Operate optional environment-scoped intent capture (`status\|enable\|disable\|list\|purge`); model participation is best-effort and purge is irreversible. |
 | `noodle policy` | Manage policy (status/list/show/effective/simulate/suspend/quota/rate/...). |
 
 ## CLI maintenance

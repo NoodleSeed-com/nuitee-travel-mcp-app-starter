@@ -70,6 +70,60 @@ const noodleseedApi = connector('noodleseed_app_api')
     },
   });
 
+const CUSTOMER_AUTH_AGENT_GUIDE = {
+  description:
+    'Use the signed-in customer context to discover organizations, review their Noodle Seed apps, and archive a selected app when authorized.',
+  useWhen: [
+    'A signed-in customer asks which organizations or apps they can access.',
+    'An organization administrator asks to archive one selected app.',
+  ],
+  workflows: [
+    {
+      id: 'find_organizations',
+      title: 'Find the customer organizations',
+      intent: 'Ground later organization-scoped work in the verified customer membership.',
+      steps: [
+        {
+          capability: { kind: 'tool', name: 'list_my_organizations' },
+          guidance: 'Use an organization identifier returned by this read in later steps.',
+        },
+      ],
+    },
+    {
+      id: 'review_organization_apps',
+      title: 'Review apps in one organization',
+      steps: [
+        { capability: { kind: 'tool', name: 'list_my_organizations' } },
+        {
+          capability: { kind: 'tool', name: 'list_org_apps' },
+          guidance: 'List apps only for an organization returned for the signed-in customer.',
+        },
+      ],
+    },
+    {
+      id: 'archive_organization_app',
+      title: 'Archive one organization app',
+      steps: [
+        { capability: { kind: 'tool', name: 'list_my_organizations' } },
+        { capability: { kind: 'tool', name: 'list_org_apps' } },
+        {
+          capability: { kind: 'tool', name: 'archive_org_app' },
+          guidance: 'Archive only the exact app the customer selected after confirmation.',
+        },
+      ],
+    },
+  ],
+  boundaries: [
+    'Never infer an organization or app identifier that was not returned for the signed-in customer.',
+    'Never claim an app was archived until the confirmed action succeeds.',
+  ],
+  examples: [
+    { prompt: 'Which organizations can I access?', workflow: 'find_organizations' },
+    { prompt: 'Show me the apps in this organization.', workflow: 'review_organization_apps' },
+    { prompt: 'Archive the app I selected.', workflow: 'archive_organization_app' },
+  ],
+} as const;
+
 export default server(
   'noodleseed_customer_auth',
   {
@@ -87,6 +141,7 @@ export default server(
       },
     },
     use: { app_api: noodleseedApi },
+    agentGuide: CUSTOMER_AUTH_AGENT_GUIDE,
     interactions: { confirmationFallback: 'host' },
     auth: customerAuth.oidc({
       issuer: 'https://id.noodleseed.dev',
