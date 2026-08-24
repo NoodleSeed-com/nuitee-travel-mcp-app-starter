@@ -513,14 +513,19 @@ useEffect(() => {
 
 `settle` must await or catch the command promise; the same structured failure also appears in the hook `error` state.
 
-The sample fails closed on input requests until you replace that branch with a form generated from `requestedSchema`. A custom renderer must show the complete confirmation review and both decisions, handle every part it supports, and surface an explicit unsupported state for the rest. For `data-view`, use `NoodleAppView` to render the linked App or deliberately map `resourceUri`/tool plus the bounded redacted `result` to an application-trusted native component. JSON result data is not the linked App UI. Never inject `part.data.html`, assign it to `srcdoc`, fetch a `ui://` URI, or reproduce the bridge with a direct Ext Apps dependency. Do not wrap this client in another chat transport or invent user messages for interaction continuations.
+The sample fails closed on input requests until you replace that branch with a form generated from `requestedSchema`. A custom renderer must show the complete confirmation review and both decisions, handle every part it supports, and surface an explicit unsupported state for the rest. For `data-view`, use the canonical `<noodle-app-view>` host (or its React `NoodleAppView` adapter) to render the linked App, or deliberately map `resourceUri`/tool plus the bounded redacted `result` to an application-trusted native component. JSON result data is not the linked App UI. Never inject `part.data.html`, assign it to `srcdoc`, fetch a `ui://` URI, or reproduce the bridge with a direct Ext Apps dependency. Do not wrap this client in another chat transport or invent user messages for interaction continuations.
 
-`NoodleAppView` owns one bridge for the semantic view identity: client + `view.id` + `view.resourceUri`. It retains the iframe across fresh payload/callback/theme rerenders, reads current payloads through refs, publishes later resolved-theme changes through MCP Apps host context, and sends standard App teardown only when that semantic identity changes or the component unmounts. Pass the same resolved application theme used by the conversation shell. Do not key an ancestor by a view object or callback. If the embedding page sets Content-Security-Policy, include the Noodle service origin in both `connect-src` and `frame-src`.
+`<noodle-app-view>` owns one bridge for the semantic view identity: client + `view.id` + `view.resourceUri`; `NoodleAppView` delegates to it. The host retains the iframe across fresh payload/callback/theme rerenders, publishes later resolved-theme changes through MCP Apps host context, and sends standard App teardown when that semantic identity changes, the element disconnects, or the App requests teardown. App views remain inline by default; the host advertises only inline presentation and rejects widget fullscreen requests. Opt in with `allowFullscreen` on `NoodleAppView` or `allow-fullscreen` on `<noodle-app-view>` only when fullscreen is an intentional part of the customer-owned experience. When fullscreen is accepted, the shared host adds an accessible top-right exit control that returns the same mounted App to inline mode without losing its state. Pass the same resolved application theme used by the conversation shell. Do not key an ancestor by a view object or callback. If the embedding page sets Content-Security-Policy, include the Noodle service origin in both `connect-src` and `frame-src`.
 
-Outside React, use the same DOM-free client directly. It keeps the session token in memory, exposes a React-free `UIMessage` transcript with typed parts, and never registers a custom element:
+Outside React, use the same DOM-free client directly and import the isolated App-view entry only when rendering linked Apps. The client keeps the session token in memory, the transcript stays React-free, and the element owns only App presentation:
+
+```html
+<noodle-app-view id="assistant-app-view"></noodle-app-view>
+```
 
 ```ts
 import { createAssistantClient } from "@noodleseed/assistant/client";
+import "@noodleseed/assistant/app-view";
 
 const assistant = createAssistantClient({
   sessionEndpoint: "/api/assistant/session",
@@ -529,6 +534,11 @@ const assistant = createAssistantClient({
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   }),
 });
+
+const appView = document.querySelector("#assistant-app-view");
+if (!appView) throw new Error("Missing App view host");
+appView.client = assistant;
+appView.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 
 assistant.updateModelContext({
   content: [{ type: 'text', text: 'The time-off form is mounted.' }],
@@ -548,7 +558,7 @@ assistant.subscribeChat((state) => {
         pending = { id: part.data.id, requestedSchema: part.data.requestedSchema };
       }
       if (part.type === 'data-view') {
-        renderRegisteredView(part.data.resourceUri, part.data.result);
+        appView.view = part.data;
       }
     }
   }
@@ -587,7 +597,7 @@ assistant.subscribe((event) => {
 });
 ```
 
-`data-view` means a completed tool has a linked MCP App view. In a customer-owned React renderer, pass that typed part and the existing client to `NoodleAppView`; it retains one bridge for client + `view.id` + `view.resourceUri` and requests standard App teardown on semantic replacement or unmount. That pair is transport identity: different call ids are distinct invocations and must not be deduplicated generically. If the product intentionally owns one current panel for a known resource, declare an application-owned slot map and replace only that slot. Deliberately map the bounded result to an application-trusted native component only when replacing the linked App UI.
+`data-view` means a completed tool has a linked MCP App view. Pass that typed part and the existing client to `<noodle-app-view>` in Vue, Angular, or plain DOM, or to its `NoodleAppView` React adapter. It retains one bridge for client + `view.id` + `view.resourceUri` and requests standard App teardown on semantic replacement, disconnect, or App request. That pair is transport identity: different call ids are distinct invocations and must not be deduplicated generically. If the product intentionally owns one current panel for a known resource, declare an application-owned slot map and replace only that slot. Deliberately map the bounded result to an application-trusted native component only when replacing the linked App UI.
 
 `clientContext` and typed `pageContext` are recomputed for each turn. `updateContext(...)` remains the legacy session-exchange context; `updatePageContext(...)` replaces the fresh per-turn application hint. `updateModelContext({ content, structuredContent })` publishes one cohesive renderer snapshot for later message turns without starting a turn; every call replaces the prior snapshot rather than merging fields. These are untrusted data, not conversation history or authorization input, and the boundaries reject credential-shaped or unbounded updates. A message may re-exchange once after a pre-execution `401`; the client never auto-retries interaction decisions. `tool_proposed.arguments` is a complete schema-aware review projection and, for connector-backed tools, names the sole exact connector version/operation/resolved arguments. Sensitive/write-only fields are redacted; truncating or omitting any non-sensitive action field fails closed. Accept is bound to the server-held action and claims at most one execution attempt—clients cannot replace it. Normal terminal outcomes scrub private arguments and continuations immediately; only an accepted action still executing retains them for the one-hour unknown-outcome recovery window, after which it records `interaction_outcome_unknown` and scrubs. Without downstream idempotency this is not an exactly-once business-effect guarantee. To reconcile a lost response, explicitly repeat the same id and decision: the service returns its durable stored outcome without re-execution.
 
@@ -612,7 +622,7 @@ Devtools privacy gate: default model and connector exercises to synthetic or moc
 
 - Node.js 20+ for `@noodleseed/assistant/server`.
 - The package ships ESM and CommonJS with full export conditions; no bundler aliases, `transpilePackages`, or ambient type shims are needed. If resolution fails, the installed package version is outdated: update `@noodleseed/assistant` instead of adding workarounds.
-- TypeScript `moduleResolution` `bundler` or `node16` recommended; classic `node` also resolves the `/client`, `/react`, `/react/client`, and `/server` subpaths.
+- TypeScript `moduleResolution` `bundler` or `node16` recommended; classic `node` also resolves the `/app-view`, `/client`, `/react`, `/react/client`, and `/server` subpaths.
 
 ## Verify the boundary
 
