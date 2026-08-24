@@ -4,7 +4,31 @@ Customize the existing flights-first product before adding scope. Keep Cedar & C
 
 ## Branding
 
-Change the shared server brand in `src/travel-server.ts` and the authored shell in `src/views/travel-home.tsx` / `travel.css`.
+The safe customization surface is `src/starter-config.ts`. Use the deterministic command instead of replacing brand text across the repository:
+
+```sh
+pnpm customize -- \
+  --brand-name "North Star Travel" \
+  --brand-mark "N" \
+  --tagline "Travel planning, made calm" \
+  --accent "#123456" \
+  --surface "#F0F1F2" \
+  --surface-dark "#101112"
+
+pnpm customize:check
+```
+
+The command updates one owned TypeScript config, writes it atomically, and is idempotent. It accepts only bounded presentation values and never reads credentials or environment files. The server, home schema, MCP widget, and companion website consume the same brand source. Review contrast in light and dark themes after changing colors.
+
+To prepare the optional Embedded Assistant for production, add only the exact deployment-owned origin:
+
+```sh
+pnpm customize -- --production-origin "https://<your-exact-domain>"
+```
+
+That removes the localhost origin by default. Add `--keep-local-demo` only when the same non-production deployment must continue to serve the local companion. The checker rejects paths, query strings, fragments, credentials, wildcards, reserved example/test domains, and non-loopback HTTP origins.
+
+The command deliberately does not rename the package, server ID, tool names, Nuitee connector, state handles, provider limits, fixture carriers, or historical product documents. Those identifiers and security boundaries are not consumer branding.
 
 - Use your own name, short copy, and restrained accent token; keep structural surfaces and text host-neutral.
 - Let the host-supplied app identity carry the logo. Do not repeat a brand mark inside a compact response widget.
@@ -90,4 +114,4 @@ Only then register the new tool and change the home domain from â€œComing soon.â
 
 ## Optional embedded assistant
 
-`src/embedded-server.ts` selects the same server factory in embedded mode. The starter allowlist contains only the exact local demo origin. Before a production deployment, add the embedding product's exact HTTPS origin and decide whether to remove the localhost origin, then follow `docs/EMBEDDED_ASSISTANT.md`. Do not create an embedded-only copy of flight tools or move model/Nuitee credentials into the embedding browser.
+`src/embedded-server.ts` selects the same server factory in embedded mode. The starter allowlist contains only the exact local demo origin. Before a production deployment, use `pnpm customize -- --production-origin "https://<your-exact-domain>"` and keep localhost only when explicitly required, then follow `docs/EMBEDDED_ASSISTANT.md`. Do not create an embedded-only copy of flight tools or move model/Nuitee credentials into the embedding browser.

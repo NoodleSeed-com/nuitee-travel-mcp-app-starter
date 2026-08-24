@@ -36,9 +36,10 @@ assistant client secret, a model credential, or `NUITEE_API_KEY`.
 The companion runs on `http://localhost:5173` and binds only to
 `127.0.0.1`. It does not replace or alter the existing travel preview on port
 3003. The embedded server allowlist contains only the exact localhost origin
-for this development example. Before production, add the real site's exact
-HTTPS origin and decide whether the localhost origin should remain in that
-deployment. Wildcard origins are not supported by this example.
+for this development example. Before production, use the repository's
+`pnpm customize -- --production-origin "https://<your-exact-domain>"` command
+to add the real site's exact HTTPS origin and decide whether the localhost
+origin should remain. Wildcard origins are not supported by this example.
 
 ## Environment separation
 
@@ -98,7 +99,7 @@ From the repository root:
 
 ```sh
 pnpm install
-pnpm --filter @cedar-cloud/embedded-assistant-host dev
+pnpm --filter @nuitee-travel-starter/embedded-assistant-host dev
 ```
 
 Then open `http://localhost:5173`. With no assistant client configuration, the
@@ -108,9 +109,9 @@ setup-required state. It does not substitute a fake assistant.
 Use these local quality gates:
 
 ```sh
-pnpm --filter @cedar-cloud/embedded-assistant-host typecheck
-pnpm --filter @cedar-cloud/embedded-assistant-host test
-pnpm --filter @cedar-cloud/embedded-assistant-host build
+pnpm --filter @nuitee-travel-starter/embedded-assistant-host typecheck
+pnpm --filter @nuitee-travel-starter/embedded-assistant-host test
+pnpm --filter @nuitee-travel-starter/embedded-assistant-host build
 pnpm test
 pnpm validate
 pnpm agent:check:assistant
@@ -126,9 +127,10 @@ deployment and a deployment-bound assistant client.
 These are owner actions, not ordinary local setup, and this repository does not
 perform them automatically:
 
-1. Add the website's exact HTTPS origin to `src/travel-server.ts`. Keep only
-   explicitly required local origins and remove the localhost origin from a
-   production-only deployment.
+1. Run the production-origin command from `docs/customization.md` with the
+   website's exact HTTPS origin. It removes localhost unless
+   `--keep-local-demo` is explicitly supplied; then run
+   `pnpm customize:check`.
 2. Re-run `pnpm agent:check:assistant` and the full repository gates.
 3. Configure `NUITEE_API_KEY` and the three `ASSISTANT_MODEL_*` settings as
    server-side managed deployment configuration.
@@ -144,7 +146,7 @@ perform them automatically:
 5. Create a deployment-bound backend client:
 
    ```sh
-   pnpm exec noodle assistant clients create --name cedar-cloud-website \
+   pnpm exec noodle assistant clients create --name nuitee-travel-starter-website \
      --org <org> --app <app> --env <test-env> --json
    ```
 

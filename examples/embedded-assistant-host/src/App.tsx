@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
+import { starterConfig } from '../../../src/starter-config.ts';
 
 const AssistantMount = lazy(() => import('./AssistantMount.tsx'));
 
@@ -40,9 +41,9 @@ export function TravelSite(props: {
     <div className="site-shell">
       <a className="skip-link" href="#main-content">Skip to main content</a>
       <header className="site-header">
-        <a className="brand" href="#top" aria-label="Cedar and Cloud Travel home">
-          <span className="brand-mark" aria-hidden="true">C</span>
-          <span>Cedar &amp; Cloud Travel</span>
+        <a className="brand" href="#top" aria-label={`${starterConfig.brand.name} home`}>
+          <span className="brand-mark" aria-hidden="true">{starterConfig.brand.mark}</span>
+          <span>{starterConfig.brand.name}</span>
         </a>
         <nav aria-label="Primary navigation">
           <a href="#flights">Flights</a>
@@ -54,7 +55,7 @@ export function TravelSite(props: {
       <main id="main-content">
         <section className="hero" id="top" aria-labelledby="hero-title">
           <div className="hero-copy">
-            <p className="eyebrow">Thoughtful journeys, conversationally planned</p>
+            <p className="eyebrow">{starterConfig.brand.tagline}</p>
             <h1 id="hero-title">Where would you like to go next?</h1>
             <p className="hero-intro">
               Compare current flights and verify the fare with one travel assistant—right here,
@@ -132,12 +133,12 @@ export function TravelSite(props: {
         <section className="travel-note" id="travel-note" aria-labelledby="travel-note-title">
           <p className="eyebrow">Travel note</p>
           <h2 id="travel-note-title">Fresh fares deserve a final check.</h2>
-          <p>Search prices can change. Cedar &amp; Cloud verifies a selected fare before any next step.</p>
+          <p>Search prices can change. {starterConfig.brand.name} verifies a selected fare before any next step.</p>
         </section>
       </main>
 
       <footer id="about">
-        <p><strong>Cedar &amp; Cloud Travel</strong> is a fictional demonstration brand.</p>
+        <p>This website demonstrates how the configured travel brand can embed the shared assistant.</p>
         <p>This experience uses a sandbox and cannot complete bookings.</p>
       </footer>
     </div>

@@ -7,7 +7,7 @@ export const DEMO_USER = Object.freeze({
   roles: ['traveler'] as const,
 });
 
-const COOKIE_NAME = 'cedar_cloud_demo';
+const COOKIE_NAME = 'nuitee_travel_starter_demo';
 const SESSION_TTL_MS = 15 * 60 * 1_000;
 
 interface DemoSession {

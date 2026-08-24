@@ -33,10 +33,11 @@ vi.mock('../src/helpers.js', () => {
 import { FlightResultsView, isGatewayError, isSearchOutput, isVerification } from '../src/views/flight-results.js';
 import { SearchEditor, searchPrompt } from '../src/views/search-editor.js';
 import { isHome, TravelHomeView } from '../src/views/travel-home.js';
+import { starterConfig } from '../src/starter-config.js';
 
 const home = {
   status: 'ready' as const,
-  brand: 'Cedar & Cloud Travel',
+  brand: starterConfig.brand.name,
   message: 'Flights are available. Tell me where and when you would like to travel.',
   domains: [
     { name: 'Flights', availability: 'available' as const },
@@ -45,7 +46,7 @@ const home = {
     { name: 'Ground travel', availability: 'coming_soon' as const },
     { name: 'Experiences', availability: 'coming_soon' as const },
   ],
-  fallback: 'Cedar & Cloud Travel can search and verify flights.',
+  fallback: `${starterConfig.brand.name} can search and verify flights.`,
 };
 
 const itinerary = {

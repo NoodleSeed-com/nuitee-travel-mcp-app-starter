@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import embeddedApp from '../src/embedded-server.js';
 import liveApp from '../src/live-server.js';
 import offlineApp from '../src/server.js';
+import { starterConfig } from '../src/starter-config.js';
 
 const expectedTools = ['open_travel_starter', 'search_flights', 'verify_flight_offer'];
 const forbiddenFragments = [
@@ -133,12 +134,12 @@ describe('server contract', () => {
     expect(wire).toContain('ASSISTANT_MODEL_BASE_URL');
     expect(wire).toContain('ASSISTANT_MODEL');
     expect(wire).toContain('ASSISTANT_MODEL_API_KEY');
-    expect(wire).toContain('http://localhost:5173');
+    for (const origin of starterConfig.embeddedAssistant.origins) expect(wire).toContain(origin);
     expect(wire).not.toContain('https://app.example.com');
     expect(manifest.server.assistant.surfaces).toEqual([
       {
         mode: 'authenticated',
-        origins: ['http://localhost:5173'],
+        origins: [...starterConfig.embeddedAssistant.origins],
       },
     ]);
   });

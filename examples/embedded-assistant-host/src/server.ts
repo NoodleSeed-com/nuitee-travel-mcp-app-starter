@@ -133,7 +133,7 @@ export function createHostApi(options: {
           clientSecret: options.config.assistant.clientSecret,
           origin: options.config.publicOrigin,
           user,
-          context: { surface: 'cedar-cloud-travel-demo' },
+          context: { surface: 'nuitee-travel-starter-demo' },
           preferences: { locale: 'en-CA', timeZone: 'America/Toronto' },
         });
         return json(200, session);
@@ -263,7 +263,7 @@ const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv
 if (isMain) {
   const mode: HostMode = process.argv.includes('--production') ? 'production' : 'development';
   void startHostServer({ mode, env: process.env })
-    .then(() => console.log('Cedar & Cloud Travel host is listening on 127.0.0.1:5173.'))
+    .then(() => console.log('Travel Embedded Assistant host is listening on 127.0.0.1:5173.'))
     .catch(() => {
       console.error('Embedded Assistant host failed to start.');
       process.exitCode = 1;

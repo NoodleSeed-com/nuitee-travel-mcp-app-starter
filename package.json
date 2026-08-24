@@ -9,6 +9,8 @@
   },
   "type": "module",
   "scripts": {
+    "customize": "node --experimental-strip-types scripts/customize.mjs",
+    "customize:check": "node --experimental-strip-types scripts/customize.mjs --check",
     "test": "vitest run",
     "validate": "noodle validate",
     "dev": "noodle dev",
