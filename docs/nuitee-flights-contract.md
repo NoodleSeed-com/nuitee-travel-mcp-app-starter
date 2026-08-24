@@ -32,7 +32,7 @@ One-way:
 ```json
 {
   "legs": [
-    { "origin": "AAA", "destination": "BBB", "date": "2030-04-20", "direction": "OUTBOUND" }
+    { "origin": "QZX", "destination": "QZY", "date": "2030-04-20", "direction": "OUTBOUND" }
   ],
   "adults": 1,
   "children": 0,
@@ -44,6 +44,10 @@ One-way:
   "country": "CA"
 }
 ```
+
+`QZX` and `QZY` are test-only fixture identifiers, not a live route. Their
+current suitability and the fictional `ZZ` carrier convention are recorded in
+[fixture-safety.md](fixture-safety.md).
 
 Round-trip adds the reverse route with `direction: "INBOUND"`. The repository supports exactly one or two legs; multicity remains outside version one even though the provider contract can accept additional legs.
 

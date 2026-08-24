@@ -1,5 +1,5 @@
-// QZX/QZY are schema-shaped fictional fixture codes. No assigned location was
-// found in the public IATA lookup/research on 2026-08-04; recheck before release.
+// QZX/QZY/QZH are schema-shaped fictional fixture codes. No assigned airport
+// was found in IATA's public code search on 2026-08-24; recheck before release.
 // ZZ is IATA's reserved computer-test designator, not an operating airline.
 export const fictionalSearchResponse = {
   data: [
