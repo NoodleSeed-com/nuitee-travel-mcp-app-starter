@@ -57,6 +57,12 @@ pnpm ci:offline
 
 `pnpm ci:offline` is the canonical no-secret gate. It checks Agent Kit freshness, validates the safe customization file, runs the root suite, exercises the default local MCP protocol, lists the tool surface, runs default/live/embedded static readiness checks, and typechecks/tests/builds the companion host. Live and embedded entrypoints are only validated statically; CI does not execute provider- or model-backed tools. Do not run those calls without managed credentials, entitlement, safe input, and explicit authorization.
 
+The offline gate also runs `pnpm audit:history` across every reachable Git
+commit and `pnpm audit:licenses` against installed package metadata. The history
+scanner reports only detector names and paths—never matched content. Before a
+release, run `pnpm audit:release`; its final npm advisory query requires network
+access and does not replace owner/legal license review.
+
 Review the tool list after every change: it must contain only `open_travel_starter`, `search_flights`, and `verify_flight_offer`. Airport lookup remains omitted until its live connector path passes; a future domain remains presentation-only until its full contract and evidence exist.
 
 ## Security review expectations
