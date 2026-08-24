@@ -185,7 +185,7 @@ Branding, tool descriptions, normalization fields, widget composition, and futur
 
 ## Public-release status
 
-No source license has been selected. Public distribution is blocked until the owner approves and adds one. Host-specific browser evidence, a credentialed sandbox/error-shape smoke by the repository owner, a recheck of deliberately unassigned fixture codes, and dependency/license review are also required before calling a release production-ready.
+No source license has been selected. Public distribution is blocked until the owner approves and adds one. The complete local and remote release-gate inventory is tracked in [PUBLIC_RELEASE_CHECKLIST.md](PUBLIC_RELEASE_CHECKLIST.md). Host-specific browser evidence, a credentialed sandbox/error-shape smoke by the repository owner, a recheck of deliberately unassigned fixture codes, and dependency/license review are also required before calling a release production-ready.
 
 Live one-way search and same-session fare verification previously passed for a bounded sandbox route. A complete owner-authorized round-trip response later measured 4,960,533 decoded bytes, above the former 3 MiB operation ceiling. `@noodleseed/one` 0.116 raises the opt-in per-operation maximum to 6 MiB; this starter applies that ceiling only to flight search and proves the measured response class reaches bounded normalization hermetically. Fare verification keeps the smaller 750,000-byte application limit and no widened connector limit. The 6 MiB configuration still needs a successful live mapping recheck after deployment. Nuitee documents no result limit or pagination contract.
 
@@ -193,3 +193,11 @@ The 0.107 airport recheck was inconclusive: the direct control received one redi
 
 No custom widget domain is claimed by default. Configure one real, dedicated,
 deployment-owned HTTPS origin for both widgets before app-store submission.
+
+## Contributing and generated guidance
+
+Start with [CONTRIBUTING.md](CONTRIBUTING.md), use the sanitized GitHub issue forms, and never place vulnerability details or secrets in a public issue. The private security route is still an owner decision and therefore remains a release blocker in [SECURITY.md](SECURITY.md).
+
+The large `.agents/` and `.claude/` trees are intentional generated Agent Kit guidance, not application source or ordinary tests. [docs/generated-agent-guidance.md](docs/generated-agent-guidance.md) explains regeneration, review, and public-redistribution boundaries. They are marked as generated for GitHub presentation, but their diffs must still be reviewed.
+
+Unreleased changes are summarized in [CHANGELOG.md](CHANGELOG.md). A version/date will be added only at an approved release freeze.

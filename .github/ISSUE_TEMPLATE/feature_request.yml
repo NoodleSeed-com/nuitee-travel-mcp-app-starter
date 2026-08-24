@@ -1,0 +1,43 @@
+name: Feature request
+description: Propose an evidence-backed improvement within the starter's product boundary.
+title: "feature: "
+labels: []
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the user or developer outcome before proposing implementation. The Version-one boundary excludes booking, payment, cancellations, hotels, loyalty, cars, arbitrary HTTP, and unfinished tools.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What recurring user or developer problem should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What should become easier, safer, or clearer?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Contract or product evidence
+      description: Link public authoritative documentation or summarize sanitized observed evidence. Do not include private sources or credentials.
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Security and scope boundaries
+      description: Explain effects on credentials, model-visible tools, network authority, normalized output, widgets, and offline tests.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety confirmation
+      options:
+        - label: This request contains no secrets, customer data, private URLs, raw provider bodies, or proprietary source.
+          required: true

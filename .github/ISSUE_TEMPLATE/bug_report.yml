@@ -1,0 +1,65 @@
+name: Bug report
+description: Report a reproducible starter, tool, widget, or documentation defect.
+title: "bug: "
+labels: []
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve the starter. Do not paste credentials, authorization headers, raw provider bodies, customer data, provider offer IDs, complete private URLs, or private repository details. Report security vulnerabilities through the private route named in SECURITY.md, not in a public issue.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Default MCP server
+        - Live Nuitee connector
+        - MCP App widget
+        - Embedded Assistant example
+        - Tests or CI
+        - Documentation
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Give the exact @noodleseed/one, Agent Kit, Node, and pnpm versions that are relevant.
+      placeholder: "@noodleseed/one 0.x.y; Agent Kit 0.x.y; Node 24.x; pnpm 11.x"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Safe reproduction
+      description: List the smallest offline or sanitized steps that reproduce the issue.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include only sanitized public error categories and bounded command evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Checks run
+      description: Name the focused tests, pnpm ci:offline result, and any evidence not run.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety confirmation
+      options:
+        - label: I removed credentials, headers, raw bodies, customer/provider identifiers, private URLs, and personal information.
+          required: true
+        - label: This is not a vulnerability report or an unauthorized live-provider test.
+          required: true

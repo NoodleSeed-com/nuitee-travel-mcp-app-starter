@@ -83,4 +83,25 @@ describe('public repository contracts', () => {
     expect(workspace).toContain("'@noodleseed/one@0.136.0'");
     expect(workspace).toContain("'@noodleseed/assistant@1.22.0'");
   });
+
+  it('ships sanitized community intake and identifies generated guidance', async () => {
+    const [attributes, pullRequest, bugReport, featureRequest, generatedGuide, releaseChecklist, changelog] = await Promise.all([
+      repositoryFile('.gitattributes'),
+      repositoryFile('.github/PULL_REQUEST_TEMPLATE.md'),
+      repositoryFile('.github/ISSUE_TEMPLATE/bug_report.yml'),
+      repositoryFile('.github/ISSUE_TEMPLATE/feature_request.yml'),
+      repositoryFile('docs/generated-agent-guidance.md'),
+      repositoryFile('PUBLIC_RELEASE_CHECKLIST.md'),
+      repositoryFile('CHANGELOG.md'),
+    ]);
+    expect(attributes).toContain('.agents/** linguist-generated=true');
+    expect(attributes).toContain('.claude/** linguist-generated=true');
+    expect(pullRequest).toContain('No credentials, provider bodies, customer data, or private URLs');
+    expect(bugReport).toContain('Do not paste credentials');
+    expect(featureRequest).toContain('Version-one boundary');
+    expect(generatedGuide).toContain('pnpm exec noodle agents setup --write');
+    expect(releaseChecklist).toContain('Owner decision required');
+    expect(releaseChecklist).toContain('license');
+    expect(changelog).toContain('## Unreleased');
+  });
 });

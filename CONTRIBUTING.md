@@ -24,6 +24,8 @@ Use Node 24+ and pnpm 11+. Do not switch package managers or remove `pnpm-lock.y
 
 Generated Agent Kit examples are documentation assets. Do not import their code or let Vitest discover tests outside the project-owned `test/` tree.
 
+See [docs/generated-agent-guidance.md](docs/generated-agent-guidance.md) for generated-file regeneration, review, and redistribution boundaries. Use the repository issue forms for sanitized bugs and product proposals. Do not report vulnerabilities in public issues; the owner must finalize the private reporting route before public release.
+
 ## Offline rule
 
 Ordinary tests and CI must require no provider network, Nuitee key, assistant-model key, Noodle account, or customer identity. Mock the compute gateway's allowlisted `callOperation` function and use fictional fixtures. The Vitest setup fails any accidental global `fetch` call.
