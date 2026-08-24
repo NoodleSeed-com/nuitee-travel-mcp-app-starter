@@ -115,7 +115,11 @@ pnpm --filter @nuitee-travel-starter/embedded-assistant-host build
 pnpm test
 pnpm validate
 pnpm agent:check:assistant
+pnpm ci:offline
 ```
+
+The final command is the canonical no-secret repository gate and includes the
+preceding static application and companion checks.
 
 MCP authoring, validation, hermetic tool tests, the companion UI, and its
 production build all work locally. A real external-browser conversation does

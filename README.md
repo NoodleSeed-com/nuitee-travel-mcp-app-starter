@@ -130,6 +130,8 @@ pnpm exec noodle devtools src/live-server.ts
 
 Ordinary tests and the default Noodle baseline are fully offline and need neither `NUITEE_API_KEY` nor an assistant-model credential. `src/live-server.ts` statically validates without a key, but executing its provider-backed tools requires the managed Nuitee secret and account entitlement.
 
+Run the same complete credential-free gate used by CI with `pnpm ci:offline`. It covers the root tests and local MCP smoke, all three entrypoint checks, exact customization validation, and the companion host typecheck/tests/build.
+
 ## Example prompts
 
 - “Open Cedar & Cloud Travel.”
