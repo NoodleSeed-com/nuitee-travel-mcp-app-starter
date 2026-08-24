@@ -6,3 +6,5 @@ dist
 !.env.example
 .noodle/
 .env.local
+.vitest-attachments/
+test/browser/__screenshots__/

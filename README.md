@@ -118,6 +118,8 @@ A developer may place the same MCP server inside an authenticated website or Saa
 
 ```sh
 pnpm test
+pnpm exec playwright install chromium
+pnpm test:browser
 pnpm exec noodle validate --json
 pnpm exec noodle test --json
 pnpm exec noodle tools list --json
@@ -148,7 +150,7 @@ Users do not need to know IATA codes. The host model resolves clear city or airp
 | `TravelHome` | Opening the starter or beginning a flight search | See Flights as available, view future domains as noninteractive “Coming soon” items, and start a familiar one-way or round-trip search through the host conversation. |
 | `FlightResults` | After search or fare verification | Compare three offers inline (up to ten in fullscreen), edit the search, select one fare, verify its current price, repeat verification against that same active fare, and return through the unified Search → Results → Verified fare-review flow. |
 
-Both widgets are implemented with host-native typography, light/dark theme styles, visible focus styles, practical touch-target sizing, reduced-motion fallbacks, and bounded text fallback for hosts without MCP Apps. Offline tests cover those component and CSS contracts; they are not real-browser proof. The final review is explicitly not a ticket, booking, or reservation. Browser-level 280px and named-host evidence remains a release gate, so clone authors should run the checks in [CONTRIBUTING.md](CONTRIBUTING.md) before making compatibility claims.
+Both widgets are implemented with host-native typography, light/dark theme styles, visible focus styles, practical touch-target sizing, reduced-motion fallbacks, and bounded text fallback for hosts without MCP Apps. `pnpm test:browser` proves the local fixture experience in Chromium at 280px and 320px, including keyboard focus, touch targets, themes, reduced motion, and selection interaction. The final review is explicitly not a ticket, booking, or reservation. Named-host evidence remains a separate release gate, so clone authors should follow [CONTRIBUTING.md](CONTRIBUTING.md) before making host-compatibility claims.
 
 ## Expected failure behavior
 

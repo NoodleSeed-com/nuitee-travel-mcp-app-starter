@@ -9,6 +9,8 @@ corepack enable
 pnpm install
 pnpm exec noodle agents doctor --json
 pnpm test
+pnpm exec playwright install chromium
+pnpm test:browser
 ```
 
 Use Node 24+ and pnpm 11+. Do not switch package managers or remove `pnpm-lock.yaml`.
@@ -30,6 +32,8 @@ See [docs/generated-agent-guidance.md](docs/generated-agent-guidance.md) for gen
 
 Ordinary tests and CI must require no provider network, Nuitee key, assistant-model key, Noodle account, or customer identity. Mock the compute gateway's allowlisted `callOperation` function and use fictional fixtures. The Vitest setup fails any accidental global `fetch` call.
 
+The separate `pnpm test:browser` gate renders fictional fixtures in headless Chromium and makes no provider call. Install its local browser once with `pnpm exec playwright install chromium`. It verifies narrow-width overflow, keyboard focus, touch targets, light/dark themes, reduced motion, and selection interaction.
+
 Never make a live provider call merely to get CI green. Live sandbox evidence is an explicitly authorized owner step after offline gates pass.
 
 ## Fixtures
@@ -46,6 +50,8 @@ Never make a live provider call merely to get CI green. Live sandbox evidence is
 ```sh
 pnpm install
 pnpm exec noodle agents setup --write
+pnpm exec playwright install chromium
+pnpm test:browser
 pnpm ci:offline
 ```
 
