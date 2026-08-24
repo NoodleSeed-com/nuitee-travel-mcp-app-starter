@@ -15,5 +15,6 @@ Notable changes to this starter will be recorded here. The repository has not pu
 - Reproducible, network-disabled Chromium captures of the fictional product experience.
 - Sanitized release evidence separating passing one-way, verification, and state-expiry behavior from unresolved fresh-write and Nuitee round-trip results.
 - Controlled exact-pin update to `@noodleseed/one` 0.137.0, Assistant 1.23.0, and generated Agent Kit 0.81.0.
+- Sanitized 0.137.0 live evidence confirming one-way mapping while preserving the unresolved post-expiry fresh-write, round-trip, and greater-than-3-MiB gates.
 
 A versioned entry and release date will be added only when the owner approves the public release contents, license, and evidence.

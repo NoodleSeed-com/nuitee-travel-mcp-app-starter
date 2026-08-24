@@ -104,4 +104,19 @@ describe('public repository contracts', () => {
     expect(releaseChecklist).toContain('license');
     expect(changelog).toContain('## Unreleased');
   });
+
+  it('keeps public-facing docs free of private upstream trackers and internal feedback IDs', async () => {
+    const docs = await Promise.all([
+      repositoryFile('README.md'),
+      repositoryFile('IMPLEMENTATION_PLAN.md'),
+      repositoryFile('PUBLIC_RELEASE_CHECKLIST.md'),
+      repositoryFile('docs/live-smoke-evidence.md'),
+      repositoryFile('docs/troubleshooting.md'),
+    ]);
+    const combined = docs.join('\n');
+    const privateTrackerPath = ['github.com', 'NoodleSeed-com', 'noodle-borg'].join('/');
+
+    expect(combined).not.toContain(privateTrackerPath);
+    expect(combined).not.toMatch(/\bfb-\d+\b/i);
+  });
 });

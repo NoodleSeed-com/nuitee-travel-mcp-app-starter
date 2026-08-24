@@ -14,6 +14,8 @@ const vite = await createServer({
   logLevel: 'error',
   resolve: { dedupe: ['react', 'react-dom'] },
   server: { middlewareMode: true },
+  // Bundle the published package's nested authoring runtime with the app so
+  // Vite deduplicates React during server-rendered preview capture.
   ssr: { noExternal: ['@noodleseed/one', '@noodle-borg/authoring'] },
 });
 
