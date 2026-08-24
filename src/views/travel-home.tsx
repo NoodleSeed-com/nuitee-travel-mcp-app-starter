@@ -80,7 +80,7 @@ export function TravelHomeView({
     >
       <Flow variant="stack" density="comfortable">
         <section className="cc-home-intro" aria-label="Flight availability">
-          <StatusBadge tone="success"><PlaneIcon />Flights available</StatusBadge>
+          <StatusBadge className="cc-availability-badge" tone="success"><PlaneIcon />Flights available</StatusBadge>
           <p>{data.message}</p>
         </section>
 
