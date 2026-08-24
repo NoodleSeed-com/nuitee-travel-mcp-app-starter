@@ -4,6 +4,14 @@ A flights-first Noodle Seed reference application for building polished conversa
 
 This repository demonstrates secure server-side API access, three bounded travel tools, two MCP Apps entry widgets designed for responsive hosts and one unified flight journey, opaque fare-selection state, defensive normalization, and fully offline tests. It is an independent starter—not an official Nuitee connector, airline partnership, booking product, or endorsement.
 
+| Credential-free home | Fictional flight comparison |
+| --- | --- |
+| ![Cedar & Cloud Travel flight-search widget using fictional fields and coming-soon domains](docs/images/travel-home.png) | ![Cedar & Cloud Travel flight-results widget using fictional fares and no airline logo](docs/images/flight-results.png) |
+
+These are fixture-only Chromium captures of the actual widgets, not live
+inventory or host screenshots. Their reproducible provenance is documented in
+[docs/images/README.md](docs/images/README.md).
+
 ## What it does
 
 - Opens a credential-free travel home with Flights marked available.
@@ -120,6 +128,7 @@ A developer may place the same MCP server inside an authenticated website or Saa
 pnpm test
 pnpm exec playwright install chromium
 pnpm test:browser
+pnpm docs:previews
 pnpm exec noodle validate --json
 pnpm exec noodle test --json
 pnpm exec noodle tools list --json
@@ -155,7 +164,7 @@ Users do not need to know IATA codes. The host model resolves clear city or airp
 | `TravelHome` | Opening the starter or beginning a flight search | See Flights as available, view future domains as noninteractive “Coming soon” items, and start a familiar one-way or round-trip search through the host conversation. |
 | `FlightResults` | After search or fare verification | Compare three offers inline (up to ten in fullscreen), edit the search, select one fare, verify its current price, repeat verification against that same active fare, and return through the unified Search → Results → Verified fare-review flow. |
 
-Both widgets are implemented with host-native typography, light/dark theme styles, visible focus styles, practical touch-target sizing, reduced-motion fallbacks, and bounded text fallback for hosts without MCP Apps. `pnpm test:browser` proves the local fixture experience in Chromium at 280px and 320px, including keyboard focus, touch targets, themes, reduced motion, and selection interaction. The final review is explicitly not a ticket, booking, or reservation. Named-host evidence remains a separate release gate, so clone authors should follow [CONTRIBUTING.md](CONTRIBUTING.md) before making host-compatibility claims.
+Both widgets are implemented with host-native typography, light/dark theme styles, visible focus styles, practical touch-target sizing, reduced-motion fallbacks, and bounded text fallback for hosts without MCP Apps. `pnpm test:browser` proves the local fixture experience in Chromium at 280px and 320px, including keyboard focus, touch targets, themes, reduced motion, and selection interaction. `pnpm docs:previews` regenerates the sanitized product images from the same network-disabled browser harness. The final review is explicitly not a ticket, booking, or reservation. Named-host evidence remains a separate release gate, so clone authors should follow [CONTRIBUTING.md](CONTRIBUTING.md) before making host-compatibility claims.
 
 ## Expected failure behavior
 

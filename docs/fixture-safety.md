@@ -21,11 +21,13 @@ the official [Passenger Standards Conference attachment](https://www.iata.org/co
 
 ## Asset boundary
 
-The reviewed Git tree contains no bundled raster images, SVG files, webfonts,
-or other airline artwork. Fixture code includes one fictional Nuitee-shaped
-`marketingLogo` URL solely to test exact-origin normalization and rendering;
-ordinary and browser tests never fetch it, and public fixture previews omit
-the image.
+The reviewed Git tree contains no bundled third-party airline artwork or
+webfonts. The only tracked raster assets are first-party Chromium captures of
+the actual widgets under `docs/images/`; their adjacent provenance file records
+the fictional, network-disabled capture process. Fixture code includes one
+fictional Nuitee-shaped `marketingLogo` URL solely to test exact-origin
+normalization and rendering; ordinary and browser tests never fetch it, and
+public fixture previews omit the image.
 
 Live search results may render an allowlisted Nuitee-hosted carrier image and
 the real carrier name/code returned with that inventory. That is data
