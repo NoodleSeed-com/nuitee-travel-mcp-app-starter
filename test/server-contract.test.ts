@@ -134,11 +134,11 @@ describe('server contract', () => {
     expect(wire).toContain('ASSISTANT_MODEL');
     expect(wire).toContain('ASSISTANT_MODEL_API_KEY');
     expect(wire).toContain('http://localhost:5173');
-    expect(wire).toContain('https://app.example.com');
+    expect(wire).not.toContain('https://app.example.com');
     expect(manifest.server.assistant.surfaces).toEqual([
       {
         mode: 'authenticated',
-        origins: ['http://localhost:5173', 'https://app.example.com'],
+        origins: ['http://localhost:5173'],
       },
     ]);
   });

@@ -35,11 +35,10 @@ assistant client secret, a model credential, or `NUITEE_API_KEY`.
 
 The companion runs on `http://localhost:5173` and binds only to
 `127.0.0.1`. It does not replace or alter the existing travel preview on port
-3003. The embedded server allowlist contains the exact localhost origin for
-this development example. Before production, replace the illustrative
-`https://app.example.com` origin with the real site origin and decide whether
-the localhost origin should remain in that deployment. Production origins
-must use HTTPS; wildcard origins are not supported by this example.
+3003. The embedded server allowlist contains only the exact localhost origin
+for this development example. Before production, add the real site's exact
+HTTPS origin and decide whether the localhost origin should remain in that
+deployment. Wildcard origins are not supported by this example.
 
 ## Environment separation
 
@@ -127,9 +126,9 @@ deployment and a deployment-bound assistant client.
 These are owner actions, not ordinary local setup, and this repository does not
 perform them automatically:
 
-1. Replace the illustrative production origin in `src/travel-server.ts` with
-   the exact HTTPS origin of the website. Keep only explicitly required local
-   origins.
+1. Add the website's exact HTTPS origin to `src/travel-server.ts`. Keep only
+   explicitly required local origins and remove the localhost origin from a
+   production-only deployment.
 2. Re-run `pnpm agent:check:assistant` and the full repository gates.
 3. Configure `NUITEE_API_KEY` and the three `ASSISTANT_MODEL_*` settings as
    server-side managed deployment configuration.

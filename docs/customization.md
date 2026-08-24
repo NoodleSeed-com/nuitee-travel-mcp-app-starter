@@ -90,4 +90,4 @@ Only then register the new tool and change the home domain from â€œComing soon.â
 
 ## Optional embedded assistant
 
-`src/embedded-server.ts` selects the same server factory in embedded mode. Replace the illustrative `https://app.example.com` with the embedding product's exact HTTPS origin, then follow `docs/EMBEDDED_ASSISTANT.md`. Do not create an embedded-only copy of flight tools or move model/Nuitee credentials into the embedding browser.
+`src/embedded-server.ts` selects the same server factory in embedded mode. The starter allowlist contains only the exact local demo origin. Before a production deployment, add the embedding product's exact HTTPS origin and decide whether to remove the localhost origin, then follow `docs/EMBEDDED_ASSISTANT.md`. Do not create an embedded-only copy of flight tools or move model/Nuitee credentials into the embedding browser.
