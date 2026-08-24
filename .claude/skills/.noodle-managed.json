@@ -59,7 +59,7 @@
     },
     {
       "path": ".claude/skills/noodle-seed/references/embedded-assistant.md",
-      "sha256": "f2ab2296cd6b81a0a49870e0cc4c0d45091067353140d2388a1d15653d196034",
+      "sha256": "3cfc04e8630a3129ab7f456495dc90d0cf85588bbae4ce1ca60452d12f8cf2a9",
       "skill": "noodle-seed",
       "skillVersion": "0.81.0"
     },
@@ -371,7 +371,7 @@
     },
     {
       "path": ".claude/skills/noodle-seed/examples/customer-auth/README.md",
-      "sha256": "d5595bc6254ae570ba2c71e097d9aa4fb4791458b2c3a5ef1a4cbb2c2138bf1c",
+      "sha256": "f9927d2a51d620ff8a90d30585eaaff91b173f850b33dc6806cc040f4ebcbeb7",
       "skill": "noodle-seed",
       "skillVersion": "0.81.0"
     },
