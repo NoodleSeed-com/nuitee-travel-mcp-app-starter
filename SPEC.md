@@ -54,8 +54,8 @@ Exactly three model-visible tools are allowed.
 
 ### `verify_flight_offer`
 
-- Input: only `sel_` plus 32 lowercase hexadecimal characters issued by this application.
-- Reads the current caller-scoped selection state (30-minute TTL), requires the record to match the active search, rejects unknown/stale selections locally, resolves the provider offer ID server-side, and calls `POST /flights/verify` only after a match.
+- Input: active-selection mode by default, with an optional application-issued `sel_` plus 32 lowercase hexadecimal characters. Explicit mode is reserved for a clearly chosen different option; “verify again” always uses the active selection.
+- Reads the current caller-scoped selection state (30-minute TTL), requires the resolved record to match the active search, rejects unknown/stale selections locally, resolves the provider offer ID server-side, and calls `POST /flights/verify` only after a match.
 - Output: availability, previous and current displayed price/currency, price-change state, bounded documented messages, verification time, and expiration.
 - Price change is a success state, not a generic error.
 - A provider 404 or locally expired offer directs the user to search again.
@@ -81,6 +81,7 @@ Only two tool-linked React entry widgets are permitted. They share one flight-jo
 - Named Search/Edit, Results, and Verified fare-review states with host-persisted Back navigation. A prompt may enter at Home/Search or Results; selection and verification advance within the same result widget.
 - Route and airport names/codes, carrier facts, optional Nuitee-provided airline imagery with text fallback, separate outbound/return airport-local dates/times, stops, duration, fare family, bounded price breakdown, baggage, terms, documented amenities, verification messages, and freshness disclosure.
 - Result cards are explicit selection controls. One **Verify selected fare** action appears only after selection.
+- Selection is mirrored through the app-only `select_flight_offer` helper, which is hidden from the model. This makes a later “verify this” or “verify again” resolve the same caller-owned fare instead of inferring an option from result order.
 - The final state is labelled **Verified fare review** and **Not a ticket or reservation**; it never invents a boarding pass, PNR, barcode, gate, seat, or ticket number.
 - Verification success, changed price, expired selection, retryable failure, partial results, empty results, malformed results, and loading are explicit.
 - No booking, checkout, reservation, payment, redemption, or handoff action. A production handoff may be added only for an exact allowlisted HTTPS domain and server-owned deep-link/session contract.
@@ -101,7 +102,7 @@ Browser widget → Noodle tool → compute gateway → fixed Nuitee HTTP connect
 - Widgets have empty `connectDomains` and `frameDomains`; FlightResults allows resource loads only from `https://sandbox.nuitee.flights` and `https://production.nuitee.flights` for validated airline images. Browser code never calls the Nuitee API.
 - Compute calls have one-host-call and 12-second ceilings. Search alone permits up to 6 MiB at both connector transport and application parsing so representative large responses can reach bounded normalization; verification retains a 750,000-byte application cap.
 - Raw provider errors and bodies are never returned. Public errors are bounded categories.
-- Selection state is caller-scoped, revisioned, private, and expires after 1,800 seconds.
+- Search records and the active selection are caller-scoped, revisioned, private, and expire after 1,800 seconds. A new search clears the active selection.
 - Fixture data is test-only, fictional, and unreachable from production tool fulfilment.
 - Ordinary tests replace global `fetch` with a failing stub and use only fictional injected provider responses.
 

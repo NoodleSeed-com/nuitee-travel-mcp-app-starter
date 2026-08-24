@@ -6,6 +6,7 @@ import offlineApp from '../src/server.js';
 import { starterConfig } from '../src/starter-config.js';
 
 const expectedTools = ['open_travel_starter', 'search_flights', 'verify_flight_offer'];
+const expectedAllTools = [...expectedTools, 'select_flight_offer'];
 const forbiddenFragments = [
   'book',
   'prebook',
@@ -28,6 +29,18 @@ describe('server contract', () => {
       .map((tool) => tool.name);
     expect(visible).toEqual(expectedTools);
     for (const fragment of forbiddenFragments) expect(visible.join('|')).not.toContain(fragment);
+  });
+
+  it('keeps active-fare selection as an app-only helper and makes repeat verification explicit', async () => {
+    const manifest = await liveApp.toManifest() as any;
+    const select = manifest.tools.find((entry: any) => entry.name === 'select_flight_offer');
+    const verify = manifest.tools.find((entry: any) => entry.name === 'verify_flight_offer');
+
+    expect(manifest.tools.map((entry: any) => entry.name)).toEqual(expectedAllTools);
+    expect(select?.visibility).toEqual(['app']);
+    expect(JSON.stringify(select?.inputSchema)).toContain('selectionId');
+    expect(verify?.description).toContain('verify again');
+    expect(verify?.inputSchema.properties.selectionMode.default).toBe('active');
   });
 
   it('links only TravelHome and FlightResults widgets', async () => {
@@ -99,9 +112,10 @@ describe('server contract', () => {
     expect(manifest.state.handles.flight_selections).toMatchObject({
       kind: 'selection',
       scope: 'caller',
-      version: 'v1',
+      version: 'v2',
       ttlSeconds: 1_800,
     });
+    expect(manifest.state.handles.flight_selections.schema.properties).toHaveProperty('activeSelectionId');
     expect(manifest.tools.find((tool: any) => tool.name === 'open_travel_starter')?.contextProvider).toBe(true);
   });
 
@@ -129,7 +143,7 @@ describe('server contract', () => {
     };
     const liveManifest = await liveApp.toManifest() as { tools: Array<{ name: string }> };
     expect(manifest.tools.map((tool) => tool.name)).toEqual(liveManifest.tools.map((tool) => tool.name));
-    expect(manifest.tools.map((tool) => tool.name)).toEqual(expectedTools);
+    expect(manifest.tools.map((tool) => tool.name)).toEqual(expectedAllTools);
     const wire = JSON.stringify(manifest);
     expect(wire).toContain('ASSISTANT_MODEL_BASE_URL');
     expect(wire).toContain('ASSISTANT_MODEL');

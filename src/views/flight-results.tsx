@@ -1,5 +1,5 @@
 import '@noodleseed/one/react/styles.css';
-import type { CSSProperties } from 'react';
+import { useEffect, useRef, type CSSProperties } from 'react';
 import {
   Action,
   ActionBar,
@@ -217,6 +217,32 @@ function airportLabel(route: Itinerary['route'], side: 'origin' | 'destination')
   const code = route[side];
   const name = route[`${side}Name`];
   return name ? `${name} (${code})` : code;
+}
+
+export function selectedFareModelContext(itinerary: Itinerary, verification?: Verification) {
+  const verified = verification?.selectionId === itinerary.selectionId ? verification : undefined;
+  const currentPrice = verified?.currentPrice ?? itinerary.price;
+  const verificationSummary = verified
+    ? ` It was last verified at ${currentPrice.total} ${currentPrice.currency}${verified.priceChanged ? ' after a price change' : ''}.`
+    : '';
+  return {
+    content: [{
+      type: 'text' as const,
+      text: `The active fare selection is ${itinerary.selectionId}: ${itinerary.carrier.name} (${itinerary.carrier.code}), ${itinerary.route.origin} to ${itinerary.route.destination}, ${currentPrice.total} ${currentPrice.currency}.${verificationSummary} When the user asks to verify this fare or verify again, use active selection mode. This is not a booking.`,
+    }],
+    structuredContent: {
+      activeFareSelection: {
+        selectionId: itinerary.selectionId,
+        carrier: { name: itinerary.carrier.name, code: itinerary.carrier.code },
+        route: { origin: itinerary.route.origin, destination: itinerary.route.destination },
+        price: { total: currentPrice.total, currency: currentPrice.currency },
+        verification: verified ? {
+          priceChanged: verified.priceChanged,
+          verifiedAt: verified.verifiedAt,
+        } : undefined,
+      },
+    },
+  };
 }
 
 function stopLabel(stops: number) {
@@ -646,10 +672,12 @@ export default function FlightResults() {
   const branding = useBranding();
   const toolInfo = useToolInfo('search_flights');
   const verify = useCallTool('verify_flight_offer');
+  const selectFare = useCallTool('select_flight_offer');
   const flow = useAppFlow<TravelView>({ key: 'nuitee_travel_flight_journey', initialView: 'results', views: ['search', 'results', 'review'] });
   const requestDisplayMode = useRequestDisplayMode();
   const sendFollowUp = useSendFollowUpMessage();
   const updateModelContext = useUpdateModelContext();
+  const selectionRequest = useRef<{ selectionId: string; request: Promise<unknown> }>();
   const [selected, setSelected] = useViewState<string | undefined>('selected_fare', undefined);
   const [savedVerification, setSavedVerification] = useViewState<Verification | undefined>('verified_fare', undefined);
   const pending = !ready || Object.keys(toolInfo).length === 0;
@@ -665,6 +693,20 @@ export default function FlightResults() {
     '--cc-accent': branding.theme?.[layout.theme]?.accent ?? branding.accent ?? '#1E6049',
     '--cc-focus': branding.theme?.[layout.theme]?.focus ?? '#0B6B52',
   } as CSSProperties;
+  const selectedItinerary = result?.itineraries.find((itinerary) => itinerary.selectionId === selected);
+  const selectedVerification = verification?.selectionId === selected ? verification : undefined;
+
+  useEffect(() => {
+    if (!ready || !layout.supports?.modelContext || !selectedItinerary) return;
+    void updateModelContext(selectedFareModelContext(selectedItinerary, selectedVerification)).catch(() => undefined);
+  }, [layout.supports?.modelContext, ready, selectedItinerary, selectedVerification, updateModelContext]);
+
+  const rememberSelection = (selectionId: string) => {
+    if (selectionRequest.current?.selectionId === selectionId) return selectionRequest.current.request;
+    const request = selectFare.callToolAsync({ selectionId });
+    selectionRequest.current = { selectionId, request };
+    return request;
+  };
 
   return (
     <FlightResultsView
@@ -682,6 +724,7 @@ export default function FlightResults() {
         setSelected(selectionId);
         setSavedVerification(undefined);
         verify.reset();
+        if (ready) void rememberSelection(selectionId).catch(() => undefined);
       }}
       onEdit={() => flow.navigate('search')}
       onBack={() => flow.back()}
@@ -692,24 +735,15 @@ export default function FlightResults() {
       onVerify={(selectionId) => {
         if (!ready) return;
         setSelected(selectionId);
-        void verify.callToolAsync({ selectionId }).then((response) => {
+        void rememberSelection(selectionId).catch(() => undefined).then(() => verify.callToolAsync({
+          selectionId,
+          selectionMode: 'explicit',
+        })).then((response) => {
           const content = record(response.structuredContent);
           const verified = isVerification(content?.verification) ? content.verification : undefined;
           if (!verified) return;
           setSavedVerification(verified);
           flow.navigate('review');
-          if (layout.supports?.modelContext) {
-            void updateModelContext({
-              content: [{ type: 'text', text: `Verified fare ${verified.selectionId}: ${verified.currentPrice.total} ${verified.currentPrice.currency}${verified.priceChanged ? ' after a price change' : ''}. This is not a booking.` }],
-              structuredContent: {
-                selectionId: verified.selectionId,
-                availability: verified.availability,
-                priceChanged: verified.priceChanged,
-                currentPrice: verified.currentPrice,
-                verifiedAt: verified.verifiedAt,
-              },
-            });
-          }
         }).catch(() => undefined);
       }}
     />

@@ -30,7 +30,13 @@ vi.mock('../src/helpers.js', () => {
     useWidgetReady: vi.fn(),
   };
 });
-import { FlightResultsView, isGatewayError, isSearchOutput, isVerification } from '../src/views/flight-results.js';
+import {
+  FlightResultsView,
+  isGatewayError,
+  isSearchOutput,
+  isVerification,
+  selectedFareModelContext,
+} from '../src/views/flight-results.js';
 import { SearchEditor, searchPrompt } from '../src/views/search-editor.js';
 import { isHome, TravelHomeView } from '../src/views/travel-home.js';
 import { starterConfig } from '../src/starter-config.js';
@@ -150,6 +156,26 @@ describe('TravelHome', () => {
 });
 
 describe('FlightResults', () => {
+  it('publishes only the active fare as bounded model context', () => {
+    const third = {
+      ...itinerary,
+      selectionId: 'sel_33333333333333333333333333333333',
+      carrier: { name: 'Cloudline Three', code: 'C3' },
+      price: { total: 412.2, currency: 'CAD' },
+    };
+
+    const context = selectedFareModelContext(third);
+    const wire = JSON.stringify(context);
+
+    expect(wire).toContain(third.selectionId);
+    expect(wire).toContain('Cloudline Three');
+    expect(wire).toContain('412.2');
+    expect(wire).toContain('active fare selection');
+    expect(wire).not.toContain(itinerary.selectionId);
+    expect(wire).not.toContain('offerId');
+    expect(wire).not.toContain('logoUrl');
+  });
+
   it('shows at most three inline and ten expanded, with one selection-aware primary action', () => {
     const results = Array.from({ length: 10 }, (_, index) => ({
       ...itinerary,

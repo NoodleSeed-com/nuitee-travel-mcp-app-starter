@@ -22,7 +22,7 @@ External MCP host or optional embedded assistant
           official Nuitee Flights API
 ```
 
-The browser never calls the Nuitee API. Both React entry widgets call or consume Noodle tools through the supported host bridge. Their CSP declares no external connection or frame origin. TravelHome has no external resource origin; FlightResults allows images only from the exact Nuitee Flights sandbox and production asset origins so it can display a validated `marketingLogo` supplied in search results. TravelHome can send an explicit user-authored search follow-up to a capable host; FlightResults uses a persisted Search/Edit → Results → Verified fare-review flow and calls only `verify_flight_offer` directly.
+The browser never calls the Nuitee API. Both React entry widgets call or consume Noodle tools through the supported host bridge. Their CSP declares no external connection or frame origin. TravelHome has no external resource origin; FlightResults allows images only from the exact Nuitee Flights sandbox and production asset origins so it can display a validated `marketingLogo` supplied in search results. TravelHome can send an explicit user-authored search follow-up to a capable host. FlightResults uses a persisted Search/Edit → Results → Verified fare-review flow, records a clicked choice through the app-only `select_flight_offer` helper, and invokes `verify_flight_offer` for provider verification.
 
 ## Entrypoints
 
@@ -44,7 +44,7 @@ The split exists because an active HTTP connector resolves its managed secret be
 4. The HTTP connector sends the exact JSON `legs` request to `POST /flights/rates`, injecting `X-API-Key` from the managed secret.
 5. Search alone permits up to 6 MiB at the connector and application parsing boundaries. The gateway then flattens bounded `data[].journeys[]`, accepts one valid offer per itinerary, normalizes at most ten, and keeps an optional airline image only from the exact Nuitee Flights asset allowlist.
 6. Each provider offer ID becomes a private selection record. The public itinerary receives only an application-issued `sel_…` identifier.
-7. The tool replaces the caller's `flight_selections` state using revision control and a 30-minute TTL.
+7. The tool replaces the caller's `flight_selections` state using revision control and a 30-minute TTL; a new search starts with no active selection.
 8. The result exposes at most three itineraries inline; the same FlightResults component may show up to ten when the host reports fullscreen display mode.
 9. The output includes the already validated `searchContext`, allowing familiar fields to be hydrated without exposing the provider request or raw response. Submitting natural place-name edits sends a host follow-up so ambiguity is resolved conversationally.
 
@@ -52,9 +52,9 @@ If validation or the provider fails, no fixture is consulted. The tool returns a
 
 ## Verification data flow
 
-1. The widget or model passes only an application `selectionId`.
-2. The tool reads private caller-scoped state.
-3. The compute gateway verifies ID syntax, state age, active-search identity, record membership, and documented expiration.
+1. A widget click records an application `selectionId` as the active fare through an app-only helper; hosts without widgets may pass the opaque application ID explicitly.
+2. The model-visible verification tool defaults to active-selection mode. “Verify this” and “verify again” therefore reuse the caller-owned active fare even if an older result ID is repeated in the model call; explicit mode is only for a clearly different choice.
+3. The tool reads private caller-scoped state, and the compute gateway verifies ID syntax, state age, active-search identity, record membership, and documented expiration.
 4. An unknown, stale, or locally expired selection stops before any Nuitee call.
 5. For a valid record, the gateway calls `POST /flights/verify` once with the exact provider ID held in state.
 6. The provider ID is discarded from public output. The result contains availability, old/new display price, change state, bounded messages, and expiry.
@@ -72,7 +72,7 @@ Version one requires three-letter IATA codes at the typed tool boundary. The lat
 | --- | --- | --- |
 | `NUITEE_API_KEY` | Project-root ignored `.env` fallback or scoped Noodle local store during authoring; Noodle managed cloud secret after deployment | Never browser/model/tool output/state/log/source |
 | Provider `offerId` | Private caller-scoped state | Never browser/model/tool output |
-| `selectionId` | Application-issued public handle | Tool/widget/model; valid only against current private state |
+| `selectionId` | Application-issued public handle and caller-scoped active-selection pointer | Tool/widget/model; valid only against current private state |
 | Assistant model settings | Optional Noodle deployment variables/secret | Never browser; unrelated to Nuitee key |
 | Assistant backend client secret | Embedding SaaS backend | Never MCP tool or browser |
 | Short-lived assistant session | Browser memory | Browser only, bounded lifetime |

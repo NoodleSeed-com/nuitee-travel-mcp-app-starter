@@ -31,6 +31,7 @@ export const moneySchema = z.object({
   fees: z.number().nonnegative().max(100_000_000).optional(),
 });
 
+export const selectionIdSchema = z.string().regex(/^sel_[a-f0-9]{32}$/);
 const iataSchema = z.string().regex(/^[A-Z]{3}$/);
 const durationMinutesSchema = z.number().int().nonnegative().max(10_080);
 const airlineLogoSchema = z.string().max(2048).regex(
@@ -83,7 +84,7 @@ const amenitySchema = z.object({
 });
 
 export const itinerarySchema = z.object({
-  selectionId: z.string().regex(/^sel_[a-f0-9]{32}$/),
+  selectionId: selectionIdSchema,
   route: z.object({
     origin: iataSchema,
     originName: z.string().min(1).max(120).optional(),
@@ -149,7 +150,7 @@ export const searchOutputSchema = z.object({
 
 export const verificationSchema = z.object({
   status: z.literal('success'),
-  selectionId: z.string().regex(/^sel_[a-f0-9]{32}$/),
+  selectionId: selectionIdSchema,
   availability: z.literal('available'),
   priceChanged: z.boolean(),
   previousPrice: moneySchema,
@@ -167,6 +168,21 @@ export const verifyOutputSchema = z.object({
   error: errorSchema.optional(),
 });
 
+export const verifyInputSchema = z.object({
+  selectionId: selectionIdSchema.optional().describe(
+    'Application-issued fare selection. Omit it when re-verifying the active fare.',
+  ),
+  selectionMode: z.enum(['active', 'explicit']).default('active').describe(
+    'Use active for “verify again”, “verify this”, or the currently selected fare. Use explicit only when the user clearly chooses a different option.',
+  ),
+});
+
+export const selectFlightOutputSchema = z.object({
+  status: z.enum(['selected', 'unavailable']),
+  message: z.string().max(240),
+  selectionId: selectionIdSchema.optional(),
+});
+
 export const homeOutputSchema = z.object({
   status: z.literal('ready'),
   brand: z.literal(starterConfig.brand.name),
@@ -179,7 +195,7 @@ export const homeOutputSchema = z.object({
 });
 
 export const selectionRecordSchema = z.object({
-  selectionId: z.string().regex(/^sel_[a-f0-9]{32}$/),
+  selectionId: selectionIdSchema,
   offerId: z.string().min(1).max(16_384),
   searchId: z.string().max(39),
   originalTotal: z.number().nonnegative().max(100_000_000),
@@ -191,6 +207,7 @@ export const selectionStateSchema = z.object({
   searchId: z.string().max(39).optional(),
   updatedAt: z.string().max(64),
   records: z.array(selectionRecordSchema).max(10),
+  activeSelectionId: selectionIdSchema.optional(),
 });
 
 export type HomeOutput = z.infer<typeof homeOutputSchema>;
