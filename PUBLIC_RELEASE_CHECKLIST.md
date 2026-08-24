@@ -26,10 +26,10 @@ This is the decision gate for making the repository public, marking it as a temp
 
 ## Technical and evidence gates
 
-- [ ] Resolve and prove the complete caller-state write → expire → fresh-write lifecycle without redeployment. On `0.136.0`, expiry correctly returned `unknown_or_stale_selection`, but the same long-running server then failed the fresh state/search path while a new one-shot server succeeded. Retest after the reviewed `0.137.0` update; keep the 30-minute TTL and revision protection.
+- [ ] Resolve and prove the complete caller-state write → expire → fresh-write lifecycle without redeployment. Exact `0.136.0` and `0.137.0` both rejected the expired selection correctly, then returned a tool-level error with no structured output on the same server's fresh search. Keep the 30-minute TTL and revision protection; do not add an application reset workaround.
 - [ ] Prove a representative large live search maps successfully under the search-only 6 MiB limit; do not raise the global/default limit.
-- [x] Rechecked a bounded live one-way search and same-session active-fare verification with the owner-authorized sandbox key; the owner also confirmed repeat verification in ChatGPT after the selection fix.
-- [ ] Recheck a bounded round trip successfully. Two 2026-08-24 attempts completed application mapping but returned Nuitee `provider_error`; do not add multicity until Nuitee documents deterministic 3+ leg response mapping.
+- [x] Rechecked a bounded live one-way search and same-session active-fare verification with the owner-authorized sandbox key on exact `0.137.0`; the owner also confirmed repeat verification in ChatGPT after the selection fix.
+- [ ] Recheck a bounded round trip successfully. Three bounded 2026-08-24 attempts across 0.136.0 and 0.137.0 completed application mapping but returned Nuitee `provider_error`; do not add multicity until Nuitee documents deterministic 3+ leg response mapping.
 - [ ] Add one real deployment-owned widget domain and pass the ChatGPT target gate before claiming or submitting ChatGPT compatibility.
 - [x] The committed Chromium fixture gate covers 280px/320px overflow, wider inline/fullscreen layouts, 400% CSS-zoom reflow, keyboard/focus, touch targets, light/dark themes, reduced motion, and selection interaction without provider access.
 - [x] Captured reproducible Chromium product images from the actual widgets using only network-disabled fictional fixtures, without host conversation chrome, live inventory, offer IDs, user data, production URLs, or third-party carrier logos.
