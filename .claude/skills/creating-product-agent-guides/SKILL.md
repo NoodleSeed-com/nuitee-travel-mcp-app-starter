@@ -3,7 +3,7 @@ name: creating-product-agent-guides
 description: "Use when a Noodle Seed MCP server needs a new or revised product agent guide, App Package skill, or explicit product-skill regeneration."
 ---
 
-<!-- noodle-skill version:0.70.0 hash:0fa48a82fe836cf0 -->
+<!-- noodle-skill version:0.81.0 hash:0fa48a82fe836cf0 -->
 
 # creating-product-agent-guides
 

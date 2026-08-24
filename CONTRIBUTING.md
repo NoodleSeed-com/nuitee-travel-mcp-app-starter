@@ -24,6 +24,8 @@ Use Node 24+ and pnpm 11+. Do not switch package managers or remove `pnpm-lock.y
 
 Generated Agent Kit examples are documentation assets. Do not import their code or let Vitest discover tests outside the project-owned `test/` tree.
 
+See [docs/generated-agent-guidance.md](docs/generated-agent-guidance.md) for generated-file regeneration, review, and redistribution boundaries. Use the repository issue forms for sanitized bugs and product proposals. Do not report vulnerabilities in public issues; the owner must finalize the private reporting route before public release.
+
 ## Offline rule
 
 Ordinary tests and CI must require no provider network, Nuitee key, assistant-model key, Noodle account, or customer identity. Mock the compute gateway's allowlisted `callOperation` function and use fictional fixtures. The Vitest setup fails any accidental global `fetch` call.
@@ -44,19 +46,10 @@ Never make a live provider call merely to get CI green. Live sandbox evidence is
 ```sh
 pnpm install
 pnpm exec noodle agents setup --write
-pnpm exec noodle agents doctor --json
-pnpm test
-pnpm exec noodle validate --json
-pnpm exec noodle test --json
-pnpm exec noodle tools list --json
-pnpm exec noodle check --json
-pnpm exec noodle validate src/live-server.ts --json
-pnpm exec noodle check src/live-server.ts --json
-pnpm exec noodle validate src/embedded-server.ts --json
-pnpm exec noodle check src/embedded-server.ts --target embedded-assistant --json
+pnpm ci:offline
 ```
 
-The last four commands are static and require no secret. Do not run provider-backed tool calls without a managed key, entitlement, safe input, and explicit authorization.
+`pnpm ci:offline` is the canonical no-secret gate. It checks Agent Kit freshness, validates the safe customization file, runs the root suite, exercises the default local MCP protocol, lists the tool surface, runs default/live/embedded static readiness checks, and typechecks/tests/builds the companion host. Live and embedded entrypoints are only validated statically; CI does not execute provider- or model-backed tools. Do not run those calls without managed credentials, entitlement, safe input, and explicit authorization.
 
 Review the tool list after every change: it must contain only `open_travel_starter`, `search_flights`, and `verify_flight_offer`. Airport lookup remains omitted until its live connector path passes; a future domain remains presentation-only until its full contract and evidence exist.
 
@@ -84,7 +77,7 @@ The package must stay exact-pinned; never commit `latest`.
 7. Review manifests, widgets, connector behavior, state, and error output for breaking changes.
 8. Merge only after human review. Do not auto-merge Noodle package updates.
 
-Monthly Dependabot pull requests are review prompts, not approval to merge.
+Monthly Dependabot pull requests cover npm and GitHub Actions. They are review prompts, not approval to merge; action updates must remain full-commit-SHA pinned. The workspace also holds newly published packages for 24 hours by default. The current exact Noodle package pair is an explicitly reviewed compatibility-set exception; change that exception only with the pins, lockfile, regenerated Agent Kit, and full gates.
 
 ## Change review
 

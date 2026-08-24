@@ -23,6 +23,23 @@ The tools chain: `list_my_organizations` surfaces the `org_id`s the customer can
 `list_org_apps` takes one of those ids, and `archive_org_app` accepts the selected app id. Tool code remains
 independent of the selected origin.
 
+The server also declares one typed `agentGuide` for those product workflows. The deployed embedded assistant
+uses it automatically: each turn keeps only complete workflows supported by the verified session's roles,
+scopes, and model-visible tools. An organization member can receive organization/app review guidance, while
+only an administrator with `org_apps:write` receives the complete archive workflow and its confirmation
+boundary. The guide stays server-side, so the Web Component, React renderer, headless hook, and public client
+need no new option and receive no raw skill content. See
+[using a product guide at runtime](https://docs.noodleseed.dev/docs/guides/product-agent-guides#use-the-guide-at-runtime)
+for the public behavior guide.
+
+A skill-aware external agent connected directly to the same tenant MCP URL receives the same
+complete-workflow filtering through the modern draft MCP Skills extension. Members and administrators may
+therefore receive different `SKILL.md` and MCP-surface bytes, each with matching caller-specific digests.
+This reuses the configured customer OAuth boundary; it does not require a second skill installation or auth
+system, and it is not a claim that every external host currently implements the draft extension. The
+same [runtime guide](https://docs.noodleseed.dev/docs/guides/product-agent-guides#use-the-guide-at-runtime)
+explains this preview boundary.
+
 ## Declare the customer endpoint
 
 `customerEndpoint` names one private routing authority and bounds the origins an IdP may select:
@@ -347,6 +364,7 @@ and passes `routing: { endpoints: { customer_api: cluster.apiBaseUrl } }` to
 browser. Do not copy the route into page context, session claims, tool input, or model instructions.
 
 ```bash
+noodle variables set ASSISTANT_ORIGIN https://app.example.com --scope env
 noodle variables set ASSISTANT_MODEL_BASE_URL https://model.example.com/v1 --scope env
 noodle variables set ASSISTANT_MODEL your-model --scope env
 noodle secrets set ASSISTANT_MODEL_API_KEY --scope env
@@ -355,7 +373,8 @@ noodle secrets set CUSTOMER_API_CLIENT_SECRET --scope env
 noodle check --target embedded-assistant src/server.ts
 ```
 
-Assistant origins are exact. Production embedding origins must use HTTPS; plain HTTP is accepted only for
+`ASSISTANT_ORIGIN` is the operator-owned production embedding origin, so one source can serve every customer
+without an application fork. Assistant origins are exact. Production embedding origins must use HTTPS; plain HTTP is accepted only for
 loopback development origins such as `http://localhost:3000`, `http://127.0.0.1:3000`, or
 `http://[::1]:3000`. `noodle dev` serves the MCP project, not that separate embedding application.
 

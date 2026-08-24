@@ -112,7 +112,7 @@ This starter intentionally omits a made-up widget domain. Local DevTools and gen
 
 ### B. Optional embedded assistant
 
-A developer may place the same MCP server inside an authenticated website or SaaS application. Embedded mode adds separate server-side model configuration and a short-lived backend session exchange; it does not duplicate the travel connector, schemas, normalizers, tools, or widgets. See [docs/EMBEDDED_ASSISTANT.md](docs/EMBEDDED_ASSISTANT.md).
+A developer may place the same MCP server inside an authenticated website or SaaS application. The companion at `examples/embedded-assistant-host/` demonstrates this without duplicating the travel connector, schemas, normalizers, tools, or widgets. See [docs/EMBEDDED_ASSISTANT.md](docs/EMBEDDED_ASSISTANT.md).
 
 ## Useful commands
 
@@ -130,6 +130,8 @@ pnpm exec noodle devtools src/live-server.ts
 
 Ordinary tests and the default Noodle baseline are fully offline and need neither `NUITEE_API_KEY` nor an assistant-model credential. `src/live-server.ts` statically validates without a key, but executing its provider-backed tools requires the managed Nuitee secret and account entitlement.
 
+Run the same complete credential-free gate used by CI with `pnpm ci:offline`. It covers the root tests and local MCP smoke, all three entrypoint checks, exact customization validation, and the companion host typecheck/tests/build.
+
 ## Example prompts
 
 - “Open Cedar & Cloud Travel.”
@@ -146,7 +148,7 @@ Users do not need to know IATA codes. The host model resolves clear city or airp
 | `TravelHome` | Opening the starter or beginning a flight search | See Flights as available, view future domains as noninteractive “Coming soon” items, and start a familiar one-way or round-trip search through the host conversation. |
 | `FlightResults` | After search or fare verification | Compare three offers inline (up to ten in fullscreen), edit the search, select one fare, verify its current price, and return through the unified Search → Results → Verified fare-review flow. |
 
-Both widgets use host-native typography, light/dark themes, visible keyboard focus, practical touch targets, reduced-motion-safe loading skeletons, and bounded text fallback for hosts without MCP Apps. The final review is explicitly not a ticket, booking, or reservation. Browser-level 280px and named-host evidence remains a release gate, so clone authors should run the checks in [CONTRIBUTING.md](CONTRIBUTING.md) before making compatibility claims.
+Both widgets are implemented with host-native typography, light/dark theme styles, visible focus styles, practical touch-target sizing, reduced-motion fallbacks, and bounded text fallback for hosts without MCP Apps. Offline tests cover those component and CSS contracts; they are not real-browser proof. The final review is explicitly not a ticket, booking, or reservation. Browser-level 280px and named-host evidence remains a release gate, so clone authors should run the checks in [CONTRIBUTING.md](CONTRIBUTING.md) before making compatibility claims.
 
 ## Expected failure behavior
 
@@ -168,11 +170,11 @@ See [docs/troubleshooting.md](docs/troubleshooting.md) for operator actions.
 
 ## Customization
 
-Branding, tool descriptions, normalization fields, widget composition, and future domain boundaries are documented in [docs/customization.md](docs/customization.md). The widgets use the host platform's system sans-serif stack, system-neutral structural colors, and a restrained Cedar & Cloud accent. They deliberately avoid a duplicated in-widget brand logo or decorative hero so they remain native to ChatGPT and other MCP hosts. Keep fixture airlines fictional and do not bundle carrier assets. Live results may display the carrier name, code, and documented `marketingLogo` supplied by Nuitee, but only when the image uses an allowlisted Nuitee Flights asset origin; carrier text remains the fallback. Inventory attribution does not by itself imply an airline partnership or make this an official Nuitee connector.
+Branding, tool descriptions, normalization fields, widget composition, and future domain boundaries are documented in [docs/customization.md](docs/customization.md). Run `pnpm customize -- <presentation options>` to update the single owned brand/origin config, then `pnpm customize:check`; the command cannot accept or read credentials. The widgets use the host platform's system sans-serif stack, system-neutral structural colors, and a restrained Cedar & Cloud accent. They deliberately avoid a duplicated in-widget brand logo or decorative hero so they remain native to ChatGPT and other MCP hosts. Keep fixture airlines fictional and do not bundle carrier assets. Live results may display the carrier name, code, and documented `marketingLogo` supplied by Nuitee, but only when the image uses an allowlisted Nuitee Flights asset origin; carrier text remains the fallback. Inventory attribution does not by itself imply an airline partnership or make this an official Nuitee connector.
 
 ## Updating Noodle Seed safely
 
-`@noodleseed/one` is pinned exactly to `0.116.0`. Dependabot opens reviewable dependency pull requests monthly; nothing auto-merges. For a manual Noodle update:
+`@noodleseed/one` is pinned exactly to `0.136.0`. Dependabot opens reviewable dependency pull requests monthly; nothing auto-merges. For a manual Noodle update:
 
 1. Compare the registry version and release guidance.
 2. Update the exact package pin and regenerate `pnpm-lock.yaml`.
@@ -183,7 +185,7 @@ Branding, tool descriptions, normalization fields, widget composition, and futur
 
 ## Public-release status
 
-No source license has been selected. Public distribution is blocked until the owner approves and adds one. Host-specific browser evidence, a credentialed sandbox/error-shape smoke by the repository owner, a recheck of deliberately unassigned fixture codes, and dependency/license review are also required before calling a release production-ready.
+No source license has been selected. Public distribution is blocked until the owner approves and adds one. The complete local and remote release-gate inventory is tracked in [PUBLIC_RELEASE_CHECKLIST.md](PUBLIC_RELEASE_CHECKLIST.md). Host-specific browser evidence, a credentialed sandbox/error-shape smoke by the repository owner, a recheck of deliberately unassigned fixture codes, and dependency/license review are also required before calling a release production-ready.
 
 Live one-way search and same-session fare verification previously passed for a bounded sandbox route. A complete owner-authorized round-trip response later measured 4,960,533 decoded bytes, above the former 3 MiB operation ceiling. `@noodleseed/one` 0.116 raises the opt-in per-operation maximum to 6 MiB; this starter applies that ceiling only to flight search and proves the measured response class reaches bounded normalization hermetically. Fare verification keeps the smaller 750,000-byte application limit and no widened connector limit. The 6 MiB configuration still needs a successful live mapping recheck after deployment. Nuitee documents no result limit or pagination contract.
 
@@ -191,3 +193,11 @@ The 0.107 airport recheck was inconclusive: the direct control received one redi
 
 No custom widget domain is claimed by default. Configure one real, dedicated,
 deployment-owned HTTPS origin for both widgets before app-store submission.
+
+## Contributing and generated guidance
+
+Start with [CONTRIBUTING.md](CONTRIBUTING.md), use the sanitized GitHub issue forms, and never place vulnerability details or secrets in a public issue. The private security route is still an owner decision and therefore remains a release blocker in [SECURITY.md](SECURITY.md).
+
+The large `.agents/` and `.claude/` trees are intentional generated Agent Kit guidance, not application source or ordinary tests. [docs/generated-agent-guidance.md](docs/generated-agent-guidance.md) explains regeneration, review, and public-redistribution boundaries. They are marked as generated for GitHub presentation, but their diffs must still be reviewed.
+
+Unreleased changes are summarized in [CHANGELOG.md](CHANGELOG.md). A version/date will be added only at an approved release freeze.

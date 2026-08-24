@@ -42,7 +42,7 @@ Do not add a raw `offerId` tool input, log state values, put provider IDs in wid
 
 Provider responses are untrusted and bounded before public use. Public results cap itineraries and nested arrays, sanitize strings, omit raw responses/provider logos/arbitrary image URLs/internal fare codes, and classify errors through application-owned messages. The only image exception is a documented marketing-carrier image on an exact Nuitee Flights asset origin. A provider failure never activates fixtures.
 
-The authored compute gateway has a 12-second/one-host-call limit. Flight search alone accepts up to 3 MiB at the connector and application boundaries before normalizing at most ten results; fare verification retains a 750,000-byte application cap. Operators should not broaden either limit without contract evidence and should monitor without logging raw bodies.
+The authored compute gateway has a 12-second/one-host-call limit. Flight search alone accepts up to 6 MiB at the connector and application boundaries before normalizing at most ten results; fare verification retains a 750,000-byte application cap. Operators should not broaden either limit without contract evidence and should monitor without logging raw bodies.
 
 ## Reporting a vulnerability
 
@@ -52,4 +52,4 @@ Include a concise impact statement, affected revision, safe reproduction steps, 
 
 ## Release blocker
 
-A final reporting contact, owner-selected license, secret/history scan, dependency/provenance review, credentialed sandbox smoke, and real-host UI evidence are required before public release.
+A final reporting contact, owner-selected license, owner/legal dependency-license and provenance review, credentialed sandbox smoke, and real-host UI evidence are required before public release. The completed automated secret-history and package-metadata checks must be repeated from the final release commit.

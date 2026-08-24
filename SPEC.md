@@ -99,7 +99,7 @@ Browser widget → Noodle tool → compute gateway → fixed Nuitee HTTP connect
 - Method, origin, base URL, path, headers, and provider offer ID are not model inputs.
 - `NUITEE_API_KEY` is a server-side managed secret injected only as `X-API-Key`.
 - Widgets have empty `connectDomains` and `frameDomains`; FlightResults allows resource loads only from `https://sandbox.nuitee.flights` and `https://production.nuitee.flights` for validated airline images. Browser code never calls the Nuitee API.
-- Compute calls have one-host-call and 12-second ceilings. Search alone permits up to 3 MiB at both connector transport and application parsing so representative large responses can reach bounded normalization; verification retains a 750,000-byte application cap.
+- Compute calls have one-host-call and 12-second ceilings. Search alone permits up to 6 MiB at both connector transport and application parsing so representative large responses can reach bounded normalization; verification retains a 750,000-byte application cap.
 - Raw provider errors and bodies are never returned. Public errors are bounded categories.
 - Selection state is caller-scoped, revisioned, private, and expires after 1,800 seconds.
 - Fixture data is test-only, fictional, and unreachable from production tool fulfilment.

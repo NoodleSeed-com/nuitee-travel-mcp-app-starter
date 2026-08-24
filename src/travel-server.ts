@@ -17,10 +17,11 @@ import {
   selectionStateSchema,
   verifyOutputSchema,
 } from './flight-schemas.js';
+import { starterConfig } from './starter-config.js';
 
 const home = {
   status: 'ready' as const,
-  brand: 'Cedar & Cloud Travel' as const,
+  brand: starterConfig.brand.name,
   message: 'Flights are available. Tell me your route, dates, travelers, currency, and point-of-sale country to begin.',
   domains: [
     { name: 'Flights' as const, availability: 'available' as const },
@@ -30,7 +31,7 @@ const home = {
     { name: 'Experiences' as const, availability: 'coming_soon' as const },
   ],
   fallback:
-    'Cedar & Cloud Travel can search one-way or round-trip flights, compare up to ten current options, and verify a selected fare. Stays, Loyalty, Ground travel, and Experiences are coming soon.',
+    `${starterConfig.brand.name} can search one-way or round-trip flights, compare up to ten current options, and verify a selected fare. Stays, Loyalty, Ground travel, and Experiences are coming soon.`,
 };
 
 const configurationError = {
@@ -62,17 +63,17 @@ const flightViewPolicy = {
 
 function openTravelStarter() {
   return tool('open_travel_starter', {
-    title: 'Open Cedar & Cloud Travel',
+    title: `Open ${starterConfig.brand.name}`,
     description:
-      'Open the Cedar & Cloud Travel home experience. Flights are available; all other displayed travel domains are noninteractive coming-soon information.',
+      `Open the ${starterConfig.brand.name} home experience. Flights are available; all other displayed travel domains are noninteractive coming-soon information.`,
     annotations: annotations.readOnly(),
     contextProvider: true,
     input: z.object({}),
     output: homeOutputSchema,
     fulfil: () => home,
-    viewTitle: 'Cedar & Cloud Travel',
+    viewTitle: starterConfig.brand.name,
     viewDescription: 'Flights-first travel discovery with clearly labelled future domains.',
-    invoking: 'Opening Cedar & Cloud Travel…',
+    invoking: `Opening ${starterConfig.brand.name}…`,
     invoked: 'Travel starter ready',
     view: { component: 'travel-home', entry: './views/travel-home.tsx' },
     ...homeViewPolicy,
@@ -204,8 +205,13 @@ export function createTravelServer(mode: 'credential-free' | 'live' | 'embedded'
           model: variable('ASSISTANT_MODEL'),
           apiKey: secret('ASSISTANT_MODEL_API_KEY'),
         }),
-        // Replace this illustrative exact origin before any deployment.
-        access: authenticatedWebsite({ origins: ['https://app.example.com'] }),
+        // The loopback origin is only for this repository's companion demo.
+        // The starter ships with the exact local demo origin only. Add the
+        // deployment-owned HTTPS origin explicitly before production use and
+        // remove localhost from production-only deployments.
+        access: authenticatedWebsite({
+          origins: [...starterConfig.embeddedAssistant.origins],
+        }),
         layout: { mode: 'floating', position: 'bottom-right' },
       })
     : undefined;
@@ -216,10 +222,10 @@ export function createTravelServer(mode: 'credential-free' | 'live' | 'embedded'
         instructions:
           'Help users discover and verify one-way or round-trip flights from natural city or airport names. Translate only well-known, unambiguous places to IATA codes, restate the resolved airports, and ask for city/region/country clarification when uncertain or ambiguous. Never guess a code, request credentials, expose provider offer identifiers, or imply booking, payment, loyalty, hotel, car, or transaction support.',
         branding: {
-          name: 'Cedar & Cloud Travel',
-          accent: '#2B6F6D',
-          surface: '#F4F1E8',
-          surfaceDark: '#101B22',
+          name: starterConfig.brand.name,
+          accent: starterConfig.brand.accent,
+          surface: starterConfig.brand.surface,
+          surfaceDark: starterConfig.brand.surfaceDark,
           radius: 'lg' as const,
           density: 'comfortable' as const,
         },
@@ -242,12 +248,12 @@ export function createTravelServer(mode: 'credential-free' | 'live' | 'embedded'
         title: 'Nuitee Travel MCP App Starter',
         version: '0.1.0',
         instructions:
-          'Open the credential-free Cedar & Cloud Travel home. Users may speak in natural city or airport names; resolve only unambiguous places and ask for region/country clarification rather than guessing a code. Live tools explain that an owner must configure NUITEE_API_KEY; never ask an end user to paste a key.',
+          `Open the credential-free ${starterConfig.brand.name} home. Users may speak in natural city or airport names; resolve only unambiguous places and ask for region/country clarification rather than guessing a code. Live tools explain that an owner must configure NUITEE_API_KEY; never ask an end user to paste a key.`,
         branding: {
-          name: 'Cedar & Cloud Travel',
-          accent: '#2B6F6D',
-          surface: '#F4F1E8',
-          surfaceDark: '#101B22',
+          name: starterConfig.brand.name,
+          accent: starterConfig.brand.accent,
+          surface: starterConfig.brand.surface,
+          surfaceDark: starterConfig.brand.surfaceDark,
           radius: 'lg' as const,
           density: 'comfortable' as const,
         },

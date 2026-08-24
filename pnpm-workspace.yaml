@@ -1,2 +1,11 @@
+packages:
+  - 'examples/*'
+
+# Hold newly published dependencies for 24 hours by default. These two exact
+# Noodle versions were reviewed as one compatibility set during the controlled
+# upgrade; future Noodle updates must update the pins, lockfile, Agent Kit, and
+# this exception deliberately.
+minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
-  - '@noodleseed/one@0.107.1 || 0.116.0 || 0.122.0'
+  - '@noodleseed/one@0.136.0'
+  - '@noodleseed/assistant@1.22.0'

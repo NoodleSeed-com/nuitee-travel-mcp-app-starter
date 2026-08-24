@@ -14,11 +14,11 @@ describe('customer-auth example', () => {
         header: { mark: 'status', badge: { text: 'Workspace online', tone: 'success' } },
       },
     });
-    expect(
-      manifest.server.assistant?.allowedOrigins.every(
-        (origin) => origin.startsWith('https://') || origin.startsWith('http://localhost:'),
-      ),
-    ).toBe(true);
+    expect(manifest.server.assistant?.allowedOrigins).toEqual([
+      '${env.ASSISTANT_ORIGIN}',
+      'https://dev.noodleseed.com',
+      'http://localhost:3000',
+    ]);
     expect(manifest.server.branding).toMatchObject({
       name: 'Noodle Seed Assistant',
       colorScheme: 'auto',
@@ -42,6 +42,23 @@ describe('customer-auth example', () => {
       },
     });
     expect(manifest.server.interactions).toEqual({ confirmationFallback: 'host' });
+    expect(manifest.server.agentGuide?.workflows.map((workflow) => workflow.id)).toEqual([
+      'find_organizations',
+      'review_organization_apps',
+      'archive_organization_app',
+    ]);
+    expect(
+      manifest.server.agentGuide?.workflows.find(
+        (workflow) => workflow.id === 'archive_organization_app',
+      )?.steps,
+    ).toEqual([
+      { capability: { kind: 'tool', name: 'list_my_organizations' } },
+      { capability: { kind: 'tool', name: 'list_org_apps' } },
+      {
+        capability: { kind: 'tool', name: 'archive_org_app' },
+        guidance: 'Archive only the exact app the customer selected after confirmation.',
+      },
+    ]);
     const catalog = app.toConnectorCatalog();
     expect(catalog?.connectors).toHaveLength(1);
     expect(catalog?.connectors[0]?.http).toMatchObject({

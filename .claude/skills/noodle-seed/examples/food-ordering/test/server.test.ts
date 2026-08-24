@@ -78,6 +78,8 @@ describe('food-ordering example', () => {
     expect(JSON.stringify(tools.get('open_ordering'))).toContain('featuredItems');
     expect(JSON.stringify(tools.get('open_ordering'))).toContain('${context.temporal.localDate}');
     expect(JSON.stringify(tools.get('open_ordering'))).toContain('${context.ambient.serviceArea}');
+    expect(JSON.stringify(tools.get('open_ordering'))).toContain('${context.location.latitude}');
+    expect(JSON.stringify(tools.get('open_ordering'))).toContain('${context.location.longitude}');
     expect(JSON.stringify(tools.get('sync_cart'))).toContain('revision');
     expect(tools.get('sync_cart')?.annotations?.confirm).toBe(false);
     expect(tools.get('prepare_checkout')?.annotations?.confirm).toBe(false);
@@ -111,7 +113,7 @@ describe('food-ordering example', () => {
     const distribution = app.toDistributionMetadata();
     expect(distribution).toMatchObject({
       schemaVersion: 1,
-      listing: { summary: expect.stringContaining('Browse local food') },
+      listing: { summary: 'Build a pickup noodle order.' },
       assets: {
         icon: { alt: 'Food Ordering noodle bowl' },
         screenshots: [

@@ -2,6 +2,7 @@ import '@noodleseed/one/react/styles.css';
 import type { CSSProperties } from 'react';
 import { Feedback, Flow, Frame, Region, StatusBadge, useBranding, useLayout, useSendFollowUpMessage, useToolInfo, useWidgetReady } from '../helpers.js';
 import type { HomeOutput } from '../flight-schemas.js';
+import { starterConfig } from '../starter-config.js';
 import { BedIcon, CarIcon, CompassIcon, PlaneIcon, StarIcon } from './icons.js';
 import { SearchEditor, searchPrompt, type SearchDraft } from './search-editor.js';
 import './travel.css';
@@ -27,7 +28,7 @@ export function isHome(value: unknown): value is HomeOutput {
     ['Experiences', 'coming_soon'],
   ] as const;
   return candidate.status === 'ready' &&
-    candidate.brand === 'Cedar & Cloud Travel' &&
+    candidate.brand === starterConfig.brand.name &&
     typeof candidate.message === 'string' && candidate.message.length <= 300 &&
     typeof candidate.fallback === 'string' && candidate.fallback.length <= 500 &&
     Array.isArray(candidate.domains) && candidate.domains.length === expected.length && candidate.domains.every((domain, index) =>
@@ -49,21 +50,21 @@ export function TravelHomeView({
 }) {
   if (state === 'loading') {
     return (
-      <Frame className={theme === 'dark' ? 'cc-theme-dark' : ''} displayMode="auto" title="Cedar & Cloud Travel">
+      <Frame className={theme === 'dark' ? 'cc-theme-dark' : ''} displayMode="auto" title={starterConfig.brand.name}>
         <Feedback status="loading">Opening your travel starting point…</Feedback>
       </Frame>
     );
   }
   if (state === 'error') {
     return (
-      <Frame className={theme === 'dark' ? 'cc-theme-dark' : ''} displayMode="auto" title="Cedar & Cloud Travel">
+      <Frame className={theme === 'dark' ? 'cc-theme-dark' : ''} displayMode="auto" title={starterConfig.brand.name}>
         <Feedback status="error">The travel starter could not open. Try again.</Feedback>
       </Frame>
     );
   }
   if (state === 'malformed' || !data) {
     return (
-      <Frame className={theme === 'dark' ? 'cc-theme-dark' : ''} displayMode="auto" title="Cedar & Cloud Travel">
+      <Frame className={theme === 'dark' ? 'cc-theme-dark' : ''} displayMode="auto" title={starterConfig.brand.name}>
         <Feedback status="error">The travel starter result was incomplete.</Feedback>
       </Frame>
     );
@@ -80,7 +81,7 @@ export function TravelHomeView({
     >
       <Flow variant="stack" density="comfortable">
         <section className="cc-home-intro" aria-label="Flight availability">
-          <StatusBadge tone="success"><PlaneIcon />Flights available</StatusBadge>
+          <StatusBadge className="cc-availability-badge" tone="success"><PlaneIcon />Flights available</StatusBadge>
           <p>{data.message}</p>
         </section>
 

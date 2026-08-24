@@ -8,6 +8,8 @@ import { annotations, server, tool, z } from '@noodleseed/one';
 // - A tool `fulfil` is *recorded*, not run as live JS. Inline inputs directly as `${input.x}` into
 //   output strings; do not transform them (no arithmetic/encode/filter) or substitution breaks. The
 //   cart total is summed in the widget (live React), not in a `fulfil`. The menu below is static data.
+// - Tool inputs stay business-facing. `__noodleIntent` is reserved for Noodle's optional serve-time
+//   analytics adapter and is removed before `fulfil`, so applications never declare or handle it.
 
 const menu = [
   { id: 'stone_pizza', name: 'Stone-baked Margherita', price: 14, kind: 'Mains' },

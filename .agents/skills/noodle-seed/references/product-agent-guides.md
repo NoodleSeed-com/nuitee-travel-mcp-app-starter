@@ -20,7 +20,7 @@ Make the judgment from the user’s stated outcome and grounded product evidence
 
 Noodle workflow skills teach a coding agent how to build and operate Noodle projects. The generated app product skill is team-local guidance for using one product. A marketplace plugin is a separate host distribution bundle.
 
-A host-neutral distribution metadata and archive framework now exists, but per-app marketplace plugin generation is not available until a target adapter lands, and customer-agent distribution is not available. If the user asks for either, explain the boundary and stop at the proven local App Package, product-skill, and metadata work. Do not claim a target bundle, submission, hosted distribution, or customer-agent projection.
+Host-neutral distribution metadata, available target adapters, local exports, and deployment-bound archives are separate projections from the guide; use the live command catalog for exact target availability, and never claim that an export submitted or published itself. The deployed embedded assistant automatically consumes a compact authorization-aware guide projection. A direct external agent connected to the tenant MCP URL can discover the deployment skill through the modern draft MCP Skills extension when its host supports that extension; this is protocol delivery, not evidence of host support or marketplace installation.
 
 ## Creation workflow
 
@@ -38,7 +38,11 @@ The guide contains `description`, `useWhen`, named `workflows`, optional `bounda
 
 Keep identifiers within 200 characters and prose within 4,000 characters. A guide has at most 32 `useWhen` entries, 32 workflows, 64 steps per workflow, 64 boundaries, and 64 examples. The compiler rejects an App Package whose bounded derived MCP surface would still exceed its artifact ceiling.
 
-Use `server.instructions` for a concise live MCP-session primer. Noodle-owned workflow skills teach how to build and operate Noodle projects; a product guide teaches agents how to use this one deployed product. Compilation validates references and produces an App Package sibling while the RuntimeArtifact deliberately omits guide prose.
+Use `server.instructions` for concise global behavior that applies to every turn and caller. Put product workflow ordering, triggers, and workflow-specific permission guidance in `agentGuide`; global description, `useWhen`, and boundaries must be safe for every assistant surface. Noodle-owned workflow skills teach how to build and operate Noodle projects; a product guide teaches agents how to use this one deployed product. Compilation validates references and produces an App Package sibling while the RuntimeArtifact deliberately omits guide prose.
+
+For a deployed embedded assistant, Noodle automatically derives bounded server-side model guidance from that App Package. Each turn retains only complete workflows supported by the session surface and the exact model-visible tools allowed for the verified roles and scopes. All managed, React, headless, and public-client renderers benefit without a new browser option; raw guide and skill files never enter the browser response. An unavailable or oversize projection is omitted without widening tools or failing the turn.
+
+For a direct modern MCP connection, use the deployment tenant MCP URL and its existing OAuth flow; do not install a second skill or create another auth integration. `skills/list`, `skills/get`, and the related `resources/read` files are rebuilt from the same deployment package for the verified caller. Only complete workflows backed by currently authorized, model-visible tools and available resources or prompts survive; app-only helpers and forbidden tools stay out of both the workflow body and MCP-surface reference. The response is private with zero freshness, and each file has a caller-specific SHA-256 digest. A role or scope change can therefore change the next response and its digest, allowing a supporting host to require fresh approval. Legacy MCP clients and modern hosts without Skills support continue to use the ordinary capability surface.
 
 ## Local lifecycle
 

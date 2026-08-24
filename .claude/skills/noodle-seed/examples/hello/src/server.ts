@@ -1,5 +1,7 @@
 import { annotations, server, tool, z } from '@noodleseed/one';
 
+// Customer apps stay on the public SDK; @noodle-borg/* packages are runtime implementation details.
+
 export default server(
   'hello',
   {

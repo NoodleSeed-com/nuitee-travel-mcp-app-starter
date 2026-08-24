@@ -646,7 +646,7 @@ export default function FlightResults() {
   const branding = useBranding();
   const toolInfo = useToolInfo('search_flights');
   const verify = useCallTool('verify_flight_offer');
-  const flow = useAppFlow<TravelView>({ key: 'cedar_cloud_flight_journey', initialView: 'results', views: ['search', 'results', 'review'] });
+  const flow = useAppFlow<TravelView>({ key: 'nuitee_travel_flight_journey', initialView: 'results', views: ['search', 'results', 'review'] });
   const requestDisplayMode = useRequestDisplayMode();
   const sendFollowUp = useSendFollowUpMessage();
   const updateModelContext = useUpdateModelContext();

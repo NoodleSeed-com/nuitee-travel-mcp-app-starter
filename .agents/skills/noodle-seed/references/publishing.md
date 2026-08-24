@@ -8,6 +8,7 @@ Directory requirements evolve. Identify the requested directory first and verify
 
 - Shared readiness gate
 - Distribution metadata source
+- Hosted immutable distribution
 - Directory-specific evidence
 - Submission boundary
 
@@ -34,6 +35,22 @@ When a directory has separate installable-plugin and remote-connector submission
 Local or repository testing and public-directory submission are distinct packaging states with distinct required inputs. An export command only compiles local source and writes the requested archive. It does not deploy, register, upload, submit, review, or publish the package.
 
 When an export reports `uploadArtifacts`, treat its output archive as an outer review kit. Extract it, follow the generated instructions, and upload only the named inner artifacts to their matching fields. Never substitute the outer kit for a nested single-purpose upload.
+
+## Hosted immutable distribution
+
+Publishing a deployment-bound archive is a hosted mutation. Run it only when the current request explicitly authorizes that exact deployment and target: `noodle distributions publish <deployment-id> [server.ts] --target <target>`. The command compiles local TypeScript and requires its package snapshot to exactly match the selected deployment before it uploads anything. It uses the endpoint and package identity returned by the service; never substitute a local URL or a different deployment.
+
+Use `noodle distributions list <deployment-id>` to discover immutable versions, `noodle distributions inspect <distribution-id>` to inspect one, and `noodle distributions download <distribution-id> --output <archive.zip>` to retrieve its exact archive. Download verifies the service length and digest before an atomic local write; a failed verification must leave no output file.
+
+Lifecycle and delivery are separate mutations. Run `readiness`, `review`, `release`, `rollback`, `deprecate`, `revoke`, or `grant` only when the request explicitly authorizes that exact distribution and action. Inspect first when the active state or version is not already known.
+
+Set readiness from evidence you can verify. Record `review` only from a real human-observed host status; never infer submission, approval, or publication from a generated archive or a successful Noodle command, and never put reviewer credentials or secrets in feedback.
+
+`release --visibility private` creates or advances a stable Noodle channel without anonymous discovery; `release --visibility public` enables Noodle public delivery only. Both still require the underlying MCP deployment to use exact public access. Neither action publishes to an external directory.
+
+`grant` returns one short-lived, exact-version bearer URL. Treat the complete URL as a secret, disclose it only to the authorized reviewer, and do not paste it into source, logs, issues, or durable docs. `rollback` moves only the channel pointer to an older ready version; `deprecate` stops delivery and `revoke` is terminal.
+
+A hosted archive is still a submission candidate. Creating, listing, inspecting, downloading, releasing, or granting it does not submit it to an external directory, satisfy review, or publish a host listing.
 
 ## Directory-specific evidence
 

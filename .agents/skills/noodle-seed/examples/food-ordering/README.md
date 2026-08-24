@@ -20,7 +20,7 @@ private customer data.
 | Durable cart state | `server(..., { state: { handles: { cart } }, use: { state } })` with caller scope and revision checks |
 | React app runtime kit | `@noodleseed/one/react` supplies app flow, shell/nav/view, async state, form, quantity, choice, and handoff primitives |
 | Multi-step widget flow | One React shell navigates stores, menu, item customization, cart, review, and handoff views through `useAppFlow` |
-| Invocation context | `server.context` sets locale/time-zone defaults, derives an ambient service area/date, and makes the same snapshot available to tools and the reserved `noodle_context` MCP adapter |
+| Invocation context | `server.context` sets locale/time-zone defaults, derives an ambient service area/date, and exposes optional host-supplied coordinates to tools and the reserved `noodle_context` MCP adapter; location is an untrusted convenience hint, never an authorization signal or a substitute for explicit input |
 | Structured missing input | `plan_order` uses `ctx.elicit` to collect a fulfilment method and date through embedded/headless forms, standard bidirectional elicitation, a linked MCP App form, or an exact structured conversational retry on stateless hosts |
 | Model-visible widget state | `useUpdateModelContext` publishes one cohesive replacement snapshot when supported; `useWidgetLifecycle` auto-publishes mounted/cancelled/dismissed and reports author-owned submitted milestones for future context (not host-presentation proof), while the user-triggered submit pairs `useSendFollowUpMessage` for an immediate reply |
 | Handoff | `handoff.allowedDomains` allows only `https://orders.example.com` checkout URLs |
@@ -157,6 +157,27 @@ That one deploy command preflights the complete target, creates a missing app/en
 hosted readiness. If it is interrupted, rerun the same command to resume the unfinished operation without a
 duplicate deployment. Use `--access org-members` for an org-wide internal demo. This example has no
 connector secrets and does not include tokens, caller-key mechanisms, or `.env.noodle` values.
+
+### Publish an immutable host archive
+
+Only when this demo is intentionally being prepared for an external directory, deploy it with exact public
+access and use the returned deployment ID to publish the matching local source:
+
+```sh
+noodle deploy --org demo --app food-ordering --env prod --access public
+noodle distributions publish <deployment-id> src/server.ts --target openai --category "Food & Drink"
+noodle distributions list <deployment-id> --target openai
+noodle distributions readiness <distribution-id> --status ready --note "Archive and review evidence checked"
+noodle distributions release <distribution-id> --visibility private
+noodle distributions grant <distribution-id> --expires-in 900
+noodle distributions download <distribution-id> --output food-ordering-openai.zip
+```
+
+Publish fails if local `src/server.ts` no longer compiles to that deployment's package snapshot. Readiness is
+an explicit operator claim, the private release keeps anonymous discovery off, and the grant prints one
+sensitive exact-version reviewer URL. Record `noodle distributions review` only after a human observes the
+real portal state. Public Noodle delivery, rollback, deprecation, and terminal revocation are separate explicit
+actions; none submits to a directory or claims acceptance.
 
 ## Demo Assets
 

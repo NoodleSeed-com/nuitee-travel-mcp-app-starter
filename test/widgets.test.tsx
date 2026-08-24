@@ -17,7 +17,7 @@ vi.mock('../src/helpers.js', () => {
     Field: ({ children, label, detail }: any) => React.createElement('label', null, label, children, detail ? React.createElement('small', null, detail) : null),
     Input: (props: any) => React.createElement('input', props),
     Select: ({ options, ...props }: any) => React.createElement('select', props, options.map((option: any) => React.createElement('option', { key: option.value, value: option.value }, option.label))),
-    StatusBadge: ({ children }: any) => React.createElement('span', null, children),
+    StatusBadge: ({ children, tone: _tone, ...props }: any) => React.createElement('span', props, children),
     useCallTool: vi.fn(),
     useAppFlow: vi.fn(),
     useBranding: vi.fn(),
@@ -33,10 +33,11 @@ vi.mock('../src/helpers.js', () => {
 import { FlightResultsView, isGatewayError, isSearchOutput, isVerification } from '../src/views/flight-results.js';
 import { SearchEditor, searchPrompt } from '../src/views/search-editor.js';
 import { isHome, TravelHomeView } from '../src/views/travel-home.js';
+import { starterConfig } from '../src/starter-config.js';
 
 const home = {
   status: 'ready' as const,
-  brand: 'Cedar & Cloud Travel',
+  brand: starterConfig.brand.name,
   message: 'Flights are available. Tell me where and when you would like to travel.',
   domains: [
     { name: 'Flights', availability: 'available' as const },
@@ -45,7 +46,7 @@ const home = {
     { name: 'Ground travel', availability: 'coming_soon' as const },
     { name: 'Experiences', availability: 'coming_soon' as const },
   ],
-  fallback: 'Cedar & Cloud Travel can search and verify flights.',
+  fallback: `${starterConfig.brand.name} can search and verify flights.`,
 };
 
 const itinerary = {
@@ -94,6 +95,7 @@ describe('TravelHome', () => {
     const html = renderToStaticMarkup(<TravelHomeView data={home} theme="light" onSearchPrompt={vi.fn()} />);
     expect(html).toContain('Flight search');
     expect(html).toContain('Flights available');
+    expect(html).toContain('cc-availability-badge');
     expect(html).toContain('Flights');
     expect(html.match(/Coming soon/g)).toHaveLength(4);
     for (const field of ['From', 'To', 'Departure', 'Return', 'Adults', 'Cabin', 'Currency', 'Country']) expect(html).toContain(field);
@@ -477,6 +479,9 @@ describe('FlightResults', () => {
     expect(css).toContain('min-height: 44px');
     expect(css).toContain('overflow-wrap: anywhere');
     expect(css).toContain('repeat(auto-fit');
+    expect(css).toContain('repeat(auto-fit, minmax(min(100%, 140px), 1fr))');
+    expect(css).toContain('.cc-availability-badge');
+    expect(css).toMatch(/\.cc-domain-name\s*\{[^}]*overflow-wrap:\s*anywhere/s);
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
     expect(css).toContain('@keyframes cc-shimmer');
     expect(css).not.toContain('@keyframes cc-route-scan');

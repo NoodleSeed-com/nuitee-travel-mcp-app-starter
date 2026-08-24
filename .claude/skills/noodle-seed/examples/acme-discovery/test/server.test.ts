@@ -22,6 +22,13 @@ describe('acme-discovery example', () => {
     expect(text).toContain('shortlist_getaway');
   });
 
+  it('gives the public website a consultative surface-specific goal', async () => {
+    const manifest = await app.toManifest();
+    expect(manifest.server.assistant?.surfaces?.[0]?.instructions).toContain(
+      'friendly, consultative travel guide',
+    );
+  });
+
   it('declares the grounded knowledge component and its live site scope', async () => {
     const manifest = (await app.toManifest()) as { server: { knowledge?: unknown[] } };
     // One declaration: controlled files plus the live public site, compiled later into the

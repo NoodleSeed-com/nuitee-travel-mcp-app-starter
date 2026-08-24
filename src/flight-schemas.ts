@@ -1,4 +1,5 @@
 import { z } from '@noodleseed/one';
+import { starterConfig } from './starter-config.js';
 
 export const errorCodeSchema = z.enum([
   'invalid_request',
@@ -168,7 +169,7 @@ export const verifyOutputSchema = z.object({
 
 export const homeOutputSchema = z.object({
   status: z.literal('ready'),
-  brand: z.literal('Cedar & Cloud Travel'),
+  brand: z.literal(starterConfig.brand.name),
   message: z.string().max(300),
   domains: z.array(z.object({
     name: z.enum(['Flights', 'Stays', 'Loyalty', 'Ground travel', 'Experiences']),
