@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@noodleseed/one':
-        specifier: 0.132.1
-        version: 0.132.1
+        specifier: 0.136.0
+        version: 0.136.0
       '@types/react':
         specifier: 19.2.18
         version: 19.2.18
@@ -36,8 +36,8 @@ importers:
   examples/embedded-assistant-host:
     dependencies:
       '@noodleseed/assistant':
-        specifier: 1.21.0
-        version: 1.21.0(@modelcontextprotocol/sdk@1.30.0(zod@4.4.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: 1.22.0
+        version: 1.22.0(@modelcontextprotocol/sdk@1.30.0(zod@4.4.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: 19.2.8
         version: 19.2.8
@@ -118,8 +118,8 @@ packages:
       '@cfworker/json-schema':
         optional: true
 
-  '@noodleseed/assistant@1.21.0':
-    resolution: {integrity: sha512-NktSqlz6tT2cwvsoi2HHXLLOgu2LHb+GQ5OVFwTQmMXieTeGEPAelH5XEnttrny2QPrxQ5TXX419L+JzVhsn/A==}
+  '@noodleseed/assistant@1.22.0':
+    resolution: {integrity: sha512-laPY5GRbOE9v5NDcO7eZcWkBoigGNuf98Xh0SfayRV56Cvdkh4ps6H1Zq9eTIXpSgJfigPRVfo91y+t2JWJ6pg==}
     engines: {node: '>=20'}
     peerDependencies:
       react: '>=18.2.0 <20'
@@ -127,8 +127,8 @@ packages:
       react:
         optional: true
 
-  '@noodleseed/one@0.132.1':
-    resolution: {integrity: sha512-C42pCuG0sT6Ssf+G+TtJU3uPC70fPu8IBS+ByeT2skt/6Hdd1p4FVxoO6pGOKNJRTHj8WgR+mctU9cVOTNU0CA==}
+  '@noodleseed/one@0.136.0':
+    resolution: {integrity: sha512-+kmzf1xOljxh4rXQuyvDvqG+C0KUWRN4XP8RPK3ybUgPNBennhfdt6gFD3GuQc1mLoX6wfV+d9d6Z/9VTh8UlA==}
     engines: {node: '>=24'}
     hasBin: true
     bundledDependencies:
@@ -221,7 +221,6 @@ packages:
       - '@standard-schema/spec'
       - '@types/trusted-types'
       - '@vercel/oidc'
-      - '@workos-inc/node'
       - ai
       - ajv
       - ajv-formats
@@ -278,7 +277,6 @@ packages:
       - shebang-command
       - shebang-regex
       - statuses
-      - stripe
       - tailwindcss
       - tldts
       - tldts-core
@@ -1300,7 +1298,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@noodleseed/assistant@1.21.0(@modelcontextprotocol/sdk@1.30.0(zod@4.4.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+  '@noodleseed/assistant@1.22.0(@modelcontextprotocol/sdk@1.30.0(zod@4.4.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
       '@modelcontextprotocol/ext-apps': 1.7.5(@modelcontextprotocol/sdk@1.30.0(zod@4.4.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(zod@4.4.3)
       ai: 6.0.201(zod@4.4.3)
@@ -1313,7 +1311,7 @@ snapshots:
       - '@modelcontextprotocol/sdk'
       - react-dom
 
-  '@noodleseed/one@0.132.1': {}
+  '@noodleseed/one@0.136.0': {}
 
   '@opentelemetry/api@1.9.1': {}
 

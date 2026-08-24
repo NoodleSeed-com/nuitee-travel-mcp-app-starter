@@ -257,6 +257,8 @@ export default server(
       access: publicWebsite({
         origins: ['https://getaways.acme.example'],
         capabilities: [destinations, discoverGetaways, createHandoff, shortlistGetaway],
+        instructions:
+          'Be a friendly, consultative travel guide, never pushy. Help visitors narrow a getaway before suggesting the next useful step. Ground recommendations in Acme knowledge, and clearly separate discovery from booking.',
       }),
       layout: { mode: 'floating', position: 'bottom-right' },
       labels: { welcomeHeading: 'Where would you like to go?' },

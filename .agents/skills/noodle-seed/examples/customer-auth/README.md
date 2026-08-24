@@ -364,6 +364,7 @@ and passes `routing: { endpoints: { customer_api: cluster.apiBaseUrl } }` to
 browser. Do not copy the route into page context, session claims, tool input, or model instructions.
 
 ```bash
+noodle variables set ASSISTANT_ORIGIN https://app.example.com --scope env
 noodle variables set ASSISTANT_MODEL_BASE_URL https://model.example.com/v1 --scope env
 noodle variables set ASSISTANT_MODEL your-model --scope env
 noodle secrets set ASSISTANT_MODEL_API_KEY --scope env
@@ -372,7 +373,8 @@ noodle secrets set CUSTOMER_API_CLIENT_SECRET --scope env
 noodle check --target embedded-assistant src/server.ts
 ```
 
-Assistant origins are exact. Production embedding origins must use HTTPS; plain HTTP is accepted only for
+`ASSISTANT_ORIGIN` is the operator-owned production embedding origin, so one source can serve every customer
+without an application fork. Assistant origins are exact. Production embedding origins must use HTTPS; plain HTTP is accepted only for
 loopback development origins such as `http://localhost:3000`, `http://127.0.0.1:3000`, or
 `http://[::1]:3000`. `noodle dev` serves the MCP project, not that separate embedding application.
 

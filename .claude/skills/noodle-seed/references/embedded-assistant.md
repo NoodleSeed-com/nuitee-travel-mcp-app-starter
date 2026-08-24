@@ -60,7 +60,7 @@ assistant: embeddedAssistant({
 }),
 ```
 
-Origins are exact: scheme, host, and optional port, with no path, trailing slash, or wildcard. Production origins must be HTTPS; plain HTTP is accepted only for loopback development origins (`http://localhost:<port>`, `http://127.0.0.1:<port>`). `noodle dev` serves the MCP project, not the embedding SaaS.
+Origins are exact: scheme, host, and optional port, with no path, trailing slash, or wildcard. Production origins must be HTTPS; plain HTTP is accepted only for loopback development origins (`http://localhost:<port>`, `http://127.0.0.1:<port>`). `noodle dev` serves the MCP project, not the embedding SaaS. For a public surface it also prints a process-local Embed ID and script; mount that script on the separately running loopback website to test anonymous mint, chat, widgets, and confirmation. The local ID is ephemeral, while a hosted deploy provisions the stable ID behind durable admission counters.
 
 ## Product workflow guidance
 
@@ -79,6 +79,7 @@ access: [
   publicWebsite({
     origins: ["https://www.example.com"],
     capabilities: [answerProductQuestion, requestDemo],
+    instructions: "Help visitors understand the best workflow for their goal before inviting a next step.",
   }),
   authenticatedWebsite({
     origins: ["https://app.example.com"],
@@ -88,6 +89,8 @@ access: [
 ```
 
 At most one public surface (`public` or `mixed`) and at most one authenticated surface, and no origin may appear on two surfaces — otherwise "which projection is this request?" would be ambiguous. Each gets its own embed snippet, budget, and kill switch.
+
+Keep shared, host-neutral product truth in `server.instructions`. Use a surface `instructions` value only for the voice, goals, boundaries, and next-step invitations appropriate to that front door. It is trimmed, non-empty, and at most 4,000 characters. The service injects it only after binding the exact website surface; it never enters MCP `initialize` or another assistant surface. For a public sales assistant, be consultative rather than pushy: deliver useful diagnosis or guidance before asking for contact details, and never put secrets in instructions.
 
 `publicWebsite` is for a page with no signed-in user. The visitor is an **anonymous principal**, not an empty user: there is no `${user}`, no roles, no scopes, no customer routing, and no delegated credentials. A tool that needs identity — because it reads `${user}` or declares an `authorization` requirement — cannot be projected to a `public` surface, and the compiler says so.
 
