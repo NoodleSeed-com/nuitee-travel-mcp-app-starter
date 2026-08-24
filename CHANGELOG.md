@@ -12,5 +12,6 @@ Notable changes to this starter will be recorded here. The repository has not pu
 - Hermetic Chromium widget checks for responsive layout, keyboard focus, themes, reduced motion, and fare selection.
 - Documented fictional fixture identifiers and the no-bundled-airline-asset boundary.
 - Reproducible sanitized Git-history and dependency-license release audit commands.
+- Reproducible, network-disabled Chromium captures of the fictional product experience.
 
 A versioned entry and release date will be added only when the owner approves the public release contents, license, and evidence.

@@ -31,9 +31,9 @@ This is the decision gate for making the repository public, marking it as a temp
 - [ ] Recheck a bounded round trip and same-session fare verification with the owner-authorized sandbox key. Do not add multicity until Nuitee documents deterministic 3+ leg response mapping.
 - [ ] Add one real deployment-owned widget domain and pass the ChatGPT target gate before claiming or submitting ChatGPT compatibility.
 - [x] The committed Chromium fixture gate covers 280px/320px overflow, wider inline/fullscreen layouts, 400% CSS-zoom reflow, keyboard/focus, touch targets, light/dark themes, reduced motion, and selection interaction without provider access.
-- [ ] Capture only verified, sanitized fixture-based product images, without host conversation chrome, live inventory, offer IDs, user data, production URLs, or third-party carrier logos.
+- [x] Captured reproducible Chromium product images from the actual widgets using only network-disabled fictional fixtures, without host conversation chrome, live inventory, offer IDs, user data, production URLs, or third-party carrier logos.
 - [ ] Complete owner/legal review of dependency-license compatibility, notices, and package provenance. Automated package metadata is evidence, not legal approval.
-- [x] The 2026-08-24 fixture review found `QZX`/`QZY`/`QZH` unassigned in IATA's public airport search, confirmed `ZZ` as IATA's computer-test airline designator, and found no bundled image/font asset in the tracked tree; recheck mutable location assignments at release time.
+- [x] The 2026-08-24 fixture review found `QZX`/`QZY`/`QZH` unassigned in IATA's public airport search, confirmed `ZZ` as IATA's computer-test airline designator, and found no bundled third-party airline or font asset; recheck mutable location assignments at release time.
 - [ ] Keep the optional Embedded Assistant limitation explicit until its separately owned hosted model-transport investigation passes. This does not block the credential-free default MCP starter when no hosted-E2E claim is made.
 
 ## Remote GitHub controls (requires explicit approval)
