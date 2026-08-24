@@ -47,7 +47,7 @@ The companion website backend may read only:
 
 | Variable | Owner | Purpose |
 | --- | --- | --- |
-| `NOODLE_SERVICE_URL` | Website backend | Noodle service used for session exchange |
+| `NOODLE_SERVICE_URL` | Website backend | Exact canonical HTTPS Noodle service origin used for session exchange; no userinfo, path, query, fragment, or trailing slash |
 | `NOODLE_ASSISTANT_CLIENT_ID` | Website backend | Deployment-bound assistant client identifier |
 | `NOODLE_ASSISTANT_CLIENT_SECRET` | Website backend | Deployment-bound assistant client credential |
 | `PUBLIC_APP_ORIGIN` | Website backend | Exact browser origin; `http://localhost:5173` in development |

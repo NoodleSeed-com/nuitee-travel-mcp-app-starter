@@ -48,12 +48,31 @@ function exactOrigin(value: string | undefined, mode: HostMode) {
   }
 }
 
+function exactHttpsServiceOrigin(value: string | undefined) {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== 'https:'
+      || url.username
+      || url.password
+      || url.origin !== value
+      || url.pathname !== '/'
+      || url.search
+      || url.hash
+    ) return undefined;
+    return url.origin;
+  } catch {
+    return undefined;
+  }
+}
+
 export function readHostConfig(env: HostEnvironment, mode: HostMode): HostConfig {
   const publicOrigin = exactOrigin(
     env.PUBLIC_APP_ORIGIN?.trim() || (mode === 'development' ? LOCAL_ORIGIN : undefined),
     mode,
   );
-  const serviceUrl = env.NOODLE_SERVICE_URL?.trim();
+  const serviceUrl = exactHttpsServiceOrigin(env.NOODLE_SERVICE_URL?.trim());
   const clientId = env.NOODLE_ASSISTANT_CLIENT_ID?.trim();
   const clientSecret = env.NOODLE_ASSISTANT_CLIENT_SECRET?.trim();
 

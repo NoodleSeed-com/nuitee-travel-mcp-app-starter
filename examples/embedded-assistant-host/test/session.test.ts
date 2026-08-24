@@ -31,6 +31,25 @@ async function login(api: ReturnType<typeof createHostApi>) {
 }
 
 describe('embedded assistant host session boundary', () => {
+  it.each([
+    'http://assistant.example.invalid',
+    'https://user@assistant.example.invalid',
+    'https://assistant.example.invalid/path',
+    'https://assistant.example.invalid?region=test',
+    'https://assistant.example.invalid#fragment',
+    'https://assistant.example.invalid/',
+    'not-a-url',
+  ])('rejects a non-canonical Assistant service URL: %s', (serviceUrl) => {
+    const config = readHostConfig({
+      NOODLE_SERVICE_URL: serviceUrl,
+      NOODLE_ASSISTANT_CLIENT_ID: 'client-id-sentinel',
+      NOODLE_ASSISTANT_CLIENT_SECRET: 'client-secret-sentinel',
+      PUBLIC_APP_ORIGIN: origin,
+    }, 'development');
+
+    expect(config.assistant).toBeUndefined();
+  });
+
   it('returns 401 when a signed-out user requests a session', async () => {
     const api = createHostApi({
       mode: 'development',
