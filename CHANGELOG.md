@@ -13,5 +13,6 @@ Notable changes to this starter will be recorded here. The repository has not pu
 - Documented fictional fixture identifiers and the no-bundled-airline-asset boundary.
 - Reproducible sanitized Git-history and dependency-license release audit commands.
 - Reproducible, network-disabled Chromium captures of the fictional product experience.
+- Sanitized release evidence separating passing one-way, verification, and state-expiry behavior from unresolved fresh-write and Nuitee round-trip results.
 
 A versioned entry and release date will be added only when the owner approves the public release contents, license, and evidence.
