@@ -1,6 +1,6 @@
 # Premium UI implementation plan
 
-Status: implemented locally; browser/real-host visual evidence remains a release gate.
+Status: implemented with committed local Chromium evidence; named-host visual evidence remains a release gate.
 
 ## Decision
 
@@ -270,7 +270,7 @@ Add the bounded search recap, selection state, one action dock, route timeline, 
 
 Replace raw duplicated colors with host-system semantic variables, reserve runtime branding for accent/focus, apply both themes, add tabular numeric alignment, refine focus, remove `overflow-x: clip` as a masking strategy, and solve any actual overflow instead.
 
-### Phase 6 — browser and host evidence (pending release evidence)
+### Phase 6 — browser and host evidence (browser complete; named-host evidence pending)
 
 Run:
 
@@ -280,11 +280,11 @@ Run:
 - `pnpm exec noodle test --json`;
 - `pnpm exec noodle tools list --json`;
 - `pnpm exec noodle check --json` and the appropriate host target;
-- real-browser tests at 280px, 320px, wider inline, fullscreen, light, dark, reduced motion, keyboard-only, and 400% zoom;
+- real-browser tests at 280px, 320px, wider inline, fullscreen, light, dark, reduced motion, keyboard-only, and 400% CSS-zoom reflow — committed in `test/browser/` and run through `pnpm test:browser`;
 - DevTools state review for every loading/error/verification state;
 - manual checks in every host the README will claim to support.
 
-No visual polish is complete until the real-browser overflow, focus, contrast, and theme evidence passes.
+The local browser overflow, focus, touch-target, theme, reduced-motion, and zoom-reflow evidence passes. Real named-host review remains required before a host-compatibility claim.
 
 ## Files expected to change during implementation
 

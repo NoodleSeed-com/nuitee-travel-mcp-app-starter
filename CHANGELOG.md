@@ -9,5 +9,6 @@ Notable changes to this starter will be recorded here. The repository has not pu
 - App-local Nuitee connector, opaque caller-scoped selections, hermetic tests, and complete offline CI gates.
 - Optional Embedded Assistant companion that reuses the same tools and widgets.
 - Deterministic presentation customization with exact-origin validation.
+- Hermetic Chromium widget checks for responsive layout, keyboard focus, themes, reduced motion, and fare selection.
 
 A versioned entry and release date will be added only when the owner approves the public release contents, license, and evidence.

@@ -30,7 +30,7 @@ This is the decision gate for making the repository public, marking it as a temp
 - [ ] Prove a representative large live search maps successfully under the search-only 6 MiB limit; do not raise the global/default limit.
 - [ ] Recheck a bounded round trip and same-session fare verification with the owner-authorized sandbox key. Do not add multicity until Nuitee documents deterministic 3+ leg response mapping.
 - [ ] Add one real deployment-owned widget domain and pass the ChatGPT target gate before claiming or submitting ChatGPT compatibility.
-- [ ] Run real-browser fixture tests for 280px overflow, keyboard/focus, light/dark themes, and reduced motion. Static SSR/CSS assertions are not browser proof.
+- [x] The committed Chromium fixture gate covers 280px/320px overflow, wider inline/fullscreen layouts, 400% CSS-zoom reflow, keyboard/focus, touch targets, light/dark themes, reduced motion, and selection interaction without provider access.
 - [ ] Capture only verified, sanitized fixture-based product images, without host conversation chrome, live inventory, offer IDs, user data, production URLs, or third-party carrier logos.
 - [ ] Complete owner/legal review of dependency-license compatibility, notices, and package provenance. Automated package metadata is evidence, not legal approval.
 - [ ] Verify fictional airport/airline codes and demonstration assets remain suitable for public distribution.

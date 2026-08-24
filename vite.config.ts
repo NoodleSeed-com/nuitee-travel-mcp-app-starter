@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     include: ['test/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['test/browser/**'],
     setupFiles: ['./test/setup.ts'],
   },
 });
