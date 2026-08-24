@@ -276,6 +276,65 @@ describe('Nuitee gateway normalization', () => {
 });
 
 describe('Nuitee gateway verification', () => {
+  it('keeps repeat verification bound to the caller-owned active selection', () => {
+    const activeRecord = {
+      ...selectionState.records[0],
+      selectionId: 'sel_22222222222222222222222222222222',
+      offerId: 'provider-offer-must-stay-private-2',
+      originalTotal: 392.75,
+    };
+    const state = {
+      ...selectionState,
+      activeSelectionId: activeRecord.selectionId,
+      records: [selectionState.records[0], activeRecord],
+    };
+    const callOperation = vi.fn(() => ({ raw: fictionalVerifyResponse }));
+
+    const result = runNuiteeGateway(
+      {
+        kind: 'verify',
+        selectionId: selectionState.records[0].selectionId,
+        selectionMode: 'active',
+        state,
+        requestedAt: now,
+      },
+      { callOperation },
+    );
+
+    expect(result.status).toBe('success');
+    expect(result.verification?.selectionId).toBe(activeRecord.selectionId);
+    expect(callOperation).toHaveBeenCalledWith('verify', { offerId: activeRecord.offerId });
+  });
+
+  it('allows an explicit new choice to replace active-selection resolution', () => {
+    const activeRecord = {
+      ...selectionState.records[0],
+      selectionId: 'sel_22222222222222222222222222222222',
+      offerId: 'provider-offer-must-stay-private-2',
+    };
+    const state = {
+      ...selectionState,
+      activeSelectionId: activeRecord.selectionId,
+      records: [selectionState.records[0], activeRecord],
+    };
+    const callOperation = vi.fn(() => ({ raw: fictionalVerifyResponse }));
+
+    const result = runNuiteeGateway(
+      {
+        kind: 'verify',
+        selectionId: selectionState.records[0].selectionId,
+        selectionMode: 'explicit',
+        state,
+        requestedAt: now,
+      },
+      { callOperation },
+    );
+
+    expect(result.status).toBe('success');
+    expect(result.verification?.selectionId).toBe(selectionState.records[0].selectionId);
+    expect(callOperation).toHaveBeenCalledWith('verify', { offerId: selectionState.records[0].offerId });
+  });
+
   it('verifies in the deterministic compute sandbox without a Date global', () => {
     const sandboxed = gatewayWithoutDate();
     const result = sandboxed(

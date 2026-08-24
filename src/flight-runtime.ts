@@ -47,6 +47,7 @@ export type SelectionState = {
   readonly searchId?: string;
   readonly updatedAt?: string;
   readonly records?: readonly SelectionRecord[];
+  readonly activeSelectionId?: string;
 };
 
 export type GatewayInput =
@@ -59,6 +60,7 @@ export type GatewayInput =
   | {
       readonly kind: 'verify';
       readonly selectionId?: string;
+      readonly selectionMode?: 'active' | 'explicit';
       readonly state?: SelectionState | unknown;
       readonly requestedAt?: string;
     };
@@ -288,8 +290,13 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
   };
 
   if (input.kind === 'verify') {
-    const selectionId = text(input.selectionId, 80);
     const state = object(input.state);
+    const requestedSelectionId = text(input.selectionId, 80);
+    const activeSelectionId = text(state?.activeSelectionId, 80);
+    const selectionMode = input.selectionMode === 'explicit' ? 'explicit' : 'active';
+    const selectionId = selectionMode === 'active'
+      ? activeSelectionId ?? requestedSelectionId
+      : requestedSelectionId;
     const records = Array.isArray(state?.records) ? state.records.slice(0, 10) : [];
     const requestedAt = text(input.requestedAt, 64);
     const requestTime = instantMillis(requestedAt);

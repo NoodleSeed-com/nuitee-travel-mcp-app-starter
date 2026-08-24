@@ -74,6 +74,7 @@ const gatewayInputSchema = z.object({
   today: z.string().optional(),
   requestedAt: z.string().optional(),
   selectionId: z.string().optional(),
+  selectionMode: z.enum(['active', 'explicit']).optional(),
   state: z.unknown().optional(),
 });
 

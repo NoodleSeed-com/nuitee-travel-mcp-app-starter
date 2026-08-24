@@ -14,7 +14,10 @@ import {
   homeOutputSchema,
   searchInputSchema,
   searchOutputSchema,
+  selectFlightOutputSchema,
+  selectionIdSchema,
   selectionStateSchema,
+  verifyInputSchema,
   verifyOutputSchema,
 } from './flight-schemas.js';
 import { starterConfig } from './starter-config.js';
@@ -153,9 +156,9 @@ function offlineVerifyFlightOffer() {
   return tool('verify_flight_offer', {
     title: 'Verify a flight fare',
     description:
-      'Verify a fare selected from the current application search. Accepts only an application-issued opaque selection identifier, never a provider offer identifier.',
+      'Verify a fare selected from the current application search. For “verify again”, re-verify the active fare. Accepts only application-issued opaque selection identifiers, never provider offer identifiers.',
     annotations: annotations.readOnly(),
-    input: z.object({ selectionId: z.string().regex(/^sel_[a-f0-9]{32}$/) }),
+    input: verifyInputSchema,
     output: verifyOutputSchema,
     fulfil: () => ({
       status: 'error' as const,
@@ -170,15 +173,16 @@ function liveVerifyFlightOffer() {
   return tool('verify_flight_offer', {
     title: 'Verify a flight fare',
     description:
-      'Verify a fare selected from the current application search. Reports availability, current price, changes, messages, and expiry; it never prebooks or books.',
+      'Verify a fare selected from the current application search. For “verify again”, “verify this”, or an otherwise unchanged choice, use the active selection mode and omit selectionId. Use explicit mode only when the user clearly chooses a different option. Reports availability, current price, changes, messages, and expiry; it never prebooks or books.',
     annotations: annotations.readOnly(),
-    input: z.object({ selectionId: z.string().regex(/^sel_[a-f0-9]{32}$/) }),
+    input: verifyInputSchema,
     output: verifyOutputSchema,
     fulfil: ({ input, context, connectors }) => {
       const current = connectors.state.readState({ handle: 'flight_selections' });
       const gateway = connectors.gateway.execute({
         kind: 'verify',
         selectionId: input.selectionId,
+        selectionMode: input.selectionMode,
         state: current.value,
         requestedAt: context.temporal.instant,
       });
@@ -188,6 +192,50 @@ function liveVerifyFlightOffer() {
         fallback: gateway.fallback,
         verification: gateway.verification,
         error: gateway.error,
+      };
+    },
+  });
+}
+
+function offlineSelectFlightOffer() {
+  return tool('select_flight_offer', {
+    title: 'Remember selected fare',
+    visibility: ['app'],
+    description: 'Remember the fare selected inside the flight-results widget for a later verification turn.',
+    annotations: annotations.action({ confirm: false }),
+    input: z.object({ selectionId: selectionIdSchema }),
+    output: selectFlightOutputSchema,
+    fulfil: () => ({
+      status: 'unavailable' as const,
+      message: configurationError.message,
+    }),
+  });
+}
+
+function liveSelectFlightOffer() {
+  return tool('select_flight_offer', {
+    title: 'Remember selected fare',
+    visibility: ['app'],
+    description: 'Remember the fare selected inside the flight-results widget for a later verification turn.',
+    annotations: annotations.action({ confirm: false }),
+    input: z.object({ selectionId: selectionIdSchema }),
+    output: selectFlightOutputSchema,
+    fulfil: ({ input, connectors }) => {
+      const current = connectors.state.readState({ handle: 'flight_selections' });
+      connectors.state.patchState({
+        handle: 'flight_selections',
+        expectedRevision: current.revision,
+        value: {
+          searchId: current.value.searchId,
+          updatedAt: current.value.updatedAt,
+          records: current.value.records,
+          activeSelectionId: input.selectionId,
+        },
+      });
+      return {
+        status: 'selected' as const,
+        message: 'The selected fare is ready for verification.',
+        selectionId: input.selectionId,
       };
     },
   });
@@ -236,7 +284,7 @@ export function createTravelServer(mode: 'credential-free' | 'live' | 'embedded'
             flight_selections: {
               kind: 'selection' as const,
               scope: 'caller' as const,
-              version: 'v1',
+              version: 'v2',
               ttlSeconds: 1_800,
               schema: selectionStateSchema,
             },
@@ -266,6 +314,7 @@ export function createTravelServer(mode: 'credential-free' | 'live' | 'embedded'
       openTravelStarter(),
       live ? liveSearchFlights() : offlineSearchFlights(),
       live ? liveVerifyFlightOffer() : offlineVerifyFlightOffer(),
+      live ? liveSelectFlightOffer() : offlineSelectFlightOffer(),
     ],
   );
 }

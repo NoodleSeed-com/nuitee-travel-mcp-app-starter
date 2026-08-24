@@ -146,7 +146,7 @@ Users do not need to know IATA codes. The host model resolves clear city or airp
 | Widget | When it appears | What the user can do |
 | --- | --- | --- |
 | `TravelHome` | Opening the starter or beginning a flight search | See Flights as available, view future domains as noninteractive “Coming soon” items, and start a familiar one-way or round-trip search through the host conversation. |
-| `FlightResults` | After search or fare verification | Compare three offers inline (up to ten in fullscreen), edit the search, select one fare, verify its current price, and return through the unified Search → Results → Verified fare-review flow. |
+| `FlightResults` | After search or fare verification | Compare three offers inline (up to ten in fullscreen), edit the search, select one fare, verify its current price, repeat verification against that same active fare, and return through the unified Search → Results → Verified fare-review flow. |
 
 Both widgets are implemented with host-native typography, light/dark theme styles, visible focus styles, practical touch-target sizing, reduced-motion fallbacks, and bounded text fallback for hosts without MCP Apps. Offline tests cover those component and CSS contracts; they are not real-browser proof. The final review is explicitly not a ticket, booking, or reservation. Browser-level 280px and named-host evidence remains a release gate, so clone authors should run the checks in [CONTRIBUTING.md](CONTRIBUTING.md) before making compatibility claims.
 
@@ -160,7 +160,7 @@ See [docs/troubleshooting.md](docs/troubleshooting.md) for operator actions.
 
 - `src/server.ts` — credential-free default entrypoint
 - `src/live-server.ts` — managed-secret live composition
-- `src/travel-server.ts` — shared three-tool product definition
+- `src/travel-server.ts` — shared three model-visible tools plus the app-only active-fare helper
 - `src/flight-connectors.ts` — exact-origin Nuitee HTTP and compute connectors plus caller state adapter
 - `src/flight-runtime.ts` — request validation, failure classification, bounded normalization, and opaque selection resolution
 - `src/flight-schemas.ts` — public and private Zod contracts
