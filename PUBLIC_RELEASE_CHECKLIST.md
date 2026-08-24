@@ -12,6 +12,8 @@ This is the decision gate for making the repository public, marking it as a temp
 - [x] Fixtures are fictional, offline-only, and never a live fallback.
 - [x] Presentation customization is bounded, deterministic, exact-origin validated, and credential-blind.
 - [x] CI Actions are full-SHA pinned, checkout credentials are not persisted, and Dependabot covers npm plus Actions.
+- [x] All reachable Git blobs passed this remediation's bounded, sanitized secret-pattern audit; only placeholder environment templates have ever been tracked.
+- [x] The installed dependency graph has no npm advisories and no unknown or unlicensed package-metadata groups at the reviewed release candidate.
 
 ## Owner decision required
 
@@ -30,7 +32,7 @@ This is the decision gate for making the repository public, marking it as a temp
 - [ ] Add one real deployment-owned widget domain and pass the ChatGPT target gate before claiming or submitting ChatGPT compatibility.
 - [ ] Run real-browser fixture tests for 280px overflow, keyboard/focus, light/dark themes, and reduced motion. Static SSR/CSS assertions are not browser proof.
 - [ ] Capture only verified, sanitized fixture-based product images, without host conversation chrome, live inventory, offer IDs, user data, production URLs, or third-party carrier logos.
-- [ ] Run a full-history secret scan and dependency/license/provenance review. Scanning current files is not proof that Git history is clean.
+- [ ] Complete owner/legal review of dependency-license compatibility, notices, and package provenance. Automated package metadata is evidence, not legal approval.
 - [ ] Verify fictional airport/airline codes and demonstration assets remain suitable for public distribution.
 - [ ] Keep the optional Embedded Assistant limitation explicit until its separately owned hosted model-transport investigation passes. This does not block the credential-free default MCP starter when no hosted-E2E claim is made.
 
@@ -45,6 +47,7 @@ This is the decision gate for making the repository public, marking it as a temp
 ## Release
 
 - [ ] Run `pnpm ci:offline` from the release commit.
+- [ ] Re-run the full-history secret audit and dependency advisory/license checks from the release commit so later changes are included.
 - [ ] Update `CHANGELOG.md` with the approved version/date and create release notes from verified evidence.
 - [ ] Confirm no environment files, deployment links, credentials, private identifiers, or unreviewed generated artifacts are tracked.
 - [ ] Publish or deploy only under separate explicit authorization.
