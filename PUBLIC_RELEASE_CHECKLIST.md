@@ -47,7 +47,7 @@ This is the decision gate for making the repository public, marking it as a temp
 ## Release
 
 - [ ] Run `pnpm ci:offline` from the release commit.
-- [ ] Re-run the full-history secret audit and dependency advisory/license checks from the release commit so later changes are included.
+- [ ] Run `pnpm audit:release` from the release commit; CI continuously runs its offline full-history and license-metadata portions against a full clone.
 - [ ] Update `CHANGELOG.md` with the approved version/date and create release notes from verified evidence.
 - [ ] Confirm no environment files, deployment links, credentials, private identifiers, or unreviewed generated artifacts are tracked.
 - [ ] Publish or deploy only under separate explicit authorization.

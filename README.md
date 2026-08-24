@@ -134,6 +134,11 @@ Ordinary tests and the default Noodle baseline are fully offline and need neithe
 
 Run the same complete credential-free gate used by CI with `pnpm ci:offline`. It covers the root tests and local MCP smoke, all three entrypoint checks, exact customization validation, and the companion host typecheck/tests/build.
 
+Before a public release, run `pnpm audit:release`. It repeats the sanitized
+full-history secret-pattern scan, checks installed package license metadata,
+and queries the npm advisory service for the locked production graph. The
+command prints no matched credential content and does not replace legal review.
+
 ## Example prompts
 
 - “Open Cedar & Cloud Travel.”
