@@ -1,5 +1,14 @@
 # Embedded Assistant companion
 
+## First-release status
+
+This companion is an optional, experimental integration path and is excluded
+from the first public release's hosted end-to-end claims. The shared entrypoint,
+sample host, and offline tests remain in the repository, but a real hosted
+conversation is not claimed or required for the flights-first MCP starter's
+initial release. Re-entering that scope requires an explicit owner decision and
+passing deployment-bound Assistant evidence.
+
 This repository demonstrates one Noodle travel product in two places:
 
 - ChatGPT, Claude, and other MCP hosts connect to the existing MCP server or

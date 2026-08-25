@@ -36,7 +36,7 @@ This is the decision gate for making the repository public, marking it as a temp
 - [x] Captured reproducible Chromium product images from the actual widgets using only network-disabled fictional fixtures, without host conversation chrome, live inventory, offer IDs, user data, production URLs, or third-party carrier logos.
 - [ ] Complete owner/legal review of dependency-license compatibility, notices, and package provenance. Automated package metadata is evidence, not legal approval.
 - [x] The 2026-08-24 fixture review found `QZX`/`QZY`/`QZH` unassigned in IATA's public airport search, confirmed `ZZ` as IATA's computer-test airline designator, and found no bundled third-party airline or font asset; recheck mutable location assignments at release time.
-- [ ] Keep the optional Embedded Assistant limitation explicit until its separately owned hosted model-transport investigation passes. This does not block the credential-free default MCP starter when no hosted-E2E claim is made.
+- [x] Exclude hosted Embedded Assistant end-to-end claims from the first release while preserving the optional shared-code companion and offline tests. Re-enter that scope only after its separately owned model-transport investigation passes.
 
 ## Remote GitHub controls (requires explicit approval)
 
