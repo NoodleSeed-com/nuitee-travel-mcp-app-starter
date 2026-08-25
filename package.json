@@ -1,6 +1,7 @@
 {
   "name": "nuitee-travel-mcp-app-starter",
   "version": "0.1.0",
+  "license": "Apache-2.0",
   "private": true,
   "packageManager": "pnpm@11.17.0",
   "engines": {
@@ -16,6 +17,7 @@
     "audit:release": "pnpm audit:history && pnpm audit:licenses && pnpm audit --prod --audit-level=low",
     "test": "vitest run",
     "test:browser": "vitest run --config vitest.browser.config.ts",
+    "docs:previews": "node scripts/capture-widget-previews.mjs",
     "validate": "noodle validate",
     "dev": "noodle dev",
     "dev:live": "noodle dev src/live-server.ts",
@@ -32,15 +34,15 @@
     "agent:commands": "noodle commands --json"
   },
   "devDependencies": {
-    "@noodleseed/one": "0.136.0",
+    "@noodleseed/one": "0.138.0",
     "@vitest/browser-playwright": "4.1.10",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
-    "@vitejs/plugin-react": "6.0.5",
+    "@vitejs/plugin-react": "6.1.0",
     "playwright": "1.62.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "vite": "8.2.0",
+    "vite": "8.2.2",
     "vitest": "4.1.10"
   }
 }

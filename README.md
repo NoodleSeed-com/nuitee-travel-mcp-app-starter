@@ -4,6 +4,14 @@ A flights-first Noodle Seed reference application for building polished conversa
 
 This repository demonstrates secure server-side API access, three bounded travel tools, two MCP Apps entry widgets designed for responsive hosts and one unified flight journey, opaque fare-selection state, defensive normalization, and fully offline tests. It is an independent starter—not an official Nuitee connector, airline partnership, booking product, or endorsement.
 
+| Credential-free home | Fictional flight comparison |
+| --- | --- |
+| ![Cedar & Cloud Travel flight-search widget using fictional fields and coming-soon domains](docs/images/travel-home.png) | ![Cedar & Cloud Travel flight-results widget using fictional fares and no airline logo](docs/images/flight-results.png) |
+
+These are fixture-only Chromium captures of the actual widgets, not live
+inventory or host screenshots. Their reproducible provenance is documented in
+[docs/images/README.md](docs/images/README.md).
+
 ## What it does
 
 - Opens a credential-free travel home with Flights marked available.
@@ -114,12 +122,18 @@ This starter intentionally omits a made-up widget domain. Local DevTools and gen
 
 A developer may place the same MCP server inside an authenticated website or SaaS application. The companion at `examples/embedded-assistant-host/` demonstrates this without duplicating the travel connector, schemas, normalizers, tools, or widgets. See [docs/EMBEDDED_ASSISTANT.md](docs/EMBEDDED_ASSISTANT.md).
 
+The optional companion is excluded from the first public release's hosted
+end-to-end claims. Its code and offline tests remain available for learning,
+but it is not a release gate until the separately owned hosted model-transport
+investigation is complete and the owner explicitly restores it to scope.
+
 ## Useful commands
 
 ```sh
 pnpm test
 pnpm exec playwright install chromium
 pnpm test:browser
+pnpm docs:previews
 pnpm exec noodle validate --json
 pnpm exec noodle test --json
 pnpm exec noodle tools list --json
@@ -155,7 +169,7 @@ Users do not need to know IATA codes. The host model resolves clear city or airp
 | `TravelHome` | Opening the starter or beginning a flight search | See Flights as available, view future domains as noninteractive “Coming soon” items, and start a familiar one-way or round-trip search through the host conversation. |
 | `FlightResults` | After search or fare verification | Compare three offers inline (up to ten in fullscreen), edit the search, select one fare, verify its current price, repeat verification against that same active fare, and return through the unified Search → Results → Verified fare-review flow. |
 
-Both widgets are implemented with host-native typography, light/dark theme styles, visible focus styles, practical touch-target sizing, reduced-motion fallbacks, and bounded text fallback for hosts without MCP Apps. `pnpm test:browser` proves the local fixture experience in Chromium at 280px and 320px, including keyboard focus, touch targets, themes, reduced motion, and selection interaction. The final review is explicitly not a ticket, booking, or reservation. Named-host evidence remains a separate release gate, so clone authors should follow [CONTRIBUTING.md](CONTRIBUTING.md) before making host-compatibility claims.
+Both widgets are implemented with host-native typography, light/dark theme styles, visible focus styles, practical touch-target sizing, reduced-motion fallbacks, and bounded text fallback for hosts without MCP Apps. `pnpm test:browser` proves the local fixture experience in Chromium at 280px and 320px, including keyboard focus, touch targets, themes, reduced motion, and selection interaction. `pnpm docs:previews` regenerates the sanitized product images from the same network-disabled browser harness. The final review is explicitly not a ticket, booking, or reservation. Named-host evidence remains a separate release gate, so clone authors should follow [CONTRIBUTING.md](CONTRIBUTING.md) before making host-compatibility claims.
 
 ## Expected failure behavior
 
@@ -181,7 +195,7 @@ Branding, tool descriptions, normalization fields, widget composition, and futur
 
 ## Updating Noodle Seed safely
 
-`@noodleseed/one` is pinned exactly to `0.136.0`. Dependabot opens reviewable dependency pull requests monthly; nothing auto-merges. For a manual Noodle update:
+`@noodleseed/one` is pinned exactly to `0.138.0`. Dependabot opens reviewable dependency pull requests monthly; nothing auto-merges. For a manual Noodle update:
 
 1. Compare the registry version and release guidance.
 2. Update the exact package pin and regenerate `pnpm-lock.yaml`.
@@ -192,9 +206,9 @@ Branding, tool descriptions, normalization fields, widget composition, and futur
 
 ## Public-release status
 
-No source license has been selected. Public distribution is blocked until the owner approves and adds one. The complete local and remote release-gate inventory is tracked in [PUBLIC_RELEASE_CHECKLIST.md](PUBLIC_RELEASE_CHECKLIST.md). Named-host evidence, a credentialed sandbox/error-shape smoke by the repository owner, and owner/legal dependency-license review are also required before calling a release production-ready.
+This repository is licensed under the [Apache License 2.0](LICENSE) and has repository-wide code owners. The complete local and remote release-gate inventory is tracked in [PUBLIC_RELEASE_CHECKLIST.md](PUBLIC_RELEASE_CHECKLIST.md). Copyright/NOTICE review, named-host evidence, the remaining credentialed sandbox/error-shape evidence, and owner/legal dependency-license review are still required before calling a release production-ready.
 
-Live one-way search and same-session fare verification previously passed for a bounded sandbox route. A complete owner-authorized round-trip response later measured 4,960,533 decoded bytes, above the former 3 MiB operation ceiling. `@noodleseed/one` 0.116 raises the opt-in per-operation maximum to 6 MiB; this starter applies that ceiling only to flight search and proves the measured response class reaches bounded normalization hermetically. Fare verification keeps the smaller 750,000-byte application limit and no widened connector limit. The 6 MiB configuration still needs a successful live mapping recheck after deployment. Nuitee documents no result limit or pagination contract.
+Live one-way search and same-session fare verification passed again on exact `0.137.0`, and the owner confirmed repeat verification in ChatGPT after the selection fix. A representative direct one-way response measured 2,865,567 decoded bytes and the equivalent connector search mapped ten bounded itineraries without a size error. The real 30-minute state test correctly rejected the expired active fare, but the same unrestarted `0.137.0` server then returned a tool-level error with no structured output on the fresh search, reproducing the unresolved state lifecycle. Bounded round-trip attempts continue to map Nuitee `provider_error`, so successful round-trip and greater-than-3-MiB response evidence also remain open. A complete earlier owner-authorized round-trip response measured 4,960,533 decoded bytes, above the former 3 MiB operation ceiling. `@noodleseed/one` 0.116 raised the opt-in per-operation maximum to 6 MiB; this starter applies that ceiling only to flight search and proves the measured response class reaches bounded normalization hermetically. Fare verification keeps the smaller 750,000-byte application limit and no widened connector limit. See [docs/live-smoke-evidence.md](docs/live-smoke-evidence.md) for the sanitized result. Nuitee documents no result limit or pagination contract.
 
 The 0.107 airport recheck was inconclusive: the direct control received one redirect and a small HTML response rather than the expected JSON, while the connector produced no mapped result or observable public upstream cause. That does not reproduce a connector-only defect because the direct control did not succeed. `find_airports` remains omitted until the current official endpoint and equivalent direct/connector requests both pass safely.
 

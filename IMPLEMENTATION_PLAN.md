@@ -6,7 +6,7 @@ The implementation is complete through offline/static gates plus prior owner-aut
 
 | Decision | Resolution |
 | --- | --- |
-| Package | Pin `@noodleseed/one` exactly to `0.136.0`; regenerate the lockfile and Agent Kit on every update. |
+| Package | Pin `@noodleseed/one` exactly to `0.138.0`; regenerate the lockfile and Agent Kit on every update. |
 | Operational scope | Flights search and fare verification only. |
 | API contract | Current official Nuitee Flights OpenAPI is source of truth; prose informs workflow and ambiguity notes. |
 | Entry points | Credential-free `src/server.ts`; managed-secret live composition `src/live-server.ts`. |
@@ -17,8 +17,8 @@ The implementation is complete through offline/static gates plus prior owner-aut
 | Verify | Resolve state before provider call; changed price is success; stop before prebook. |
 | Widgets | TravelHome and FlightResults only. |
 | Fixtures | Hermetic, fictional, test-only; never a production fallback. |
-| Embedded assistant | Valuable optional path that reuses the live server; not part of the default baseline. |
-| License | None until owner approval; public-release blocker. |
+| Embedded assistant | Valuable optional path that reuses the live server; excluded from the first release's hosted end-to-end claims. |
+| License | Apache License 2.0; copyright/NOTICE and dependency-provenance review remain public-release gates. |
 
 ## Phase 0 — preflight and bootstrap (complete)
 
@@ -31,7 +31,7 @@ Dependencies: none.
 5. Scope Vitest to `test/**/*.{test,spec}.{ts,tsx}`.
 6. Run the untouched baseline. Record and stop on failure.
 
-Correction outcome: the reviewed scaffold failure was narrowly corrected by pinning the approved exact package, regenerating the lock, refreshing Agent Kit, and removing the active embedded-assistant block from the default server. The repository now resolves exact `0.136.0`; the generated Codex and Claude instructions identify Agent Kit `0.81.0`, and `noodle agents doctor --json` reports both targets current with no restart required. The corrected baseline requires neither a provider nor assistant-model credential.
+Correction outcome: the reviewed scaffold failure was narrowly corrected by pinning the approved exact package, regenerating the lock, refreshing Agent Kit, and removing the active embedded-assistant block from the default server. The repository now resolves exact `0.138.0`; the generated Codex and Claude instructions identify Agent Kit `0.82.0`, and `noodle agents doctor --json` reports both targets current with no restart required. The corrected baseline requires neither a provider nor assistant-model credential.
 
 ## Phase 1 — primary-source and reference audit (complete)
 
@@ -176,7 +176,9 @@ Stop on missing entitlement, inconsistent sandbox inventory, provider ambiguity,
 
 Dependencies: Phase 7 evidence and owner decisions.
 
-- [ ] Owner selects and adds a source license.
+- [x] Owner selected and added Apache License 2.0.
+- [ ] Owner/legal review confirms the copyright holder, NOTICE treatment,
+      dependency-license compatibility, and package provenance.
 - [ ] Owner approves public visibility and repository description.
 - [ ] Credentialed sandbox smoke passes without sanitized-data concerns.
 - [ ] Owner-authorized smoke confirms the concrete connector runtime error shape and deadline behavior used for public error categories.
@@ -210,15 +212,15 @@ Classification: application contract mismatch, not a Noodle or Nuitee defect. A 
 
 ### Significant — initializer version drift
 
-Tracking: Noodle feedback `fb-957`; [GitHub issue #4](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/4).
+Tracking: [GitHub issue #4](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/4).
 
-Running an exact-version initializer historically produced a manifest containing `"latest"`. The original `0.103.1` run resolved `0.100.0`; a `0.104.1` recheck on 2026-08-05 resolved `0.102.1`. On 2026-08-06, an exact `npx @noodleseed/one@0.105.0 init` still wrote `"@noodleseed/one": "latest"`; the untouched pnpm install resolved `0.104.2` under the active minimum-release-age policy even though npm's `latest` dist-tag was `0.105.0`. The current repository independently pins exact `0.136.0`, regenerated the lockfile, and verifies manifest/installed/lock agreement instead of assuming the historical initializer behavior is fixed.
+Running an exact-version initializer historically produced a manifest containing `"latest"`. The original `0.103.1` run resolved `0.100.0`; a `0.104.1` recheck on 2026-08-05 resolved `0.102.1`. On 2026-08-06, an exact `npx @noodleseed/one@0.105.0 init` still wrote `"@noodleseed/one": "latest"`; the untouched pnpm install resolved `0.104.2` under the active minimum-release-age policy even though npm's `latest` dist-tag was `0.105.0`. The current repository independently pins exact `0.138.0`, regenerated the lockfile, and verifies manifest/installed/lock agreement instead of assuming the historical initializer behavior is fixed.
 
 Classification: Noodle Seed developer experience, not Nuitee or application code.
 
 ### Blocking baseline, corrected — default embedded-assistant credentials
 
-Tracking: Noodle feedback `fb-956`; [GitHub issue #3](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/3).
+Tracking: [GitHub issue #3](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/3).
 
 The generated widget server activated an embedded assistant and made ordinary `noodle test` require assistant-model configuration. After correcting the fresh scaffold's drift to exact `0.105.0`, its 2026-08-06 local smoke still failed `connector_secret_unresolved` for `ASSISTANT_MODEL_API_KEY` with all three assistant-model settings absent. Noodle 0.116 removes that block from new default scaffolds. This existing starter keeps its separately selected embedded entrypoint as an explicit authenticated-surface opt-in while the credential-free default remains assistant-free.
 
@@ -236,29 +238,40 @@ The authoring compiler followed `src/travel-server.ts` but failed to package its
 
 Classification: Noodle authoring compiler/module-layout behavior.
 
-### Resolved capability, live recheck pending — HTTP body-cap configurability
+### Nice-to-have — clean-install executable-link warning
 
-Tracking: Noodle feedback `fb-954`; [GitHub issue #1](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/1).
+The clean 0.138.0 install completed, but pnpm emitted one warning while linking
+an optional nested service executable whose packaged target was absent. The
+project-local Noodle CLI resolved to 0.138.0, and the full validation, MCP smoke,
+readiness, test, typecheck, and build gates passed afterward.
 
-The exact-`0.105.0` HTTP runtime applied a 1,048,576-byte transport ceiling before response mapping or compute: a 2026-08-06 synthetic check mapped a 1.04 MB JSON response to one tiny field, while a 1.06 MB response returned only `connector failed for operation`. Owner-authorized probes later measured a complete round-trip response at 4,960,533 decoded bytes, above the exact 3 MiB ceiling. `@noodleseed/one` 0.116 raises the opt-in per-operation maximum to 6 MiB; this starter applies 6 MiB only to search and proves that the measured response class completes bounded normalization hermetically. Verification is not widened. Successful live mapping under the 6 MiB configuration remains pending.
+Classification: Noodle package-install developer experience, not Nuitee or
+application behavior. It is nonblocking evidence for a packaging review; no
+upstream feedback was submitted during this upgrade.
 
-Classification: the reported Noodle connector capability is available in 0.107 and the application-side cap mismatch is corrected. Remaining live evidence concerns request/provider behavior, not proof that the response-size fix failed. It does not justify direct browser/provider access or an ungoverned fetch workaround.
+### Resolved capability, greater-than-3-MiB live recheck pending — HTTP body-cap configurability
 
-### Open — expired caller-scoped state blocks later searches
+Tracking: [GitHub issue #1](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/1).
 
-Tracking: [GitHub issue #5](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/5) and upstream [Noodle Borg issue #1033](https://github.com/NoodleSeed-com/noodle-borg/issues/1033).
+The exact-`0.105.0` HTTP runtime applied a 1,048,576-byte transport ceiling before response mapping or compute: a 2026-08-06 synthetic check mapped a 1.04 MB JSON response to one tiny field, while a 1.06 MB response returned only `connector failed for operation`. Owner-authorized probes later measured a complete round-trip response at 4,960,533 decoded bytes, above the exact 3 MiB ceiling. `@noodleseed/one` 0.116 raises the opt-in per-operation maximum to 6 MiB; this starter applies 6 MiB only to search and proves that the measured response class completes bounded normalization hermetically. Verification is not widened. On 0.137.0, an equivalent connector request successfully mapped ten bounded itineraries after a direct control measured 2,865,567 decoded bytes. Successful live mapping of a legitimate response above 3 MiB remains pending.
 
-The hosted `flight_selections` handle uses a 30-minute caller-scoped TTL. A fresh deployment restored flight searches, but the same deployment later returned `connector_error (patch_state)` after the state expired; repeating the deployment produced the same temporary recovery and later failure. Source and existing store tests show expired rows reject writes until explicitly pruned, while reliable hosted pruning has not yet been demonstrated.
+Classification: the reported Noodle connector capability is available and the application-side cap mismatch is corrected. The representative 0.137.0 one-way response fits below 3 MiB; remaining greater-than-3-MiB evidence concerns request/provider behavior, not proof that the response-size fix failed. It does not justify direct browser/provider access or an ungoverned fetch workaround.
 
-Classification: upstream state-lifecycle behavior with a temporary deployment-reset mitigation. Do not remove the TTL or weaken revision checks. Keep this finding open until a released fix passes a hosted short-TTL write-expire-write smoke without redeployment.
+### Open on 0.137.0 — expired caller-scoped state blocks later searches
+
+Tracking: [GitHub issue #5](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/5).
+
+The `flight_selections` handle uses a 30-minute caller-scoped TTL. In persistent local MCP sessions on exact 0.136.0 and 0.137.0, initial search, selection, and active verification passed; expiry then mapped `unknown_or_stale_selection` correctly, but the next fresh search on the same unrestarted server returned a tool-level error with no structured output. A fresh one-shot 0.136.0 server succeeded during the earlier control, which isolates a server-lifetime/state-runtime concern without establishing its internal root cause.
+
+Classification: unresolved Noodle state-runtime behavior, reproduced without application or hosted mutation. Do not remove the TTL, weaken revision checks, or add a deployment-reset workaround. Keep this finding open until a released fix passes write → expire → fresh write → verify on one unrestarted server.
 
 ### Inconclusive on current version — direct airport GET connector incompatibility
 
-Tracking: Noodle feedback `fb-955`; [GitHub issue #2](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/2).
+Tracking: [GitHub issue #2](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/2).
 
 The documented airport endpoint returned `200 OK` in earlier controls, while the exact-`0.105.0` fixed-origin connector returned only `connector failed for operation "search"`. The 0.107 read-only reproduction did not confirm that earlier connector-only result: the direct control followed one redirect and returned 69 bytes of HTML rather than valid JSON; the connector produced no mapped output or observable public upstream cause.
 
-Classification: current result is inconclusive and should be investigated first as endpoint/redirect/request behavior. Because the direct control did not succeed, the prescribed rubric does not reproduce FB-955 on 0.107. The model-visible airport tool remains omitted until equivalent current direct and connector requests both pass.
+Classification: current result is inconclusive and should be investigated first as endpoint/redirect/request behavior. Because the direct control did not succeed, the earlier connector-only failure is not reproduced on 0.107. The model-visible airport tool remains omitted until equivalent current direct and connector requests both pass.
 
 ### Nuitee documentation ambiguities
 

@@ -65,6 +65,7 @@ Platform helper connectors are explicit subpath imports from `@noodleseed/one/pl
 - `knowledge`
 - `managedSecret`
 - `meilisearch`
+- `noodleManaged`
 - `openAICompatible`
 - `publicWebsite`
 - `site`

@@ -79,13 +79,13 @@ Version one intentionally exposes no `find_airports` tool. The latest equivalent
 
 `@noodleseed/one` 0.116 supports an opt-in per-operation maximum of 6 MiB. This starter applies 6 MiB only to `search`; its application parser uses the same search cap and hermetic coverage proves the measured 4,960,533-byte response class reaches bounded normalization. Verification retains a 750,000-byte application cap and no widened connector limit.
 
-Owner-authorized probes confirmed one representative request returned `200 OK` and the documented Nuitee shape at 2.85 MB, while a complete round-trip response reached 4,960,533 decoded bytes. Live response mapping under the new 6 MiB configuration remains unproven even though the application now has matching connector/parser limits and an offline regression. Do not expose raw responses, weaken secret boundaries, bypass the fixed connector with browser fetch, or add undocumented provider parameters.
+Owner-authorized probes confirmed one representative request returned `200 OK` and the documented Nuitee shape at 2,865,567 decoded bytes; the equivalent 0.137.0 connector request mapped ten bounded itineraries. A complete earlier round-trip response reached 4,960,533 decoded bytes, but current round-trip attempts return the sanitized provider-error category before a successful large mapping can be observed. Do not expose raw responses, weaken secret boundaries, bypass the fixed connector with browser fetch, or add undocumented provider parameters.
 
 ## Expired selection state
 
-**Symptom:** flight search worked after deployment, then later returned `connector_error (patch_state)`.
+**Symptom:** flight search worked, then a fresh search failed after the caller-scoped selection expired.
 
-The live `flight_selections` handle is caller-scoped and expires after 30 minutes. A fresh deployment currently creates a new state namespace and may temporarily restore the flow, but that is a testing mitigation rather than a fix. Track the starter evidence in [issue #5](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/5) and the platform correction in [Noodle Borg issue #1033](https://github.com/NoodleSeed-com/noodle-borg/issues/1033). Do not extend or remove the TTL and do not bypass expected-revision protection. After a fixed package is released, prove write → expire → fresh write using a hosted short-TTL smoke without redeployment.
+The live `flight_selections` handle is caller-scoped and expires after 30 minutes. Exact 0.136.0 and 0.137.0 both rejected an expired active selection correctly, then returned a tool-level error with no structured output on the same server's next fresh search. Track the sanitized starter evidence in [issue #5](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/5). Do not extend or remove the TTL, bypass expected-revision protection, repeatedly redeploy, or add a client-side reset workaround. A candidate fix must pass write → expire → fresh write → verify on one unrestarted server.
 
 ## Malformed or partial response
 

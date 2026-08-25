@@ -13,7 +13,7 @@ Version one uses one deployment-owner Nuitee key. Multi-tenant credential broker
 - Assistant-model credentials are optional, separate from the Nuitee key, and server-side only.
 - Embedded-assistant backend client credentials remain in the authenticated embedding backend.
 - Browser code receives no Nuitee/model/client secret; embedded mode gives it only a short-lived assistant session.
-- `.env`, `.env.noodle`, and local `.env.*` variants are ignored; the intentionally tracked `.env.example` exception contains only an empty variable name.
+- `.env`, `.env.noodle`, and local `.env.*` variants are ignored; the intentionally tracked `.env.example` files contain only empty secret/config names and the non-secret localhost demo origin.
 
 Never put secret values in source, fixtures, tests, snapshots, screenshots, prompts, widget data, tool results, errors, logs, generated artifacts, Git history, issues, or pull requests.
 
@@ -52,4 +52,4 @@ Include a concise impact statement, affected revision, safe reproduction steps, 
 
 ## Release blocker
 
-A final reporting contact, owner-selected license, owner/legal dependency-license and provenance review, credentialed sandbox smoke, and real-host UI evidence are required before public release. The completed automated secret-history and package-metadata checks must be repeated from the final release commit.
+A final reporting contact, copyright/NOTICE and owner/legal dependency-license and provenance review, the remaining state/round-trip/large-response gates, and real-host UI evidence are required before public release. The completed automated secret-history and package-metadata checks must be repeated from the final release commit.

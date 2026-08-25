@@ -541,9 +541,15 @@ then aborts and clears the prior session and transcript. The sample fails closed
 fallback is replaced with a form generated from `requestedSchema`. A production renderer must show the
 complete confirmation review and both decisions. For `data-view`, map `resourceUri` or `tool` and the
 bounded/redacted result to a component already trusted by this application only when intentionally replacing
-the linked App with a native UI. Otherwise use `NoodleAppView`; JSON result data is not the App UI. Its
-semantic lifecycle identity is the client plus `view.id` plus `view.resourceUri`, so parent payload/callback
-rerenders keep the iframe and only a different view or unmount tears down the bridge.
+the linked App with a native UI. Otherwise use `<noodle-app-view>` or its React `NoodleAppView` adapter;
+JSON result data is not the App UI. The element's semantic lifecycle identity is the client plus `view.id`
+plus `view.resourceUri`, so parent payload/callback rerenders keep the iframe and only a different view,
+disconnect, or App teardown request retires the bridge.
+App views remain inline by default: the host advertises only inline presentation and rejects a widget's
+fullscreen request. A customer-owned renderer may opt in explicitly with `allowFullscreen` on
+`NoodleAppView` or `allow-fullscreen` on `<noodle-app-view>` only when fullscreen is part of its intended
+experience. When fullscreen is accepted, the shared host adds a top-right exit control that returns the same
+mounted App to inline mode without discarding its state.
 Never inject `part.data.html`, assign it to `srcdoc`, fetch a `ui://` URI, or reproduce the bridge directly. Pages with a
 Content-Security-Policy must include the Noodle service origin in both `connect-src` and `frame-src`.
 
@@ -588,23 +594,33 @@ useEffect(() => {
 
 For a chat-first custom host, raw `tool_started` supplies the direct call `id` and technical tool name. Map
 known tools to concise application copy and use a neutral fallback. Reserve a stable `role="status"` region
-for thinking, tool activity, and the view skeleton; switch to the ready `NoodleAppView` on `view_available`
-or to `role="alert"` on error. Decorative skeleton shapes stay hidden from assistive technology, and shimmer
+for thinking, tool activity, and the view skeleton; switch to the ready `<noodle-app-view>` (or React
+`NoodleAppView`) on `view_available` or to `role="alert"` on error. Decorative skeleton shapes stay hidden from assistive technology, and shimmer
 or transition motion is disabled under `prefers-reduced-motion`.
 
 Use `${view.id}:${view.resourceUri}` as transport identity. Different call IDs are distinct invocations and
 must not be deduplicated generically. If this application intentionally owns one current panel for a known
 resource, declare an application-owned slot for that resource and replace only that slot.
 
-Outside React, subscribe to the DOM-free client directly. It exposes the same conversation as headless AI
-SDK `UIMessage` state, including typed confirmation, input, tool-result, and linked-view parts:
+Outside React, subscribe to the DOM-free client directly and use the isolated framework-neutral App host.
+It exposes the same conversation as headless AI SDK `UIMessage` state, including typed confirmation, input,
+tool-result, and linked-view parts, without installing React:
+
+```html
+<noodle-app-view id="assistant-app-view"></noodle-app-view>
+```
 
 ```ts
+import '@noodleseed/assistant/app-view';
 import { createAssistantClient } from '@noodleseed/assistant/client';
 
 const assistant = createAssistantClient({
   sessionEndpoint: '/api/noodle-assistant/session',
 });
+const appView = document.querySelector('#assistant-app-view');
+if (!appView) throw new Error('Missing App view host');
+appView.client = assistant;
+appView.theme = resolvedTheme;
 
 assistant.subscribeChat((state) => {
   renderUIMessageState(state);
@@ -613,13 +629,14 @@ assistant.subscribeChat((state) => {
       if (part.type === 'data-confirmation' && part.data.status === 'pending') {
         renderConfirmation(part.data, (response) => assistant.respond(part.data.id, response));
       }
+      if (part.type === 'data-view') appView.view = part.data;
     }
   }
 });
 ```
 
 `theme="auto"` follows the operating-system preference, not a SaaS-owned toggle. Pass the resolved
-`light`/`dark` theme to `NoodleAssistant` and `NoodleAppView`; updates reach mounted MCP Apps without a
+`light`/`dark` theme to `NoodleAssistant` and `<noodle-app-view>`/`NoodleAppView`; updates reach mounted MCP Apps without a
 remount. CSS custom properties inherit through the host, and documented `--ns-assistant-*` variables remain
 the final integration escape hatch. Server `branding` is shared by widgets and the assistant; there is no
 second branding declaration. Text streams progressively. Expired turns re-exchange and retry once;
