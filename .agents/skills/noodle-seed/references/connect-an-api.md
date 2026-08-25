@@ -11,6 +11,7 @@ Connect a real API to a focused MCP product using managed credentials, mappings 
 - Secure the key first
 - Probe the live API
 - Model the connector from the observed shape
+- Import and curate an upstream MCP server
 - Return a list
 - Create, update, delete
 - Design intent tools
@@ -22,7 +23,7 @@ Connect a real API to a focused MCP product using managed credentials, mappings 
 
 ## Use when
 
-- The user provides credentials, a reachable API, or an OpenAPI document and wants real MCP behavior backed by it.
+- The user provides credentials, a reachable API, an OpenAPI document, or an upstream MCP endpoint and wants real MCP behavior backed by it.
 - Existing connector behavior compiles but still needs proof against the actual service and data shape.
 
 ## Do not use when
@@ -79,6 +80,35 @@ Encode the API as an HTTP connector, mapping only the fields you actually saw in
 
 The full connector shape, every `auth.kind`, and compute connectors are in
 `references/authoring-workflow.md`.
+
+### Import and curate an upstream MCP server
+
+Use an explicit import to discover the upstream tool surface once and generate TypeScript:
+
+```sh
+noodle import mcp https://store.example/api/mcp --name store --output store-app
+# When import discovery needs a credential, read it only from the environment:
+noodle import mcp https://store.example/api/mcp --name store \
+  --header-env Authorization=STORE_MCP_TOKEN
+```
+
+The importer freezes upstream tool names and normalized schemas into `.mcp({ operations })`; it never
+persists the import credential. Runtime calls only those declared operations and never runs `tools/list`.
+MCP annotations are untrusted hints, so every generated tool starts as a destructive confirmed action.
+Verify real behavior and deliberately narrow proven reads before accepting the generated source. Use
+`noodle import mcp <url> --output <dir> --check` in CI to detect upstream additions, removals, or schema
+changes without mutating source; its review labels drift additive, breaking, or metadata-only.
+
+Treat the imported connector operation as a backing-system contract, not the public tool design. Publish
+ordinary intent-shaped `tool(...)` capabilities with stable names and narrower schemas, normalize text or
+large upstream output through compute, and attach a normal Noodle React `view` when UI helps. Upstream
+`_meta`, resources, prompts, annotations, widgets, and CSP are never forwarded. A Noodle-owned widget may
+therefore enrich a headless upstream tool without trusting upstream executable UI.
+
+Managed endpoints require an exact managed origin allowlist. Configure each deployment with
+`variable(...)` and `secret(...)`; inbound MCP/OAuth bearer tokens are never reusable upstream credentials.
+The first release supports no auth, bearer, API key, and client credentials through the broker. Do not
+invent a delegated-user OAuth shortcut for an upstream MCP server.
 
 ### Return a list
 

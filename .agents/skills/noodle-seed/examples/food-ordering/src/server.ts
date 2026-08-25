@@ -352,6 +352,18 @@ export default server(
       description:
         'Open a complete food-ordering widget with store discovery, menu browsing, cart review, and checkout handoff.',
       annotations: readOnly,
+      modelVisibility: {
+        latestMessageIncludesAny: [
+          'order',
+          'food',
+          'menu',
+          'restaurant',
+          'cart',
+          'pickup',
+          'delivery',
+          'checkout',
+        ],
+      },
       input: z.object({
         query: z.string().optional(),
         customer: z.string().default('Guest'),

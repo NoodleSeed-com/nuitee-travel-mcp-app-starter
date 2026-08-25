@@ -80,6 +80,13 @@ describe('food-ordering example', () => {
     expect(JSON.stringify(tools.get('open_ordering'))).toContain('${context.ambient.serviceArea}');
     expect(JSON.stringify(tools.get('open_ordering'))).toContain('${context.location.latitude}');
     expect(JSON.stringify(tools.get('open_ordering'))).toContain('${context.location.longitude}');
+    expect(tools.get('open_ordering')?.annotations).toMatchObject({
+      'x-noodleseed-model-latest-message-includes-any': expect.arrayContaining([
+        'order',
+        'menu',
+        'checkout',
+      ]),
+    });
     expect(JSON.stringify(tools.get('sync_cart'))).toContain('revision');
     expect(tools.get('sync_cart')?.annotations?.confirm).toBe(false);
     expect(tools.get('prepare_checkout')?.annotations?.confirm).toBe(false);
