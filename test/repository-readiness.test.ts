@@ -141,6 +141,13 @@ describe('public repository contracts', () => {
     expect(checklist).toContain('[x] Keep squash merge as the only enabled merge method');
   });
 
+  it('records the enforced and proven merge queue gate', async () => {
+    const checklist = await repositoryFile('PUBLIC_RELEASE_CHECKLIST.md');
+
+    expect(checklist).toContain('[x] Require GitHub Merge Queue');
+    expect(checklist).toContain('passes `offline-quality-gates`');
+  });
+
   it('keeps hosted Embedded Assistant proof outside the first release boundary', async () => {
     const [readme, guide, checklist] = await Promise.all([
       repositoryFile('README.md'),
