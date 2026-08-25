@@ -26,6 +26,7 @@ private customer data.
 | Handoff | `handoff.allowedDomains` allows only `https://orders.example.com` checkout URLs |
 | Progressive enhancement | Non-Apps hosts still receive stores, featured items, and a readable fallback summary |
 | Fail-closed hydration | The React view treats only the unhydrated, pre-result `{}` envelope as pending; a hydrated empty success remains distinct. It surfaces `isError`, validates required records and identifiers, and withholds ordering actions from malformed results |
+| Upstream MCP composition | This synthetic example keeps its data local. For the canonical frozen-tool import, governed upstream invocation, response normalization, and Noodle-owned widget pattern, use the repository's `shopify-storefront` flagship rather than copying another composition surface here |
 
 The example is intentionally richer than the generated starter, but each inline view still follows the
 same default: one immediate purpose, one primary action, at most one subordinate action, and progressive

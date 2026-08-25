@@ -74,7 +74,7 @@ Platform helper connectors are explicit subpath imports from `@noodleseed/one/pl
 ## Authoring signatures
 
 - `server(name, options, definitions)` — `options` commonly includes `title`, `version`, `instructions`, `agentGuide`, `distribution`, `branding`, `auth`, `use`, `provides`, `state`, and `handoff`; `definitions` is the array of tools/resources/prompts.
-- `tool(name, { description, input, output, annotations?, visibility?, view?, fulfil })` — `input`/`output` are Zod schemas; `fulfil({ input, connectors, user })` returns data matching `output`. Add `view: { component, entry }` for a React widget; use `visibility: ["app"]` for an app-only helper.
+- `tool(name, { description, input, output, annotations?, visibility?, modelVisibility?, view?, fulfil })` — `input`/`output` are Zod schemas; `fulfil({ input, connectors, user })` returns data matching `output`. Add `view: { component, entry }` for a React widget; use `visibility: ["app"]` for an app-only helper. Use `modelVisibility.latestMessageIncludesAny` only for normalized literal explicit-intent discovery; it does not authorize execution.
 - Keep tool input names application-owned and meaningful; `__noodleIntent` is reserved for an optional serve-time operator analytics adapter and never reaches `fulfil`.
 - `resource(name, { uri, description?, mimeType?, fulfil })` and `prompt(name, { description?, arguments?, fulfil })` expose MCP resources/prompts.
 - View metadata (`viewTitle`, `viewDescription`, `csp`, `domain`, `permissions`) belongs on the tool that renders it; `asset("./path")` packages local files.
@@ -146,7 +146,7 @@ prompt('summarize_ticket', {
 
 ### Non-trivial tool: ctx connectors, annotations, visibility, async
 
-`ctx` is `{ input, user, connectors }`. Bind connectors with `use` on the server, then call one inside `fulfil` to record a step. `annotations.readOnly()` declares a closed-world safe read. TypeScript action helpers enforce confirmation only with `{ confirm: true }`; omitted or `false` executes directly, and action/destructive/open-world hints alone never enable the gate. For stateless hosts that cannot present Noodle confirmation, set `interactions: { confirmationFallback: 'host' }` in the `server` options to explicitly trust native host write approval; omission remains fail-closed and the fallback never supplies missing `ctx.elicit` input. `visibility` defaults to `['model', 'app']` — set `['app']` to hide a helper from the model. `fulfil` may be `async` (the compiler awaits it while recording).
+`ctx` is `{ input, user, connectors }`. Bind connectors with `use` on the server, then call one inside `fulfil` to record a step. `annotations.readOnly()` declares a closed-world safe read. TypeScript action helpers enforce confirmation only with `{ confirm: true }`; omitted or `false` executes directly, and action/destructive/open-world hints alone never enable the gate. For stateless hosts that cannot present Noodle confirmation, set `interactions: { confirmationFallback: 'host' }` in the `server` options to explicitly trust native host write approval; omission remains fail-closed and the fallback never supplies missing `ctx.elicit` input. `visibility` defaults to `['model', 'app']` — set `['app']` to hide a helper from the model. For a narrow explicit-intent tool, `modelVisibility: { latestMessageIncludesAny: [...] }` deterministically limits model discovery to a latest user message containing one of the normalized literal phrases; it is not authorization. `fulfil` may be `async` (the compiler awaits it while recording).
 
 ```ts
 import { annotations, connector, server, tool, z } from '@noodleseed/one';
@@ -177,6 +177,7 @@ export default server('support', { title: 'Support', version: '1.0.0', use: { cr
     output: z.object({ subject: z.string(), status: z.string() }),
     annotations: annotations.readOnly(), // read-only hint for hosts
     visibility: ['model', 'app'], // default; use ['app'] to hide the tool from the model
+    modelVisibility: { latestMessageIncludesAny: ['show ticket', 'open ticket'] },
     // ctx is { input, user, connectors }. A connector call records one flow step (a Ref) —
     // recording is not execution, so never branch on the result with native if (use when).
     fulfil: ({ input, connectors }) => {

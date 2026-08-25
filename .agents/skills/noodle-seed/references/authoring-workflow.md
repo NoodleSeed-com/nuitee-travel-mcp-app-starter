@@ -23,7 +23,8 @@
 
 1. **Website scrape** — if the user gives a URL, scrape it for surface hints (products, services, hours, contact, pricing). Stop there: the URL does not reveal CRM, booking systems, custom APIs, auth model, eligibility rules, quoting logic, or approval flows. Those live in the business systems and the owner’s head — ask.
 2. **OpenAPI import** — `noodle import openapi <file>` emits a starter `server.ts` from a spec. Use it when the user provides an OpenAPI document.
-3. **User interview** — Noodle does not interview; you do. Cover custom APIs/integrations, eligibility rules, quoting/approval logic, and private schemas (SQL DDL or JSON samples for custom `connector` declarations). Ask for concrete examples and sample payloads; do not guess a schema from a URL or invent endpoints.
+3. **Upstream MCP import** — `noodle import mcp <url> --name <slug> --output <dir>` discovers `tools/list` once, validates and freezes tool schemas into TypeScript, and writes a secret-free drift snapshot. Upstream annotations are untrusted, so generated tools remain destructive confirmed actions until an author verifies and narrows them. Use `--header-env <header>=<ENV_NAME>` for import-only auth and `--check` for classified, non-mutating drift detection. Runtime never performs discovery.
+4. **User interview** — Noodle does not interview; you do. Cover custom APIs/integrations, eligibility rules, quoting/approval logic, and private schemas (SQL DDL or JSON samples for custom `connector` declarations). Ask for concrete examples and sample payloads; do not guess a schema from a URL or invent endpoints.
 
 ## Fit check
 
@@ -42,9 +43,17 @@ Author in `server.ts`, then `noodle validate` → fix cited errors (see `compile
 Declare connectors as data, not imperative code:
 
 - **HTTP**: `connector("id").version("1.0.0").http({ baseUrl, allowedOrigins, auth, operations })` with per-operation `request`/`response` mapping using `${args...}` / `${response...}` expressions.
+- **MCP**: `connector("id").version("1.0.0").mcp({ endpoint, allowedOrigins, auth?, operations })` where each operation freezes the separate upstream `tool` wire name plus input/output schema. Import with `noodle import mcp`; do not hand-copy a live surface or call `tools/list` at runtime.
 - **Compute**: `connector("id").version("1.0.0").compute(name, { input, output, calls?, run })` — a self-contained, sandboxed function (no imports/closure capture) that may call allowlisted operations via `callOperation`.
 
 Tools record connector calls into a flow; recording is not execution. Do not branch on runtime outputs with native `if` — use declarative `when(...)` conditions.
+
+MCP connectors are curated backing operations, never transparent proxies. Publish ordinary Noodle tools
+with stable intent-shaped names, descriptions, annotations, authored schemas, confirmation, visibility,
+and optional React `view`. Normalize a text-only upstream result through compute before rendering when the
+view needs a richer stable output. Upstream resources, prompts, `_meta`, annotations, widgets, and CSP are
+not imported or forwarded. The runtime opens one guarded session for one operation, uses only a broker-minted
+credential, and closes it; it does not act as an agent for upstream sampling, roots, or elicitation.
 
 HTTP connector auth variants: `bearer` (`{ kind: "bearer", secret: secret("API_TOKEN") }`), `apiKey` (`{ kind: "apiKey", header: "X-API-Key", secret: secret("API_KEY") }`), `clientCredentials`, `delegatedOAuth`, `delegatedSessionCookie`, and `delegatedTokenExchange` (per-user calls to your own API — see "Delegated downstream auth" below). Use managed `secret(...)` / `variable(...)` refs for all values that differ by org/app/env.
 
