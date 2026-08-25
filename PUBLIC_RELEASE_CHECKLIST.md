@@ -17,10 +17,11 @@ This is the decision gate for making the repository public, marking it as a temp
 
 ## Owner decision required
 
-- [ ] Select a source license and copyright holder. Confirm the chosen license permits redistribution of generated Agent Kit guidance/examples; add notices if required.
+- [x] Adopt Apache License 2.0 for the repository and declare it in package metadata.
+- [ ] Confirm the copyright holder and whether generated Agent Kit guidance/examples or dependencies require a repository `NOTICE` file.
 - [ ] Choose and configure a monitored private vulnerability-reporting route, then replace the placeholder section in `SECURITY.md`.
 - [ ] Approve a Code of Conduct and a monitored enforcement contact, or explicitly decide not to adopt one before launch.
-- [ ] Supply valid CODEOWNERS users/teams and review boundaries.
+- [x] Assign repository-wide ownership to the verified maintainers `@WahabShah23` and `@asadatnoodle` in `.github/CODEOWNERS`.
 - [ ] Decide public support, governance, and contributor legal policy (DCO, CLA, or neither). Do not promise an SLA without staffing it.
 - [ ] Approve repository description, topics, merge strategy, release/tag policy, and whether the repository becomes a GitHub template.
 

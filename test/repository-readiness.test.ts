@@ -105,6 +105,24 @@ describe('public repository contracts', () => {
     expect(changelog).toContain('## Unreleased');
   });
 
+  it('declares the approved source license and repository owners', async () => {
+    const [rootPackage, license, codeowners, readme, contributing] = await Promise.all([
+      repositoryJson('package.json'),
+      repositoryFile('LICENSE'),
+      repositoryFile('.github/CODEOWNERS'),
+      repositoryFile('README.md'),
+      repositoryFile('CONTRIBUTING.md'),
+    ]);
+
+    expect(rootPackage.license).toBe('Apache-2.0');
+    expect(rootPackage.private).toBe(true);
+    expect(license).toContain('Apache License');
+    expect(license).toContain('Version 2.0, January 2004');
+    expect(codeowners.trim()).toBe('* @WahabShah23 @asadatnoodle');
+    expect(readme).toContain('licensed under the [Apache License 2.0]');
+    expect(contributing).toContain('Apache License 2.0');
+  });
+
   it('keeps public-facing docs free of private upstream trackers and internal feedback IDs', async () => {
     const docs = await Promise.all([
       repositoryFile('README.md'),
