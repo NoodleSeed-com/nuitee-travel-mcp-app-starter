@@ -29,7 +29,8 @@ Keep every credential and identity layer separate:
 | Owner | Values | Destination |
 | --- | --- | --- |
 | Noodle operator | Login, selected org/app/env | Plugin-managed CLI profile and explicit target; never the SaaS runtime |
-| Noodle deployment | `ASSISTANT_MODEL_BASE_URL`, `ASSISTANT_MODEL`, `ASSISTANT_MODEL_API_KEY` | `noodle variables set` / `noodle secrets set`; never the SaaS environment |
+| Noodle-managed model | No authored provider, model id, URL, or key | Hosted operator state; available only when Noodle has enrolled the exact org/app/env |
+| Operator-provided model | `ASSISTANT_MODEL_BASE_URL`, `ASSISTANT_MODEL`, `ASSISTANT_MODEL_API_KEY` | `noodle variables set` / `noodle secrets set`; never the SaaS environment |
 | Connector/delegated exchange | Connector credentials and any customer-owned token-exchange client | Noodle managed configuration plus the matching customer backend secret manager |
 | SaaS backend | `NOODLE_SERVICE_URL`, `NOODLE_ASSISTANT_CLIENT_ID`, `NOODLE_ASSISTANT_CLIENT_SECRET`, `PUBLIC_APP_ORIGIN` | Backend-only environment or secret manager; never browser code or public-prefixed variables |
 | Browser | Short-lived assistant session only | In memory; never a client secret, model key, connector credential, or raw application session |
@@ -48,17 +49,15 @@ Use the same server tools in the embed; do not create a second tool set. Declare
 branding: { name: "Acme", accent: "#3157D5" },
 context: { defaults: { locale: "en-GB", timeZone: "Europe/London" } },
 assistant: embeddedAssistant({
-  model: openAICompatible({
-    baseUrl: variable("ASSISTANT_MODEL_BASE_URL"),
-    model: variable("ASSISTANT_MODEL"),
-    apiKey: secret("ASSISTANT_MODEL_API_KEY"),
-  }),
+  model: noodleManaged(),
   access: authenticatedWebsite({
     origins: ["http://localhost:3000", "https://app.example.com"],
   }),
   layout: { mode: "floating", position: "bottom-right" },
 }),
 ```
+
+`noodleManaged()` is the zero-configuration Cloud path: the public artifact contains only `{ kind: "noodle-managed" }`. It never exposes a provider or model identifier, and it fails closed unless Noodle has enrolled that exact deployment target. For a customer- or self-hosted model, replace it with `openAICompatible({ baseUrl: variable("ASSISTANT_MODEL_BASE_URL"), model: variable("ASSISTANT_MODEL"), apiKey: secret("ASSISTANT_MODEL_API_KEY") })`; that remains the portable BYO path.
 
 Origins are exact: scheme, host, and optional port, with no path, trailing slash, or wildcard. Production origins must be HTTPS; plain HTTP is accepted only for loopback development origins (`http://localhost:<port>`, `http://127.0.0.1:<port>`). `noodle dev` serves the MCP project, not the embedding SaaS. For a public surface it also prints a process-local Embed ID and script; mount that script on the separately running loopback website to test anonymous mint, chat, widgets, and confirmation. The local ID is ephemeral, while a hosted deploy provisions the stable ID behind durable admission counters.
 
@@ -166,7 +165,7 @@ Local MCP authoring and tests need no account, but an external browser embed nee
 noodle deploy --org <org> --app <app> --env <env>
 ```
 
-Deploy preflights the complete target before upload. In an interactive terminal it collects all missing model variables and secrets, then continues. In a non-interactive run it reports every missing name and safe `noodle variables set ... --from-env` / `noodle secrets set ... --from-env` action; perform every action and repeat the same deploy command. Values never appear in the preflight report or resume state. Do not put these model values in the embedding SaaS environment. A production deployment may omit a local origin; include a loopback origin only when local browser integration is required.
+Deploy preflights the complete target before upload. `noodleManaged()` has no customer model variables or secrets; enrollment is hosted operator state and an unenrolled target fails closed at serving time. `openAICompatible()` preflight collects or reports every missing model variable and secret with safe `noodle variables set ... --from-env` / `noodle secrets set ... --from-env` actions. Values never appear in the preflight report or resume state. Do not put BYO model values in the embedding SaaS environment. A production deployment may omit a local origin; include a loopback origin only when local browser integration is required.
 
 ## Access modes and customer auth
 

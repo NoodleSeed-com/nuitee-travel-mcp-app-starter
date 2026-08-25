@@ -3,13 +3,11 @@ import {
   embeddedAssistant,
   file,
   knowledge,
-  openAICompatible,
+  noodleManaged,
   publicWebsite,
-  secret,
   server,
   site,
   tool,
-  variable,
   z,
 } from '@noodleseed/one';
 
@@ -249,11 +247,7 @@ export default server(
     // one glance, and closed by default when a tool is added to the server later. The knowledge
     // component projects its generated search capability the same way a tool does.
     assistant: embeddedAssistant({
-      model: openAICompatible({
-        baseUrl: variable('ASSISTANT_MODEL_BASE_URL'),
-        model: variable('ASSISTANT_MODEL'),
-        apiKey: secret('ASSISTANT_MODEL_API_KEY'),
-      }),
+      model: noodleManaged(),
       access: publicWebsite({
         origins: ['https://getaways.acme.example'],
         capabilities: [destinations, discoverGetaways, createHandoff, shortlistGetaway],

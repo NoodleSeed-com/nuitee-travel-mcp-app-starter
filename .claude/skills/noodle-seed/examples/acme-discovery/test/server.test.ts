@@ -24,6 +24,7 @@ describe('acme-discovery example', () => {
 
   it('gives the public website a consultative surface-specific goal', async () => {
     const manifest = await app.toManifest();
+    expect(manifest.server.assistant?.model).toEqual({ kind: 'noodle-managed' });
     expect(manifest.server.assistant?.surfaces?.[0]?.instructions).toContain(
       'friendly, consultative travel guide',
     );

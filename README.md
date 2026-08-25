@@ -190,7 +190,7 @@ Branding, tool descriptions, normalization fields, widget composition, and futur
 
 ## Updating Noodle Seed safely
 
-`@noodleseed/one` is pinned exactly to `0.137.0`. Dependabot opens reviewable dependency pull requests monthly; nothing auto-merges. For a manual Noodle update:
+`@noodleseed/one` is pinned exactly to `0.138.0`. Dependabot opens reviewable dependency pull requests monthly; nothing auto-merges. For a manual Noodle update:
 
 1. Compare the registry version and release guidance.
 2. Update the exact package pin and regenerate `pnpm-lock.yaml`.
