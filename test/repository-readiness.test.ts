@@ -74,7 +74,7 @@ describe('public repository contracts', () => {
     ]);
     expect(workflow).toContain('actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1');
     expect(workflow).toContain('pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86');
-    expect(workflow).toContain('actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38');
+    expect(workflow).toContain('actions/setup-node@820762786026740c76f36085b0efc47a31fe5020');
     expect(workflow).toContain('persist-credentials: false');
     expect(workflow).toContain('run: pnpm ci:offline');
     expect(workflow).not.toMatch(/uses:\s+[^\s]+@v\d/);
