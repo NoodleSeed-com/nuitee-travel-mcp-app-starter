@@ -72,7 +72,7 @@ describe('public repository contracts', () => {
       repositoryFile('.github/dependabot.yml'),
       repositoryFile('pnpm-workspace.yaml'),
     ]);
-    expect(workflow).toContain('actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803');
+    expect(workflow).toContain('actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1');
     expect(workflow).toContain('pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86');
     expect(workflow).toContain('actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38');
     expect(workflow).toContain('persist-credentials: false');
