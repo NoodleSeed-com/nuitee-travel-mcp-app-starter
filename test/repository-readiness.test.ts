@@ -123,6 +123,18 @@ describe('public repository contracts', () => {
     expect(contributing).toContain('Apache License 2.0');
   });
 
+  it('keeps hosted Embedded Assistant proof outside the first release boundary', async () => {
+    const [readme, guide, checklist] = await Promise.all([
+      repositoryFile('README.md'),
+      repositoryFile('docs/EMBEDDED_ASSISTANT.md'),
+      repositoryFile('PUBLIC_RELEASE_CHECKLIST.md'),
+    ]);
+
+    expect(readme).toContain('excluded from the first public release');
+    expect(guide).toContain('First-release status');
+    expect(checklist).toContain('[x] Exclude hosted Embedded Assistant end-to-end claims');
+  });
+
   it('keeps public-facing docs free of private upstream trackers and internal feedback IDs', async () => {
     const docs = await Promise.all([
       repositoryFile('README.md'),

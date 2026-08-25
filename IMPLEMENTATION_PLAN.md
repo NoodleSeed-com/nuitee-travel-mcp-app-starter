@@ -17,8 +17,8 @@ The implementation is complete through offline/static gates plus prior owner-aut
 | Verify | Resolve state before provider call; changed price is success; stop before prebook. |
 | Widgets | TravelHome and FlightResults only. |
 | Fixtures | Hermetic, fictional, test-only; never a production fallback. |
-| Embedded assistant | Valuable optional path that reuses the live server; not part of the default baseline. |
-| License | None until owner approval; public-release blocker. |
+| Embedded assistant | Valuable optional path that reuses the live server; excluded from the first release's hosted end-to-end claims. |
+| License | Apache License 2.0; copyright/NOTICE and dependency-provenance review remain public-release gates. |
 
 ## Phase 0 — preflight and bootstrap (complete)
 
@@ -176,7 +176,9 @@ Stop on missing entitlement, inconsistent sandbox inventory, provider ambiguity,
 
 Dependencies: Phase 7 evidence and owner decisions.
 
-- [ ] Owner selects and adds a source license.
+- [x] Owner selected and added Apache License 2.0.
+- [ ] Owner/legal review confirms the copyright holder, NOTICE treatment,
+      dependency-license compatibility, and package provenance.
 - [ ] Owner approves public visibility and repository description.
 - [ ] Credentialed sandbox smoke passes without sanitized-data concerns.
 - [ ] Owner-authorized smoke confirms the concrete connector runtime error shape and deadline behavior used for public error categories.
