@@ -79,7 +79,7 @@ Version one intentionally exposes no `find_airports` tool. The latest equivalent
 
 `@noodleseed/one` 0.116 supports an opt-in per-operation maximum of 6 MiB. This starter applies 6 MiB only to `search`; its application parser uses the same search cap and hermetic coverage proves the measured 4,960,533-byte response class reaches bounded normalization. Verification retains a 750,000-byte application cap and no widened connector limit.
 
-Owner-authorized probes confirmed one representative request returned `200 OK` and the documented Nuitee shape at 2,865,567 decoded bytes; the equivalent 0.137.0 connector request mapped ten bounded itineraries. A complete earlier round-trip response reached 4,960,533 decoded bytes, but current round-trip attempts return the sanitized provider-error category before a successful large mapping can be observed. Do not expose raw responses, weaken secret boundaries, bypass the fixed connector with browser fetch, or add undocumented provider parameters.
+Owner-authorized probes confirmed one representative request returned `200 OK` and the documented Nuitee shape at 2,865,567 decoded bytes; the equivalent 0.137.0 connector request mapped ten bounded itineraries. On exact 0.138.0, a round-trip control returned valid documented JSON at exactly 4,207,267 decoded bytes and the equivalent connector mapped ten complete outbound/return itineraries under the search-only 6 MiB ceiling. This is evidence for the tested request, not a guarantee that every provider response stays below the ceiling. Do not expose raw responses, weaken secret boundaries, bypass the fixed connector with browser fetch, add undocumented provider parameters, or raise the global limit.
 
 ## Expired selection state
 

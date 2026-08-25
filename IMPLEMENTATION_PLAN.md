@@ -165,7 +165,7 @@ Dependencies: owner credential, Nuitee Flights access, explicit live-call author
 2. Complete: a bounded one-way search and a verify against its selection passed in the same local MCP session.
 3. Complete for the tested happy path: populated mappings were bounded and neither key nor upstream offer ID appeared in public output.
 4. Pending: the latest airport direct/connector comparison was inconclusive because the direct control redirected to HTML; keep the tool omitted until equivalent current requests both pass.
-5. Partially complete: the former 1 MiB connector blocker now has a supported 6 MiB search-only configuration and hermetic 4.96 MB mapping proof. A successful representative large live response still requires recheck after deployment.
+5. Complete for the tested sandbox request: on exact 0.138.0 a 4,207,267-byte decoded round-trip response mapped to ten bounded, complete outbound/return itineraries under the search-only 6 MiB ceiling, and same-session active fare verification succeeded. Smaller operations remain unwidened.
 6. Exercise widgets in DevTools at 280px, light/dark, keyboard, reduced motion, empty/error/changed/expired states.
 7. Connect each named external host and verify fallback plus App rendering before claiming compatibility.
 8. Remove local diagnostic data according to operator policy; never commit runtime secret stores.
@@ -180,7 +180,7 @@ Dependencies: Phase 7 evidence and owner decisions.
 - [ ] Owner/legal review confirms the copyright holder, NOTICE treatment,
       dependency-license compatibility, and package provenance.
 - [ ] Owner approves public visibility and repository description.
-- [ ] Credentialed sandbox smoke passes without sanitized-data concerns.
+- [x] Credentialed sandbox search/selection/verification smoke passes without sanitized-data concerns.
 - [ ] Owner-authorized smoke confirms the concrete connector runtime error shape and deadline behavior used for public error categories.
 - [ ] Real-browser and claimed-host evidence passes.
 - [ ] Dependency, asset, provenance, and trademark review passes.
@@ -249,13 +249,13 @@ Classification: Noodle package-install developer experience, not Nuitee or
 application behavior. It is nonblocking evidence for a packaging review; no
 upstream feedback was submitted during this upgrade.
 
-### Resolved capability, greater-than-3-MiB live recheck pending — HTTP body-cap configurability
+### Resolved capability and live proof — HTTP body-cap configurability
 
 Tracking: [GitHub issue #1](https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter/issues/1).
 
-The exact-`0.105.0` HTTP runtime applied a 1,048,576-byte transport ceiling before response mapping or compute: a 2026-08-06 synthetic check mapped a 1.04 MB JSON response to one tiny field, while a 1.06 MB response returned only `connector failed for operation`. Owner-authorized probes later measured a complete round-trip response at 4,960,533 decoded bytes, above the exact 3 MiB ceiling. `@noodleseed/one` 0.116 raises the opt-in per-operation maximum to 6 MiB; this starter applies 6 MiB only to search and proves that the measured response class completes bounded normalization hermetically. Verification is not widened. On 0.137.0, an equivalent connector request successfully mapped ten bounded itineraries after a direct control measured 2,865,567 decoded bytes. Successful live mapping of a legitimate response above 3 MiB remains pending.
+The exact-`0.105.0` HTTP runtime applied a 1,048,576-byte transport ceiling before response mapping or compute: a 2026-08-06 synthetic check mapped a 1.04 MB JSON response to one tiny field, while a 1.06 MB response returned only `connector failed for operation`. Owner-authorized probes later measured a complete round-trip response at 4,960,533 decoded bytes, above the exact 3 MiB ceiling. `@noodleseed/one` 0.116 raises the opt-in per-operation maximum to 6 MiB; this starter applies 6 MiB only to search and proves that the measured response class completes bounded normalization hermetically. Verification is not widened. On 0.137.0, an equivalent connector request successfully mapped ten bounded itineraries after a direct control measured 2,865,567 decoded bytes. On exact 0.138.0, a 4,207,267-byte decoded round-trip control returned valid documented JSON and the equivalent connector mapped ten complete outbound/return itineraries under the search-only ceiling; a same-session application selection and active fare verification also succeeded.
 
-Classification: the reported Noodle connector capability is available and the application-side cap mismatch is corrected. The representative 0.137.0 one-way response fits below 3 MiB; remaining greater-than-3-MiB evidence concerns request/provider behavior, not proof that the response-size fix failed. It does not justify direct browser/provider access or an ungoverned fetch workaround.
+Classification: the reported Noodle connector capability is available, the application-side cap mismatch is corrected, and the representative greater-than-3-MiB live evidence now passes. The result does not guarantee every provider response is below 6 MiB and does not justify direct browser/provider access, an ungoverned fetch workaround, or a wider global/default limit.
 
 ### Open on 0.137.0 — expired caller-scoped state blocks later searches
 

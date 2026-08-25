@@ -11,22 +11,33 @@ customer data.
   `0.82.0`.
 - Package currency: the npm registry still published `0.138.0` as the current
   `@noodleseed/one` version when this check ran.
-- Round trip: one owner-authorized, bounded, read-only connector request
-  reached Nuitee and completed the application's public error mapping. Nuitee
-  returned `provider_error` with zero itineraries. The result did not contain
-  an oversized-response signature.
-- Scope: this was one attempt only. It did not retry provider inventory, test
-  booking behavior, or exercise the caller-state expiry lifecycle.
-- Privacy review: the recorded output contained only the public error category,
-  aggregate itinerary and leg counts, mapping status, and response-size
-  classification. No credential, authorization header, endpoint, request
-  value, raw body, offer identifier, fare, carrier, or customer data was
-  emitted.
+- Round-trip direct control: one owner-authorized, bounded, read-only request
+  returned HTTP 200 with no redirect, `application/json`, gzip content
+  encoding, and exactly 4,207,267 decoded bytes. The body was valid JSON in the
+  documented top-level search shape, with one batch and 231 journeys. Only
+  aggregate metadata and shape counts were inspected.
+- Equivalent connector control: search alone retained its 6 MiB ceiling and
+  completed bounded `partial` mapping to ten public itineraries. Every retained
+  itinerary contained one complete outbound leg and one complete return leg;
+  no `response_too_large` result occurred. Verification and smaller operations
+  were not widened.
+- Persistent-session flow: on one local MCP session, the same bounded round
+  trip mapped ten complete itineraries, the app-only helper recorded one
+  application-issued selection, and active fare verification returned the
+  bounded public success/available state with no price change.
+- Scope: the successful control, connector request, and same-session flow were
+  each run once. They did not test booking behavior or exercise the
+  caller-state expiry lifecycle.
+- Privacy review: recorded output contained only HTTP/content metadata, exact
+  decoded byte count, aggregate batch/journey/itinerary/leg counts, mapped
+  status, and bounded verification flags. No credential, authorization header,
+  endpoint, request value, raw body, provider offer identifier, selection
+  identifier, fare, carrier, or customer data was emitted.
 
-This result keeps the successful-round-trip and greater-than-3-MiB live gates
-open. It is evidence of correct bounded application error handling, not a
-response-size failure and not evidence that Nuitee sandbox round-trip inventory
-is healthy.
+This result closes the successful-round-trip and greater-than-3-MiB live
+evidence gates for the tested 0.138.0 sandbox request. It does not establish
+that every provider response is below 6 MiB or that production inventory is
+equivalent.
 
 ## 2026-08-24 candidate — 0.137.0
 
@@ -105,13 +116,9 @@ provider error.
 
 ## Evidence still required
 
-- One successful representative round trip whose normalized itineraries each
-  cover both requested legs.
-- One successful response in the previously observed large-response class,
-  mapped under the search-only 6 MiB ceiling.
 - A successful fresh search/write/verification after the real 30-minute TTL on
   the same unrestarted server. Expiry rejection is proven; fresh write is not.
 
-Sandbox inventory is mutable and may be incomplete. A later provider success
-must still pass application shape and leg-coverage checks before either open
-item can be closed.
+Sandbox inventory is mutable and may be incomplete. The successful bounded
+evidence above is a release-candidate observation, not an availability or
+pricing guarantee.
