@@ -46,7 +46,7 @@ This is the decision gate for making the repository public, marking it as a temp
 - [x] Enable Dependabot alerts/security updates, secret scanning, and push protection.
 - [ ] Enable code scanning where available and private vulnerability reporting when the repository visibility and owner-selected reporting process support them.
 - [x] Keep squash merge as the only enabled merge method, require web commit sign-off, and delete merged branches automatically.
-- [ ] Require GitHub Merge Queue after the `merge_group` CI trigger reaches `main`, then prove one approved queued pull request passes `offline-quality-gates` against the latest base without a manual branch update.
+- [x] Require GitHub Merge Queue after the `merge_group` CI trigger reaches `main`, then prove one approved queued pull request passes `offline-quality-gates` against the latest base without a manual branch update.
 - [x] Merge the current readiness changes to `main` through reviewed pull requests.
 - [ ] Re-audit anonymously, switch visibility, verify public-only security controls, and enable template status last.
 
