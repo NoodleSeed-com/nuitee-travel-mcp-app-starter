@@ -21,16 +21,16 @@ This is the decision gate for making the repository public, marking it as a temp
 - [ ] Confirm the copyright holder and whether generated Agent Kit guidance/examples or dependencies require a repository `NOTICE` file.
 - [ ] Choose and configure a monitored private vulnerability-reporting route, then replace the placeholder section in `SECURITY.md`.
 - [ ] Approve a Code of Conduct and a monitored enforcement contact, or explicitly decide not to adopt one before launch.
-- [x] Assign repository-wide ownership to the verified maintainers `@WahabShah23` and `@asadatnoodle` in `.github/CODEOWNERS`.
-- [ ] Decide public support, governance, and contributor legal policy (DCO, CLA, or neither). Do not promise an SLA without staffing it.
-- [ ] Approve repository description, topics, merge strategy, release/tag policy, and whether the repository becomes a GitHub template.
+- [x] Assign repository-wide ownership to the verified maintainers `@WahabShah23`, `@asadatnoodle`, and `@hassan50306` in `.github/CODEOWNERS`.
+- [x] Use the Developer Certificate of Origin without a CLA, provide community support through GitHub Issues and Discussions without an SLA, and document the boundary in `CONTRIBUTING.md` and `SUPPORT.md`.
+- [x] Use the approved repository description and topics, squash-only merges with branch cleanup, SemVer beginning at `v0.1.0`, and enable GitHub template status only after the final public audit.
 
 ## Technical and evidence gates
 
 - [ ] Resolve and prove the complete caller-state write → expire → fresh-write lifecycle without redeployment. Exact `0.136.0` and `0.137.0` both rejected the expired selection correctly, then returned a tool-level error with no structured output on the same server's fresh search. Keep the 30-minute TTL and revision protection; do not add an application reset workaround.
 - [ ] Prove a representative large live search maps successfully under the search-only 6 MiB limit; do not raise the global/default limit.
 - [x] Rechecked a bounded live one-way search and same-session active-fare verification with the owner-authorized sandbox key on exact `0.137.0`; the owner also confirmed repeat verification in ChatGPT after the selection fix.
-- [ ] Recheck a bounded round trip successfully. Three bounded 2026-08-24 attempts across 0.136.0 and 0.137.0 completed application mapping but returned Nuitee `provider_error`; do not add multicity until Nuitee documents deterministic 3+ leg response mapping.
+- [ ] Recheck a bounded round trip successfully. Three bounded 2026-08-24 attempts across 0.136.0 and 0.137.0, plus one bounded 2026-08-25 attempt on 0.138.0, completed application error mapping but returned Nuitee `provider_error`; do not add multicity until Nuitee documents deterministic 3+ leg response mapping.
 - [ ] Add one real deployment-owned widget domain and pass the ChatGPT target gate before claiming or submitting ChatGPT compatibility.
 - [x] The committed Chromium fixture gate covers 280px/320px overflow, wider inline/fullscreen layouts, 400% CSS-zoom reflow, keyboard/focus, touch targets, light/dark themes, reduced motion, and selection interaction without provider access.
 - [x] Captured reproducible Chromium product images from the actual widgets using only network-disabled fictional fixtures, without host conversation chrome, live inventory, offer IDs, user data, production URLs, or third-party carrier logos.
@@ -42,10 +42,11 @@ This is the decision gate for making the repository public, marking it as a temp
 
 - [x] Protect `main` with pull requests, one code-owner approval, stale-review dismissal, last-push approval, resolved conversations, strict `offline-quality-gates`, admin enforcement, and force-push/deletion blocking.
 - [x] Set default workflow token permissions to read, keep Actions unable to approve pull requests, and enforce full-SHA pinning in the committed workflow.
-- [ ] Decide whether to restrict the repository's allowed Actions beyond the current full-SHA policy; do not break the reviewed third-party actions already used by CI.
+- [x] Keep the reviewed full-SHA Actions policy for the first release; do not add a narrower repository allowlist until every required action is represented and tested.
 - [x] Enable Dependabot alerts/security updates, secret scanning, and push protection.
 - [ ] Enable code scanning where available and private vulnerability reporting when the repository visibility and owner-selected reporting process support them.
-- [ ] Decide delete-branch-on-merge and merge methods; do not infer maintainer preferences.
+- [x] Keep squash merge as the only enabled merge method, require web commit sign-off, and delete merged branches automatically.
+- [ ] Require GitHub Merge Queue after the `merge_group` CI trigger reaches `main`, then prove one approved queued pull request passes `offline-quality-gates` against the latest base without a manual branch update.
 - [x] Merge the current readiness changes to `main` through reviewed pull requests.
 - [ ] Re-audit anonymously, switch visibility, verify public-only security controls, and enable template status last.
 

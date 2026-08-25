@@ -217,7 +217,7 @@ deployment-owned HTTPS origin for both widgets before app-store submission.
 
 ## Contributing and generated guidance
 
-Start with [CONTRIBUTING.md](CONTRIBUTING.md), use the sanitized GitHub issue forms, and never place vulnerability details or secrets in a public issue. The private security route is still an owner decision and therefore remains a release blocker in [SECURITY.md](SECURITY.md).
+Start with [CONTRIBUTING.md](CONTRIBUTING.md), use the sanitized GitHub issue forms, and never place vulnerability details or secrets in a public issue. Community support and its no-SLA boundary are documented in [SUPPORT.md](SUPPORT.md). The private security route is still an owner decision and therefore remains a release blocker in [SECURITY.md](SECURITY.md).
 
 The large `.agents/` and `.claude/` trees are intentional generated Agent Kit guidance, not application source or ordinary tests. [docs/generated-agent-guidance.md](docs/generated-agent-guidance.md) explains regeneration, review, and public-redistribution boundaries. They are marked as generated for GitHub presentation, but their diffs must still be reviewed.
 
