@@ -76,6 +76,7 @@ describe('public repository contracts', () => {
     expect(workflow).toContain('pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86');
     expect(workflow).toContain('actions/setup-node@820762786026740c76f36085b0efc47a31fe5020');
     expect(workflow).toContain('persist-credentials: false');
+    expect(workflow).toContain('merge_group:');
     expect(workflow).toContain('run: pnpm ci:offline');
     expect(workflow).not.toMatch(/uses:\s+[^\s]+@v\d/);
     expect(dependabot).toContain('package-ecosystem: github-actions');
@@ -121,6 +122,23 @@ describe('public repository contracts', () => {
     expect(codeowners.trim()).toBe('* @WahabShah23 @asadatnoodle');
     expect(readme).toContain('licensed under the [Apache License 2.0]');
     expect(contributing).toContain('Apache License 2.0');
+  });
+
+  it('documents the approved community support and DCO policy', async () => {
+    const [support, contributing, checklist] = await Promise.all([
+      repositoryFile('SUPPORT.md'),
+      repositoryFile('CONTRIBUTING.md'),
+      repositoryFile('PUBLIC_RELEASE_CHECKLIST.md'),
+    ]);
+
+    expect(support).toContain('GitHub Discussions');
+    expect(support).toMatch(/does not\s+provide a support SLA/);
+    expect(contributing).toContain('Developer Certificate of Origin');
+    expect(contributing).toContain('git commit --signoff');
+    expect(contributing).toMatch(/does not use a Contributor License\s+Agreement/);
+    expect(contributing).toContain('GitHub\'s Merge Queue');
+    expect(checklist).toContain('[x] Use the Developer Certificate of Origin');
+    expect(checklist).toContain('[x] Keep squash merge as the only enabled merge method');
   });
 
   it('keeps hosted Embedded Assistant proof outside the first release boundary', async () => {

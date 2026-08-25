@@ -96,6 +96,35 @@ Monthly Dependabot pull requests cover npm and GitHub Actions. They are review p
 A pull request should state product impact, contract source, new failing test, security impact, evidence run, and unexecuted evidence (live provider, host, deployment). Do not mix unrelated generated-kit, dependency, visual, and provider-contract changes when they can be reviewed separately.
 
 Contributions accepted into this repository are licensed under the
-[Apache License 2.0](LICENSE). The maintainers have not yet selected a DCO or
-CLA; do not claim that either policy applies unless it is added through a
-separately reviewed governance change.
+[Apache License 2.0](LICENSE).
+
+## Developer Certificate of Origin
+
+This project uses the [Developer Certificate of Origin
+1.1](https://developercertificate.org/) and does not use a Contributor License
+Agreement. Sign off every commit to certify that you have the right to submit
+the contribution under the project's license:
+
+```sh
+git commit --signoff
+```
+
+The sign-off adds a `Signed-off-by` trailer using the contributor's real name
+and reachable email address. Maintainers should not merge a contribution whose
+commits lack the required sign-off.
+
+Community support is described in [SUPPORT.md](SUPPORT.md). This project does
+not promise a support SLA.
+
+## Merge Queue
+
+After the required code-owner review and `offline-quality-gates` pass, add the
+pull request to GitHub's Merge Queue instead of manually updating its branch.
+The queue tests a temporary candidate containing the latest `main` and the
+changes ahead of it before using the repository's squash-only merge method.
+
+An actual change to the pull request still requires fresh review. A base-branch
+advance alone should be handled by the queue; do not create merge-only update
+commits merely to make an otherwise approved pull request current. If the
+merge-group check fails or GitHub reports a conflict, remove and repair the
+affected pull request without bypassing branch protection.

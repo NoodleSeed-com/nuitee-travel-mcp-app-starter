@@ -5,6 +5,29 @@ sandbox behavior. It contains no credential, authorization header, endpoint,
 request values, raw response, fare, carrier, opaque selection identifier, or
 customer data.
 
+## 2026-08-25 candidate — 0.138.0
+
+- Runtime: exact `@noodleseed/one` and CLI `0.138.0`; generated Agent Kit
+  `0.82.0`.
+- Package currency: the npm registry still published `0.138.0` as the current
+  `@noodleseed/one` version when this check ran.
+- Round trip: one owner-authorized, bounded, read-only connector request
+  reached Nuitee and completed the application's public error mapping. Nuitee
+  returned `provider_error` with zero itineraries. The result did not contain
+  an oversized-response signature.
+- Scope: this was one attempt only. It did not retry provider inventory, test
+  booking behavior, or exercise the caller-state expiry lifecycle.
+- Privacy review: the recorded output contained only the public error category,
+  aggregate itinerary and leg counts, mapping status, and response-size
+  classification. No credential, authorization header, endpoint, request
+  value, raw body, offer identifier, fare, carrier, or customer data was
+  emitted.
+
+This result keeps the successful-round-trip and greater-than-3-MiB live gates
+open. It is evidence of correct bounded application error handling, not a
+response-size failure and not evidence that Nuitee sandbox round-trip inventory
+is healthy.
+
 ## 2026-08-24 candidate — 0.137.0
 
 - Runtime: exact `@noodleseed/one` and CLI `0.137.0`; generated Agent Kit
