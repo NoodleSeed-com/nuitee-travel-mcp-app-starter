@@ -95,4 +95,7 @@ Monthly Dependabot pull requests cover npm and GitHub Actions. They are review p
 
 A pull request should state product impact, contract source, new failing test, security impact, evidence run, and unexecuted evidence (live provider, host, deployment). Do not mix unrelated generated-kit, dependency, visual, and provider-contract changes when they can be reviewed separately.
 
-No license has been selected. Do not add one or publish the repository without owner approval.
+Contributions accepted into this repository are licensed under the
+[Apache License 2.0](LICENSE). The maintainers have not yet selected a DCO or
+CLA; do not claim that either policy applies unless it is added through a
+separately reviewed governance change.

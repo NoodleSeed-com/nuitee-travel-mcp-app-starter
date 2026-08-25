@@ -4,6 +4,9 @@ Notable changes to this starter will be recorded here. The repository has not pu
 
 ## Unreleased
 
+- Adopt Apache License 2.0 and assign repository-wide ownership to the two
+  verified maintainers in `.github/CODEOWNERS`.
+
 - Flights-first MCP server with bounded search and fare-verification tools.
 - TravelHome and FlightResults MCP App widgets with credential-free fallback behavior.
 - App-local Nuitee connector, opaque caller-scoped selections, hermetic tests, and complete offline CI gates.
