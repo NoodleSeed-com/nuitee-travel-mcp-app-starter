@@ -119,7 +119,7 @@ describe('public repository contracts', () => {
     expect(rootPackage.private).toBe(true);
     expect(license).toContain('Apache License');
     expect(license).toContain('Version 2.0, January 2004');
-    expect(codeowners.trim()).toBe('* @WahabShah23 @asadatnoodle');
+    expect(codeowners.trim()).toBe('* @WahabShah23 @asadatnoodle @hassan50306');
     expect(readme).toContain('licensed under the [Apache License 2.0]');
     expect(contributing).toContain('Apache License 2.0');
   });

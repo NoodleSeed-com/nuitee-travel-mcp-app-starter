@@ -21,7 +21,7 @@ This is the decision gate for making the repository public, marking it as a temp
 - [ ] Confirm the copyright holder and whether generated Agent Kit guidance/examples or dependencies require a repository `NOTICE` file.
 - [ ] Choose and configure a monitored private vulnerability-reporting route, then replace the placeholder section in `SECURITY.md`.
 - [ ] Approve a Code of Conduct and a monitored enforcement contact, or explicitly decide not to adopt one before launch.
-- [x] Assign repository-wide ownership to the verified maintainers `@WahabShah23` and `@asadatnoodle` in `.github/CODEOWNERS`.
+- [x] Assign repository-wide ownership to the verified maintainers `@WahabShah23`, `@asadatnoodle`, and `@hassan50306` in `.github/CODEOWNERS`.
 - [x] Use the Developer Certificate of Origin without a CLA, provide community support through GitHub Issues and Discussions without an SLA, and document the boundary in `CONTRIBUTING.md` and `SUPPORT.md`.
 - [x] Use the approved repository description and topics, squash-only merges with branch cleanup, SemVer beginning at `v0.1.0`, and enable GitHub template status only after the final public audit.
 
