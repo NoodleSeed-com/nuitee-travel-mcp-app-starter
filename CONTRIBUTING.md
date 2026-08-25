@@ -96,6 +96,22 @@ Monthly Dependabot pull requests cover npm and GitHub Actions. They are review p
 A pull request should state product impact, contract source, new failing test, security impact, evidence run, and unexecuted evidence (live provider, host, deployment). Do not mix unrelated generated-kit, dependency, visual, and provider-contract changes when they can be reviewed separately.
 
 Contributions accepted into this repository are licensed under the
-[Apache License 2.0](LICENSE). The maintainers have not yet selected a DCO or
-CLA; do not claim that either policy applies unless it is added through a
-separately reviewed governance change.
+[Apache License 2.0](LICENSE).
+
+## Developer Certificate of Origin
+
+This project uses the [Developer Certificate of Origin
+1.1](https://developercertificate.org/) and does not use a Contributor License
+Agreement. Sign off every commit to certify that you have the right to submit
+the contribution under the project's license:
+
+```sh
+git commit --signoff
+```
+
+The sign-off adds a `Signed-off-by` trailer using the contributor's real name
+and reachable email address. Maintainers should not merge a contribution whose
+commits lack the required sign-off.
+
+Community support is described in [SUPPORT.md](SUPPORT.md). This project does
+not promise a support SLA.

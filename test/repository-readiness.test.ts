@@ -123,6 +123,22 @@ describe('public repository contracts', () => {
     expect(contributing).toContain('Apache License 2.0');
   });
 
+  it('documents the approved community support and DCO policy', async () => {
+    const [support, contributing, checklist] = await Promise.all([
+      repositoryFile('SUPPORT.md'),
+      repositoryFile('CONTRIBUTING.md'),
+      repositoryFile('PUBLIC_RELEASE_CHECKLIST.md'),
+    ]);
+
+    expect(support).toContain('GitHub Discussions');
+    expect(support).toMatch(/does not\s+provide a support SLA/);
+    expect(contributing).toContain('Developer Certificate of Origin');
+    expect(contributing).toContain('git commit --signoff');
+    expect(contributing).toMatch(/does not use a Contributor License\s+Agreement/);
+    expect(checklist).toContain('[x] Use the Developer Certificate of Origin');
+    expect(checklist).toContain('[x] Keep squash merge as the only enabled merge method');
+  });
+
   it('keeps hosted Embedded Assistant proof outside the first release boundary', async () => {
     const [readme, guide, checklist] = await Promise.all([
       repositoryFile('README.md'),

@@ -22,8 +22,8 @@ This is the decision gate for making the repository public, marking it as a temp
 - [ ] Choose and configure a monitored private vulnerability-reporting route, then replace the placeholder section in `SECURITY.md`.
 - [ ] Approve a Code of Conduct and a monitored enforcement contact, or explicitly decide not to adopt one before launch.
 - [x] Assign repository-wide ownership to the verified maintainers `@WahabShah23` and `@asadatnoodle` in `.github/CODEOWNERS`.
-- [ ] Decide public support, governance, and contributor legal policy (DCO, CLA, or neither). Do not promise an SLA without staffing it.
-- [ ] Approve repository description, topics, merge strategy, release/tag policy, and whether the repository becomes a GitHub template.
+- [x] Use the Developer Certificate of Origin without a CLA, provide community support through GitHub Issues and Discussions without an SLA, and document the boundary in `CONTRIBUTING.md` and `SUPPORT.md`.
+- [x] Use the approved repository description and topics, squash-only merges with branch cleanup, SemVer beginning at `v0.1.0`, and enable GitHub template status only after the final public audit.
 
 ## Technical and evidence gates
 
@@ -42,10 +42,10 @@ This is the decision gate for making the repository public, marking it as a temp
 
 - [x] Protect `main` with pull requests, one code-owner approval, stale-review dismissal, last-push approval, resolved conversations, strict `offline-quality-gates`, admin enforcement, and force-push/deletion blocking.
 - [x] Set default workflow token permissions to read, keep Actions unable to approve pull requests, and enforce full-SHA pinning in the committed workflow.
-- [ ] Decide whether to restrict the repository's allowed Actions beyond the current full-SHA policy; do not break the reviewed third-party actions already used by CI.
+- [x] Keep the reviewed full-SHA Actions policy for the first release; do not add a narrower repository allowlist until every required action is represented and tested.
 - [x] Enable Dependabot alerts/security updates, secret scanning, and push protection.
 - [ ] Enable code scanning where available and private vulnerability reporting when the repository visibility and owner-selected reporting process support them.
-- [ ] Decide delete-branch-on-merge and merge methods; do not infer maintainer preferences.
+- [x] Keep squash merge as the only enabled merge method, require web commit sign-off, and delete merged branches automatically.
 - [x] Merge the current readiness changes to `main` through reviewed pull requests.
 - [ ] Re-audit anonymously, switch visibility, verify public-only security controls, and enable template status last.
 
