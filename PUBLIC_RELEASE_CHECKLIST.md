@@ -40,11 +40,14 @@ This is the decision gate for making the repository public, marking it as a temp
 
 ## Remote GitHub controls (requires explicit approval)
 
-- [ ] Protect `main` with pull requests, at least one approval, stale-review dismissal, resolved conversations, the canonical CI check, and force-push/deletion blocking.
-- [ ] Set default workflow token permissions to read, keep Actions unable to approve pull requests, restrict allowed Actions, and enforce full-SHA pinning.
-- [ ] Enable Dependabot alerts/security updates, secret scanning and push protection, code scanning where available, and private vulnerability reporting.
+- [x] Protect `main` with pull requests, one code-owner approval, stale-review dismissal, last-push approval, resolved conversations, strict `offline-quality-gates`, admin enforcement, and force-push/deletion blocking.
+- [x] Set default workflow token permissions to read, keep Actions unable to approve pull requests, and enforce full-SHA pinning in the committed workflow.
+- [ ] Decide whether to restrict the repository's allowed Actions beyond the current full-SHA policy; do not break the reviewed third-party actions already used by CI.
+- [x] Enable Dependabot alerts/security updates, secret scanning, and push protection.
+- [ ] Enable code scanning where available and private vulnerability reporting when the repository visibility and owner-selected reporting process support them.
 - [ ] Decide delete-branch-on-merge and merge methods; do not infer maintainer preferences.
-- [ ] Merge readiness changes to `main`, re-audit anonymously, switch visibility, verify public-only security controls, and enable template status last.
+- [x] Merge the current readiness changes to `main` through reviewed pull requests.
+- [ ] Re-audit anonymously, switch visibility, verify public-only security controls, and enable template status last.
 
 ## Release
 
