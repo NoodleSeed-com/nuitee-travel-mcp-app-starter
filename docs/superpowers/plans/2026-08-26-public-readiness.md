@@ -59,7 +59,7 @@
 - [x] Add an optional exact `widgetDomain` config and `--widget-domain` customization option.
 - [x] Apply the same configured domain to both widget policies while preserving an intentionally unconfigured default.
 - [x] Verify generic checks still pass and the ChatGPT target remains blocked until an owner supplies a real domain.
-- [ ] Commit the configuration path without inventing an owner domain.
+- [x] Commit the configuration path without inventing an owner domain.
 
 ### Task 4: Prove the caller-state lifecycle on exact 0.139.0
 
@@ -85,7 +85,7 @@
 - Create: `NOTICE` only when the copyright and notice review requires it
 - Create: `CODE_OF_CONDUCT.md` only after the owner selects the policy and monitored enforcement contact
 
-- [ ] Inventory shipped notices and dependency-license metadata without treating automation as legal approval.
+- [x] Inventory shipped notices and dependency-license metadata without treating automation as legal approval.
 - [ ] Obtain the copyright-holder and NOTICE decision.
 - [ ] Obtain and test a monitored private vulnerability-reporting route.
 - [ ] Obtain the Code of Conduct and enforcement-contact decision.

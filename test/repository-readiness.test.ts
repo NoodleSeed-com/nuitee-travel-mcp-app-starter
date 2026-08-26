@@ -124,6 +124,13 @@ describe('public repository contracts', () => {
     expect(contributing).toContain('Apache License 2.0');
   });
 
+  it('keeps generated-guidance provenance review distinct from the declared source license', async () => {
+    const generatedGuide = await repositoryFile('docs/generated-agent-guidance.md');
+
+    expect(generatedGuide).not.toContain('private and unlicensed');
+    expect(generatedGuide).toContain('does not by itself complete the owner/legal provenance review');
+  });
+
   it('documents the approved community support and DCO policy', async () => {
     const [support, contributing, checklist] = await Promise.all([
       repositoryFile('SUPPORT.md'),

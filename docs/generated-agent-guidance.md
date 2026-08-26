@@ -16,4 +16,4 @@ pnpm exec noodle agents doctor --json
 
 Do not hand-edit generated examples, import their source into the application, let Vitest discover their example tests, or assume a package upgrade preserves their guidance. After regeneration, re-read `AGENTS.md`, every selected `SKILL.md`, and the references required by the active route. Keep application tests scoped to `test/**/*.{test,spec}.{ts,tsx}`.
 
-Before public release, the owner must confirm that the selected repository license and any required notices permit redistribution of the generated guidance and examples. Until that legal/provenance decision is complete, the repository must remain private and unlicensed.
+Before public release, the owner must confirm that the selected repository license and any required notices permit redistribution of the generated guidance and examples. The repository declares Apache-2.0 for its source, but that declaration does not by itself complete the owner/legal provenance review for generated guidance and examples. Until that review is complete, the repository must remain private.
