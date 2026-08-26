@@ -12,7 +12,7 @@ This is the decision gate for making the repository public, marking it as a temp
 - [x] Fixtures are fictional, offline-only, and never a live fallback.
 - [x] Presentation customization is bounded, deterministic, exact-origin validated, and credential-blind.
 - [x] CI Actions are full-SHA pinned, checkout credentials are not persisted, and Dependabot covers npm plus Actions.
-- [x] All reachable Git blobs passed this remediation's bounded, sanitized secret-pattern audit; only placeholder environment templates have ever been tracked.
+- [x] Reachable text blobs pass the sanitized secret-pattern audit, and each tracked binary release artifact is held to an exact Git-blob review allowlist; the two current fictional widget PNGs received visual review.
 - [x] The installed dependency graph has no npm advisories and no unknown or unlicensed package-metadata groups at the reviewed release candidate.
 
 ## Private ready-to-toggle gates
@@ -31,6 +31,9 @@ Everything in this section may be completed while the repository remains private
 
 ### Technical and evidence gates
 
+- [x] Bound each provider journey's fallback-offer list before normalization and omit operating-carrier logos so the public output matches the documented marketing-carrier-only image exception.
+- [ ] Replace every mutable dependency selector in bundled runnable Agent Kit examples with reviewed exact pins, add an exact package-manager declaration and reproducible lock coverage, then regenerate both managed trees. The pinned 0.139.0 kit and the inspected 0.140.0 package still emit `latest`; `pnpm audit:generated-guidance` and therefore `pnpm audit:release` must fail closed until the upstream generator is fixed.
+- [ ] Regenerate the Acme Bistro flagship so its runnable mock no longer claims to mint a signed, expiring checkout URL. Keep payment examples explicitly non-production until an authoritative backend actually owns cart pricing, inventory, signature, and expiry.
 - [ ] Resolve and prove the complete caller-state write → expire → fresh-write lifecycle without redeployment. Exact `0.136.0` and `0.137.0` both rejected the expired selection correctly, then returned a tool-level error with no structured output on the same server's fresh search. Keep the 30-minute TTL and revision protection; do not add an application reset workaround.
 - [x] On exact `0.138.0`, proved a 4,207,267-byte decoded round-trip response maps to ten bounded itineraries under the search-only 6 MiB limit; the global/default and verification limits remain unwidened.
 - [x] Rechecked a bounded live one-way search and same-session active-fare verification with the owner-authorized sandbox key on exact `0.137.0`; the owner also confirmed repeat verification in ChatGPT after the selection fix.
@@ -55,7 +58,7 @@ Everything in this section may be completed while the repository remains private
 ### Candidate freeze
 
 - [ ] Run `pnpm ci:offline` from the release commit.
-- [ ] Run `pnpm audit:release` from the release commit; CI continuously runs its offline full-history and license-metadata portions against a full clone.
+- [ ] Run `pnpm audit:release` from the release commit. It intentionally remains red while bundled runnable Agent Kit examples use mutable dependencies; CI continuously runs the offline history and license-metadata portions against a full clone.
 - [ ] Update `CHANGELOG.md` with the approved version/date and create release notes from verified evidence.
 - [ ] Confirm no environment files, deployment links, credentials, private identifiers, or unreviewed generated artifacts are tracked.
 

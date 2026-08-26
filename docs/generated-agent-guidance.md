@@ -16,4 +16,12 @@ pnpm exec noodle agents doctor --json
 
 Do not hand-edit generated examples, import their source into the application, let Vitest discover their example tests, or assume a package upgrade preserves their guidance. After regeneration, re-read `AGENTS.md`, every selected `SKILL.md`, and the references required by the active route. Keep application tests scoped to `test/**/*.{test,spec}.{ts,tsx}`.
 
+## Known upstream release blockers
+
+The bundled runnable example manifests currently use mutable `latest` dependency selectors, have no exact `packageManager`, and sit outside reproducible lock coverage. This is true of the pinned 0.139.0 Agent Kit and remained true in the inspected 0.140.0 package on 2026-08-26. A developer installing one of those examples could therefore execute dependency code that was not reviewed with this repository revision.
+
+The bundled Acme Bistro mock also describes its checkout URL as signed and expiring even though the runnable fulfilment only builds a reserved `.example` query string. Its design contract correctly requires a real backend to recompute pricing and inventory and enforce signature and expiry, but the runnable claim must be corrected before redistribution.
+
+Until the upstream generator fixes both problems, this repository must stay private and `pnpm audit:release` must fail at `pnpm audit:generated-guidance`. Do not hand-edit the generated copies or their managed integrity metadata. Update the exact Noodle pin, regenerate both trees through the CLI, review the generated diff, and rerun the release audit once a corrected package exists.
+
 Before public release, the owner must confirm that the selected repository license and any required notices permit redistribution of the generated guidance and examples. The repository declares Apache-2.0 for its source, but that declaration does not by itself complete the owner/legal provenance review for generated guidance and examples. Until that review is complete, the repository must remain private.

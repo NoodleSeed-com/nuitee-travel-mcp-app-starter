@@ -66,6 +66,20 @@ describe('public repository contracts', () => {
     ]) expect(rootPackage.scripts['ci:offline']).toContain(command);
   });
 
+  it('keeps mutable generated examples behind a fail-closed release-only gate', async () => {
+    const [rootPackage, checklist, generatedGuide] = await Promise.all([
+      repositoryJson('package.json'),
+      repositoryFile('PUBLIC_RELEASE_CHECKLIST.md'),
+      repositoryFile('docs/generated-agent-guidance.md'),
+    ]);
+
+    expect(rootPackage.scripts['audit:release']).toContain('pnpm audit:generated-guidance');
+    expect(rootPackage.scripts['ci:offline']).not.toContain('audit:generated-guidance');
+    expect(checklist).toContain('[ ] Replace every mutable dependency selector in bundled runnable Agent Kit examples');
+    expect(generatedGuide).toContain('must stay private');
+    expect(generatedGuide).toContain('Do not hand-edit the generated copies');
+  });
+
   it('pins CI actions and covers application, embedded, and supply-chain gates', async () => {
     const [workflow, dependabot, workspace] = await Promise.all([
       repositoryFile('.github/workflows/ci.yml'),

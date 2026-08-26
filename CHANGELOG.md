@@ -6,7 +6,7 @@ Notable changes to this starter will be recorded here. The repository has not pu
 
 - Controlled exact-pin update to `@noodleseed/one` 0.139.0 and Assistant
   1.24.0, with the lockfile and generated Agent Kit 0.83.0 refreshed together.
-- Adopt Apache License 2.0 and assign repository-wide ownership to the two
+- Adopt Apache License 2.0 and assign repository-wide ownership to the three
   verified maintainers in `.github/CODEOWNERS`.
 
 - Flights-first MCP server with bounded search and fare-verification tools.

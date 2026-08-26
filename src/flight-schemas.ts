@@ -42,6 +42,7 @@ const carrierSchema = z.object({
   code: z.string().regex(/^(?:[A-Z0-9]{2,3}|—)$/),
   logoUrl: airlineLogoSchema.optional(),
 });
+const operatingCarrierSchema = carrierSchema.omit({ logoUrl: true });
 
 export const segmentSchema = z.object({
   origin: iataSchema,
@@ -53,7 +54,7 @@ export const segmentSchema = z.object({
   direction: z.enum(['OUTBOUND', 'INBOUND']),
   durationMinutes: durationMinutesSchema,
   carrier: carrierSchema,
-  operatingCarrier: carrierSchema.optional(),
+  operatingCarrier: operatingCarrierSchema.optional(),
   flightNumber: z.string().max(16).optional(),
   operatingFlightNumber: z.string().max(16).optional(),
 });

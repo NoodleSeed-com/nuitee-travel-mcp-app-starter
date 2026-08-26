@@ -155,6 +155,36 @@ describe('Nuitee gateway normalization', () => {
     expect(JSON.stringify(result.itineraries)).not.toContain('javascript:');
   });
 
+  it('omits an operating-carrier logo even when the provider URL is allowlisted', () => {
+    const journey = structuredClone(fictionalSearchResponse.data[0].journeys[0]) as any;
+    journey.segments[0].carrier.operatingName = 'Cloud Harbour Regional';
+    journey.segments[0].carrier.operatingCode = 'QZ';
+    journey.segments[0].carrier.operatingLogo =
+      'https://sandbox.nuitee.flights/static/images/airlines/QZ.png';
+    const { result } = search({}, { data: [{ journeys: [journey] }] });
+
+    expect(result.itineraries?.[0]?.segments[0]?.operatingCarrier).toEqual({
+      name: 'Cloud Harbour Regional',
+      code: 'QZ',
+    });
+  });
+
+  it('bounds each journey offer list before choosing a fallback offer', () => {
+    const journey = structuredClone(fictionalSearchResponse.data[0].journeys[0]) as any;
+    delete journey.cheapestOffer;
+    journey.offers = Array.from({ length: 101 }, (_, index) => (
+      index === 99
+        ? structuredClone(fictionalSearchResponse.data[0].journeys[0].cheapestOffer)
+        : { offerId: `invalid-${index}` }
+    ));
+
+    const { result } = search({}, { data: [{ journeys: [journey] }] });
+
+    expect(result.itineraries).toHaveLength(1);
+    expect(result.records).toHaveLength(1);
+    expect(result.status).toBe('partial');
+  });
+
   it('caps results at ten and reports partial provider data', () => {
     const journey = fictionalSearchResponse.data[0].journeys[0];
     const raw = {
