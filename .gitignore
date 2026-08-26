@@ -2,6 +2,7 @@ node_modules
 dist
 .pnpm-store/
 .worktrees/
+.superpowers/
 .env
 .env.noodle
 .env.*
