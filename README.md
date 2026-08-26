@@ -116,7 +116,7 @@ The local link is deliberate: without an explicit link or deploy target, the CLI
 
 The interactive deploy preflight identifies missing cloud configuration. Configure `NUITEE_API_KEY` as the deployment's server-side secret; do not assume the local `.env` has been uploaded, and do not put the key in ChatGPT. `owner-only` is the safe initial test access. ChatGPT Developer mode uses the public HTTPS MCP endpoint printed after deployment.
 
-This starter intentionally omits a made-up widget domain. Local DevTools and generic MCP connection testing do not need one. `pnpm exec noodle check src/live-server.ts --target chatgpt --json` therefore fails its `chatgpt_widget_domain` release gate until the deployment owner configures one real, dedicated HTTPS origin for both widgets. That domain is required for reliable ChatGPT app-version discovery and becomes the widget sandbox origin; never satisfy the gate with a placeholder. Add it and make the ChatGPT target check pass before claiming ChatGPT compatibility or submitting the app.
+This starter intentionally omits a made-up widget domain. Local DevTools and generic MCP connection testing do not need one. `pnpm exec noodle check src/live-server.ts --target chatgpt --json` therefore fails its `chatgpt_widget_domain` release gate until the deployment owner configures one real, dedicated HTTPS origin for both widgets. After setting `DEPLOYMENT_WIDGET_ORIGIN` to that owner-controlled value, run `pnpm customize -- --widget-domain "$DEPLOYMENT_WIDGET_ORIGIN"` and `pnpm customize:check`. The validated value is applied to both widget policies. That domain is required for reliable ChatGPT app-version discovery and becomes the widget sandbox origin; never satisfy the gate with a placeholder. Make the ChatGPT target check pass before claiming ChatGPT compatibility or submitting the app.
 
 ### B. Optional embedded assistant
 
@@ -149,9 +149,12 @@ Ordinary tests and the default Noodle baseline are fully offline and need neithe
 Run the same complete credential-free gate used by CI with `pnpm ci:offline`. It covers the root tests and local MCP smoke, all three entrypoint checks, exact customization validation, and the companion host typecheck/tests/build.
 
 Before a public release, run `pnpm audit:release`. It repeats the sanitized
-full-history secret-pattern scan, checks installed package license metadata,
-and queries the npm advisory service for the locked production graph. The
-command prints no matched credential content and does not replace legal review.
+full-history secret-pattern and exact-binary-review scan, verifies that bundled
+runnable Agent Kit examples use reproducible dependency inputs, checks installed
+package license metadata, and queries the npm advisory service for the locked
+production graph. The command prints no matched credential content and does not
+replace legal review. It intentionally fails while the generated examples still
+contain mutable `latest` dependencies.
 
 ## Example prompts
 
@@ -206,14 +209,16 @@ Branding, tool descriptions, normalization fields, widget composition, and futur
 
 ## Public-release status
 
-This repository is licensed under the [Apache License 2.0](LICENSE) and has repository-wide code owners. The complete local and remote release-gate inventory is tracked in [PUBLIC_RELEASE_CHECKLIST.md](PUBLIC_RELEASE_CHECKLIST.md). Copyright/NOTICE review, named-host evidence, the remaining runtime error-shape evidence, and owner/legal dependency-license review are still required before calling a release production-ready.
+This repository is licensed under the [Apache License 2.0](LICENSE) and has repository-wide code owners. The complete local and remote release-gate inventory is tracked in [PUBLIC_RELEASE_CHECKLIST.md](PUBLIC_RELEASE_CHECKLIST.md). Generated Agent Kit dependency/checkout corrections, copyright/NOTICE review, a monitored security route, a Code of Conduct decision, a real widget domain, the remaining caller-state lifecycle proof, and owner/legal dependency-license review are still required before calling a release production-ready.
 
 Live one-way search and same-session fare verification passed on exact `0.137.0`, and the owner confirmed repeat verification in ChatGPT after the selection fix. On exact `0.138.0`, an owner-authorized round-trip control returned valid documented JSON at exactly 4,207,267 decoded bytes; the equivalent connector mapped ten complete outbound/return itineraries under the search-only 6 MiB ceiling, and one application-issued selection verified successfully in the same MCP session. Fare verification keeps the smaller 750,000-byte application limit and no widened connector limit. The real 30-minute state test correctly rejected the expired active fare, but the same unrestarted server then returned a tool-level error with no structured output on the fresh search, so the fresh-write lifecycle remains unresolved. See [docs/live-smoke-evidence.md](docs/live-smoke-evidence.md) for the sanitized evidence. Nuitee documents no result limit or pagination contract.
 
 The 0.107 airport recheck was inconclusive: the direct control received one redirect and a small HTML response rather than the expected JSON, while the connector produced no mapped result or observable public upstream cause. That does not reproduce a connector-only defect because the direct control did not succeed. `find_airports` remains omitted until the current official endpoint and equivalent direct/connector requests both pass safely.
 
-No custom widget domain is claimed by default. Configure one real, dedicated,
-deployment-owned HTTPS origin for both widgets before app-store submission.
+No custom widget domain is claimed by default. After setting
+`DEPLOYMENT_WIDGET_ORIGIN` to one real, dedicated, deployment-owned HTTPS
+origin, configure both widgets with `pnpm customize -- --widget-domain
+"$DEPLOYMENT_WIDGET_ORIGIN"` before app-store submission.
 
 ## Contributing and generated guidance
 

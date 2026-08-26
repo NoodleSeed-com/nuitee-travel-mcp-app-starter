@@ -473,12 +473,21 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
     }
     const journey = object(candidates[candidateIndex]);
     const rawSegments = Array.isArray(journey?.segments) ? journey.segments : [];
-    const preferred = object(journey?.cheapestOffer);
-    const offerCandidates = [preferred, ...(Array.isArray(journey?.offers) ? journey.offers.map((entry: unknown) => object(entry)) : [])].filter(Boolean) as Array<Record<string, any>>;
-    const offer = offerCandidates.find((entry) => {
+    const usableOffer = (value: unknown): Record<string, any> | undefined => {
+      const entry = object(value);
+      if (!entry) return undefined;
       const display = object(object(entry.pricing)?.display);
-      return Boolean(text(entry.offerId, 16_384) && finiteNumber(display?.total) !== undefined && text(display?.currency, 3));
-    });
+      return text(entry.offerId, 16_384) && finiteNumber(display?.total) !== undefined && text(display?.currency, 3)
+        ? entry
+        : undefined;
+    };
+    const rawOffers = Array.isArray(journey?.offers) ? journey.offers : [];
+    const maxOffersPerJourney = 100;
+    if (rawOffers.length > maxOffersPerJourney) partial = true;
+    let offer = usableOffer(journey?.cheapestOffer);
+    for (let offerIndex = 0; !offer && offerIndex < Math.min(rawOffers.length, maxOffersPerJourney); offerIndex += 1) {
+      offer = usableOffer(rawOffers[offerIndex]);
+    }
     if (!journey || rawSegments.length === 0 || !offer) {
       partial = true;
       continue;
@@ -513,7 +522,6 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
       const marketingLogo = nuiteeAirlineLogo(carrier?.marketingLogo);
       const operatingName = text(carrier?.operatingName, 100);
       const operatingCode = text(carrier?.operatingCode, 8)?.toUpperCase();
-      const operatingLogo = nuiteeAirlineLogo(carrier?.operatingLogo);
       segments.push({
         origin: segmentOrigin,
         ...(segmentOriginName ? { originName: segmentOriginName } : {}),
@@ -529,7 +537,7 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
           ...(marketingLogo ? { logoUrl: marketingLogo } : {}),
         },
         ...(operatingName && operatingCode && (operatingName !== marketingName || operatingCode !== marketingCode)
-          ? { operatingCarrier: { name: operatingName, code: operatingCode, ...(operatingLogo ? { logoUrl: operatingLogo } : {}) } }
+          ? { operatingCarrier: { name: operatingName, code: operatingCode } }
           : {}),
         ...(text(flight?.marketingNumber, 16) ? { flightNumber: text(flight?.marketingNumber, 16)! } : {}),
         ...(text(flight?.operatingNumber, 16) ? { operatingFlightNumber: text(flight?.operatingNumber, 16)! } : {}),

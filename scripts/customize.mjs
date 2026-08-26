@@ -16,6 +16,7 @@ const OPTION_KEYS = new Set([
   'accent',
   'surface',
   'surfaceDark',
+  'widgetDomain',
   'productionOrigin',
   'keepLocalDemo',
 ]);
@@ -86,11 +87,22 @@ export function validateOrigin(value) {
   return value;
 }
 
+export function validateWidgetDomain(value) {
+  if (value === null) return null;
+  validateOrigin(value);
+  if (new URL(value).protocol !== 'https:') {
+    fail('Widget domain must use a real deployment-owned HTTPS origin.');
+  }
+  return value;
+}
+
 export function validateStarterConfig(input) {
   const config = object(input, 'Starter config');
-  exactKeys(config, ['brand', 'embeddedAssistant'], 'Starter config');
+  exactKeys(config, ['brand', 'widgets', 'embeddedAssistant'], 'Starter config');
   const brand = object(config.brand, 'Brand config');
   exactKeys(brand, ['name', 'mark', 'tagline', 'accent', 'surface', 'surfaceDark'], 'Brand config');
+  const widgets = object(config.widgets, 'Widget config');
+  exactKeys(widgets, ['domain'], 'Widget config');
   const assistant = object(config.embeddedAssistant, 'Embedded Assistant config');
   exactKeys(assistant, ['origins'], 'Embedded Assistant config');
   if (!Array.isArray(assistant.origins) || assistant.origins.length < 1 || assistant.origins.length > 5) {
@@ -107,6 +119,7 @@ export function validateStarterConfig(input) {
       surface: color(brand.surface, 'Surface color'),
       surfaceDark: color(brand.surfaceDark, 'Dark surface color'),
     },
+    widgets: { domain: validateWidgetDomain(widgets.domain) },
     embeddedAssistant: { origins },
   };
 }
@@ -140,6 +153,9 @@ export function applyCustomization(current, options = {}) {
       accent: options.accent ?? validated.brand.accent,
       surface: options.surface ?? validated.brand.surface,
       surfaceDark: options.surfaceDark ?? validated.brand.surfaceDark,
+    },
+    widgets: {
+      domain: options.widgetDomain ?? validated.widgets.domain,
     },
     embeddedAssistant: {
       origins: options.productionOrigin === undefined
@@ -178,6 +194,7 @@ function parseArguments(argumentsList) {
       '--accent': 'accent',
       '--surface': 'surface',
       '--surface-dark': 'surfaceDark',
+      '--widget-domain': 'widgetDomain',
       '--production-origin': 'productionOrigin',
     };
     const field = fields[argument];

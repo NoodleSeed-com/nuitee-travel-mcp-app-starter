@@ -66,6 +66,20 @@ describe('public repository contracts', () => {
     ]) expect(rootPackage.scripts['ci:offline']).toContain(command);
   });
 
+  it('keeps mutable generated examples behind a fail-closed release-only gate', async () => {
+    const [rootPackage, checklist, generatedGuide] = await Promise.all([
+      repositoryJson('package.json'),
+      repositoryFile('PUBLIC_RELEASE_CHECKLIST.md'),
+      repositoryFile('docs/generated-agent-guidance.md'),
+    ]);
+
+    expect(rootPackage.scripts['audit:release']).toContain('pnpm audit:generated-guidance');
+    expect(rootPackage.scripts['ci:offline']).not.toContain('audit:generated-guidance');
+    expect(checklist).toContain('[ ] Replace every mutable dependency selector in bundled runnable Agent Kit examples');
+    expect(generatedGuide).toContain('must stay private');
+    expect(generatedGuide).toContain('Do not hand-edit the generated copies');
+  });
+
   it('pins CI actions and covers application, embedded, and supply-chain gates', async () => {
     const [workflow, dependabot, workspace] = await Promise.all([
       repositoryFile('.github/workflows/ci.yml'),
@@ -124,6 +138,13 @@ describe('public repository contracts', () => {
     expect(contributing).toContain('Apache License 2.0');
   });
 
+  it('keeps generated-guidance provenance review distinct from the declared source license', async () => {
+    const generatedGuide = await repositoryFile('docs/generated-agent-guidance.md');
+
+    expect(generatedGuide).not.toContain('private and unlicensed');
+    expect(generatedGuide).toContain('does not by itself complete the owner/legal provenance review');
+  });
+
   it('documents the approved community support and DCO policy', async () => {
     const [support, contributing, checklist] = await Promise.all([
       repositoryFile('SUPPORT.md'),
@@ -148,6 +169,17 @@ describe('public repository contracts', () => {
     expect(checklist).toContain('passes `offline-quality-gates`');
   });
 
+  it('separates private ready-to-toggle gates from unauthorized transition-day actions', async () => {
+    const checklist = await repositoryFile('PUBLIC_RELEASE_CHECKLIST.md');
+
+    expect(checklist).toContain('## Private ready-to-toggle gates');
+    expect(checklist).toContain('## Transition-day actions — not authorized');
+    expect(checklist).toContain('Do not execute any transition-day action without separate explicit authorization.');
+    expect(checklist).toContain('- [ ] Switch repository visibility to public.');
+    expect(checklist).toContain('- [ ] Enable GitHub template status last.');
+    expect(checklist).toContain('- [ ] Publish or deploy only under separate explicit authorization.');
+  });
+
   it('keeps hosted Embedded Assistant proof outside the first release boundary', async () => {
     const [readme, guide, checklist] = await Promise.all([
       repositoryFile('README.md'),
@@ -158,6 +190,18 @@ describe('public repository contracts', () => {
     expect(readme).toContain('excluded from the first public release');
     expect(guide).toContain('First-release status');
     expect(checklist).toContain('[x] Exclude hosted Embedded Assistant end-to-end claims');
+  });
+
+  it('documents the safe widget-domain customization path without claiming a default domain', async () => {
+    const [readme, customization, config] = await Promise.all([
+      repositoryFile('README.md'),
+      repositoryFile('docs/customization.md'),
+      repositoryFile('src/starter-config.ts'),
+    ]);
+
+    expect(readme).toContain('pnpm customize -- --widget-domain');
+    expect(customization).toContain('--widget-domain "$DEPLOYMENT_WIDGET_ORIGIN"');
+    expect(config).toContain('"domain": null');
   });
 
   it('keeps public-facing docs free of private upstream trackers and internal feedback IDs', async () => {

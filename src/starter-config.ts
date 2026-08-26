@@ -7,6 +7,9 @@ export const starterConfig = {
     "surface": "#F4F1E8",
     "surfaceDark": "#101B22"
   },
+  "widgets": {
+    "domain": null
+  },
   "embeddedAssistant": {
     "origins": [
       "http://localhost:5173"

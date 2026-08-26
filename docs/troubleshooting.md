@@ -110,7 +110,7 @@ This is normal market behavior. Show old and current displayed prices clearly. I
 
 Do not claim ChatGPT, Claude, or another host works from generic metadata alone; record a real host render.
 
-For ChatGPT specifically, `noodle check src/live-server.ts --target chatgpt --json` intentionally reports `chatgpt_widget_domain` until the deployment owner adds one real, dedicated HTTPS widget origin to both widgets. The generic/local gates do not require it. Do not use a reserved or placeholder domain to make the target check green.
+For ChatGPT specifically, `noodle check src/live-server.ts --target chatgpt --json` intentionally reports `chatgpt_widget_domain` until the deployment owner sets `DEPLOYMENT_WIDGET_ORIGIN` to one real, dedicated HTTPS widget origin, runs `pnpm customize -- --widget-domain "$DEPLOYMENT_WIDGET_ORIGIN"`, and then runs `pnpm customize:check`. The validated value is applied to both widgets. The generic/local gates do not require it. Do not use a reserved or placeholder domain to make the target check green.
 
 ## Embedded assistant session errors
 

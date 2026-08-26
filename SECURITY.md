@@ -52,4 +52,4 @@ Include a concise impact statement, affected revision, safe reproduction steps, 
 
 ## Release blocker
 
-A final reporting contact, copyright/NOTICE and owner/legal dependency-license and provenance review, the remaining state/round-trip/large-response gates, and real-host UI evidence are required before public release. The completed automated secret-history and package-metadata checks must be repeated from the final release commit.
+A final reporting contact, copyright/NOTICE and owner/legal dependency-license and provenance review, corrected reproducible generated examples, the remaining caller-state lifecycle proof, and named-host UI evidence are required before public release. The automated history, exact-binary-review, generated-guidance, package-metadata, and advisory checks must be repeated from the final release commit.

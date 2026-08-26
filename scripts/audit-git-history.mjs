@@ -1,4 +1,7 @@
 import { execFileSync, spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const credentialNames = [
   'NUITEE_API_KEY',
@@ -24,7 +27,23 @@ const detectors = [
     name: 'managed_secret_assignment',
     pattern: `(${credentialNames})[[:space:]]*=[[:space:]]*[^[:space:]#<][^[:space:]]+`,
   },
+  {
+    name: 'managed_secret_structured_value',
+    pattern: `["']?(${credentialNames})["']?[[:space:]]*:[[:space:]]*["'][^"'[:space:]][^"']*["']`,
+    ignoredLinePatterns: [
+      /NOODLE_ASSISTANT_CLIENT_SECRET:\s*'client-secret-sentinel'/,
+    ],
+  },
 ];
+
+const binaryArtifactExtension = /\.(?:7z|bin|bmp|docx?|gif|gz|ico|jpe?g|mov|mp3|mp4|otf|pdf|png|pptx?|tar|tgz|ttf|wasm|webm|webp|woff2?|xlsx?|zip)$/i;
+const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const reviewedBinaryBlobs = new Set(
+  readFileSync(resolve(repositoryRoot, 'security/reviewed-binary-blobs.txt'), 'utf8')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#')),
+);
 
 function gitOutput(args) {
   return execFileSync('git', args, {
@@ -34,11 +53,14 @@ function gitOutput(args) {
   }).trim();
 }
 
-function pathsFromMatches(output) {
-  return [...new Set(output.split('\n').filter(Boolean).map((line) => {
-    const separator = line.indexOf(':');
-    return separator >= 0 ? line.slice(separator + 1) : line;
-  }))].sort();
+function pathsFromMatches(output, ignoredLinePatterns = []) {
+  const paths = [];
+  for (const line of output.split('\n').filter(Boolean)) {
+    const match = /^[^:]+:(.+?):\d+:(.*)$/.exec(line);
+    if (!match || ignoredLinePatterns.some((pattern) => pattern.test(match[2]))) continue;
+    paths.push(match[1]);
+  }
+  return [...new Set(paths)].sort();
 }
 
 const commits = gitOutput(['rev-list', '--all']).split('\n').filter(Boolean);
@@ -47,17 +69,49 @@ if (commits.length === 0) {
   process.exit(1);
 }
 
+const unreviewedBinaryPaths = new Set();
+for (const commit of commits) {
+  for (const entry of gitOutput(['ls-tree', '-r', '-z', '--full-tree', commit]).split('\0')) {
+    if (!entry) continue;
+    const separator = entry.indexOf('\t');
+    if (separator < 0) continue;
+    const header = entry.slice(0, separator);
+    const path = entry.slice(separator + 1);
+    const match = /^\d+ blob ([0-9a-f]+)$/.exec(header);
+    if (
+      match
+      && binaryArtifactExtension.test(path)
+      && !reviewedBinaryBlobs.has(`${match[1]} ${path}`)
+    ) {
+      unreviewedBinaryPaths.add(path);
+    }
+  }
+}
+
+if (unreviewedBinaryPaths.size > 0) {
+  process.stdout.write(`${JSON.stringify({
+    ok: false,
+    error: {
+      code: 'unreviewed_binary_artifact',
+      message: 'A reachable binary artifact has not completed exact-blob human review.',
+      paths: [...unreviewedBinaryPaths].sort(),
+    },
+  })}\n`);
+  process.exit(1);
+}
+
 const findings = [];
 for (const detector of detectors) {
   const result = spawnSync('git', [
-    'grep', '-I', '-l', '-E', '-e', detector.pattern, ...commits, '--',
+    'grep', '-n', '-E', '-e', detector.pattern, ...commits, '--',
   ], {
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   if (result.status === 0) {
-    findings.push({ detector: detector.name, paths: pathsFromMatches(result.stdout) });
+    const paths = pathsFromMatches(result.stdout, detector.ignoredLinePatterns);
+    if (paths.length > 0) findings.push({ detector: detector.name, paths });
   } else if (result.status !== 1) {
     process.stdout.write(`${JSON.stringify({
       ok: false,

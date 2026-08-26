@@ -1,0 +1,5 @@
+# Exact Git blob IDs that received a human visual review for credentials and
+# private data. Any new binary release artifact must be reviewed and added as a
+# separate change; paths alone are never sufficient.
+9122e358ee27ad1546b36a3748dae09bbd488313 docs/images/flight-results.png
+bfa35fd295c35804ead9331f8828001d77437ba5 docs/images/travel-home.png
