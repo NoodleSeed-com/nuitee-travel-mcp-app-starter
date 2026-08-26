@@ -38,7 +38,10 @@ describe('server contract', () => {
     const verify = manifest.tools.find((entry: any) => entry.name === 'verify_flight_offer');
 
     expect(manifest.tools.map((entry: any) => entry.name)).toEqual(expectedAllTools);
-    expect(select?.visibility).toEqual(['app']);
+    expect(select).toMatchObject({
+      visibility: ['app'],
+      annotations: { confirm: true },
+    });
     expect(JSON.stringify(select?.inputSchema)).toContain('selectionId');
     expect(verify?.description).toContain('verify again');
     expect(verify?.inputSchema.properties.selectionMode.default).toBe('active');
@@ -148,8 +151,17 @@ describe('server contract', () => {
 
   it('keeps embedding optional while reusing the same travel tools', async () => {
     const manifest = await embeddedApp.toManifest() as {
-      server: { assistant: { surfaces: Array<{ mode: string; origins: string[] }> } };
-      tools: Array<{ name: string }>;
+      server: {
+        assistant: {
+          surfaces: Array<{
+            mode: string;
+            origins: string[];
+            capabilities: Array<{ kind: string; name: string }>;
+          }>;
+          layout: { mode: string };
+        };
+      };
+      tools: Array<{ name: string; visibility?: string[] }>;
     };
     const liveManifest = await liveApp.toManifest() as { tools: Array<{ name: string }> };
     expect(manifest.tools.map((tool) => tool.name)).toEqual(liveManifest.tools.map((tool) => tool.name));
@@ -162,10 +174,22 @@ describe('server contract', () => {
     expect(wire).not.toContain('https://app.example.com');
     expect(manifest.server.assistant.surfaces).toEqual([
       {
-        mode: 'authenticated',
+        mode: 'public',
         origins: [...starterConfig.embeddedAssistant.origins],
+        capabilities: [
+          { kind: 'tool', name: 'open_travel_starter' },
+          { kind: 'tool', name: 'search_flights' },
+          { kind: 'tool', name: 'verify_flight_offer' },
+          { kind: 'tool', name: 'select_flight_offer' },
+        ],
       },
     ]);
+    expect(manifest.server.assistant.layout).toEqual({ mode: 'inline' });
+    expect(manifest.tools.find((tool) => tool.name === 'select_flight_offer'))
+      .toMatchObject({ visibility: ['app'], annotations: { confirm: true } });
+    for (const name of expectedAllTools) {
+      expect(manifest.tools.filter((tool) => tool.name === name)).toHaveLength(1);
+    }
   });
 
   it('keeps the companion website free of assistant-specific business tools', async () => {

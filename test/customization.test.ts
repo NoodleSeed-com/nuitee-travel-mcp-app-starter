@@ -199,8 +199,18 @@ describe('safe starter customization', () => {
     const manifest = await createTravelServer('embedded').toManifest() as any;
     expect(manifest.server.branding.name).toBe(starterConfig.brand.name);
     expect(manifest.server.assistant.surfaces).toEqual([
-      { mode: 'authenticated', origins: [...starterConfig.embeddedAssistant.origins] },
+      {
+        mode: 'public',
+        origins: [...starterConfig.embeddedAssistant.origins],
+        capabilities: [
+          { kind: 'tool', name: 'open_travel_starter' },
+          { kind: 'tool', name: 'search_flights' },
+          { kind: 'tool', name: 'verify_flight_offer' },
+          { kind: 'tool', name: 'select_flight_offer' },
+        ],
+      },
     ]);
+    expect(manifest.server.assistant.layout).toEqual({ mode: 'inline' });
     const homeTool = manifest.tools.find((entry: any) => entry.name === 'open_travel_starter');
     expect(JSON.stringify(homeTool)).toContain(starterConfig.brand.name);
   });
