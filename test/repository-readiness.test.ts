@@ -196,12 +196,12 @@ describe('public repository contracts', () => {
     const [readme, customization, config] = await Promise.all([
       repositoryFile('README.md'),
       repositoryFile('docs/customization.md'),
-      repositoryFile('src/starter-config.ts'),
+      repositoryFile('starter.config.ts'),
     ]);
 
     expect(readme).toContain('pnpm customize -- --widget-domain');
     expect(customization).toContain('--widget-domain "$DEPLOYMENT_WIDGET_ORIGIN"');
-    expect(config).toContain('"domain": null');
+    expect(config).toContain('domain: null');
   });
 
   it('keeps public-facing docs free of private upstream trackers and internal feedback IDs', async () => {

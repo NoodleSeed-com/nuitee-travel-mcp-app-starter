@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import { applyCustomization, renderStarterConfig, validateStarterConfig } from '../scripts/customize.mjs';
-import { starterConfig } from '../src/starter-config.js';
+import { starterConfig } from '../starter.config.js';
 import { createTravelServer } from '../src/travel-server.js';
 
 describe('safe starter customization', () => {
@@ -9,6 +9,20 @@ describe('safe starter customization', () => {
     const validated = validateStarterConfig(starterConfig);
     expect(validated.widgets.domain).toBeNull();
     expect(renderStarterConfig(validated)).toBe(renderStarterConfig(validated));
+  });
+
+  it('owns website presentation in one root config', async () => {
+    expect(starterConfig.embeddedAssistant.origins).toContain('http://localhost:3000');
+    expect(starterConfig.prompts).toHaveLength(3);
+    expect(starterConfig.website.developerPath).toBe('/developers');
+    expect(starterConfig.website.privacyUrl).toBeNull();
+    const compatibilitySource = await readFile(
+      new URL('../src/starter-config.ts', import.meta.url),
+      'utf8',
+    );
+    expect(compatibilitySource).toBe(
+      "export { starterConfig, type StarterConfig } from '../starter.config.js';\n",
+    );
   });
 
   it.each([
@@ -84,6 +98,25 @@ describe('safe starter customization', () => {
       ...starterConfig,
       brand: { ...starterConfig.brand, accent: '#abc' },
     })).toThrow();
+    expect(() => validateStarterConfig({
+      ...starterConfig,
+      brand: { ...starterConfig.brand, assistantName: 'Travel\u0000assistant' },
+    })).toThrow();
+  });
+
+  it('bounds unique prompts and requires safe website links', () => {
+    expect(() => validateStarterConfig({
+      ...starterConfig,
+      prompts: [...starterConfig.prompts, 'Find an extra flight'],
+    })).toThrow();
+    expect(() => validateStarterConfig({
+      ...starterConfig,
+      prompts: [starterConfig.prompts[0], starterConfig.prompts[0], starterConfig.prompts[2]],
+    })).toThrow();
+    expect(() => validateStarterConfig({
+      ...starterConfig,
+      website: { ...starterConfig.website, privacyUrl: 'http://travel.example.co/privacy' },
+    })).toThrow();
   });
 
   it('rejects unknown and credential-shaped configuration fields', () => {
@@ -96,13 +129,30 @@ describe('safe starter customization', () => {
       brand: {
         name: 'Baseline Travel',
         mark: 'B',
+        assistantName: 'Travel assistant',
         tagline: 'A stable customization baseline',
         accent: '#234567',
+        signal: '#CFE86A',
+        canvas: '#FBFBFB',
         surface: '#F1F2F3',
         surfaceDark: '#111213',
+        ink: '#2C2C2E',
+        muted: '#737479',
+        boundary: '#CBCDD5',
       },
+      website: {
+        developerPath: '/developers',
+        supportPath: '/developers#support',
+        privacyUrl: null,
+        termsUrl: null,
+      },
+      prompts: [
+        'Find a weekend flight to Rome',
+        'Compare nonstop fares to London',
+        'Plan a round trip for two',
+      ],
       widgets: { domain: null },
-      embeddedAssistant: { origins: ['http://localhost:5173'] },
+      embeddedAssistant: { origins: ['http://localhost:3000'] },
     };
     const options = {
       brandName: 'North Star Travel',
@@ -131,7 +181,7 @@ describe('safe starter customization', () => {
       productionOrigin: 'https://book.example.co',
       keepLocalDemo: true,
     }).config.embeddedAssistant.origins).toEqual([
-      'http://localhost:5173',
+      'http://localhost:3000',
       'https://book.example.co',
     ]);
     expect(() => applyCustomization(starterConfig, { keepLocalDemo: true })).toThrow();
