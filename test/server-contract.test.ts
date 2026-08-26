@@ -4,6 +4,7 @@ import embeddedApp from '../src/embedded-server.js';
 import liveApp from '../src/live-server.js';
 import offlineApp from '../src/server.js';
 import { starterConfig } from '../src/starter-config.js';
+import * as travelServer from '../src/travel-server.js';
 
 const expectedTools = ['open_travel_starter', 'search_flights', 'verify_flight_offer'];
 const expectedAllTools = [...expectedTools, 'select_flight_offer'];
@@ -56,6 +57,15 @@ describe('server contract', () => {
     const wire = JSON.stringify(manifest);
     expect(wire).not.toContain('cedar-cloud.example');
     expect(wire).not.toContain('your-app.example.com');
+  });
+
+  it('applies one configured widget domain consistently to every widget policy', () => {
+    const policy = (travelServer as any).widgetDomainPolicy;
+    expect(policy).toBeTypeOf('function');
+    expect(policy(null)).toEqual({});
+    expect(policy('https://widgets.travel.example.co')).toEqual({
+      domain: 'https://widgets.travel.example.co',
+    });
   });
 
   it('allows airline images only from the documented Nuitee Flights asset origins', async () => {

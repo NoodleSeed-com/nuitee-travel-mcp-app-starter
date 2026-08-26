@@ -171,6 +171,18 @@ describe('public repository contracts', () => {
     expect(checklist).toContain('[x] Exclude hosted Embedded Assistant end-to-end claims');
   });
 
+  it('documents the safe widget-domain customization path without claiming a default domain', async () => {
+    const [readme, customization, config] = await Promise.all([
+      repositoryFile('README.md'),
+      repositoryFile('docs/customization.md'),
+      repositoryFile('src/starter-config.ts'),
+    ]);
+
+    expect(readme).toContain('pnpm customize -- --widget-domain');
+    expect(customization).toContain('--widget-domain "$DEPLOYMENT_WIDGET_ORIGIN"');
+    expect(config).toContain('"domain": null');
+  });
+
   it('keeps public-facing docs free of private upstream trackers and internal feedback IDs', async () => {
     const docs = await Promise.all([
       repositoryFile('README.md'),

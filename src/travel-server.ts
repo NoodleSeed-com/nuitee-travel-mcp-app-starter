@@ -43,10 +43,17 @@ const configurationError = {
   retryable: false,
 };
 
+export function widgetDomainPolicy(domain: string | null) {
+  return domain === null ? {} : { domain };
+}
+
+const sharedWidgetDomainPolicy = widgetDomainPolicy(starterConfig.widgets.domain);
+
 const homeViewPolicy = {
   // A custom widget `domain` is intentionally omitted for local and ordinary
-  // MCP-host use. Before an app-store submission, add the same real,
-  // deployment-owned HTTPS origin to both widgets; never ship a placeholder.
+  // MCP-host use. The customizer applies one real, deployment-owned HTTPS
+  // origin to both widgets before submission; never ship a placeholder.
+  ...sharedWidgetDomainPolicy,
   csp: { connectDomains: [], resourceDomains: [], frameDomains: [] },
 };
 
@@ -54,6 +61,7 @@ const flightViewPolicy = {
   // The widget never calls Nuitee. These origins are resource-only so it can
   // display a bounded marketingLogo returned by the official Flights contract.
   // Runtime normalization rejects every other image origin and path.
+  ...sharedWidgetDomainPolicy,
   csp: {
     connectDomains: [],
     resourceDomains: [

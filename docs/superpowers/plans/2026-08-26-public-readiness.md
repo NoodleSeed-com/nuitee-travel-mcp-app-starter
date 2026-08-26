@@ -41,7 +41,7 @@
 - [x] Add a failing repository-contract test for distinct ready-to-toggle and transition-day sections.
 - [x] Reorganize the checklist without marking unproven items complete.
 - [x] Verify the focused repository test and full unit suite.
-- [ ] Commit the checklist contract.
+- [x] Commit the checklist contract.
 
 ### Task 3: Add a safe real widget-domain configuration path
 
@@ -55,10 +55,10 @@
 - Modify: `docs/customization.md`
 - Modify: `docs/troubleshooting.md`
 
-- [ ] Write failing tests for absent, placeholder, wildcard, non-HTTPS, path-bearing, and mismatched widget domains.
-- [ ] Add an optional exact `widgetDomain` config and `--widget-domain` customization option.
-- [ ] Apply the same configured domain to both widget policies while preserving an intentionally unconfigured default.
-- [ ] Verify generic checks still pass and the ChatGPT target remains blocked until an owner supplies a real domain.
+- [x] Write failing tests for absent, placeholder, wildcard, non-HTTPS, path-bearing, and mismatched widget domains.
+- [x] Add an optional exact `widgetDomain` config and `--widget-domain` customization option.
+- [x] Apply the same configured domain to both widget policies while preserving an intentionally unconfigured default.
+- [x] Verify generic checks still pass and the ChatGPT target remains blocked until an owner supplies a real domain.
 - [ ] Commit the configuration path without inventing an owner domain.
 
 ### Task 4: Prove the caller-state lifecycle on exact 0.139.0

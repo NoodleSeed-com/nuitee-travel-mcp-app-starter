@@ -36,9 +36,18 @@ The command deliberately does not rename the package, server ID, tool names, Nui
 - Follow the current [OpenAI Apps SDK UI guidelines](https://developers.openai.com/plugins/concepts/ui-guidelines) when changing typography, color, spacing, actions, or navigation.
 - Do not bundle airline/provider logos. FlightResults may render the documented `marketingLogo` from a live result only after the runtime accepts its exact Nuitee Flights asset origin/path; keep carrier text and initials as the failure fallback. A remote image request still reveals normal network metadata to the Nuitee asset host, so disable the image path if that tradeoff does not fit the deployment's privacy policy.
 - Never imply a partnership or call this an “official Nuitee connector” without authorization.
-- The starter claims no custom widget domain. Before app-store submission, add
-  one real, dedicated, deployment-owned HTTPS origin consistently to
-  `homeViewPolicy` and `flightViewPolicy`; never publish a placeholder origin.
+- The starter claims no custom widget domain. Before app-store submission, set
+  one real, dedicated, deployment-owned HTTPS origin with:
+
+  ```sh
+  pnpm customize -- --widget-domain "$DEPLOYMENT_WIDGET_ORIGIN"
+  pnpm customize:check
+  ```
+
+  Set `DEPLOYMENT_WIDGET_ORIGIN` to the actual owner-controlled deployment
+  domain first. The customizer validates one exact HTTPS origin and applies it consistently to
+  `homeViewPolicy` and `flightViewPolicy`; it rejects placeholders, wildcards,
+  paths, query strings, and fragments. The committed default remains `null`.
 
 Search fixtures must remain clearly fictional. Live output may show the actual carrier name, code, and allowlisted Nuitee-hosted airline image returned by Nuitee, but that is inventory attribution—not a bundled brand partnership.
 

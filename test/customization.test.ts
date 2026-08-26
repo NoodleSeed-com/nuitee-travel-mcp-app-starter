@@ -7,6 +7,7 @@ import { createTravelServer } from '../src/travel-server.js';
 describe('safe starter customization', () => {
   it('accepts the shipped presentation config and renders it deterministically', () => {
     const validated = validateStarterConfig(starterConfig);
+    expect(validated.widgets.domain).toBeNull();
     expect(renderStarterConfig(validated)).toBe(renderStarterConfig(validated));
   });
 
@@ -44,6 +45,32 @@ describe('safe starter customization', () => {
     }).embeddedAssistant.origins).toEqual([origin]);
   });
 
+  it.each([
+    '',
+    'https://app.example.com',
+    'https://brand.example',
+    'https://*.travel.example.co',
+    'https://travel.example.co/path',
+    'https://travel.example.co/',
+    'http://travel.example.co',
+    'http://localhost:5173',
+  ])('rejects unsafe or placeholder widget domain %j', (domain) => {
+    expect(() => validateStarterConfig({
+      ...starterConfig,
+      widgets: { domain },
+    })).toThrow();
+  });
+
+  it('configures one exact widget domain idempotently without changing assistant origins', () => {
+    const domain = 'https://widgets.travel.example.co';
+    const first = applyCustomization(starterConfig, { widgetDomain: domain });
+    const second = applyCustomization(first.config, { widgetDomain: domain });
+
+    expect(first.config.widgets.domain).toBe(domain);
+    expect(first.config.embeddedAssistant.origins).toEqual(starterConfig.embeddedAssistant.origins);
+    expect(second.changed).toBe(false);
+  });
+
   it('bounds brand copy and requires strict hexadecimal colors', () => {
     expect(() => validateStarterConfig({
       ...starterConfig,
@@ -74,6 +101,7 @@ describe('safe starter customization', () => {
         surface: '#F1F2F3',
         surfaceDark: '#111213',
       },
+      widgets: { domain: null },
       embeddedAssistant: { origins: ['http://localhost:5173'] },
     };
     const options = {
@@ -96,6 +124,7 @@ describe('safe starter customization', () => {
   it('makes local-demo retention declarative and requires HTTPS for production', () => {
     const productionOnly = {
       ...starterConfig,
+      widgets: { domain: null },
       embeddedAssistant: { origins: ['https://travel.example.co'] },
     };
     expect(applyCustomization(productionOnly, {

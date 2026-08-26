@@ -116,7 +116,7 @@ The local link is deliberate: without an explicit link or deploy target, the CLI
 
 The interactive deploy preflight identifies missing cloud configuration. Configure `NUITEE_API_KEY` as the deployment's server-side secret; do not assume the local `.env` has been uploaded, and do not put the key in ChatGPT. `owner-only` is the safe initial test access. ChatGPT Developer mode uses the public HTTPS MCP endpoint printed after deployment.
 
-This starter intentionally omits a made-up widget domain. Local DevTools and generic MCP connection testing do not need one. `pnpm exec noodle check src/live-server.ts --target chatgpt --json` therefore fails its `chatgpt_widget_domain` release gate until the deployment owner configures one real, dedicated HTTPS origin for both widgets. That domain is required for reliable ChatGPT app-version discovery and becomes the widget sandbox origin; never satisfy the gate with a placeholder. Add it and make the ChatGPT target check pass before claiming ChatGPT compatibility or submitting the app.
+This starter intentionally omits a made-up widget domain. Local DevTools and generic MCP connection testing do not need one. `pnpm exec noodle check src/live-server.ts --target chatgpt --json` therefore fails its `chatgpt_widget_domain` release gate until the deployment owner configures one real, dedicated HTTPS origin for both widgets. After setting `DEPLOYMENT_WIDGET_ORIGIN` to that owner-controlled value, run `pnpm customize -- --widget-domain "$DEPLOYMENT_WIDGET_ORIGIN"` and `pnpm customize:check`. The validated value is applied to both widget policies. That domain is required for reliable ChatGPT app-version discovery and becomes the widget sandbox origin; never satisfy the gate with a placeholder. Make the ChatGPT target check pass before claiming ChatGPT compatibility or submitting the app.
 
 ### B. Optional embedded assistant
 
@@ -212,8 +212,10 @@ Live one-way search and same-session fare verification passed on exact `0.137.0`
 
 The 0.107 airport recheck was inconclusive: the direct control received one redirect and a small HTML response rather than the expected JSON, while the connector produced no mapped result or observable public upstream cause. That does not reproduce a connector-only defect because the direct control did not succeed. `find_airports` remains omitted until the current official endpoint and equivalent direct/connector requests both pass safely.
 
-No custom widget domain is claimed by default. Configure one real, dedicated,
-deployment-owned HTTPS origin for both widgets before app-store submission.
+No custom widget domain is claimed by default. After setting
+`DEPLOYMENT_WIDGET_ORIGIN` to one real, dedicated, deployment-owned HTTPS
+origin, configure both widgets with `pnpm customize -- --widget-domain
+"$DEPLOYMENT_WIDGET_ORIGIN"` before app-store submission.
 
 ## Contributing and generated guidance
 
