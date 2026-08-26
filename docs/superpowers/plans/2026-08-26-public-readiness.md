@@ -30,7 +30,7 @@
 - [x] Create branch `169/public-readiness` in an isolated worktree.
 - [x] Verify the baseline unit and Chromium suites pass.
 - [x] Ignore `.pnpm-store/` and `.worktrees/` without committing either directory.
-- [ ] Commit the isolated readiness foundation.
+- [x] Commit the isolated readiness foundation.
 
 ### Task 2: Separate readiness evidence from publication actions
 
@@ -38,9 +38,9 @@
 - Modify: `PUBLIC_RELEASE_CHECKLIST.md`
 - Modify: `test/repository-readiness.test.ts`
 
-- [ ] Add a failing repository-contract test for distinct ready-to-toggle and transition-day sections.
-- [ ] Reorganize the checklist without marking unproven items complete.
-- [ ] Verify the focused repository test and full unit suite.
+- [x] Add a failing repository-contract test for distinct ready-to-toggle and transition-day sections.
+- [x] Reorganize the checklist without marking unproven items complete.
+- [x] Verify the focused repository test and full unit suite.
 - [ ] Commit the checklist contract.
 
 ### Task 3: Add a safe real widget-domain configuration path

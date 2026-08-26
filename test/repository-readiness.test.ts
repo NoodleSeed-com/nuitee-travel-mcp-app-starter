@@ -148,6 +148,17 @@ describe('public repository contracts', () => {
     expect(checklist).toContain('passes `offline-quality-gates`');
   });
 
+  it('separates private ready-to-toggle gates from unauthorized transition-day actions', async () => {
+    const checklist = await repositoryFile('PUBLIC_RELEASE_CHECKLIST.md');
+
+    expect(checklist).toContain('## Private ready-to-toggle gates');
+    expect(checklist).toContain('## Transition-day actions — not authorized');
+    expect(checklist).toContain('Do not execute any transition-day action without separate explicit authorization.');
+    expect(checklist).toContain('- [ ] Switch repository visibility to public.');
+    expect(checklist).toContain('- [ ] Enable GitHub template status last.');
+    expect(checklist).toContain('- [ ] Publish or deploy only under separate explicit authorization.');
+  });
+
   it('keeps hosted Embedded Assistant proof outside the first release boundary', async () => {
     const [readme, guide, checklist] = await Promise.all([
       repositoryFile('README.md'),
