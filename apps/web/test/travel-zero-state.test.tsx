@@ -1,10 +1,48 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { starterConfig } from '../../../starter.config';
 import { TravelAssistantPage } from '../src/components/travel-assistant-page';
 import { TravelZeroState } from '../src/components/travel-zero-state';
 
-afterEach(cleanup);
+const originalDialogShowModal = HTMLDialogElement.prototype.showModal;
+const originalDialogClose = HTMLDialogElement.prototype.close;
+let showModal: ReturnType<typeof vi.fn>;
+
+beforeEach(() => {
+  showModal = vi.fn(function showModalPolyfill(this: HTMLDialogElement) {
+    this.setAttribute('open', '');
+  });
+  Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+    configurable: true,
+    value: showModal,
+  });
+  Object.defineProperty(HTMLDialogElement.prototype, 'close', {
+    configurable: true,
+    value(this: HTMLDialogElement) {
+      this.removeAttribute('open');
+    },
+  });
+});
+
+afterEach(() => {
+  cleanup();
+  if (originalDialogShowModal) {
+    Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
+      configurable: true,
+      value: originalDialogShowModal,
+    });
+  } else {
+    Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal');
+  }
+  if (originalDialogClose) {
+    Object.defineProperty(HTMLDialogElement.prototype, 'close', {
+      configurable: true,
+      value: originalDialogClose,
+    });
+  } else {
+    Reflect.deleteProperty(HTMLDialogElement.prototype, 'close');
+  }
+});
 
 describe('travel assistant zero state', () => {
   it('renders the assistant as the product without fake trip history', () => {
@@ -61,6 +99,41 @@ describe('travel assistant zero state', () => {
     );
     expect(screen.getByRole('button', { name: 'Clear conversation' }))
       .toBeVisible();
+  });
+
+  it('contains modal focus, closes on Escape, and restores the trigger', () => {
+    render(
+      <TravelAssistantPage
+        runtime={{ status: 'setup-required', message: 'setup' }}
+      />,
+    );
+    const background = screen.getByRole('main').parentElement;
+    const trigger = screen.getByRole('button', { name: 'Settings' });
+    trigger.focus();
+
+    fireEvent.click(trigger);
+
+    const dialog = screen.getByRole('dialog', { name: 'Settings' });
+    const close = screen.getByRole('button', { name: 'Close settings' });
+    const clear = screen.getByRole('button', { name: 'Clear conversation' });
+    expect(dialog).toBeInstanceOf(HTMLDialogElement);
+    expect(showModal).toHaveBeenCalledOnce();
+    expect(background).toHaveAttribute('inert');
+    expect(close).toHaveFocus();
+
+    clear.focus();
+    fireEvent.keyDown(dialog, { key: 'Tab' });
+    expect(close).toHaveFocus();
+
+    close.focus();
+    fireEvent.keyDown(dialog, { key: 'Tab', shiftKey: true });
+    expect(clear).toHaveFocus();
+
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Settings' }))
+      .not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+    expect(background).not.toHaveAttribute('inert');
   });
 
   it('submits a typed prompt on Enter', () => {

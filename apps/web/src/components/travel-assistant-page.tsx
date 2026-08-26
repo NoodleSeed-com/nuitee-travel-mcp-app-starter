@@ -43,26 +43,34 @@ export function TravelAssistantPage({
 
   return (
     <>
-      <a className="skip-link" href="#main-content">
-        Skip to content
-      </a>
-      <main className="workspace-shell" id="main-content" tabIndex={-1}>
-        <TripContextRail
-          projection={projection}
-          onNewTrip={reset}
-          onOpenSettings={() => setSettingsOpen(true)}
-        />
-        {mode === 'zero' ? (
-          <TravelZeroState launchError={launchError} onStart={startConversation} />
-        ) : (
-          <section className="travel-canvas" aria-label="Starting conversation">
-            <div className="travel-starting" role="status">
-              <span>Starting your trip</span>
-              <small>{initialPrompt}</small>
-            </div>
-          </section>
-        )}
-      </main>
+      <div className="travel-workspace" inert={settingsOpen || undefined}>
+        <a className="skip-link" href="#main-content">
+          Skip to content
+        </a>
+        <main className="workspace-shell" id="main-content" tabIndex={-1}>
+          <TripContextRail
+            projection={projection}
+            onNewTrip={reset}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
+          {mode === 'zero' ? (
+            <TravelZeroState
+              launchError={launchError}
+              onStart={startConversation}
+            />
+          ) : (
+            <section
+              className="travel-canvas"
+              aria-label="Starting conversation"
+            >
+              <div className="travel-starting" role="status">
+                <span>Starting your trip</span>
+                <small>{initialPrompt}</small>
+              </div>
+            </section>
+          )}
+        </main>
+      </div>
       <SettingsSheet
         open={settingsOpen}
         onClearConversation={reset}

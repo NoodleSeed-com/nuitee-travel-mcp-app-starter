@@ -5,6 +5,7 @@
   --travel-boundary: var(--travel-boundary-light, #cbcdd5);
   --travel-muted: var(--travel-muted-light, #737479);
   --travel-ink: var(--travel-ink-light, #2c2c2e);
+  --travel-focus: var(--travel-accent, #2b6f6d);
   --travel-rail-width: 17.5rem;
   --travel-gutter: 16px;
   background: var(--travel-canvas);
@@ -17,44 +18,30 @@
 html[data-theme="dark"] {
   color-scheme: dark;
   --travel-canvas: var(--travel-surface-dark, #101b22);
-  --travel-surface: color-mix(
-    in srgb,
-    var(--travel-surface-dark, #101b22) 82%,
-    var(--travel-canvas-light, #fbfbfb)
-  );
-  --travel-boundary: color-mix(
-    in srgb,
-    var(--travel-canvas-light, #fbfbfb) 24%,
-    var(--travel-surface-dark, #101b22)
-  );
+  --travel-surface: var(--travel-surface-dark-raised, #3a4349);
+  --travel-boundary: var(--travel-boundary-dark, #8798a0);
   --travel-muted: color-mix(
     in srgb,
     var(--travel-canvas-light, #fbfbfb) 62%,
     var(--travel-surface-dark, #101b22)
   );
   --travel-ink: var(--travel-canvas-light, #fbfbfb);
+  --travel-focus: var(--travel-focus-dark, #cfe86a);
 }
 
 @media (prefers-color-scheme: dark) {
   html[data-theme="system"] {
     color-scheme: dark;
     --travel-canvas: var(--travel-surface-dark, #101b22);
-    --travel-surface: color-mix(
-      in srgb,
-      var(--travel-surface-dark, #101b22) 82%,
-      var(--travel-canvas-light, #fbfbfb)
-    );
-    --travel-boundary: color-mix(
-      in srgb,
-      var(--travel-canvas-light, #fbfbfb) 24%,
-      var(--travel-surface-dark, #101b22)
-    );
+    --travel-surface: var(--travel-surface-dark-raised, #3a4349);
+    --travel-boundary: var(--travel-boundary-dark, #8798a0);
     --travel-muted: color-mix(
       in srgb,
       var(--travel-canvas-light, #fbfbfb) 62%,
       var(--travel-surface-dark, #101b22)
     );
     --travel-ink: var(--travel-canvas-light, #fbfbfb);
+    --travel-focus: var(--travel-focus-dark, #cfe86a);
   }
 }
 
@@ -92,7 +79,7 @@ button:disabled {
 }
 
 :focus-visible {
-  outline: 3px solid var(--travel-accent, #2b6f6d);
+  outline: 3px solid var(--travel-focus);
   outline-offset: 3px;
 }
 
@@ -446,26 +433,29 @@ button:disabled {
   text-align: center;
 }
 
-.settings-sheet-backdrop {
+.settings-sheet {
   position: fixed;
   z-index: 10;
-  inset: 0;
-  background: color-mix(in srgb, var(--travel-ink) 12%, transparent);
-}
-
-.settings-sheet {
-  position: absolute;
+  top: auto;
+  right: auto;
   bottom: var(--travel-gutter);
   left: calc(var(--travel-rail-width) + (var(--travel-gutter) * 2));
   display: grid;
   width: min(28rem, calc(100vw - 21rem));
   gap: 1.25rem;
+  max-height: calc(100svh - (var(--travel-gutter) * 2));
+  margin: 0;
   padding: 1.35rem;
   border: 1px solid var(--travel-boundary);
   border-radius: 20px;
   background: var(--travel-canvas);
   color: var(--travel-ink);
   box-shadow: 0 18px 48px color-mix(in srgb, var(--travel-ink) 14%, transparent);
+  overflow-y: auto;
+}
+
+.settings-sheet::backdrop {
+  background: color-mix(in srgb, var(--travel-ink) 12%, transparent);
 }
 
 .settings-sheet__header {
@@ -554,7 +544,7 @@ button:disabled {
 }
 
 .theme-choice input:focus-visible + span {
-  outline: 3px solid var(--travel-accent, #2b6f6d);
+  outline: 3px solid var(--travel-focus);
   outline-offset: 3px;
 }
 
