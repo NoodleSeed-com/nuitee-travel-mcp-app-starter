@@ -1,16 +1,23 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const auditScript = fileURLToPath(new URL('../scripts/audit-git-history.mjs', import.meta.url));
+const reviewedBinaryArtifact = readFileSync(
+  fileURLToPath(new URL('../docs/images/flight-results.png', import.meta.url)),
+);
 
 function repositoryWith(files: Record<string, string | Uint8Array>) {
   const directory = mkdtempSync(join(tmpdir(), 'nuitee-history-audit-'));
   execFileSync('git', ['init', '--quiet'], { cwd: directory });
-  for (const [path, contents] of Object.entries(files)) writeFileSync(join(directory, path), contents);
+  for (const [path, contents] of Object.entries(files)) {
+    const destination = join(directory, path);
+    mkdirSync(dirname(destination), { recursive: true });
+    writeFileSync(destination, contents);
+  }
   execFileSync('git', ['add', '.'], { cwd: directory });
   execFileSync('git', [
     '-c', 'user.name=History Audit Test',
@@ -53,5 +60,18 @@ describe('Git-history release audit', () => {
     expect(result.status).toBe(1);
     expect(result.envelope.error.code).toBe('unreviewed_binary_artifact');
     expect(result.envelope.error.paths).toEqual(['screenshot.png']);
+  });
+
+  it('requires a separate review when approved binary bytes are copied to another path', () => {
+    const directory = repositoryWith({
+      'docs/images/flight-results.png': reviewedBinaryArtifact,
+      'docs/images/unreviewed-copy.png': reviewedBinaryArtifact,
+    });
+
+    const result = audit(directory);
+
+    expect(result.status).toBe(1);
+    expect(result.envelope.error.code).toBe('unreviewed_binary_artifact');
+    expect(result.envelope.error.paths).toEqual(['docs/images/unreviewed-copy.png']);
   });
 });

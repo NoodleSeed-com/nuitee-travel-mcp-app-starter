@@ -69,28 +69,32 @@ if (commits.length === 0) {
   process.exit(1);
 }
 
-const unreviewedBinaryPaths = [...new Set(
-  gitOutput(['rev-list', '--objects', '--all'])
-    .split('\n')
-    .map((line) => {
-      const separator = line.indexOf(' ');
-      if (separator < 0) return undefined;
-      const objectId = line.slice(0, separator);
-      const path = line.slice(separator + 1);
-      return binaryArtifactExtension.test(path) && !reviewedBinaryBlobs.has(`${objectId} ${path}`)
-        ? path
-        : undefined;
-    })
-    .filter(Boolean),
-)].sort();
+const unreviewedBinaryPaths = new Set();
+for (const commit of commits) {
+  for (const entry of gitOutput(['ls-tree', '-r', '-z', '--full-tree', commit]).split('\0')) {
+    if (!entry) continue;
+    const separator = entry.indexOf('\t');
+    if (separator < 0) continue;
+    const header = entry.slice(0, separator);
+    const path = entry.slice(separator + 1);
+    const match = /^\d+ blob ([0-9a-f]+)$/.exec(header);
+    if (
+      match
+      && binaryArtifactExtension.test(path)
+      && !reviewedBinaryBlobs.has(`${match[1]} ${path}`)
+    ) {
+      unreviewedBinaryPaths.add(path);
+    }
+  }
+}
 
-if (unreviewedBinaryPaths.length > 0) {
+if (unreviewedBinaryPaths.size > 0) {
   process.stdout.write(`${JSON.stringify({
     ok: false,
     error: {
       code: 'unreviewed_binary_artifact',
       message: 'A reachable binary artifact has not completed exact-blob human review.',
-      paths: unreviewedBinaryPaths,
+      paths: [...unreviewedBinaryPaths].sort(),
     },
   })}\n`);
   process.exit(1);
