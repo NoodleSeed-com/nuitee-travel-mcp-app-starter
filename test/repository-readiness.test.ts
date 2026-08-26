@@ -1,4 +1,6 @@
+import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 async function repositoryFile(path: string) {
@@ -7,6 +9,20 @@ async function repositoryFile(path: string) {
 
 async function repositoryJson(path: string) {
   return JSON.parse(await repositoryFile(path)) as Record<string, any>;
+}
+
+async function noodleValidate() {
+  const executable = fileURLToPath(new URL('../node_modules/.bin/noodle', import.meta.url));
+  const cwd = fileURLToPath(new URL('../', import.meta.url));
+  return new Promise<{ code: number | null; stdout: string; stderr: string }>((resolve, reject) => {
+    const child = spawn(executable, ['validate', '--json'], { cwd });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (chunk) => { stdout += chunk; });
+    child.stderr.on('data', (chunk) => { stderr += chunk; });
+    child.once('error', reject);
+    child.once('close', (code) => resolve({ code, stdout, stderr }));
+  });
 }
 
 describe('public repository contracts', () => {
@@ -29,6 +45,14 @@ describe('public repository contracts', () => {
   it('does not ship an illustrative production origin in active application source', async () => {
     const source = await repositoryFile('src/travel-server.ts');
     expect(source).not.toContain('https://app.example.com');
+  });
+
+  it('keeps Noodle validation able to load the canonical authoring config', async () => {
+    const result = await noodleValidate();
+
+    expect(result.code).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(JSON.parse(result.stdout)).toMatchObject({ ok: true });
   });
 
   it('keeps Noodle runtime dependencies exact and aligned with the lockfile and install', async () => {
@@ -196,7 +220,7 @@ describe('public repository contracts', () => {
     const [readme, customization, config] = await Promise.all([
       repositoryFile('README.md'),
       repositoryFile('docs/customization.md'),
-      repositoryFile('starter.config.ts'),
+      repositoryFile('src/starter-config.ts'),
     ]);
 
     expect(readme).toContain('pnpm customize -- --widget-domain');

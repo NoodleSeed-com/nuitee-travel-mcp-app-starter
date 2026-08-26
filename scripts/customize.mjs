@@ -1,9 +1,9 @@
 import { rename, unlink, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { starterConfig } from '../starter.config.ts';
+import { starterConfig } from '../src/starter-config.ts';
 
-const CONFIG_PATH = fileURLToPath(new URL('../starter.config.ts', import.meta.url));
+const CONFIG_PATH = fileURLToPath(new URL('../src/starter-config.ts', import.meta.url));
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/;
 const HEX_COLOR = /^#[0-9A-F]{6}$/;
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1']);

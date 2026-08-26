@@ -11,17 +11,22 @@ describe('safe starter customization', () => {
     expect(renderStarterConfig(validated)).toBe(renderStarterConfig(validated));
   });
 
-  it('owns website presentation in one root config', async () => {
+  it('keeps one canonical config in the authoring source with a root public facade', async () => {
     expect(starterConfig.embeddedAssistant.origins).toContain('http://localhost:3000');
     expect(starterConfig.prompts).toHaveLength(3);
     expect(starterConfig.website.developerPath).toBe('/developers');
     expect(starterConfig.website.privacyUrl).toBeNull();
-    const compatibilitySource = await readFile(
+    const canonicalSource = await readFile(
       new URL('../src/starter-config.ts', import.meta.url),
       'utf8',
     );
-    expect(compatibilitySource).toBe(
-      "export { starterConfig, type StarterConfig } from '../starter.config.js';\n",
+    const publicFacadeSource = await readFile(
+      new URL('../starter.config.ts', import.meta.url),
+      'utf8',
+    );
+    expect(canonicalSource).toContain('export const starterConfig =');
+    expect(publicFacadeSource).toBe(
+      "export { starterConfig, type StarterConfig } from './src/starter-config.js';\n",
     );
   });
 
