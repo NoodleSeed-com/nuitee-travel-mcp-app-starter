@@ -1,219 +1,174 @@
-# Embedded Assistant companion
+# Guest embedded Assistant
 
-## First-release status
+`apps/web/` is the primary developer experience in this repository: a guest-first Next.js travel website whose embedded Assistant exposes the same Search → Select → Verify product as external MCP hosts.
 
-This companion is an optional, experimental integration path and is excluded
-from the first public release's hosted end-to-end claims. The shared entrypoint,
-sample host, and offline tests remain in the repository, but a real hosted
-conversation is not claimed or required for the flights-first MCP starter's
-initial release. Re-entering that scope requires an explicit owner decision and
-passing deployment-bound Assistant evidence.
+Local tests prove the code and browser shell. They do not prove an active hosted Assistant, provider inventory, a production origin, daily admission budget, privacy monitoring, or a public release. Those require the exact promotion evidence in [../PUBLIC_RELEASE_CHECKLIST.md](../PUBLIC_RELEASE_CHECKLIST.md) and separate authorization for every hosted mutation.
 
-This repository demonstrates one Noodle travel product in two places:
-
-- ChatGPT, Claude, and other MCP hosts connect to the existing MCP server or
-  MCP App.
-- A travel retailer can embed the same tools and linked widgets in its own
-  authenticated website.
-
-Both paths use `createTravelServer(...)` from `src/travel-server.ts`. The
-embedded entrypoint remains `src/embedded-server.ts` and calls
-`createTravelServer('embedded')`; it does not copy the connector, schemas,
-normalizers, tools, or widgets.
-
-The small Cedar & Cloud Travel companion is in
-`examples/embedded-assistant-host/`. It is a fictional local demonstration,
-not a booking site or a production identity implementation.
-
-## Architecture
+## Guest-first architecture
 
 ```text
-Browser sample website
-  -> same-origin /api/assistant/session endpoint
-  -> Noodle Embedded Assistant runtime
-  -> existing search_flights and verify_flight_offer tools
-  -> existing linked MCP App widgets
-  -> Nuitee sandbox
+Next.js guest browser
+  → public embed ID and exact Noodle service origin
+  → Noodle public Assistant surface and model
+  → shared travel MCP tools and linked Apps
+  → server-side Nuitee connector
+  → Nuitee Flights API
 ```
 
-The browser mounts the supported `NoodleAssistant` React wrapper. Its session
-endpoint authenticates the website user, validates the exact browser origin,
-and calls `createAssistantSession` from `@noodleseed/assistant/server`. The
-browser receives only a short-lived assistant session. It never receives the
-assistant client secret, a model credential, or `NUITEE_API_KEY`.
+The browser uses the custom renderer in `apps/web/` with `useNoodleAssistant` and `NoodleAppView`. It does not implement a second chat transport, fetch `ui://` resources, copy the linked Apps, or call Nuitee directly.
 
-The companion runs on `http://localhost:5173` and binds only to
-`127.0.0.1`. It does not replace or alter the existing travel preview on port
-3003. The embedded server allowlist contains only the exact localhost origin
-for this development example. Before production, use the repository's
-`pnpm customize -- --production-origin "https://<your-exact-domain>"` command
-to add the real site's exact HTTPS origin and decide whether the localhost
-origin should remain. Wildcard origins are not supported by this example.
+`src/embedded-server.ts` calls the same `createTravelServer('embedded')` product factory as the other entrypoints. Its public surface allowlists the same four tool instances registered on the server:
 
-## Environment separation
+- model-visible `open_travel_starter`;
+- model-visible `search_flights`;
+- model-visible `verify_flight_offer`; and
+- App-only `select_flight_offer`.
 
-The companion website backend may read only:
+The public surface is anonymous, not identity-free: Noodle binds each session to an anonymous principal, exact surface, admission controls, and budget. It has no `${user}` claims, customer routing, delegated credentials, or website account.
 
-| Variable | Owner | Purpose |
+## Product boundary
+
+The Assistant may open the starter, search one-way or round-trip flights, select an application-issued fare handle, and verify current availability and price. A verified or changed fare is terminal.
+
+It does not prebook, hold inventory, collect passenger data, take payment, issue a ticket, manage a booking, cancel, refund, redeem loyalty, or search hotels and cars. Neither a selection nor a verified fare implies that inventory is held.
+
+## Website runtime configuration
+
+The primary website reads only two public values:
+
+| Variable | Purpose | Secret |
 | --- | --- | --- |
-| `NOODLE_SERVICE_URL` | Website backend | Exact canonical HTTPS Noodle service origin used for session exchange; no userinfo, path, query, fragment, or trailing slash |
-| `NOODLE_ASSISTANT_CLIENT_ID` | Website backend | Deployment-bound assistant client identifier |
-| `NOODLE_ASSISTANT_CLIENT_SECRET` | Website backend | Deployment-bound assistant client credential |
-| `PUBLIC_APP_ORIGIN` | Website backend | Exact browser origin; `http://localhost:5173` in development |
+| `NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID` | Stable identifier for the active public Assistant surface | No |
+| `NEXT_PUBLIC_NOODLE_SERVICE_URL` | Exact Noodle service origin; optional when using the default Cloud origin | No |
 
-The assistant deployment, not the browser app, owns:
+Copy `apps/web/.env.example` into an ignored local file only after an active assistant-enabled deployment provides the real embed ID. The service URL must be an exact HTTPS origin, or an explicit `localhost`/`127.0.0.1` origin with a port for local development.
 
-- `NUITEE_API_KEY`
-- `ASSISTANT_MODEL_BASE_URL`
-- `ASSISTANT_MODEL`
-- `ASSISTANT_MODEL_API_KEY`
+The Noodle deployment, never the browser, owns:
 
-Model credentials and the Nuitee credential are separate secrets. None of
-these values belongs in Vite public variables, browser source, HTML, built
-JavaScript, cookies, URLs, logs, fixtures, screenshots, tool results, or Git
-history. The companion's `.env.example` contains empty placeholders plus the
-non-secret localhost origin. Store real local values in an ignored `.env`
-inside the companion folder or inject them through the local process
-environment.
+- `NUITEE_API_KEY`;
+- `ASSISTANT_MODEL_BASE_URL`;
+- `ASSISTANT_MODEL`;
+- `ASSISTANT_MODEL_API_KEY`; and
+- any future connector or delegated-exchange secret.
 
-External MCP hosts supply their own conversational model, so the normal
-starter requires none of the three `ASSISTANT_MODEL_*` values.
+Do not put those values in `NEXT_PUBLIC_` variables, source, HTML, cookies, URLs, screenshots, logs, fixtures, or Assistant context. A public embed ID is safe in page source; an Assistant client secret is not.
 
-## Development-only authentication
-
-The local website starts signed out. Selecting **Enter demo** creates an
-opaque, short-lived in-memory session in an HTTP-only, SameSite cookie. The
-backend assigns this fixed synthetic identity:
-
-```text
-id: nuitee-demo-user
-email: demo@example.invalid
-roles: traveler
-```
-
-The identity is local demonstration data only. The browser cannot choose its
-user ID, roles, scopes, or allowed origin. Signed-out session exchange returns
-`401`; an unexpected `Origin` returns `403`. The demo login endpoint is absent
-in production mode and the server remains bound to loopback, so this mechanism
-must not be treated as production authentication.
-
-A real travel website must authenticate its own user on the backend and derive
-identity and authorization from that verified session. If the downstream API
-requires per-user authorization, use a reviewed delegated credential exchange;
-do not forward a browser-supplied user identifier with a shared credential.
-
-## Run the local website
+## Local development
 
 From the repository root:
 
 ```sh
 pnpm install
-pnpm --filter @nuitee-travel-starter/embedded-assistant-host dev
+pnpm dev:web
 ```
 
-Then open `http://localhost:5173`. With no assistant client configuration, the
-retailer UI still loads, demo sign-in still works, and the page shows a concise
-setup-required state. It does not substitute a fake assistant.
+Open `http://localhost:3000`. Without an embed ID, the real zero state and `/developers` route render normally. The first submitted message shows a bounded setup-required state; the app does not activate fixtures or a fake Assistant.
 
-Use these local quality gates:
+Validate the MCP independently:
 
 ```sh
-pnpm --filter @nuitee-travel-starter/embedded-assistant-host typecheck
-pnpm --filter @nuitee-travel-starter/embedded-assistant-host test
-pnpm --filter @nuitee-travel-starter/embedded-assistant-host build
-pnpm test
-pnpm validate
+pnpm agent:check
 pnpm agent:check:assistant
-pnpm ci:offline
 ```
 
-The final command is the canonical no-secret repository gate and includes the
-preceding static application and companion checks.
+The default page does not open an Assistant session on mount. Admission starts only after a valid first message. The guest `principalKey`, transcript, and trip projection remain in browser memory and reset together.
 
-MCP authoring, validation, hermetic tool tests, the companion UI, and its
-production build all work locally. A real external-browser conversation does
-not: it requires a separately authorized assistant-enabled Noodle test
-deployment and a deployment-bound assistant client.
+## Exact origins and CSP
 
-## Manual hosted setup for a real session
+The committed public surface allows only the exact Next.js loopback origin. Before a hosted browser test, configure the real deployment-owned HTTPS website origin:
 
-These are owner actions, not ordinary local setup, and this repository does not
-perform them automatically:
+```sh
+pnpm customize -- --production-origin "https://<your-exact-domain>"
+pnpm customize:check
+```
 
-1. Run the production-origin command from `docs/customization.md` with the
-   website's exact HTTPS origin. It removes localhost unless
-   `--keep-local-demo` is explicitly supplied; then run
-   `pnpm customize:check`.
-2. Re-run `pnpm agent:check:assistant` and the full repository gates.
-3. Configure `NUITEE_API_KEY` and the three `ASSISTANT_MODEL_*` settings as
-   server-side managed deployment configuration.
-4. Deploy `src/embedded-server.ts` to an authorized owner-only test environment:
+Keep loopback only when the same non-production deployment intentionally serves local development. Wildcards, paths, query strings, fragments, userinfo, trailing slashes, and non-loopback HTTP origins fail validation.
 
-   ```sh
-   pnpm exec noodle deploy src/embedded-server.ts \
-     --org <org> --app <app> --env <test-env> --private
-   ```
+The Next.js security headers allow the exact Noodle service origin in:
 
-   Review the resolved organization, app, environment, access mode, origin,
-   and entrypoint before approving that mutation.
-5. Create a deployment-bound backend client:
+- `script-src` for the public embed runtime;
+- `connect-src` for session and turn traffic; and
+- `frame-src` for linked App sandboxes.
 
-   ```sh
-   pnpm exec noodle assistant clients create --name nuitee-travel-starter-website \
-     --org <org> --app <app> --env <test-env> --json
-   ```
+Keep `default-src 'self'`, `frame-ancestors 'none'`, `object-src 'none'`, the restrictive permissions policy, and the exact service origin. A blocked `script-src` prevents the runtime from starting, so the page cannot report that failure from inside the Assistant.
 
-   Store its returned credential only in the website backend as
-   `NOODLE_ASSISTANT_CLIENT_ID` and `NOODLE_ASSISTANT_CLIENT_SECRET`.
-6. Set `NOODLE_SERVICE_URL` and the exact `PUBLIC_APP_ORIGIN` in the website
-   backend. Never prefix the secret variables with `VITE_`.
-7. Run the doctor using the project-local CLI:
+Run the local non-mutating preflight and production-equivalent website build before promotion:
 
-   ```sh
-   pnpm exec noodle assistant doctor --origin <exact-https-origin> \
-     --client-id <client-id> --org <org> --app <app> --env <test-env> --json
-   ```
+```sh
+pnpm exec noodle assistant embed --check --json --surface public
+pnpm --filter @nuitee-travel-starter/web build
+```
 
-   Then run the companion typecheck, tests, production build, and a real
-   browser smoke.
-8. In the browser smoke, verify sign-out, wrong-origin rejection, session
-   expiry, keyboard operation, error handling, linked travel widgets, and the
-   absence of secrets from network responses, DOM, storage, logs, and built
-   assets.
+The preflight reports required or missing environment names without printing values. It does not prove that a hosted deployment, origin, embed ID, privacy link, or budget is active.
 
-Command options can change. Discover the installed contract with
-`pnpm exec noodle commands --json` before performing hosted steps. Creating a
-client, setting hosted configuration, and deploying are mutations that require
-separate authorization.
+## Public admission and budget
 
-The example's `authenticatedWebsite(...)` surface protects Assistant session
-exchange, but it does not invent a customer identity provider. A future
-`--access customers` deployment must add and validate the integrating site's
-real `server.auth` configuration first. Do not reuse the synthetic demo user as
-a production identity.
+A public surface must have one reviewed daily turn budget and an operational kill switch. Before inviting traffic, the owner must inspect the active embed projection, exact origins, four allowed capabilities, current spend, and configured cap. Budget exhaustion is a calm unavailable state; the website does not automatically retry it.
 
-## Current capability boundary
+Budget changes and embed revocation are hosted mutations. Do not run them under local implementation authority. Record the exact organization, app, environment, old value, new value, approver, and post-change probe in the promotion evidence.
 
-The shared product can search one-way and round-trip flights, compare bounded
-results, and verify a selected fare. Search prices can change. It cannot
-retrieve or complete a booking, collect payment or passenger details, manage a
-booking, change travel, cancel, or refund. The sandbox disclosure in the sample
-site is intentional.
+## Browser proof required for a hosted claim
 
-Possible future post-booking tools include:
+Use synthetic or explicitly approved provider input and prove all of the following against the exact candidate revision and active target:
 
-- `get_booking`
-- `get_cancellation_policy`
-- `quote_cancellation`
-- `cancel_booking`
+1. The page loads without starting an Assistant session.
+2. The first message opens one anonymous session from the exact HTTPS origin.
+3. Search returns bounded current results or a truthful empty/partial state.
+4. App selection updates only caller-scoped state and exposes no provider offer ID.
+5. Verify reaches a verified, changed, unavailable, or expired fare without implying a hold or booking.
+6. Text, confirmation/input fallbacks, and linked Apps render through the official typed client.
+7. Missing configuration, wrong origin, budget exhaustion, expired session, retryable service failure, terminal failure, and unavailable App views produce safe bounded UI.
+8. Browser network, DOM, storage, built assets, console, and logs contain no Nuitee key, model key, Assistant client secret, raw provider body, or private offer ID.
+9. Desktop, 390px mobile, keyboard, 200% text zoom, dark mode, and reduced motion remain usable.
+10. The privacy and support destinations resolve, are monitored, and describe the actual data flow.
 
-Do not implement those tools until the relevant official Nuitee endpoint
-contracts are confirmed and each action has a separate, reviewed customer
-authorization design.
+Local Playwright coverage deliberately stays on the zero state and sends no `/v1/assistant/` requests. It is not a substitute for this hosted smoke.
 
-## Other presentation modes
+## State and TTL proof
 
-The current server uses the floating bottom-right Assistant surface. Noodle
-also supports inline, drawer, and application-owned presentations. A custom
-presentation must still use the supported Assistant bridge to render linked
-MCP App views; it must not copy, scrape, or reinterpret widget HTML.
+Selection state is caller-scoped, revision-protected, and expires after 30 minutes. Before a hosted readiness claim, prove the complete lifecycle on one unrestarted deployment:
+
+1. search and select one fare;
+2. verify that fare before expiry;
+3. wait for the real 30-minute TTL and prove the stale selection fails before provider access;
+4. run a fresh search in the same caller/session boundary;
+5. select and verify the new fare successfully; and
+6. confirm that no old provider identifier or revision is reused.
+
+Do not shorten the TTL, redeploy between steps, patch an application reset workaround, or infer a pass from the expected stale-selection rejection alone.
+
+## Privacy and support
+
+The checked-in `starterConfig.website.privacyUrl` and `termsUrl` are `null`, so the website renders no invented legal links. Configure one real HTTPS privacy URL and a monitored support destination before a hosted public-readiness claim. The privacy notice must cover anonymous Assistant/model processing, page and client context, Nuitee-backed flight searches, retention, third parties, budgets, and the fact that the site does not create bookings.
+
+The `/developers` route renders support only from configured application paths and renders privacy only when a real URL exists. Do not use a reserved example domain or claim monitoring that has not been established.
+
+## Optional authenticated extension
+
+The guest website has no `/api/assistant/session` route. If a future identity-bound capability requires sign-in, follow [oauth.md](oauth.md) and keep these layers distinct:
+
+1. the website's own login and server session;
+2. backend `createAssistantSession` exchange using deployment-bound client credentials; and
+3. optional direct MCP customer authentication through a compliant issuer and `customerAuth.oidc(...)` or supported adapter.
+
+The authenticated browser replaces `embedId` with a same-origin `sessionEndpoint`; it never uses both. The backend authenticates first, validates the exact origin, derives claims and tenant routing from server-owned state, and forwards the session response unchanged.
+
+## Legacy authenticated host
+
+`examples/embedded-assistant-host/` remains a **temporary authenticated migration reference**. It preserves earlier origin, session-exchange, error, build, and local synthetic-login tests while the primary Next.js app's replacement evidence is reviewed.
+
+It is not the primary website, not a second supported product architecture, and not a production identity provider. Its `Enter demo` session uses a fixed fictional local identity and loopback-only behavior. Do not copy it into the guest app or represent it as OAuth.
+
+Remove the legacy host and its root scripts only after the Next.js app has equivalent or stronger session/origin coverage for the chosen authenticated extension, the hosted guest gates pass, migration documentation no longer depends on it, and a separate reviewed removal change proves the repository gates.
+
+## Honest handoff
+
+After local validation, report the highest evidence actually reached:
+
+- source and unit tests;
+- local Noodle validate/test/check;
+- local Next.js typecheck/build/browser shell;
+- non-mutating embed preflight; or
+- separately authorized hosted browser proof.
+
+Do not collapse those layers into “production ready.” Deployment, hosted configuration, public budget changes, direct MCP access changes, legacy-host deletion, repository visibility, template status, and release publication remain separately authorized actions.

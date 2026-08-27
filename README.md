@@ -1,52 +1,79 @@
 # Nuitee Travel MCP App Starter
 
-A flights-first Noodle Seed reference application for building polished conversational travel experiences with the official Nuitee Connect Flights API. The fictional customer-facing brand is **Cedar & Cloud Travel**.
+A guest-first Next.js developer template for building a chat-first flight experience with a Noodle embedded assistant and the official Nuitee Connect Flights API. The fictional customer-facing brand is **Cedar & Cloud Travel**.
 
-This repository demonstrates secure server-side API access, three bounded travel tools, two MCP Apps entry widgets designed for responsive hosts and one unified flight journey, opaque fare-selection state, defensive normalization, and fully offline tests. It is an independent starter—not an official Nuitee connector, airline partnership, booking product, or endorsement.
+The primary guest website guides a traveler through **Search → Select → Verify** and stops at a verified fare. It does not book, hold inventory, collect passenger details, take payment, or issue tickets. The repository also exposes the same bounded MCP tools and linked Apps to external MCP hosts; there is no website-only copy of the travel product.
 
-| Credential-free home | Fictional flight comparison |
-| --- | --- |
-| ![Cedar & Cloud Travel flight-search widget using fictional fields and coming-soon domains](docs/images/travel-home.png) | ![Cedar & Cloud Travel flight-results widget using fictional fares and no airline logo](docs/images/flight-results.png) |
+This is an independent starter, not an official Nuitee connector, airline partnership, booking product, or endorsement.
 
-These are fixture-only Chromium captures of the actual widgets, not live
-inventory or host screenshots. Their reproducible provenance is documented in
-[docs/images/README.md](docs/images/README.md).
+## Primary guest website
 
-## What it does
-
-- Opens a credential-free travel home with Flights marked available.
-- Searches current one-way and round-trip flight offers through Nuitee.
-- Returns at most ten normalized options and shows at most three inline.
-- Provides familiar editable search controls with explicit Round trip and One way choices; the host resolves natural place names and asks before resolving ambiguous airports.
-- Verifies a fare selected from the current caller-scoped search.
-- Moves from search to comparison to a boarding-pass-inspired **Verified fare review**, with Back/Edit navigation and no ticket claim.
-- Treats fare changes as a normal state and stops before prebooking.
-
-It deliberately does **not** prebook, book, hold inventory, collect passengers, take payment, cancel, refund, redeem loyalty, search hotels or cars, or expose arbitrary HTTP. Stays, Loyalty, Ground travel, and Experiences are noninteractive “Coming soon” presentation only.
-
-## Requirements
-
-- Node.js 24 or newer
-- pnpm 11 or newer
-- A Nuitee API key for live tools
-- Nuitee Flights access for the intended environment; possession of a key alone does not guarantee usable Flights entitlement
-
-See Nuitee's [authentication](https://docs.liteapi.travel/reference/authentication) and [Flights access](https://docs.liteapi.travel/docs/getting-access-to-flights) guidance. Sandbox flight data is non-production, limited, and may be inconsistent. Production and whitelabel access require Nuitee approval.
-
-## Five-minute local setup
+The Next.js application in `apps/web/` is the main developer path. It provides the Brightdesk-derived conversation shell, delayed anonymous Assistant admission, an application-owned typed renderer, plain-language progress, structured trip projection, and the existing Noodle MCP App views.
 
 ```sh
-git clone https://github.com/NoodleSeed-com/nuitee-travel-mcp-app-starter.git
-cd nuitee-travel-mcp-app-starter
 corepack enable
 pnpm install
-pnpm test
+pnpm dev:web
+```
+
+Open `http://localhost:3000`. The zero state works without credentials and does not open an Assistant session on mount. Without a real public embed ID, the first submitted message fails closed with setup guidance rather than substituting a fake assistant.
+
+Run the credential-free MCP gate separately:
+
+```sh
+pnpm agent:check
+```
+
+After a separately authorized assistant-enabled deployment provides a stable public embed ID, copy `apps/web/.env.example` to an ignored local environment file and set:
+
+```text
+NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID=<real-public-embed-id>
+NEXT_PUBLIC_NOODLE_SERVICE_URL=<exact-service-origin>
+```
+
+Both values are public deployment coordinates. Never place `NUITEE_API_KEY`, an Assistant client secret, or model credentials in a `NEXT_PUBLIC_` variable. The optional service URL must be one exact HTTPS origin, or an explicit loopback origin with a port for local development.
+
+The browser path is:
+
+```text
+Next.js browser
+  → public Noodle assistant
+  → shared travel MCP and linked Apps
+  → server-side Nuitee connector
+  → Nuitee Flights API
+```
+
+The guest template has no login button, application database, or `/api/assistant/session` route. Add identity only for a real identity-bound capability and follow [docs/oauth.md](docs/oauth.md); website login, Assistant session exchange, and direct MCP customer authentication are distinct layers.
+
+## Capability boundary
+
+- Open the travel starter and explain the supported flight scope.
+- Search current one-way and round-trip offers after resolving only unambiguous places to IATA codes.
+- Return at most ten normalized itineraries and show at most three inline.
+- Select an application-issued opaque fare handle inside the linked flight-results App.
+- Verify the active or explicitly selected fare against current availability and price.
+- Treat partial results, changed prices, unavailable offers, and expiry as normal bounded outcomes.
+
+The product deliberately does not prebook, reserve, collect passengers, take payment, ticket, cancel, refund, manage loyalty, or search hotels and cars. “Stays,” “Loyalty,” “Ground travel,” and “Experiences” remain noninteractive presentation only.
+
+## Live Nuitee development
+
+Requirements:
+
+- Node.js 24 or newer;
+- pnpm 11 or newer;
+- a Nuitee API key for live tools; and
+- Nuitee Flights access for the intended environment. Possession of a key alone does not guarantee usable Flights entitlement.
+
+See Nuitee's [authentication](https://docs.liteapi.travel/reference/authentication) and [Flights access](https://docs.liteapi.travel/docs/getting-access-to-flights) guidance. Sandbox data is non-production, limited, and may be inconsistent. Production and whitelabel access require Nuitee approval.
+
+The credential-free server remains the default:
+
+```sh
 pnpm dev
 ```
 
-`pnpm dev` uses the credential-free entrypoint. The home widget works and live-only tools return an explicit configuration error; they never substitute fixtures.
-
-For current provider results in local DevTools, copy the value-free template, add your key to the project-root `.env`, and start the live entrypoint:
+Its home App works and live-only tools return an explicit configuration error. For current provider results in local DevTools, copy the value-free template, add the key to the project-root ignored `.env`, and start the live entrypoint:
 
 ```sh
 cp .env.example .env
@@ -54,23 +81,21 @@ cp .env.example .env
 pnpm dev:live
 ```
 
-Local setup does not require `noodle login`. The pinned Noodle CLI treats the exact project-root `.env` as a read-only fallback for matching `secret(...)` declarations. `.env.local` is not that fallback. Stop and restart `pnpm dev:live` after changing server code or local configuration, then use Chat mode in the opened DevTools.
+Local setup does not require `noodle login`. The pinned CLI reads the exact project-root `.env` only as a local fallback for matching `secret(...)` declarations. `.env.local` is not that fallback. Stop and restart `pnpm dev:live` after changing server code or configuration.
 
-If you prefer Noodle's scoped local store, transfer an already exported shell value without putting the value on the command line:
+Alternatively, transfer an already exported shell value into Noodle's ignored local store without placing the value on the command line:
 
 ```sh
 pnpm exec noodle secrets set NUITEE_API_KEY --runtime local --from-env NUITEE_API_KEY
 ```
 
-That optional command writes `.env.noodle` for the effective local target. Both `.env` and `.env.noodle` are ignored. A local value is not automatically a cloud deployment secret.
+Never paste a Nuitee key into a conversation, source file, browser variable, screenshot, fixture, test, log, URL, or Git history. A local value is not automatically a hosted deployment secret.
 
-Never paste a Nuitee key into a conversation, source file, browser variable, screenshot, fixture, test, log, or Git history. `.env.example` contains only the variable name; `.env`, `.env.local`, and `.env.noodle` are ignored. End-user credential brokering is outside version one.
+For a live smoke, ask for a future one-way or round-trip flight, select one returned fare in the linked App, and choose **Verify selected fare**. A `partial` search result is valid when malformed provider entries were safely dropped. The terminal outcome is a verified or changed fare, never a booking.
 
-## Two supported consumption paths
+## External MCP hosts
 
-### A. External MCP host
-
-ChatGPT, Claude, and other MCP hosts provide the conversational model, so no assistant-model API key is required. Start the appropriate entrypoint and use the current CLI guidance for your host:
+ChatGPT, Claude, Inspector, and other MCP hosts can consume the same MCP server. The host provides the conversational model, so this path requires no Assistant model key.
 
 ```sh
 pnpm exec noodle connect chatgpt
@@ -78,152 +103,93 @@ pnpm exec noodle connect claude
 pnpm exec noodle connect inspector
 ```
 
-Hosts without MCP Apps support still receive bounded structured data and a readable `fallback` summary.
+Hosts without MCP Apps support still receive bounded structured results and a readable fallback summary. Users may speak in natural city or airport names; a capable host should resolve only clear places and ask for region or country clarification when a name is ambiguous.
 
-### Test a live search locally
-
-With `pnpm dev:live` running, send this in DevTools Chat:
-
-> Find a one-way flight from Sydney, Nova Scotia to Halifax two months from today for one adult in economy, priced in CAD from Canada.
-
-The host should resolve the place names to YQY and YHZ before calling the typed tool. A successful call shows current normalized provider options; a `partial` result is valid when malformed provider entries were safely dropped. Select one option and choose **Verify selected fare** to exercise same-session verification. If the widget still shows an earlier schema error after a source change, stop the running process with Ctrl+C, run `pnpm dev:live` again, and start a fresh DevTools conversation.
-
-### Test the deployed server in ChatGPT
-
-Local proof and hosted proof are separate. After local search and verification pass, the repository owner can run:
+The starter does not claim a custom widget domain. Before claiming or submitting ChatGPT App compatibility, set one real deployment-owned origin and run:
 
 ```sh
-pnpm exec noodle validate src/live-server.ts --json
-pnpm exec noodle login
-
-# One-time local link. Replace YOUR_ORG_SLUG with the slug shown by Noodle.
-pnpm exec noodle link \
-  --org YOUR_ORG_SLUG \
-  --app nuitee-travel-mcp-app-starter \
-  --env dev \
-  --access owner-only \
-  --entrypoint src/live-server.ts \
-  --save local
-
-pnpm exec noodle deploy
-pnpm exec noodle open --print
-pnpm exec noodle connect chatgpt
+pnpm customize -- --widget-domain "$DEPLOYMENT_WIDGET_ORIGIN"
+pnpm customize:check
+pnpm exec noodle check src/live-server.ts --target chatgpt --json
 ```
 
-Always use the pinned project-local CLI through `pnpm exec noodle`. A bare `noodle deploy` may invoke an older global installation and correctly fail the deploy preflight when its CLI version does not match the project's pinned `@noodleseed/one` version. The hosted service can also raise its minimum compatible CLI version; in that case even the correctly pinned local CLI fails closed and names the required version. Treat that as a reviewed dependency update: inspect the release guidance, update the exact pin and lockfile, regenerate Agent Kit, and rerun every gate below. Do not bypass the compatibility check.
+Do not satisfy the gate with a placeholder, wildcard, path, or unrelated domain.
 
-The local link is deliberate: without an explicit link or deploy target, the CLI may infer the app slug from the entrypoint filename (for example, `live-server`) and use a different environment than intended. Confirm the printed org, app, environment, access mode, and entrypoint before approving a deploy.
+## Embedded Assistant architecture
 
-The interactive deploy preflight identifies missing cloud configuration. Configure `NUITEE_API_KEY` as the deployment's server-side secret; do not assume the local `.env` has been uploaded, and do not put the key in ChatGPT. `owner-only` is the safe initial test access. ChatGPT Developer mode uses the public HTTPS MCP endpoint printed after deployment.
+`src/embedded-server.ts` declares the public Assistant surface over the same tool instances used by MCP hosts. `apps/web/` consumes the public embed ID and renders the primary guest website. Model settings and `NUITEE_API_KEY` remain server-side in Noodle; the browser receives neither.
 
-This starter intentionally omits a made-up widget domain. Local DevTools and generic MCP connection testing do not need one. `pnpm exec noodle check src/live-server.ts --target chatgpt --json` therefore fails its `chatgpt_widget_domain` release gate until the deployment owner configures one real, dedicated HTTPS origin for both widgets. After setting `DEPLOYMENT_WIDGET_ORIGIN` to that owner-controlled value, run `pnpm customize -- --widget-domain "$DEPLOYMENT_WIDGET_ORIGIN"` and `pnpm customize:check`. The validated value is applied to both widget policies. That domain is required for reliable ChatGPT app-version discovery and becomes the widget sandbox origin; never satisfy the gate with a placeholder. Make the ChatGPT target check pass before claiming ChatGPT compatibility or submitting the app.
+The older `examples/embedded-assistant-host/` application remains only as a temporary authenticated migration reference while parity and removal gates are reviewed. It is not the primary website and its synthetic local sign-in is not a production identity implementation. See [docs/EMBEDDED_ASSISTANT.md](docs/EMBEDDED_ASSISTANT.md) for the guest path and [docs/oauth.md](docs/oauth.md) for a real authenticated extension.
 
-### B. Optional embedded assistant
+No hosted conversation is claimed from local code or tests alone. A real public embed ID, exact HTTPS website origin, monitored privacy link, CSP validation, budget controls, live Search → Select → Verify browser proof, and the selection-TTL smoke remain promotion evidence in [PUBLIC_RELEASE_CHECKLIST.md](PUBLIC_RELEASE_CHECKLIST.md). Deployments, access changes, hosted configuration, and budget mutations require separate exact authorization.
 
-A developer may place the same MCP server inside an authenticated website or SaaS application. The companion at `examples/embedded-assistant-host/` demonstrates this without duplicating the travel connector, schemas, normalizers, tools, or widgets. See [docs/EMBEDDED_ASSISTANT.md](docs/EMBEDDED_ASSISTANT.md).
+## Customization
 
-The optional companion is excluded from the first public release's hosted
-end-to-end claims. Its code and offline tests remain available for learning,
-but it is not a release gate until the separately owned hosted model-transport
-investigation is complete and the owner explicitly restores it to scope.
+The canonical checked-in configuration lives in `src/starter-config.ts`; root `starter.config.ts` is the public compatibility facade imported by the Next.js app. Use the deterministic customizer rather than replacing strings across the repository:
 
-## Useful commands
+```sh
+pnpm customize -- \
+  --brand-name "North Star Travel" \
+  --brand-mark "N" \
+  --tagline "Travel planning, made calm" \
+  --accent "#123456"
+
+pnpm customize:check
+```
+
+To prepare a specific hosted website, add its exact owner-controlled HTTPS origin and decide explicitly whether loopback remains:
+
+```sh
+pnpm customize -- --production-origin "https://<your-exact-domain>"
+pnpm customize:check
+```
+
+The customizer does not rename packages, server IDs, tool names, connector contracts, state handles, provider limits, or fixtures. Review light/dark contrast and browser layout after visual changes. Full constraints are in [docs/customization.md](docs/customization.md).
+
+## Architecture and security
+
+The browser never calls Nuitee. The fixed server-side connector owns the exact provider origin, path, method, API-key injection, timeout, response-size limit, and normalization boundary. Provider offer IDs stay in private caller-scoped state; browser-visible selection IDs are application-issued opaque handles valid only against that state.
+
+The shared journey is Search/Edit → Results → Verified fare review. The flight-results App uses `select_flight_offer` as an App-only helper and `verify_flight_offer` for current provider verification. Raw provider responses, arbitrary URLs, and transaction identifiers are never public output fields.
+
+Read [docs/architecture.md](docs/architecture.md), [SECURITY.md](SECURITY.md), and [docs/nuitee-flights-contract.md](docs/nuitee-flights-contract.md) before changing the network, identity, state, or provider boundary.
+
+## Quality gates
+
+Useful local commands:
 
 ```sh
 pnpm test
-pnpm exec playwright install chromium
 pnpm test:browser
-pnpm docs:previews
+pnpm customize:check
+pnpm --filter @nuitee-travel-starter/web test
+pnpm --filter @nuitee-travel-starter/web typecheck
+pnpm --filter @nuitee-travel-starter/web build
+pnpm --filter @nuitee-travel-starter/web test:browser
 pnpm exec noodle validate --json
 pnpm exec noodle test --json
 pnpm exec noodle tools list --json
 pnpm exec noodle check --json
-
-pnpm validate:live
-pnpm exec noodle devtools src/server.ts
-pnpm exec noodle devtools src/live-server.ts
+pnpm agent:check:live
+pnpm agent:check:assistant
 ```
 
-Ordinary tests and the default Noodle baseline are fully offline and need neither `NUITEE_API_KEY` nor an assistant-model credential. `src/live-server.ts` statically validates without a key, but executing its provider-backed tools requires the managed Nuitee secret and account entitlement.
+The fixture-only Chromium captures below show the real linked Apps with fictional data; they are not live inventory or host screenshots. Their reproducible provenance is in [docs/images/README.md](docs/images/README.md).
 
-Run the same complete credential-free gate used by CI with `pnpm ci:offline`. It covers the root tests and local MCP smoke, all three entrypoint checks, exact customization validation, and the companion host typecheck/tests/build.
-
-Before a public release, run `pnpm audit:release`. It repeats the sanitized
-full-history secret-pattern and exact-binary-review scan, verifies that bundled
-runnable Agent Kit examples use reproducible dependency inputs, checks installed
-package license metadata, and queries the npm advisory service for the locked
-production graph. The command prints no matched credential content and does not
-replace legal review. It intentionally fails while the generated examples still
-contain mutable `latest` dependencies.
-
-## Example prompts
-
-- “Open Cedar & Cloud Travel.”
-- “Find a one-way flight from Sydney, Nova Scotia to Halifax on `<future YYYY-MM-DD>` for one adult, economy, priced in CAD from Canada.”
-- “Find a round trip from San Francisco to Tokyo next month, returning a week later, for two adults in premium economy, priced in USD from the US.”
-- “Verify the fare I selected.”
-
-Users do not need to know IATA codes. The host model resolves clear city or airport names to the tool's validated internal codes, restates the selected airports, and asks for region/country clarification when a name is ambiguous. The official live airport-search tool remains omitted until the published Noodle HTTP connector can execute that GET reliably, so the model must never guess an unfamiliar code.
-
-## Widget tour
-
-| Widget | When it appears | What the user can do |
-| --- | --- | --- |
-| `TravelHome` | Opening the starter or beginning a flight search | See Flights as available, view future domains as noninteractive “Coming soon” items, and start a familiar one-way or round-trip search through the host conversation. |
-| `FlightResults` | After search or fare verification | Compare three offers inline (up to ten in fullscreen), edit the search, select one fare, verify its current price, repeat verification against that same active fare, and return through the unified Search → Results → Verified fare-review flow. |
-
-Both widgets are implemented with host-native typography, light/dark theme styles, visible focus styles, practical touch-target sizing, reduced-motion fallbacks, and bounded text fallback for hosts without MCP Apps. `pnpm test:browser` proves the local fixture experience in Chromium at 280px and 320px, including keyboard focus, touch targets, themes, reduced motion, and selection interaction. `pnpm docs:previews` regenerates the sanitized product images from the same network-disabled browser harness. The final review is explicitly not a ticket, booking, or reservation. Named-host evidence remains a separate release gate, so clone authors should follow [CONTRIBUTING.md](CONTRIBUTING.md) before making host-compatibility claims.
-
-## Expected failure behavior
-
-Provider failures never trigger fixture fallback. The gateway has hermetic coverage for sanitized categories covering missing configuration, authentication, entitlement, rate limiting, timeout, provider error, unavailable service, malformed or oversized response, expired or unavailable offer, and unknown or stale selection. A changed fare remains a successful verification state with old and new prices. Exact transport-error mapping remains part of the owner-authorized live smoke because the public connector guidance does not specify every thrown runtime error shape.
-
-See [docs/troubleshooting.md](docs/troubleshooting.md) for operator actions.
-
-## Project map
-
-- `src/server.ts` — credential-free default entrypoint
-- `src/live-server.ts` — managed-secret live composition
-- `src/travel-server.ts` — shared three model-visible tools plus the app-only active-fare helper
-- `src/flight-connectors.ts` — exact-origin Nuitee HTTP and compute connectors plus caller state adapter
-- `src/flight-runtime.ts` — request validation, failure classification, bounded normalization, and opaque selection resolution
-- `src/flight-schemas.ts` — public and private Zod contracts
-- `src/views/` — TravelHome and FlightResults entry widgets plus their shared search editor and unified visual system
-- `test/` — hermetic fictional fixtures and offline tests
-- `docs/` — architecture, provider contract, customization, embedding, and troubleshooting
-
-## Customization
-
-Branding, tool descriptions, normalization fields, widget composition, and future domain boundaries are documented in [docs/customization.md](docs/customization.md). Run `pnpm customize -- <presentation options>` to update the single owned brand/origin config, then `pnpm customize:check`; the command cannot accept or read credentials. The widgets use the host platform's system sans-serif stack, system-neutral structural colors, and a restrained Cedar & Cloud accent. They deliberately avoid a duplicated in-widget brand logo or decorative hero so they remain native to ChatGPT and other MCP hosts. Keep fixture airlines fictional and do not bundle carrier assets; the reviewed identifier and asset boundary is in [docs/fixture-safety.md](docs/fixture-safety.md). Live results may display the carrier name, code, and documented `marketingLogo` supplied by Nuitee, but only when the image uses an allowlisted Nuitee Flights asset origin; carrier text remains the fallback. Inventory attribution does not by itself imply an airline partnership or make this an official Nuitee connector.
-
-## Updating Noodle Seed safely
-
-`@noodleseed/one` is pinned exactly to `0.139.0`. Dependabot opens reviewable dependency pull requests monthly; nothing auto-merges. For a manual Noodle update:
-
-1. Compare the registry version and release guidance.
-2. Update the exact package pin and regenerate `pnpm-lock.yaml`.
-3. Run `pnpm exec noodle agents setup --write`.
-4. Re-read `AGENTS.md`, the selected skills, and generated references.
-5. Run the full default and live static validation gates in [CONTRIBUTING.md](CONTRIBUTING.md).
-6. Review breaking behavior before merge; never auto-merge a Noodle package change.
+| Credential-free home | Fictional flight comparison |
+| --- | --- |
+| ![Cedar & Cloud Travel flight-search widget using fictional fields and coming-soon domains](docs/images/travel-home.png) | ![Cedar & Cloud Travel flight-results widget using fictional fares and no airline logo](docs/images/flight-results.png) |
 
 ## Public-release status
 
-This repository is licensed under the [Apache License 2.0](LICENSE) and has repository-wide code owners. The complete local and remote release-gate inventory is tracked in [PUBLIC_RELEASE_CHECKLIST.md](PUBLIC_RELEASE_CHECKLIST.md). Generated Agent Kit dependency/checkout corrections, copyright/NOTICE review, a monitored security route, a Code of Conduct decision, a real widget domain, the remaining caller-state lifecycle proof, and owner/legal dependency-license review are still required before calling a release production-ready.
+This repository is licensed under the [Apache License 2.0](LICENSE), remains private, and is not being made public by these changes. Local implementation evidence does not prove hosted availability or authorize repository visibility, template status, deployment, access, budget, submission, or release changes.
 
-Live one-way search and same-session fare verification passed on exact `0.137.0`, and the owner confirmed repeat verification in ChatGPT after the selection fix. On exact `0.138.0`, an owner-authorized round-trip control returned valid documented JSON at exactly 4,207,267 decoded bytes; the equivalent connector mapped ten complete outbound/return itineraries under the search-only 6 MiB ceiling, and one application-issued selection verified successfully in the same MCP session. Fare verification keeps the smaller 750,000-byte application limit and no widened connector limit. The real 30-minute state test correctly rejected the expired active fare, but the same unrestarted server then returned a tool-level error with no structured output on the fresh search, so the fresh-write lifecycle remains unresolved. See [docs/live-smoke-evidence.md](docs/live-smoke-evidence.md) for the sanitized evidence. Nuitee documents no result limit or pagination contract.
-
-The 0.107 airport recheck was inconclusive: the direct control received one redirect and a small HTML response rather than the expected JSON, while the connector produced no mapped result or observable public upstream cause. That does not reproduce a connector-only defect because the direct control did not succeed. `find_airports` remains omitted until the current official endpoint and equivalent direct/connector requests both pass safely.
-
-No custom widget domain is claimed by default. After setting
-`DEPLOYMENT_WIDGET_ORIGIN` to one real, dedicated, deployment-owned HTTPS
-origin, configure both widgets with `pnpm customize -- --widget-domain
-"$DEPLOYMENT_WIDGET_ORIGIN"` before app-store submission.
+The complete gate inventory is in [PUBLIC_RELEASE_CHECKLIST.md](PUBLIC_RELEASE_CHECKLIST.md). Outstanding owner/legal, security-contact, generated-dependency, widget-domain, caller-state lifecycle, hosted guest-assistant, privacy, and production browser evidence must be satisfied before a public-readiness claim.
 
 ## Contributing and generated guidance
 
-Start with [CONTRIBUTING.md](CONTRIBUTING.md), use the sanitized GitHub issue forms, and never place vulnerability details or secrets in a public issue. Community support and its no-SLA boundary are documented in [SUPPORT.md](SUPPORT.md). The private security route is still an owner decision and therefore remains a release blocker in [SECURITY.md](SECURITY.md).
+Start with [CONTRIBUTING.md](CONTRIBUTING.md), use the sanitized issue forms, and never place vulnerability details or secrets in a public issue. Community support and its no-SLA boundary are in [SUPPORT.md](SUPPORT.md); the monitored private security route remains an owner decision in [SECURITY.md](SECURITY.md).
 
-The large `.agents/` and `.claude/` trees are intentional generated Agent Kit guidance, not application source or ordinary tests. [docs/generated-agent-guidance.md](docs/generated-agent-guidance.md) explains regeneration, review, and public-redistribution boundaries. They are marked as generated for GitHub presentation, but their diffs must still be reviewed.
+The `.agents/` and `.claude/` trees are generated Agent Kit guidance. [docs/generated-agent-guidance.md](docs/generated-agent-guidance.md) explains regeneration, provenance review, and public-redistribution boundaries. Review generated diffs; do not hand-edit them.
 
-Unreleased changes are summarized in [CHANGELOG.md](CHANGELOG.md). A version/date will be added only at an approved release freeze.
+Unreleased changes are summarized in [CHANGELOG.md](CHANGELOG.md). Add a version and date only at an approved release freeze.

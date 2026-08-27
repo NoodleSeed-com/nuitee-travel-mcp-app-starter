@@ -4,7 +4,7 @@ Customize the existing flights-first product before adding scope. Keep Cedar & C
 
 ## Branding
 
-The safe customization surface is `src/starter-config.ts`. Use the deterministic command instead of replacing brand text across the repository:
+The canonical customization source is `src/starter-config.ts`. Root `starter.config.ts` is the public compatibility facade consumed by `apps/web/`; it re-exports the same object and must not define a second brand. Use the deterministic command instead of replacing brand text across the repository:
 
 ```sh
 pnpm customize -- \
@@ -18,15 +18,27 @@ pnpm customize -- \
 pnpm customize:check
 ```
 
-The command updates one owned TypeScript config, writes it atomically, and is idempotent. It accepts only bounded presentation values and never reads credentials or environment files. The server, home schema, MCP widget, and companion website consume the same brand source. Review contrast in light and dark themes after changing colors.
+The command updates the canonical `src/starter-config.ts` file, writes it atomically, and is idempotent. It accepts only bounded presentation values and never reads credentials or environment files. The MCP server and Apps import the canonical module; the primary Next.js website reaches that same value through root `starter.config.ts`. Review contrast in light and dark themes after changing colors.
 
-To prepare the optional Embedded Assistant for production, add only the exact deployment-owned origin:
+To prepare the primary guest Assistant surface for one hosted website, add only that exact deployment-owned origin:
 
 ```sh
 pnpm customize -- --production-origin "https://<your-exact-domain>"
 ```
 
-That removes the localhost origin by default. Add `--keep-local-demo` only when the same non-production deployment must continue to serve the local companion. The checker rejects paths, query strings, fragments, credentials, wildcards, reserved example/test domains, and non-loopback HTTP origins.
+That removes the localhost origin by default. Add `--keep-local-demo` only when the same non-production deployment must continue to serve the local Next.js website. The checker rejects paths, query strings, fragments, credentials, wildcards, reserved example/test domains, and non-loopback HTTP origins.
+
+The customized runtime stays one bounded pipeline:
+
+```text
+Next.js browser
+  → public Assistant surface using the configured exact origin
+  → shared travel MCP and linked Apps using the same brand config
+  → server-side Nuitee connector
+  → Nuitee Flights API
+```
+
+The browser receives only the public embed ID and public service origin. Branding changes never move `NUITEE_API_KEY`, model settings, Assistant client credentials, provider identifiers, or raw provider data into the website.
 
 The command deliberately does not rename the package, server ID, tool names, Nuitee connector, state handles, provider limits, fixture carriers, or historical product documents. Those identifiers and security boundaries are not consumer branding.
 
@@ -53,7 +65,7 @@ Search fixtures must remain clearly fictional. Live output may show the actual c
 
 ## Tool descriptions and inputs
 
-The three tools are created in `src/travel-server.ts` from shared schemas in `src/flight-schemas.ts`.
+Four shared capabilities are created in `src/travel-server.ts` from schemas in `src/flight-schemas.ts`: three model-visible tools plus the App-only selection helper. The public Assistant allowlists the same instances registered for external MCP hosts.
 
 - Keep names intent-shaped and stable.
 - Describe one-way/round-trip, price verification, and stop-before-booking boundaries plainly.
@@ -121,6 +133,8 @@ Do not begin with an empty folder or placeholder tool. First obtain:
 
 Only then register the new tool and change the home domain from “Coming soon.” Domain modules should appear when they own real behavior; do not pre-build abstractions for speculative expansion.
 
-## Optional embedded assistant
+## Guest website and optional identity
 
-`src/embedded-server.ts` selects the same server factory in embedded mode. The starter allowlist contains only the exact local demo origin. Before a production deployment, use `pnpm customize -- --production-origin "https://<your-exact-domain>"` and keep localhost only when explicitly required, then follow `docs/EMBEDDED_ASSISTANT.md`. Do not create an embedded-only copy of flight tools or move model/Nuitee credentials into the embedding browser.
+`apps/web/` is the primary guest website and `src/embedded-server.ts` selects the shared server factory's public Assistant mode. The committed allowlist contains only the exact Next.js loopback origin. Before a hosted deployment, configure one real HTTPS origin, decide explicitly whether loopback remains, and follow [EMBEDDED_ASSISTANT.md](EMBEDDED_ASSISTANT.md).
+
+Do not create an embedded-only copy of the flight tools or move model/Nuitee credentials into the browser. The public embed ID is intentionally non-secret; an Assistant client secret is not. If a real identity-bound capability later needs website login and backend session exchange, follow [oauth.md](oauth.md). Do not add a disabled login control or reuse the synthetic identity from `examples/embedded-assistant-host/`.

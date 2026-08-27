@@ -80,6 +80,11 @@ button:disabled {
   cursor: not-allowed;
 }
 
+pre,
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
 :focus-visible {
   outline: 3px solid var(--travel-focus);
   outline-offset: 3px;
@@ -712,6 +717,152 @@ button:disabled {
   background: var(--travel-surface);
 }
 
+.developer-page {
+  min-height: 100svh;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  background: var(--travel-canvas);
+}
+
+.developer-page__frame {
+  width: min(72rem, 100%);
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--travel-boundary);
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--travel-surface) 35%, var(--travel-canvas));
+}
+
+.developer-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--travel-boundary);
+}
+
+.developer-page__home,
+.developer-guide__support a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 0 0.9rem;
+  border: 1px solid var(--travel-boundary);
+  border-radius: 999px;
+  color: var(--travel-ink);
+  font-size: 0.82rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.developer-page__home:hover,
+.developer-guide__support a:hover {
+  background: var(--travel-surface);
+}
+
+.developer-guide {
+  width: min(48rem, 100%);
+  margin: 0 auto;
+  padding: clamp(2.5rem, 7vw, 6rem) clamp(1.25rem, 5vw, 4rem);
+}
+
+.developer-guide__intro {
+  max-width: 42rem;
+  margin-bottom: 3rem;
+}
+
+.developer-guide__eyebrow {
+  margin: 0 0 0.65rem;
+  color: var(--travel-muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.developer-guide h1,
+.developer-guide h2,
+.developer-guide p {
+  margin-top: 0;
+}
+
+.developer-guide h1 {
+  max-width: 12ch;
+  margin-bottom: 1rem;
+  font-size: clamp(2.75rem, 8vw, 5rem);
+  line-height: 0.95;
+  letter-spacing: -0.065em;
+}
+
+.developer-guide__intro > p:last-child,
+.developer-guide section > p:last-of-type,
+.developer-steps p {
+  color: var(--travel-muted);
+  line-height: 1.65;
+}
+
+.developer-steps {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.developer-steps li {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--travel-boundary);
+}
+
+.developer-step__number {
+  color: var(--travel-muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+}
+
+.developer-steps h2,
+.developer-guide section h2 {
+  margin-bottom: 0.55rem;
+  font-size: 1.15rem;
+  letter-spacing: -0.025em;
+}
+
+.developer-steps pre {
+  margin: 1rem 0 0;
+  overflow-x: auto;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--travel-boundary);
+  border-radius: 12px;
+  background: var(--travel-canvas);
+  color: var(--travel-ink);
+  font-size: 0.78rem;
+}
+
+.developer-guide__boundary,
+.developer-guide__oauth,
+.developer-guide__support {
+  margin-top: 3rem;
+  padding: 1.5rem;
+  border: 1px solid var(--travel-boundary);
+  border-radius: 18px;
+  background: var(--travel-canvas);
+}
+
+.developer-guide__boundary {
+  border-color: color-mix(in srgb, var(--travel-accent) 60%, var(--travel-boundary));
+}
+
+.developer-guide__support nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
 @media (max-width: 62rem) and (min-width: 701px) {
   :root {
     --travel-rail-width: 4.5rem;
@@ -753,6 +904,34 @@ button:disabled {
     align-content: start;
     gap: 0;
     padding: 0;
+  }
+
+  .developer-page {
+    padding: 0;
+  }
+
+  .developer-page__frame {
+    border-inline: 0;
+    border-radius: 0;
+  }
+
+  .developer-page__header {
+    align-items: flex-start;
+  }
+
+  .developer-page__header .travel-wordmark {
+    width: auto;
+    justify-content: flex-start;
+  }
+
+  .developer-page__home {
+    max-width: 10rem;
+    border-radius: 12px;
+    text-align: center;
+  }
+
+  .developer-guide h1 {
+    font-size: clamp(2.5rem, 15vw, 4rem);
   }
 
   .trip-context-rail {

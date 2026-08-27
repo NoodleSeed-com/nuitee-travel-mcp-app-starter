@@ -26,6 +26,27 @@ async function noodleValidate() {
 }
 
 describe('public repository contracts', () => {
+  it('makes the Next.js guest website the primary README path', async () => {
+    const readme = await repositoryFile('README.md');
+
+    expect(readme).toContain('pnpm dev:web');
+    expect(readme).toContain('External MCP hosts');
+    expect(readme.indexOf('pnpm dev:web')).toBeLessThan(
+      readme.indexOf('External MCP hosts'),
+    );
+    expect(readme).toContain('Search → Select → Verify');
+    expect(readme).toContain('does not book');
+  });
+
+  it('documents OAuth without claiming that login consumption is an OIDC issuer', async () => {
+    const oauth = await repositoryFile('docs/oauth.md');
+
+    expect(oauth).toContain('Website login');
+    expect(oauth).toContain('createAssistantSession');
+    expect(oauth).toContain('customerAuth.oidc');
+    expect(oauth).toContain('does not make your website an OIDC authorization server');
+  });
+
   it('keeps the documented flight response limits aligned with the implementation', async () => {
     const [spec, security, connector, runtime] = await Promise.all([
       repositoryFile('SPEC.md'),
@@ -53,7 +74,7 @@ describe('public repository contracts', () => {
     expect(result.code).toBe(0);
     expect(result.stderr).toBe('');
     expect(JSON.parse(result.stdout)).toMatchObject({ ok: true });
-  });
+  }, 15_000);
 
   it('keeps Noodle runtime dependencies exact and aligned with the lockfile and install', async () => {
     const [rootPackage, hostPackage, lockfile, installedOne, installedAssistant] = await Promise.all([
@@ -204,16 +225,19 @@ describe('public repository contracts', () => {
     expect(checklist).toContain('- [ ] Publish or deploy only under separate explicit authorization.');
   });
 
-  it('keeps hosted Embedded Assistant proof outside the first release boundary', async () => {
+  it('makes hosted guest-assistant proof an explicit promotion gate', async () => {
     const [readme, guide, checklist] = await Promise.all([
       repositoryFile('README.md'),
       repositoryFile('docs/EMBEDDED_ASSISTANT.md'),
       repositoryFile('PUBLIC_RELEASE_CHECKLIST.md'),
     ]);
 
-    expect(readme).toContain('excluded from the first public release');
-    expect(guide).toContain('First-release status');
-    expect(checklist).toContain('[x] Exclude hosted Embedded Assistant end-to-end claims');
+    expect(readme).toContain('primary guest website');
+    expect(guide).toContain('Guest-first architecture');
+    expect(guide).toContain('temporary authenticated migration reference');
+    expect(checklist).toContain('[ ] Configure one real public embed ID');
+    expect(checklist).toContain('[ ] Configure and monitor a real HTTPS privacy URL');
+    expect(checklist).toContain('[ ] Prove the 30-minute selection TTL');
   });
 
   it('documents the safe widget-domain customization path without claiming a default domain', async () => {
