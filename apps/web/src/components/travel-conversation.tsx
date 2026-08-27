@@ -42,35 +42,6 @@ function newestActivity(
   return newest;
 }
 
-function useResolvedTheme() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
-    const updateTheme = () => {
-      const choice = document.documentElement.dataset.theme;
-      setTheme(
-        choice === 'dark' || (choice !== 'light' && mediaQuery?.matches)
-          ? 'dark'
-          : 'light',
-      );
-    };
-    const observer = new MutationObserver(updateTheme);
-    observer.observe(document.documentElement, {
-      attributeFilter: ['data-theme'],
-      attributes: true,
-    });
-    mediaQuery?.addEventListener('change', updateTheme);
-    updateTheme();
-    return () => {
-      observer.disconnect();
-      mediaQuery?.removeEventListener('change', updateTheme);
-    };
-  }, []);
-
-  return theme;
-}
-
 export function TravelConversation({
   runtime,
   initialPrompt,
@@ -101,7 +72,6 @@ export function TravelConversation({
   const terminal = status === 'error' || Boolean(error);
   const terminalRef = useRef(terminal);
   terminalRef.current = terminal;
-  const theme = useResolvedTheme();
 
   useEffect(() => {
     let active = true;
@@ -243,11 +213,7 @@ export function TravelConversation({
           >
             {messages.map((message) => (
               <li key={message.id}>
-                <TravelMessage
-                  client={client}
-                  message={message}
-                  theme={theme}
-                />
+                <TravelMessage client={client} message={message} />
               </li>
             ))}
           </ol>

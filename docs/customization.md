@@ -18,7 +18,7 @@ pnpm customize -- \
 pnpm customize:check
 ```
 
-The command updates the canonical `src/starter-config.ts` file, writes it atomically, and is idempotent. It accepts only bounded presentation values and never reads credentials or environment files. The MCP server and Apps import the canonical module; the primary Next.js website reaches that same value through root `starter.config.ts`. Review contrast in light and dark themes after changing colors.
+The command updates the canonical `src/starter-config.ts` file, writes it atomically, and is idempotent. It accepts only bounded presentation values and never reads credentials or environment files. The MCP server and Apps import the canonical module; the primary Next.js website reaches that same value through root `starter.config.ts`. The website is intentionally light-only and maps these values onto Tailwind's Neutral palette by default. Review light-theme contrast after changing colors; `surfaceDark` remains available to external hosts that consume the portable MCP brand kit.
 
 To prepare the primary guest Assistant surface for one hosted website, add only that exact deployment-owned origin:
 
@@ -44,7 +44,7 @@ The command deliberately does not rename the package, server ID, tool names, Nui
 
 - Use your own name, short copy, and restrained accent token; keep structural surfaces and text host-neutral.
 - Let the host-supplied app identity carry the logo. Do not repeat a brand mark inside a compact response widget.
-- Keep the explicit platform system-font stack, light/dark support, compact type scale, and system sizing.
+- Keep the explicit platform system-font stack, compact type scale, and system sizing. The primary website stays light-only; portable MCP widgets retain semantic light/dark colors for external hosts that own their presentation.
 - Follow the current [OpenAI Apps SDK UI guidelines](https://developers.openai.com/plugins/concepts/ui-guidelines) when changing typography, color, spacing, actions, or navigation.
 - Do not bundle airline/provider logos. FlightResults may render the documented `marketingLogo` from a live result only after the runtime accepts its exact Nuitee Flights asset origin/path; keep carrier text and initials as the failure fallback. A remote image request still reveals normal network metadata to the Nuitee asset host, so disable the image path if that tradeoff does not fit the deployment's privacy policy.
 - Never imply a partnership or call this an “official Nuitee connector” without authorization.

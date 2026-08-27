@@ -15,7 +15,6 @@ type MessagePart = AssistantUIMessage['parts'][number];
 interface TravelMessageProps {
   readonly client: AssistantClient;
   readonly message: AssistantUIMessage;
-  readonly theme?: 'light' | 'dark';
 }
 
 const MAX_VISIBLE_ARGUMENTS = 6;
@@ -236,18 +235,16 @@ function messagePartKey(
 function TravelMessagePart({
   client,
   part,
-  theme,
 }: Readonly<{
   client: AssistantClient;
   part: MessagePart;
-  theme: 'light' | 'dark';
 }>) {
   switch (part.type) {
     case 'text':
       return <TravelMarkdown>{part.text}</TravelMarkdown>;
     case 'data-view':
       return (
-        <TravelViewRegistry client={client} theme={theme} view={part.data} />
+        <TravelViewRegistry client={client} view={part.data} />
       );
     case 'data-confirmation':
       return <ConfirmationPart client={client} confirmation={part.data} />;
@@ -263,7 +260,6 @@ function TravelMessagePart({
 export function TravelMessage({
   client,
   message,
-  theme = 'light',
 }: Readonly<TravelMessageProps>) {
   return (
     <article
@@ -275,7 +271,6 @@ export function TravelMessage({
           client={client}
           key={messagePartKey(message.id, part, index)}
           part={part}
-          theme={theme}
         />
       ))}
     </article>

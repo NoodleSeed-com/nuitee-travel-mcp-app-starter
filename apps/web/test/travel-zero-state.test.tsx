@@ -96,8 +96,10 @@ describe('travel assistant zero state', () => {
 
     const dialog = screen.getByRole('dialog', { name: 'Settings' });
     expect(dialog).toBeVisible();
-    expect(screen.getByRole('group', { name: 'Theme' })).toBeVisible();
-    expect(screen.getByRole('radio', { name: 'System' })).toBeChecked();
+    expect(screen.queryByRole('group', { name: 'Theme' }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /System|Light|Dark/ }))
+      .not.toBeInTheDocument();
     expect(screen.getByText('Privacy')).toBeVisible();
     expect(screen.getByText('Terms')).toBeVisible();
     expect(screen.getAllByText('Not configured')).toHaveLength(2);

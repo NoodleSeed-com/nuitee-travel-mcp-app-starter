@@ -1,21 +1,13 @@
 'use client';
 
 import { X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { starterConfig } from '../../../../starter.config';
-
-type ThemeChoice = 'system' | 'light' | 'dark';
 
 interface SettingsSheetProps {
   readonly open: boolean;
   readonly onClearConversation: () => void;
   readonly onClose: () => void;
-}
-
-const THEME_CHOICES: readonly ThemeChoice[] = ['system', 'light', 'dark'];
-
-function themeLabel(theme: ThemeChoice) {
-  return `${theme[0]?.toUpperCase()}${theme.slice(1)}`;
 }
 
 export function SettingsSheet({
@@ -25,11 +17,6 @@ export function SettingsSheet({
 }: Readonly<SettingsSheetProps>) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [theme, setTheme] = useState<ThemeChoice>('system');
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
 
   useEffect(() => {
     if (!open) return;
@@ -101,24 +88,6 @@ export function SettingsSheet({
           <X aria-hidden="true" />
         </button>
       </header>
-
-      <fieldset className="theme-choice">
-        <legend>Theme</legend>
-        <div className="theme-choice__options">
-          {THEME_CHOICES.map((choice) => (
-            <label key={choice}>
-              <input
-                checked={theme === choice}
-                name="theme"
-                onChange={() => setTheme(choice)}
-                type="radio"
-                value={choice}
-              />
-              <span>{themeLabel(choice)}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
 
       <section
         className="settings-sheet__links"

@@ -55,6 +55,34 @@ test('keeps the shell keyboard-visible and motion-safe', async ({ page }) => {
   expect(undersizedControls).toEqual([]);
 });
 
+test('stays light and uses the Neutral palette under a dark OS preference', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/');
+
+  const theme = await page.evaluate(() => {
+    const root = getComputedStyle(document.documentElement);
+    const rail = getComputedStyle(document.querySelector('.trip-context-rail')!);
+    const heading = getComputedStyle(document.querySelector('h1')!);
+    return {
+      colorScheme: root.colorScheme,
+      canvas: root.backgroundColor,
+      railBorder: rail.borderColor,
+      heading: heading.color,
+    };
+  });
+
+  expect(theme).toEqual({
+    colorScheme: 'light',
+    canvas: 'rgb(250, 250, 250)',
+    railBorder: 'rgb(212, 212, 212)',
+    heading: 'rgb(10, 10, 10)',
+  });
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.getByRole('group', { name: 'Theme' })).toHaveCount(0);
+});
+
 test('fits the 390px mobile shell and 200 percent text zoom', async ({
   page,
 }, testInfo) => {

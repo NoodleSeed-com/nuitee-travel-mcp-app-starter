@@ -91,6 +91,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  delete document.documentElement.dataset.theme;
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
@@ -130,6 +131,44 @@ describe('guest travel conversation lifecycle', () => {
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
     expect(options.clientContext()).not.toHaveProperty('principalKey');
+  });
+
+  it('keeps linked App views light when the surrounding document requests dark mode', async () => {
+    document.documentElement.dataset.theme = 'light';
+    assistantMock.useNoodleAssistant.mockImplementation(() => ({
+      client,
+      messages: [{
+        id: 'assistant-view',
+        role: 'assistant',
+        parts: [{
+          type: 'data-view',
+          data: {
+            id: 'view-light-only',
+            tool: 'search_flights',
+            resourceUri: 'ui://nuitee_travel/flight-results',
+            title: 'Flight results',
+            result: { status: 'success' },
+          },
+        }],
+      }],
+      status: 'ready',
+      error: undefined,
+    }));
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+
+    submitPrompt('JFK to Lisbon next month');
+
+    const linkedView = await waitFor(() => {
+      const view = document.querySelector('noodle-app-view');
+      expect(view).not.toBeNull();
+      return view;
+    });
+    await act(async () => {
+      document.documentElement.dataset.theme = 'dark';
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(linkedView?.theme).toBe('light');
   });
 
   it('sends the first prompt once under StrictMode and client identity changes', async () => {

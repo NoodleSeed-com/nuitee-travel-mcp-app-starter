@@ -1,7 +1,5 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { starterConfig } from '../../../starter.config';
-import { DARK_THEME_TOKENS } from '../src/lib/travel-theme';
 
 type Rgb = readonly [number, number, number];
 
@@ -11,16 +9,6 @@ function rgb(hex: string): Rgb {
   ));
   if (!channels || channels.length !== 3) throw new Error(`Invalid color: ${hex}`);
   return channels as unknown as Rgb;
-}
-
-function mix(foreground: string, background: string, opacity: number): string {
-  const front = rgb(foreground);
-  const back = rgb(background);
-  return `#${front.map((channel, index) => (
-    Math.round((channel * opacity) + (back[index] * (1 - opacity)))
-      .toString(16)
-      .padStart(2, '0')
-  )).join('')}`;
 }
 
 function luminance(hex: string): number {
@@ -38,31 +26,14 @@ function contrastRatio(first: string, second: string): number {
   return ((values[0] ?? 0) + 0.05) / ((values[1] ?? 0) + 0.05);
 }
 
-describe('dark travel theme', () => {
-  const rail = mix(DARK_THEME_TOKENS.surface, DARK_THEME_TOKENS.canvas, 0.82);
-  const composer = mix(DARK_THEME_TOKENS.canvas, '#ffffff', 0.94);
-
+describe('light Neutral travel theme', () => {
   it.each([
-    ['boundary against canvas', DARK_THEME_TOKENS.boundary, DARK_THEME_TOKENS.canvas],
-    ['boundary against rail', DARK_THEME_TOKENS.boundary, rail],
-    ['focus against canvas', DARK_THEME_TOKENS.focus, DARK_THEME_TOKENS.canvas],
-    ['focus against rail', DARK_THEME_TOKENS.focus, rail],
-  ])('%s meets 3:1 non-text contrast', (_label, foreground, background) => {
-    expect(contrastRatio(foreground, background)).toBeGreaterThanOrEqual(3);
-  });
-
-  it('keeps the composer focus indicator distinct from its surface', () => {
-    const stylesheet = readFileSync('app/globals.css', 'utf8');
-    const focusToken = stylesheet.match(
-      /\.travel-composer:focus-within\s*\{[^}]*border-color:\s*var\((--[\w-]+)/,
-    )?.[1];
-    const tokenColors: Record<string, string> = {
-      '--travel-accent': starterConfig.brand.accent,
-      '--travel-focus': DARK_THEME_TOKENS.focus,
-    };
-
-    expect(focusToken).toBeDefined();
-    expect(contrastRatio(tokenColors[focusToken ?? ''] ?? '', composer))
-      .toBeGreaterThanOrEqual(3);
+    ['primary text', starterConfig.brand.ink, starterConfig.brand.canvas, 4.5],
+    ['secondary text', starterConfig.brand.muted, starterConfig.brand.canvas, 4.5],
+    ['focus indicator', starterConfig.brand.accent, starterConfig.brand.canvas, 3],
+    ['portable dark accent', starterConfig.brand.accent, starterConfig.brand.surfaceDark, 3],
+    ['action label', starterConfig.brand.canvas, starterConfig.brand.signal, 4.5],
+  ])('%s keeps accessible contrast', (_label, foreground, background, minimum) => {
+    expect(contrastRatio(foreground, background)).toBeGreaterThanOrEqual(minimum);
   });
 });

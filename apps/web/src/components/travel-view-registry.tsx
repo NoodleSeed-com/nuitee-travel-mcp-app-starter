@@ -8,13 +8,11 @@ import type {
 
 interface TravelViewRegistryProps {
   readonly client: AssistantClient;
-  readonly theme: 'light' | 'dark';
   readonly view: AssistantViewData;
 }
 
 export function TravelViewRegistry({
   client,
-  theme,
   view,
 }: Readonly<TravelViewRegistryProps>) {
   if (
@@ -24,5 +22,5 @@ export function TravelViewRegistry({
     return <p role="status">This travel view is unavailable.</p>;
   }
 
-  return <NoodleAppView client={client} theme={theme} view={view} />;
+  return <NoodleAppView client={client} theme="light" view={view} />;
 }
