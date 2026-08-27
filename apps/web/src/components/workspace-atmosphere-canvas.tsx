@@ -3,11 +3,11 @@
 import { MeshGradient } from '@paper-design/shaders-react';
 
 const atmosphere = {
-  colors: ['#FAFAFA', '#E5E5E5', '#FFFFFF', '#F5F5F5', '#D4D4D4', '#FAFAFA'],
-  distortion: 0.42,
+  colors: ['#FAFAFA', '#D4D4D4', '#FFFFFF', '#F5F5F5', '#A3A3A3', '#E5E5E5'],
+  distortion: 0.7,
   scale: 1.18,
-  speed: 0.12,
-  swirl: 0.12,
+  speed: 0.32,
+  swirl: 0.24,
 } as const;
 
 export default function WorkspaceAtmosphereCanvas() {

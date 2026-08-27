@@ -94,7 +94,7 @@ code {
   inset: 0;
   overflow: hidden;
   background: var(--travel-canvas);
-  opacity: 0.58;
+  opacity: 0.72;
 }
 
 .workspace-atmosphere__fallback,
@@ -116,7 +116,7 @@ code {
 }
 
 .workspace-atmosphere__canvas {
-  opacity: 0.68;
+  opacity: 0.86;
 }
 
 .workspace-atmosphere__canvas canvas {

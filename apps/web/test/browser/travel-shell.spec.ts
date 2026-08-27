@@ -1,4 +1,22 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import { PNG } from 'pngjs';
+
+async function captureAtmosphereFrame(page: Page) {
+  return PNG.sync.read(await page.screenshot({
+    clip: { x: 640, y: 40, width: 320, height: 240 },
+  })).data;
+}
+
+function averageRgbDelta(first: Uint8Array, second: Uint8Array) {
+  let delta = 0;
+  let channels = 0;
+  for (let index = 0; index < first.length; index += 1) {
+    if (index % 4 === 3) continue;
+    delta += Math.abs(first[index]! - second[index]!);
+    channels += 1;
+  }
+  return delta / channels;
+}
 
 test('renders the guest shell without opening an assistant session', async ({
   page,
@@ -23,6 +41,19 @@ test('renders the guest shell without opening an assistant session', async ({
   await expect(page.locator('[data-atmosphere-canvas]')).toBeVisible();
   await expect(page.locator('.route-assistant-mark')).toHaveCount(0);
   expect(assistantRequests).toEqual([]);
+});
+
+test('keeps the neutral atmosphere visibly alive', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/');
+  await expect(page.locator('[data-atmosphere-canvas] canvas')).toBeVisible();
+
+  const firstFrame = await captureAtmosphereFrame(page);
+  await page.waitForTimeout(1_200);
+  const secondFrame = await captureAtmosphereFrame(page);
+
+  expect(averageRgbDelta(firstFrame, secondFrame)).toBeGreaterThanOrEqual(1);
 });
 
 test('keeps the shell keyboard-visible and motion-safe', async ({ page }) => {
