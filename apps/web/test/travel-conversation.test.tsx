@@ -181,6 +181,33 @@ describe('guest travel conversation lifecycle', () => {
     expect(composer).toHaveValue('');
   });
 
+  it('renders the typed transcript instead of role placeholders', async () => {
+    assistantMock.useNoodleAssistant.mockImplementation(() => {
+      const activeClient = client;
+      useEffect(() => () => {
+        activeClient.abort();
+        activeClient.resetSession();
+      }, [activeClient]);
+      return {
+        client: activeClient,
+        messages: [{
+          id: 'assistant-typed-message',
+          role: 'assistant',
+          parts: [{ type: 'text', text: 'Here are the current choices.' }],
+        }],
+        status: 'ready',
+        error: undefined,
+      };
+    });
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+
+    submitPrompt('JFK to Lisbon next month');
+
+    expect(await screen.findByText('Here are the current choices.'))
+      .toBeVisible();
+    expect(screen.queryByText('Assistant message')).not.toBeInTheDocument();
+  });
+
   it('aborts and resets the session before returning to a fresh zero state', async () => {
     render(<TravelAssistantPage runtime={readyRuntime} />);
     submitPrompt('JFK to Lisbon next month');
