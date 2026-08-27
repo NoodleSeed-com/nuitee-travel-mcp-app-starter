@@ -293,7 +293,7 @@ code {
 }
 
 .travel-zero-state h1 {
-  max-width: 18ch;
+  max-width: 22ch;
   margin: 1.25rem auto 0;
   color: var(--travel-ink);
   font-size: clamp(2rem, 4vw, 3.25rem);

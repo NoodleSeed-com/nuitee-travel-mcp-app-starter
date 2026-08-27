@@ -56,6 +56,36 @@ test('keeps the neutral atmosphere visibly alive', async ({ page }, testInfo) =>
   expect(averageRgbDelta(firstFrame, secondFrame)).toBeGreaterThanOrEqual(1);
 });
 
+test('avoids an orphaned final word in the desktop hero heading', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium');
+  await page.goto('/');
+
+  const lines = await page.locator('#travel-home-title').evaluate((heading) => {
+    const textNode = heading.firstChild;
+    if (!(textNode instanceof Text)) return [];
+    const text = textNode.textContent ?? '';
+    const words = text.trim().split(/\s+/);
+    const renderedLines = new Map<number, string[]>();
+    let cursor = 0;
+
+    for (const word of words) {
+      const start = text.indexOf(word, cursor);
+      const range = document.createRange();
+      range.setStart(textNode, start);
+      range.setEnd(textNode, start + word.length);
+      const lineTop = Math.round(range.getBoundingClientRect().top);
+      renderedLines.set(lineTop, [...(renderedLines.get(lineTop) ?? []), word]);
+      cursor = start + word.length;
+    }
+
+    return [...renderedLines.values()];
+  });
+
+  expect(lines.at(-1)).not.toHaveLength(1);
+});
+
 test('keeps the shell keyboard-visible and motion-safe', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
