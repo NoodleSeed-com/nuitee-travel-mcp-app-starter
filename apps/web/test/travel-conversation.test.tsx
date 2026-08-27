@@ -218,7 +218,7 @@ describe('guest travel conversation lifecycle', () => {
     expect(screen.queryByText('Assistant message')).not.toBeInTheDocument();
   });
 
-  it('projects structured trip context and uses one stable mapped activity region', async () => {
+  it('projects a later empty route honestly and uses one stable mapped activity region', async () => {
     assistantMock.useNoodleAssistant.mockImplementation(() => {
       const activeClient = client;
       useEffect(() => () => {
@@ -227,29 +227,54 @@ describe('guest travel conversation lifecycle', () => {
       }, [activeClient]);
       return {
         client: activeClient,
-        messages: [{
-          id: 'assistant-search-result',
-          role: 'assistant',
-          parts: [{
-            type: 'data-tool-result',
-            data: {
-              id: 'call-search',
-              tool: 'search_flights',
-              result: {
-                status: 'success',
-                searchId: 'search_private',
-                searchContext: {
-                  origin: 'JFK',
-                  destination: 'LIS',
-                  departureDate: '2026-10-12',
-                  adults: 1,
-                  children: 0,
-                  infants: 0,
+        messages: [
+          {
+            id: 'assistant-search-result',
+            role: 'assistant',
+            parts: [{
+              type: 'data-tool-result',
+              data: {
+                id: 'call-search',
+                tool: 'search_flights',
+                result: {
+                  status: 'success',
+                  searchContext: {
+                    origin: 'JFK',
+                    destination: 'LIS',
+                    departureDate: '2026-10-12',
+                    adults: 1,
+                    children: 0,
+                    infants: 0,
+                  },
                 },
               },
-            },
-          }],
-        }],
+            }],
+          },
+          {
+            id: 'assistant-empty-result',
+            role: 'assistant',
+            parts: [{
+              type: 'data-tool-result',
+              data: {
+                id: 'call-search-empty',
+                tool: 'search_flights',
+                result: {
+                  status: 'empty',
+                  searchId: 'search_private-new-route',
+                  searchContext: {
+                    origin: 'SFO',
+                    destination: 'NRT',
+                    departureDate: '2026-12-01',
+                    adults: 1,
+                    children: 0,
+                    infants: 0,
+                  },
+                  itineraries: [],
+                },
+              },
+            }],
+          },
+        ],
         status: 'ready',
         error: undefined,
       };
@@ -258,8 +283,9 @@ describe('guest travel conversation lifecycle', () => {
 
     submitPrompt('JFK to Lisbon in October');
 
-    expect(await screen.findByText('JFK → LIS')).toBeVisible();
-    expect(screen.getByText('Comparing fares')).toBeVisible();
+    expect(await screen.findByText('SFO → NRT')).toBeVisible();
+    expect(screen.queryByText('JFK → LIS')).not.toBeInTheDocument();
+    expect(screen.getByText('No fares found')).toBeVisible();
     const activityRegion = screen.getByRole('status');
     expect(activityRegion).toBeEmptyDOMElement();
     expect(screen.getAllByRole('status')).toHaveLength(1);
@@ -291,7 +317,78 @@ describe('guest travel conversation lifecycle', () => {
     });
 
     expect(activityRegion).toBeEmptyDOMElement();
-    expect(screen.getByText('Comparing fares')).toBeVisible();
+    expect(screen.getByText('No fares found')).toBeVisible();
+  });
+
+  it('keeps the newest active tool visible when an earlier call completes', async () => {
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('JFK to Lisbon in October');
+
+    const activityRegion = await screen.findByRole('status');
+    act(() => {
+      client.emit({
+        event: 'tool_started',
+        data: { id: 'call-search-first', tool: 'search_flights' },
+      });
+      client.emit({
+        event: 'tool_started',
+        data: { id: 'call-verify-second', tool: 'verify_flight_offer' },
+      });
+    });
+    expect(activityRegion).toHaveTextContent('Verifying the current fare');
+
+    act(() => {
+      client.emit({
+        event: 'tool_completed',
+        data: {
+          id: 'call-search-first',
+          tool: 'search_flights',
+          result: { status: 'success' },
+        },
+      });
+    });
+    expect(activityRegion).toHaveTextContent('Verifying the current fare');
+    expect(document.body).not.toHaveTextContent(
+      /call-search-first|call-verify-second/,
+    );
+
+    act(() => {
+      client.emit({
+        event: 'tool_completed',
+        data: {
+          id: 'call-verify-second',
+          tool: 'verify_flight_offer',
+          result: { status: 'success' },
+        },
+      });
+    });
+    expect(activityRegion).toBeEmptyDOMElement();
+  });
+
+  it.each<AssistantClientEvent>([
+    { event: 'done', data: {} },
+    { event: 'error', data: { code: 'provider_error' } },
+  ])('clears all concurrent activity on terminal $event', async (terminalEvent) => {
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('JFK to Lisbon in October');
+
+    const activityRegion = await screen.findByRole('status');
+    act(() => {
+      client.emit({
+        event: 'tool_started',
+        data: { id: 'call-search-active', tool: 'search_flights' },
+      });
+      client.emit({
+        event: 'tool_started',
+        data: { id: 'call-verify-active', tool: 'verify_flight_offer' },
+      });
+    });
+    expect(activityRegion).toHaveTextContent('Verifying the current fare');
+
+    act(() => {
+      client.emit(terminalEvent);
+    });
+    expect(activityRegion).toBeEmptyDOMElement();
   });
 
   it('aborts and resets the session before returning to a fresh zero state', async () => {

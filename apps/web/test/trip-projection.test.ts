@@ -168,6 +168,58 @@ describe('structured trip projection', () => {
     });
   });
 
+  it('replaces an old route with a later validated empty search context', () => {
+    expect(projectTrip([
+      messageWithToolResult('search_flights', {
+        status: 'success',
+        searchContext: validSearchContext,
+      }),
+      messageWithToolResult('search_flights', {
+        status: 'empty',
+        searchId: 'search_private-new-route',
+        searchContext: {
+          origin: 'SFO',
+          destination: 'NRT',
+          departureDate: '2026-12-01',
+          adults: 1,
+          children: 0,
+          infants: 0,
+        },
+        itineraries: [],
+      }),
+    ])).toEqual({
+      phase: 'no-results',
+      origin: 'SFO',
+      destination: 'NRT',
+      departureDate: '2026-12-01',
+      travelers: '1 adult',
+    });
+  });
+
+  it('does not replace prior context with malformed fields from an empty search', () => {
+    expect(projectTrip([
+      messageWithToolResult('search_flights', {
+        status: 'success',
+        searchContext: validSearchContext,
+      }),
+      messageWithToolResult('search_flights', {
+        status: 'empty',
+        searchContext: {
+          origin: 'sfo',
+          destination: 'NRT',
+          departureDate: '2026-12-01',
+          adults: 1,
+          children: 0,
+          infants: 0,
+        },
+      }),
+    ])).toMatchObject({
+      phase: 'comparing',
+      origin: 'JFK',
+      destination: 'LIS',
+    });
+  });
+
   it('retains only prior valid context when a later structured result errors', () => {
     expect(projectTrip([
       messageWithToolResult('search_flights', {

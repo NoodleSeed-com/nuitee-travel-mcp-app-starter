@@ -4,6 +4,7 @@ export type TripPhase =
   | 'idle'
   | 'searching'
   | 'comparing'
+  | 'no-results'
   | 'selected'
   | 'verifying'
   | 'verified'
@@ -96,7 +97,11 @@ function travelerCopy(adults: number, children: number, infants: number) {
 }
 
 function searchProjection(result: UnknownRecord): TripProjection | undefined {
-  if (result.status !== 'success' && result.status !== 'partial') {
+  if (
+    result.status !== 'success'
+    && result.status !== 'partial'
+    && result.status !== 'empty'
+  ) {
     return undefined;
   }
   const context = result.searchContext;
@@ -125,7 +130,7 @@ function searchProjection(result: UnknownRecord): TripProjection | undefined {
   }
 
   return {
-    phase: 'comparing',
+    phase: result.status === 'empty' ? 'no-results' : 'comparing',
     origin,
     destination,
     departureDate,

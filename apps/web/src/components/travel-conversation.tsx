@@ -31,6 +31,14 @@ function sameProjection(left: TripProjection, right: TripProjection) {
     && left.travelers === right.travelers;
 }
 
+function newestActivity(
+  activeActivities: ReadonlyMap<string, ToolActivity>,
+): ToolActivity | null {
+  let newest: ToolActivity | null = null;
+  for (const activity of activeActivities.values()) newest = activity;
+  return newest;
+}
+
 function useResolvedTheme() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
@@ -78,6 +86,7 @@ export function TravelConversation({
   });
   const initialPromptSentRef = useRef(false);
   const publishedProjectionRef = useRef<TripProjection>(EMPTY_TRIP);
+  const activeActivitiesRef = useRef(new Map<string, ToolActivity>());
   const [activity, setActivity] = useState<ToolActivity | null>(null);
   const theme = useResolvedTheme();
 
@@ -94,18 +103,31 @@ export function TravelConversation({
   }, [client, initialPrompt]);
 
   useEffect(() => {
+    const activeActivities = activeActivitiesRef.current;
+    activeActivities.clear();
     setActivity(null);
-    return client.subscribe((event) => {
+    const unsubscribe = client.subscribe((event) => {
       const progress = progressForEvent(event);
-      if (progress) setActivity(progress);
-      if (
-        event.event === 'tool_completed'
-        || event.event === 'done'
-        || event.event === 'error'
-      ) {
+      if (event.event === 'tool_started' && progress) {
+        activeActivities.delete(event.data.id);
+        activeActivities.set(event.data.id, progress);
+        setActivity(progress);
+        return;
+      }
+      if (event.event === 'tool_completed') {
+        activeActivities.delete(event.data.id);
+        setActivity(newestActivity(activeActivities));
+        return;
+      }
+      if (event.event === 'done' || event.event === 'error') {
+        activeActivities.clear();
         setActivity(null);
       }
     });
+    return () => {
+      activeActivities.clear();
+      unsubscribe();
+    };
   }, [client]);
 
   useEffect(() => {

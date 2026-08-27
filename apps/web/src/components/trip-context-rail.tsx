@@ -12,6 +12,7 @@ const PHASE_LABELS: Readonly<Record<TripProjection['phase'], string>> = {
   idle: 'No trip started',
   searching: 'Searching',
   comparing: 'Comparing fares',
+  'no-results': 'No fares found',
   selected: 'Fare selected',
   verifying: 'Verifying fare',
   verified: 'Fare verified',
