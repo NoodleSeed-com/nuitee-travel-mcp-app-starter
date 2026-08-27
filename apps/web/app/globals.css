@@ -1,13 +1,18 @@
 :root {
   color-scheme: light;
-  --travel-canvas: #fafafa;
-  --travel-surface: #f5f5f5;
+  --travel-paper: #fbfaf7;
   --travel-raised: #ffffff;
-  --travel-boundary: #d4d4d4;
-  --travel-muted: #525252;
-  --travel-ink: #0a0a0a;
-  --travel-on-action: #fafafa;
-  --travel-focus: var(--travel-accent, #737373);
+  --travel-navy: #14213d;
+  --travel-blue: #245aa8;
+  --travel-ink: #19202b;
+  --travel-muted: #657083;
+  --travel-boundary: #d9dee6;
+  --travel-success-wash: #d9eee6;
+  --travel-success-ink: #17694c;
+  --travel-canvas: var(--travel-paper);
+  --travel-surface: #f4f6f9;
+  --travel-on-action: var(--travel-paper);
+  --travel-focus: var(--travel-blue);
   --travel-rail-width: 17.5rem;
   --travel-gutter: 16px;
   background: var(--travel-canvas);
@@ -287,21 +292,6 @@ code {
   padding: clamp(3rem, 8vh, 6rem) clamp(1.5rem, 6vw, 5rem);
 }
 
-.travel-zero-state {
-  width: min(100%, 47rem);
-  text-align: center;
-}
-
-.travel-zero-state h1 {
-  max-width: 22ch;
-  margin: 1.25rem auto 0;
-  color: var(--travel-ink);
-  font-size: clamp(2rem, 4vw, 3.25rem);
-  font-weight: 450;
-  letter-spacing: -0.05em;
-  line-height: 1.05;
-}
-
 .assistant-identity {
   margin: 0.85rem 0 0;
   color: var(--travel-muted);
@@ -309,14 +299,6 @@ code {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-}
-
-.travel-zero-state__description {
-  max-width: 36rem;
-  margin: 1rem auto 0;
-  color: var(--travel-muted);
-  font-size: clamp(0.96rem, 1.4vw, 1.05rem);
-  line-height: 1.6;
 }
 
 .travel-composer {
@@ -333,6 +315,11 @@ code {
   background: var(--travel-raised);
   box-shadow: 0 14px 38px color-mix(in srgb, var(--travel-ink) 8%, transparent);
   text-align: left;
+}
+
+.travel-composer__controls {
+  display: flex;
+  flex: 0 0 auto;
 }
 
 .travel-composer:focus-within {
@@ -377,35 +364,125 @@ code {
   height: 1.05rem;
 }
 
-.starter-prompts {
+.travel-hero {
+  position: relative;
+  display: grid;
+  min-height: 100svh;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.travel-hero__image {
+  object-fit: cover;
+  object-position: 62% center;
+}
+
+.travel-hero__scrim {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgb(12 29 50 / 78%) 0%, rgb(12 29 50 / 38%) 48%, rgb(12 29 50 / 14%) 76%),
+    linear-gradient(0deg, rgb(12 29 50 / 58%) 0%, transparent 46%);
+}
+
+.travel-hero__content {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  align-content: end;
+  gap: 1.25rem;
+  min-height: 100svh;
+  padding: clamp(6rem, 13vh, 9rem) clamp(1rem, 6vw, 5rem) clamp(1.5rem, 6vh, 3rem);
+}
+
+.travel-hero__copy {
+  max-width: 42rem;
+  color: var(--travel-raised);
+}
+
+.travel-hero__copy .assistant-identity {
+  margin: 0;
+  color: rgb(255 255 255 / 78%);
+}
+
+.travel-hero__copy h1 {
+  margin: 0.75rem 0 0;
+  font-family: Iowan Old Style, Baskerville, "Times New Roman", serif;
+  font-size: clamp(2.75rem, 7vw, 6.5rem);
+  font-weight: 400;
+  letter-spacing: -0.055em;
+  line-height: 0.94;
+}
+
+.travel-hero__headline-phrase {
+  white-space: nowrap;
+}
+
+.travel-hero__copy > p:last-child {
+  max-width: 42rem;
+  margin: 1.25rem 0 0;
+  color: rgb(255 255 255 / 86%);
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  line-height: 1.6;
+}
+
+.travel-composer--hero {
+  width: min(100%, 65rem);
+  margin: 0;
+  border-color: rgb(255 255 255 / 62%);
+  background: rgb(255 255 255 / 96%);
+}
+
+.travel-composer--hero .travel-composer__send {
+  width: auto;
+  min-width: 44px;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  border-radius: 999px;
+  background: var(--travel-blue);
+}
+
+.travel-composer--hero .travel-composer__send:disabled {
+  opacity: 0.62;
+}
+
+.travel-starter-prompts {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.5rem;
-  margin: 0.9rem auto 0;
+  width: min(100%, 65rem);
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.starter-prompts button {
+.travel-starter-prompts button {
   min-height: 44px;
   padding: 0.55rem 0.8rem;
-  border: 1px solid var(--travel-boundary);
+  border: 1px solid rgb(255 255 255 / 52%);
   border-radius: 999px;
-  background: transparent;
-  color: var(--travel-muted);
+  background: rgb(12 29 50 / 24%);
+  color: var(--travel-raised);
   font-size: 0.76rem;
 }
 
-.starter-prompts button:hover {
-  background: var(--travel-surface);
-  color: var(--travel-ink);
+.travel-starter-prompts button:hover {
+  background: rgb(255 255 255 / 18%);
+}
+
+.travel-attribution {
+  margin: 0;
+  color: rgb(255 255 255 / 76%);
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
 }
 
 .travel-zero-state__error {
-  max-width: 34rem;
-  margin: 1rem auto 0;
-  color: #a4423f;
+  max-width: 65rem;
+  margin: 0;
+  color: #ffe0dd;
   font-size: 0.85rem;
   line-height: 1.5;
 }
@@ -970,22 +1047,36 @@ code {
     padding: 16px;
   }
 
-  .travel-zero-state h1 {
-    font-size: clamp(2rem, 10vw, 2.75rem);
+  .travel-hero__image {
+    object-position: 68% center;
+  }
+
+  .travel-hero__content {
+    align-content: end;
+    gap: 1rem;
+    padding: 5.5rem 1rem 1rem;
+  }
+
+  .travel-hero__headline-phrase {
+    white-space: normal;
   }
 
   .travel-composer {
     min-width: 0;
-    margin-top: 1.5rem;
     padding-left: 1rem;
   }
 
-  .starter-prompts {
-    display: grid;
+  .travel-composer--hero .travel-composer__controls {
+    align-items: stretch;
+    flex-direction: column;
   }
 
-  .starter-prompts button {
+  .travel-composer--hero button[type='submit'] {
     width: 100%;
+  }
+
+  .travel-starter-prompts > :nth-child(n + 2) {
+    display: none;
   }
 
   .settings-sheet {
@@ -1021,6 +1112,11 @@ code {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .travel-hero,
+  .travel-hero * {
+    transition-duration: 0.01ms !important;
+  }
+
   .assistant-skeleton {
     animation: none;
     transition: none;

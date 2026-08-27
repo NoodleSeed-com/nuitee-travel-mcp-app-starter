@@ -8,7 +8,10 @@ interface TravelComposerProps {
   readonly formLabel?: string;
   readonly onStop?: () => void;
   readonly onSubmit: (prompt: string) => void;
+  readonly placeholder?: string;
   readonly submitLabel?: string;
+  readonly variant?: 'hero' | 'conversation';
+  readonly visibleSubmitLabel?: string;
 }
 
 export function TravelComposer({
@@ -16,7 +19,10 @@ export function TravelComposer({
   formLabel = 'Start a trip',
   onStop,
   onSubmit,
+  placeholder = 'Ask about dates, airports, or a route',
   submitLabel = 'Start trip',
+  variant = 'conversation',
+  visibleSubmitLabel,
 }: Readonly<TravelComposerProps>) {
   const [draft, setDraft] = useState('');
 
@@ -30,7 +36,13 @@ export function TravelComposer({
   }
 
   return (
-    <form aria-label={formLabel} className="travel-composer" onSubmit={submit}>
+    <form
+      aria-label={formLabel}
+      className={variant === 'hero'
+        ? 'travel-composer travel-composer--hero'
+        : 'travel-composer'}
+      onSubmit={submit}
+    >
       <textarea
         aria-label="Ask about a flight"
         className="travel-composer__input"
@@ -41,29 +53,34 @@ export function TravelComposer({
             event.currentTarget.form?.requestSubmit();
           }
         }}
-        placeholder="Ask about dates, airports, or a route"
+        placeholder={placeholder}
         rows={1}
         value={draft}
       />
-      {busy && onStop ? (
-        <button
-          aria-label="Stop generating"
-          className="travel-composer__send travel-composer__stop"
-          onClick={onStop}
-          type="button"
-        >
-          <Square aria-hidden="true" />
-        </button>
-      ) : (
-        <button
-          aria-label={submitLabel}
-          className="travel-composer__send"
-          disabled={!draft.trim()}
-          type="submit"
-        >
-          <ArrowUp aria-hidden="true" />
-        </button>
-      )}
+      <div className="travel-composer__controls">
+        {busy && onStop ? (
+          <button
+            aria-label="Stop generating"
+            className="travel-composer__send travel-composer__stop"
+            onClick={onStop}
+            type="button"
+          >
+            <Square aria-hidden="true" />
+          </button>
+        ) : (
+          <button
+            aria-label={submitLabel}
+            className="travel-composer__send"
+            disabled={!draft.trim()}
+            type="submit"
+          >
+            <ArrowUp aria-hidden="true" />
+            {variant === 'hero' && visibleSubmitLabel ? (
+              <span>{visibleSubmitLabel}</span>
+            ) : null}
+          </button>
+        )}
+      </div>
     </form>
   );
 }

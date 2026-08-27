@@ -226,7 +226,7 @@ describe('guest travel conversation lifecycle', () => {
     submitPrompt('JFK to Lisbon next month');
 
     expect(screen.getByRole('heading', {
-      name: 'Where would you like to go?',
+      name: 'Tell us where you want to be.',
     })).toBeVisible();
     expect(screen.getAllByRole('alert')).toHaveLength(1);
     expect(screen.getByRole('alert')).toHaveTextContent('Add the public embed.');
@@ -746,9 +746,9 @@ describe('guest travel conversation lifecycle', () => {
     expect(screen.queryByRole('log', {
       name: 'Conversation transcript',
     })).not.toBeInTheDocument();
-    expect(screen.getByText('No trip started')).toBeVisible();
+    expect(screen.queryByText('No trip started')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', {
-      name: 'Where would you like to go?',
+      name: 'Tell us where you want to be.',
     })).toBeVisible();
   });
 

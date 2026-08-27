@@ -45,32 +45,39 @@ export function TravelAssistantPage({
 
   return (
     <>
-      <div className="travel-workspace" inert={settingsOpen || undefined}>
-        <a className="skip-link" href="#travel-canvas">
-          Skip to content
-        </a>
-        <main className="workspace-shell">
-          <WorkspaceAtmosphere />
-          <TripContextRail
-            projection={projection}
-            onNewTrip={reset}
-            onOpenSettings={() => setSettingsOpen(true)}
-          />
-          {mode === 'zero' || !initialPrompt || runtime.status !== 'ready' ? (
+      {mode === 'zero' || !initialPrompt || runtime.status !== 'ready' ? (
+        <div className="travel-workspace">
+          <a className="skip-link" href="#travel-canvas">
+            Skip to content
+          </a>
+          <main>
             <TravelZeroState
               launchError={launchError}
               onStart={startConversation}
             />
-          ) : (
+          </main>
+        </div>
+      ) : (
+        <div className="travel-workspace" inert={settingsOpen || undefined}>
+          <a className="skip-link" href="#travel-canvas">
+            Skip to content
+          </a>
+          <main className="workspace-shell">
+            <WorkspaceAtmosphere />
+            <TripContextRail
+              projection={projection}
+              onNewTrip={reset}
+              onOpenSettings={() => setSettingsOpen(true)}
+            />
             <TravelConversation
               initialPrompt={initialPrompt}
               onProjectionChange={setProjection}
               onReset={reset}
               runtime={runtime}
             />
-          )}
-        </main>
-      </div>
+          </main>
+        </div>
+      )}
       <SettingsSheet
         open={settingsOpen}
         onClearConversation={reset}
