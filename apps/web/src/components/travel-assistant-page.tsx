@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { PublicAssistantRuntime } from '../lib/assistant-config';
 import { EMPTY_TRIP, type TripProjection } from '../lib/trip-projection';
 import { SettingsSheet } from './settings-sheet';
+import { TravelConversation } from './travel-conversation';
 import { TravelZeroState } from './travel-zero-state';
 import { TripContextRail } from './trip-context-rail';
 
@@ -53,21 +54,18 @@ export function TravelAssistantPage({
             onNewTrip={reset}
             onOpenSettings={() => setSettingsOpen(true)}
           />
-          {mode === 'zero' ? (
+          {mode === 'zero' || !initialPrompt || runtime.status !== 'ready' ? (
             <TravelZeroState
               launchError={launchError}
               onStart={startConversation}
             />
           ) : (
-            <section
-              className="travel-canvas"
-              aria-label="Starting conversation"
-            >
-              <div className="travel-starting" role="status">
-                <span>Starting your trip</span>
-                <small>{initialPrompt}</small>
-              </div>
-            </section>
+            <TravelConversation
+              initialPrompt={initialPrompt}
+              onProjectionChange={setProjection}
+              onReset={reset}
+              runtime={runtime}
+            />
           )}
         </main>
       </div>
