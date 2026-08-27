@@ -5,7 +5,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import { StrictMode } from 'react';
+import { StrictMode, useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TravelAssistantPage } from '../src/components/travel-assistant-page';
 
@@ -43,12 +43,19 @@ let client = createClient();
 beforeEach(() => {
   client = createClient();
   assistantMock.useNoodleAssistant.mockReset();
-  assistantMock.useNoodleAssistant.mockImplementation(() => ({
-    client,
-    messages: [],
-    status: 'ready',
-    error: undefined,
-  }));
+  assistantMock.useNoodleAssistant.mockImplementation(() => {
+    const activeClient = client;
+    useEffect(() => () => {
+      activeClient.abort();
+      activeClient.resetSession();
+    }, [activeClient]);
+    return {
+      client: activeClient,
+      messages: [],
+      status: 'ready',
+      error: undefined,
+    };
+  });
 });
 
 afterEach(() => {
@@ -114,6 +121,27 @@ describe('guest travel conversation lifecycle', () => {
     await Promise.resolve();
     expect(firstClient.sendMessage).toHaveBeenCalledTimes(1);
     expect(replacementClient.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it('lets the hook dispose replaced and unmounted clients once', async () => {
+    const firstClient = client;
+    const view = render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('JFK to Lisbon next month');
+    await waitFor(() => expect(firstClient.sendMessage).toHaveBeenCalledOnce());
+
+    const replacementClient = createClient();
+    client = replacementClient;
+    view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
+
+    expect(firstClient.abort).toHaveBeenCalledOnce();
+    expect(firstClient.resetSession).toHaveBeenCalledOnce();
+    expect(firstClient.sendMessage).toHaveBeenCalledOnce();
+    expect(replacementClient.sendMessage).not.toHaveBeenCalled();
+
+    view.unmount();
+    await Promise.resolve();
+    expect(replacementClient.abort).toHaveBeenCalledOnce();
+    expect(replacementClient.resetSession).toHaveBeenCalledOnce();
   });
 
   it('keeps setup-required submission on the zero state with one alert', () => {

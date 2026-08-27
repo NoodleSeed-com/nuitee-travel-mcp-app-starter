@@ -29,30 +29,7 @@ export function TravelConversation({
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     }),
   });
-  const clientRef = useRef(client);
-  const projectionChangeRef = useRef(onProjectionChange);
-  const disposedClientsRef = useRef(new WeakSet<object>());
-  const mountedRef = useRef(false);
   const initialPromptSentRef = useRef(false);
-  clientRef.current = client;
-  projectionChangeRef.current = onProjectionChange;
-
-  function disposeClient() {
-    const activeClient = clientRef.current;
-    if (disposedClientsRef.current.has(activeClient)) return;
-    disposedClientsRef.current.add(activeClient);
-    try {
-      activeClient.abort();
-    } catch {
-      // Reset still needs to clear local session state when abort fails.
-    }
-    try {
-      activeClient.resetSession();
-    } catch {
-      // The host reset remains fail-closed even if SDK cleanup has failed.
-    }
-    projectionChangeRef.current(EMPTY_TRIP);
-  }
 
   useEffect(() => {
     let active = true;
@@ -66,18 +43,8 @@ export function TravelConversation({
     };
   }, [client, initialPrompt]);
 
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-      queueMicrotask(() => {
-        if (!mountedRef.current) disposeClient();
-      });
-    };
-  }, []);
-
   function resetConversation() {
-    disposeClient();
+    onProjectionChange(EMPTY_TRIP);
     onReset();
   }
 
