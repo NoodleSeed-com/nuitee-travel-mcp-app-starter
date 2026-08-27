@@ -19,6 +19,9 @@ test('renders the guest shell without opening an assistant session', async ({
   await expect(page.locator('h1')).toHaveCount(1);
   await expect(page.getByRole('link', { name: 'Skip to content' }))
     .toHaveAttribute('href', '#travel-canvas');
+  await expect(page.getByTestId('workspace-atmosphere')).toBeVisible();
+  await expect(page.locator('[data-atmosphere-canvas]')).toBeVisible();
+  await expect(page.locator('.route-assistant-mark')).toHaveCount(0);
   expect(assistantRequests).toEqual([]);
 });
 
@@ -34,8 +37,9 @@ test('keeps the shell keyboard-visible and motion-safe', async ({ page }) => {
     return style.outlineStyle !== 'none'
       && Number.parseFloat(style.outlineWidth) > 0;
   })).toBe(true);
-  await expect(page.locator('.route-assistant-mark'))
-    .toHaveCSS('animation-name', 'none');
+  await expect(page.getByTestId('workspace-atmosphere')).toBeVisible();
+  await expect(page.locator('[data-atmosphere-fallback]')).toBeVisible();
+  await expect(page.locator('[data-atmosphere-canvas]')).toHaveCount(0);
 
   const undersizedControls = await page.locator(
     '.travel-workspace button, .travel-workspace a',

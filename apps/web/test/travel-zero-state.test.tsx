@@ -67,6 +67,13 @@ describe('travel assistant zero state', () => {
     expect(screen.getByRole('region', {
       name: 'Where would you like to go?',
     })).toHaveAttribute('id', 'travel-canvas');
+    expect(document.querySelector('.route-assistant-mark'))
+      .not.toBeInTheDocument();
+    const atmosphere = screen.getByTestId('workspace-atmosphere');
+    expect(atmosphere).toHaveAttribute('aria-hidden', 'true');
+    expect(atmosphere).toHaveStyle({ pointerEvents: 'none' });
+    expect(atmosphere.querySelector('[data-atmosphere-fallback]'))
+      .toBeInTheDocument();
   });
 
   it('submits a configured prompt through the same first-message callback', () => {

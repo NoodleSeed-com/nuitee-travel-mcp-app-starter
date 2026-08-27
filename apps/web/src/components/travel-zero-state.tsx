@@ -1,7 +1,6 @@
 'use client';
 
 import { starterConfig } from '../../../../starter.config';
-import { RouteAssistantMark } from './route-assistant-mark';
 import { TravelComposer } from './travel-composer';
 
 interface TravelZeroStateProps {
@@ -21,7 +20,6 @@ export function TravelZeroState({
       tabIndex={-1}
     >
       <div className="travel-zero-state">
-        <RouteAssistantMark />
         <p className="assistant-identity">
           {starterConfig.brand.assistantName}
         </p>

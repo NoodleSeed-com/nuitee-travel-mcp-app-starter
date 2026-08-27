@@ -81,10 +81,48 @@ code {
 
 .workspace-shell {
   position: relative;
+  isolation: isolate;
   min-height: 100svh;
   overflow-x: clip;
   padding: var(--travel-gutter);
   background: var(--travel-canvas);
+}
+
+.workspace-atmosphere {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  background: var(--travel-canvas);
+  opacity: 0.58;
+}
+
+.workspace-atmosphere__fallback,
+.workspace-atmosphere__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.workspace-atmosphere__fallback {
+  transform: scale(1.08);
+  background:
+    radial-gradient(ellipse at 82% 12%, rgb(212 212 212 / 52%), transparent 44%),
+    radial-gradient(ellipse at 58% 88%, rgb(229 229 229 / 72%), transparent 52%),
+    radial-gradient(ellipse at 18% 36%, rgb(245 245 245 / 86%), transparent 46%),
+    linear-gradient(135deg, #fafafa 8%, #f5f5f5 54%, #ffffff 100%);
+  filter: blur(22px);
+}
+
+.workspace-atmosphere__canvas {
+  opacity: 0.68;
+}
+
+.workspace-atmosphere__canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .trip-context-rail {
@@ -240,6 +278,8 @@ code {
 }
 
 .travel-canvas {
+  position: relative;
+  z-index: 1;
   display: grid;
   min-height: calc(100svh - (var(--travel-gutter) * 2));
   margin-left: calc(var(--travel-rail-width) + var(--travel-gutter));
@@ -250,41 +290,6 @@ code {
 .travel-zero-state {
   width: min(100%, 47rem);
   text-align: center;
-}
-
-.route-assistant-mark {
-  display: inline-flex;
-  width: 4.5rem;
-  height: 4.5rem;
-  transform-origin: center;
-  animation: route-orbit 24s linear infinite;
-}
-
-.route-assistant-mark svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.route-assistant-mark__orbit {
-  fill: none;
-  stroke: var(--travel-boundary);
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-dasharray: 102 58;
-}
-
-.route-assistant-mark__endpoint {
-  fill: var(--travel-signal, #171717);
-  stroke: var(--travel-on-action);
-  stroke-width: 1.5;
-}
-
-@keyframes route-orbit {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .travel-zero-state h1 {
@@ -1016,7 +1021,6 @@ code {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .route-assistant-mark,
   .assistant-skeleton {
     animation: none;
     transition: none;

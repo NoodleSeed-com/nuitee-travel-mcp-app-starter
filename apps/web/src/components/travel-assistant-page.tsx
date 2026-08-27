@@ -7,6 +7,7 @@ import { SettingsSheet } from './settings-sheet';
 import { TravelConversation } from './travel-conversation';
 import { TravelZeroState } from './travel-zero-state';
 import { TripContextRail } from './trip-context-rail';
+import { WorkspaceAtmosphere } from './workspace-atmosphere';
 
 type PageMode = 'zero' | 'starting';
 
@@ -49,6 +50,7 @@ export function TravelAssistantPage({
           Skip to content
         </a>
         <main className="workspace-shell">
+          <WorkspaceAtmosphere />
           <TripContextRail
             projection={projection}
             onNewTrip={reset}
