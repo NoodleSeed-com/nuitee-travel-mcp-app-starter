@@ -75,7 +75,7 @@ The default page does not open an Assistant session on mount. Admission starts o
 
 ## Exact origins and CSP
 
-The committed public surface allows only the exact Next.js loopback origin. Before a hosted browser test, configure the real deployment-owned HTTPS website origin:
+The committed public surface allows only the exact Next.js loopback origins `http://localhost:3000` and `http://localhost:3001`; the second supports a local fallback when port 3000 is occupied. Before a hosted browser test, configure the real deployment-owned HTTPS website origin:
 
 ```sh
 pnpm customize -- --production-origin "https://<your-exact-domain>"

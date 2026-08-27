@@ -25,7 +25,9 @@ export const starterConfig = {
     'Plan a round trip for two',
   ],
   widgets: { domain: null },
-  embeddedAssistant: { origins: ['http://localhost:3000'] },
+  embeddedAssistant: {
+    origins: ['http://localhost:3000', 'http://localhost:3001'],
+  },
 } as const;
 
 export type StarterConfig = typeof starterConfig;

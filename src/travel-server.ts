@@ -274,10 +274,10 @@ export function createTravelServer(mode: 'credential-free' | 'live' | 'embedded'
           model: variable('ASSISTANT_MODEL'),
           apiKey: secret('ASSISTANT_MODEL_API_KEY'),
         }),
-        // The starter ships with the exact Next.js loopback origin for the
-        // primary guest Next.js website. Add the deployment-owned HTTPS origin
-        // explicitly before hosted use and remove loopback from hosted-only
-        // deployments.
+        // The starter ships with exact Next.js loopback origins for the
+        // primary guest website's standard and fallback preview ports. Add the
+        // deployment-owned HTTPS origin explicitly before hosted use and
+        // remove loopback from hosted-only deployments.
         access: publicWebsite({
           origins: [...starterConfig.embeddedAssistant.origins],
           capabilities: [...capabilities.publicSurface],

@@ -170,6 +170,10 @@ describe('server contract', () => {
     expect(wire).toContain('ASSISTANT_MODEL_BASE_URL');
     expect(wire).toContain('ASSISTANT_MODEL');
     expect(wire).toContain('ASSISTANT_MODEL_API_KEY');
+    expect(manifest.server.assistant.surfaces[0]?.origins).toEqual([
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ]);
     for (const origin of starterConfig.embeddedAssistant.origins) expect(wire).toContain(origin);
     expect(wire).not.toContain('https://app.example.com');
     expect(manifest.server.assistant.surfaces).toEqual([
