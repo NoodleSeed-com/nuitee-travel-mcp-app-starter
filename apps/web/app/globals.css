@@ -105,7 +105,7 @@ button:disabled {
 .workspace-shell {
   position: relative;
   min-height: 100svh;
-  overflow-x: hidden;
+  overflow-x: clip;
   padding: var(--travel-gutter);
   background: var(--travel-canvas);
 }

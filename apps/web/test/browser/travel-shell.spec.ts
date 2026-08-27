@@ -79,4 +79,14 @@ test('fits the 390px mobile shell and 200 percent text zoom', async ({
       && bounds.left >= 0
       && bounds.right <= window.innerWidth;
   })).toBe(true);
+
+  await page.evaluate(() => {
+    window.scrollTo(0, document.documentElement.scrollHeight);
+  });
+  await expect.poll(() => page.evaluate(() => window.scrollY))
+    .toBeGreaterThan(0);
+  const headerTop = await page.getByRole('complementary', {
+    name: 'Trip context',
+  }).evaluate((element) => element.getBoundingClientRect().top);
+  expect(Math.abs(headerTop)).toBeLessThanOrEqual(1);
 });

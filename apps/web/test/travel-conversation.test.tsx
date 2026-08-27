@@ -1,4 +1,7 @@
-import type { AssistantClientEvent } from '@noodleseed/assistant/client';
+import type {
+  AssistantChatError,
+  AssistantClientEvent,
+} from '@noodleseed/assistant/client';
 import {
   act,
   cleanup,
@@ -236,6 +239,66 @@ describe('guest travel conversation lifecycle', () => {
     expect(document.body).not.toHaveTextContent(
       /Assistant is responding|token secret|https?:|search_flights/i,
     );
+  });
+
+  it('suppresses stale tool activity when hook state becomes terminal without a client event', async () => {
+    let hookState: {
+      status: 'streaming' | 'error';
+      error: AssistantChatError | undefined;
+    } = {
+      status: 'streaming',
+      error: undefined,
+    };
+    assistantMock.useNoodleAssistant.mockImplementation(() => {
+      const activeClient = client;
+      useEffect(() => () => {
+        activeClient.abort();
+        activeClient.resetSession();
+      }, [activeClient]);
+      return {
+        client: activeClient,
+        messages: [],
+        ...hookState,
+      };
+    });
+    const view = render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('JFK to Lisbon next month');
+
+    act(() => {
+      client.emit({
+        event: 'tool_started',
+        data: { id: 'call-search-stale', tool: 'search_flights' },
+      });
+    });
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Searching current flights',
+    );
+    expect(screen.getByText('Searching')).toBeVisible();
+
+    hookState = {
+      status: 'error',
+      error: {
+        name: 'AssistantClientError',
+        message: 'terminal turn failure',
+        detail: {
+          code: 'turn_failed',
+          status: 400,
+          retryable: false,
+        },
+      },
+    };
+    view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'The travel assistant could not continue',
+    );
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    expect(screen.queryByText('Searching')).not.toBeInTheDocument();
+    expect(screen.getByText('No trip started')).toBeVisible();
+
+    hookState = { ...hookState, status: 'streaming' };
+    view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
   });
 
   it('retries the last message only when the client marks a service error retryable', async () => {

@@ -94,6 +94,9 @@ export function TravelConversation({
   const transcriptViewportRef = useRef<HTMLDivElement>(null);
   const followLatestRef = useRef(true);
   const [activity, setActivity] = useState<ToolActivity | null>(null);
+  const terminal = status === 'error' || Boolean(error);
+  const terminalRef = useRef(terminal);
+  terminalRef.current = terminal;
   const theme = useResolvedTheme();
 
   useEffect(() => {
@@ -124,6 +127,10 @@ export function TravelConversation({
     activeActivities.clear();
     setActivity(null);
     const unsubscribe = client.subscribe((event) => {
+      if (terminalRef.current) {
+        activeActivities.clear();
+        return;
+      }
       const progress = progressForEvent(event);
       if (event.event === 'tool_started' && progress) {
         activeActivities.delete(event.data.id);
@@ -148,11 +155,20 @@ export function TravelConversation({
   }, [client]);
 
   useEffect(() => {
-    const projection = projectTrip(messages, activity?.phase);
+    if (!terminal) return;
+    activeActivitiesRef.current.clear();
+    setActivity(null);
+  }, [terminal]);
+
+  useEffect(() => {
+    const projection = projectTrip(
+      messages,
+      terminal ? undefined : activity?.phase,
+    );
     if (sameProjection(projection, publishedProjectionRef.current)) return;
     publishedProjectionRef.current = projection;
     onProjectionChange(projection);
-  }, [activity?.phase, messages, onProjectionChange]);
+  }, [activity?.phase, messages, onProjectionChange, terminal]);
 
   function resetConversation() {
     onProjectionChange(EMPTY_TRIP);
@@ -168,8 +184,9 @@ export function TravelConversation({
   }
 
   const busy = status === 'submitted' || status === 'streaming';
-  const statusLabel = activity?.label
-    ?? (busy ? 'Assistant is responding' : '');
+  const statusLabel = terminal
+    ? ''
+    : activity?.label ?? (busy ? 'Assistant is responding' : '');
   const errorPresentation = error ? presentAssistantError(error) : null;
 
   return (
