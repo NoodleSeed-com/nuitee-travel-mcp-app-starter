@@ -1,0 +1,26 @@
+import type { AssistantClientEvent } from '@noodleseed/assistant/client';
+import type { TripPhase } from './trip-projection';
+
+export interface ToolActivity {
+  readonly label: string;
+  readonly phase?: TripPhase;
+}
+
+export function progressForEvent(
+  event: AssistantClientEvent,
+): ToolActivity | null {
+  if (event.event !== 'tool_started') return null;
+
+  switch (event.data.tool) {
+    case 'open_travel_starter':
+      return { label: 'Opening the travel assistant' };
+    case 'search_flights':
+      return { label: 'Searching current flights', phase: 'searching' };
+    case 'select_flight_offer':
+      return { label: 'Saving your fare choice' };
+    case 'verify_flight_offer':
+      return { label: 'Verifying the current fare', phase: 'verifying' };
+    default:
+      return { label: 'Working on your request' };
+  }
+}

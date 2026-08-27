@@ -1,4 +1,6 @@
+import type { AssistantClientEvent } from '@noodleseed/assistant/client';
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -24,10 +26,18 @@ const readyRuntime = {
 };
 
 function createClient() {
+  const eventListeners = new Set<(event: AssistantClientEvent) => void>();
   return {
     abort: vi.fn(),
     resetSession: vi.fn(),
     sendMessage: vi.fn().mockResolvedValue(undefined),
+    subscribe: vi.fn((listener: (event: AssistantClientEvent) => void) => {
+      eventListeners.add(listener);
+      return () => eventListeners.delete(listener);
+    }),
+    emit(event: AssistantClientEvent) {
+      for (const listener of eventListeners) listener(event);
+    },
   };
 }
 
@@ -206,6 +216,82 @@ describe('guest travel conversation lifecycle', () => {
     expect(await screen.findByText('Here are the current choices.'))
       .toBeVisible();
     expect(screen.queryByText('Assistant message')).not.toBeInTheDocument();
+  });
+
+  it('projects structured trip context and uses one stable mapped activity region', async () => {
+    assistantMock.useNoodleAssistant.mockImplementation(() => {
+      const activeClient = client;
+      useEffect(() => () => {
+        activeClient.abort();
+        activeClient.resetSession();
+      }, [activeClient]);
+      return {
+        client: activeClient,
+        messages: [{
+          id: 'assistant-search-result',
+          role: 'assistant',
+          parts: [{
+            type: 'data-tool-result',
+            data: {
+              id: 'call-search',
+              tool: 'search_flights',
+              result: {
+                status: 'success',
+                searchId: 'search_private',
+                searchContext: {
+                  origin: 'JFK',
+                  destination: 'LIS',
+                  departureDate: '2026-10-12',
+                  adults: 1,
+                  children: 0,
+                  infants: 0,
+                },
+              },
+            },
+          }],
+        }],
+        status: 'ready',
+        error: undefined,
+      };
+    });
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+
+    submitPrompt('JFK to Lisbon in October');
+
+    expect(await screen.findByText('JFK → LIS')).toBeVisible();
+    expect(screen.getByText('Comparing fares')).toBeVisible();
+    const activityRegion = screen.getByRole('status');
+    expect(activityRegion).toBeEmptyDOMElement();
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+
+    act(() => {
+      client.emit({
+        event: 'tool_started',
+        data: {
+          id: 'call-search-next',
+          tool: 'search_flights',
+        },
+      });
+    });
+
+    expect(activityRegion).toHaveTextContent('Searching current flights');
+    expect(screen.getByText('Searching')).toBeVisible();
+    expect(document.body).not.toHaveTextContent('search_flights');
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+
+    act(() => {
+      client.emit({
+        event: 'tool_completed',
+        data: {
+          id: 'call-search-next',
+          tool: 'search_flights',
+          result: { status: 'success' },
+        },
+      });
+    });
+
+    expect(activityRegion).toBeEmptyDOMElement();
+    expect(screen.getByText('Comparing fares')).toBeVisible();
   });
 
   it('aborts and resets the session before returning to a fresh zero state', async () => {
