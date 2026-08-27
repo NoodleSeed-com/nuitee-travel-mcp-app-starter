@@ -6,6 +6,7 @@ import type {
   AssistantInteractionResponse,
   AssistantUIMessage,
 } from '@noodleseed/assistant/client';
+import { useRef, useState } from 'react';
 import { TravelMarkdown } from './travel-markdown';
 import { TravelViewRegistry } from './travel-view-registry';
 
@@ -17,16 +18,48 @@ interface TravelMessageProps {
   readonly theme?: 'light' | 'dark';
 }
 
-const SENSITIVE_ARGUMENT_KEY = /(?:auth|booking|card|cookie|credential|cvc|cvv|key|passport|password|payment|provider|reservation|secret|session|token)|(?:^|[_-])id$|Id$/i;
 const MAX_VISIBLE_ARGUMENTS = 6;
 const MAX_ARGUMENT_LENGTH = 120;
+const MAX_CONFIRMATION_TITLE_LENGTH = 80;
+const MAX_CONFIRMATION_DESCRIPTION_LENGTH = 240;
+const UNSAFE_DISPLAY_CHARACTERS = /[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/gu;
 
-function argumentLabel(key: string) {
-  const words = key
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .replace(/[_-]+/g, ' ')
+function reviewArgumentLabel(key: string): string | undefined {
+  switch (key) {
+    case 'origin':
+      return 'Origin';
+    case 'destination':
+      return 'Destination';
+    case 'departureDate':
+      return 'Departure date';
+    case 'returnDate':
+      return 'Return date';
+    case 'adults':
+      return 'Adults';
+    case 'children':
+      return 'Children';
+    case 'infants':
+      return 'Infants';
+    case 'cabinClass':
+      return 'Cabin class';
+    default:
+      return undefined;
+  }
+}
+
+function boundedDisplayString(
+  value: string,
+  maximumLength: number,
+): string | undefined {
+  const normalized = value
+    .replace(UNSAFE_DISPLAY_CHARACTERS, ' ')
+    .replace(/\s+/gu, ' ')
     .trim();
-  return words ? `${words[0]?.toUpperCase()}${words.slice(1)}` : '';
+  if (!normalized) return undefined;
+
+  const characters = Array.from(normalized);
+  if (characters.length <= maximumLength) return normalized;
+  return `${characters.slice(0, maximumLength - 1).join('').trimEnd()}…`;
 }
 
 function safeArguments(
@@ -37,7 +70,8 @@ function safeArguments(
   const visible: [string, string][] = [];
   for (const [key, candidate] of Object.entries(value)) {
     if (visible.length >= MAX_VISIBLE_ARGUMENTS) break;
-    if (!key || key.length > 48 || SENSITIVE_ARGUMENT_KEY.test(key)) continue;
+    const label = reviewArgumentLabel(key);
+    if (!label) continue;
     if (
       typeof candidate !== 'string'
       && typeof candidate !== 'number'
@@ -46,10 +80,11 @@ function safeArguments(
       continue;
     }
     if (typeof candidate === 'number' && !Number.isFinite(candidate)) continue;
-    const rendered = String(candidate);
-    if (!rendered || rendered.length > MAX_ARGUMENT_LENGTH) continue;
-    const label = argumentLabel(key);
-    if (label) visible.push([label, rendered]);
+    const rendered = boundedDisplayString(
+      String(candidate),
+      MAX_ARGUMENT_LENGTH,
+    );
+    if (rendered) visible.push([label, rendered]);
   }
   return visible;
 }
@@ -66,6 +101,23 @@ async function respondSafely(
   }
 }
 
+function useSingleInteractionResponse(client: AssistantClient, id: string) {
+  const submittedIdRef = useRef<string | null>(null);
+  const [submittedId, setSubmittedId] = useState<string | null>(null);
+
+  function submit(response: AssistantInteractionResponse) {
+    if (submittedIdRef.current === id) return;
+    submittedIdRef.current = id;
+    setSubmittedId(id);
+    void respondSafely(client, id, response);
+  }
+
+  return {
+    locked: submittedId === id,
+    submit,
+  };
+}
+
 function ConfirmationPart({
   client,
   confirmation,
@@ -75,11 +127,27 @@ function ConfirmationPart({
 }>) {
   const argumentsToReview = safeArguments(confirmation.arguments);
   const pending = confirmation.status === 'pending';
+  const { locked, submit } = useSingleInteractionResponse(
+    client,
+    confirmation.id,
+  );
+  const title = boundedDisplayString(
+    confirmation.title ?? '',
+    MAX_CONFIRMATION_TITLE_LENGTH,
+  ) ?? 'Confirm this action?';
+  const description = boundedDisplayString(
+    confirmation.description ?? '',
+    MAX_CONFIRMATION_DESCRIPTION_LENGTH,
+  );
 
   return (
-    <section aria-label="Confirmation request" className="travel-confirmation">
-      <h3>{confirmation.title ?? 'Confirm this action?'}</h3>
-      {confirmation.description ? <p>{confirmation.description}</p> : null}
+    <section
+      aria-busy={locked || undefined}
+      aria-label="Confirmation request"
+      className="travel-confirmation"
+    >
+      <h3>{title}</h3>
+      {description ? <p>{description}</p> : null}
       {argumentsToReview.length > 0 ? (
         <dl>
           {argumentsToReview.map(([label, value]) => (
@@ -93,16 +161,18 @@ function ConfirmationPart({
       {pending ? (
         <div>
           <button
+            disabled={locked}
             onClick={() => {
-              void respondSafely(client, confirmation.id, { action: 'accept' });
+              submit({ action: 'accept' });
             }}
             type="button"
           >
             Confirm
           </button>
           <button
+            disabled={locked}
             onClick={() => {
-              void respondSafely(client, confirmation.id, { action: 'decline' });
+              submit({ action: 'decline' });
             }}
             type="button"
           >
@@ -111,6 +181,42 @@ function ConfirmationPart({
         </div>
       ) : (
         <p role="status">This confirmation is {confirmation.status}.</p>
+      )}
+    </section>
+  );
+}
+
+function InputRequestPart({
+  client,
+  inputRequest,
+}: Readonly<{
+  client: AssistantClient;
+  inputRequest: Extract<MessagePart, { type: 'data-input-request' }>['data'];
+}>) {
+  const { locked, submit } = useSingleInteractionResponse(
+    client,
+    inputRequest.id,
+  );
+
+  return (
+    <section
+      aria-busy={locked || undefined}
+      aria-label="Input request"
+      className="travel-input-request"
+    >
+      <p>This travel template cannot collect the requested form.</p>
+      {inputRequest.status === 'pending' ? (
+        <button
+          disabled={locked}
+          onClick={() => {
+            submit({ action: 'cancel' });
+          }}
+          type="button"
+        >
+          Cancel request
+        </button>
+      ) : (
+        <p role="status">This input request is {inputRequest.status}.</p>
       )}
     </section>
   );
@@ -146,23 +252,7 @@ function TravelMessagePart({
     case 'data-confirmation':
       return <ConfirmationPart client={client} confirmation={part.data} />;
     case 'data-input-request':
-      return (
-        <section aria-label="Input request" className="travel-input-request">
-          <p>This travel template cannot collect the requested form.</p>
-          {part.data.status === 'pending' ? (
-            <button
-              onClick={() => {
-                void respondSafely(client, part.data.id, { action: 'cancel' });
-              }}
-              type="button"
-            >
-              Cancel request
-            </button>
-          ) : (
-            <p role="status">This input request is {part.data.status}.</p>
-          )}
-        </section>
-      );
+      return <InputRequestPart client={client} inputRequest={part.data} />;
     case 'data-tool-result':
       return null;
     default:

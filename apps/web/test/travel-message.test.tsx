@@ -3,6 +3,7 @@ import type {
   AssistantUIMessage,
 } from '@noodleseed/assistant/client';
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -147,7 +148,7 @@ describe('typed travel message parts', () => {
       .not.toBeInTheDocument();
   });
 
-  it('accepts a pending confirmation and exposes only safe scalar arguments', async () => {
+  it('accepts a pending confirmation and exposes only allowlisted scalar arguments', async () => {
     renderMessage(client, {
       id: 'assistant-confirm',
       role: 'assistant',
@@ -189,6 +190,99 @@ describe('typed travel message parts', () => {
         action: 'accept',
       });
     });
+  });
+
+  it('hides credential and provider aliases outside the review allowlist', () => {
+    const aliases = [
+      ['pnr', 'PNR-PRIVATE'],
+      ['recordLocator', 'LOCATOR-PRIVATE'],
+      ['offerReference', 'OFFER-PRIVATE'],
+      ['accessCode', 'ACCESS-PRIVATE'],
+      ['bankAccountNumber', 'BANK-PRIVATE'],
+      ['travelerEmail', 'TRAVELER-PRIVATE'],
+      ['dateOfBirth', 'DOB-PRIVATE'],
+    ] as const;
+
+    for (const [alias, privateValue] of aliases) {
+      const view = renderMessage(client, {
+        id: `assistant-${alias}`,
+        role: 'assistant',
+        parts: [{
+          type: 'data-confirmation',
+          data: {
+            id: `confirm-${alias}`,
+            arguments: { [alias]: privateValue },
+            status: 'pending',
+          },
+        }],
+      });
+
+      expect(screen.queryByText(privateValue)).not.toBeInTheDocument();
+      view.unmount();
+    }
+  });
+
+  it('sanitizes and bounds confirmation title and description text', () => {
+    renderMessage(client, {
+      id: 'assistant-bounded-confirmation',
+      role: 'assistant',
+      parts: [{
+        type: 'data-confirmation',
+        data: {
+          id: 'confirm-bounded-copy',
+          title: `Review\u0000   ${'T'.repeat(100)}`,
+          description: `Details\u202e   ${'D'.repeat(300)}`,
+          status: 'pending',
+        },
+      }],
+    });
+
+    const heading = screen.getByRole('heading');
+    const confirmation = screen.getByRole('region', {
+      name: 'Confirmation request',
+    });
+    const description = confirmation.querySelector('p');
+    expect(heading).toHaveTextContent(/^Review T/);
+    expect(heading.textContent).not.toContain('\u0000');
+    expect(heading.textContent?.length).toBeLessThanOrEqual(80);
+    expect(description).toHaveTextContent(/^Details D/);
+    expect(description?.textContent).not.toContain('\u202e');
+    expect(description?.textContent?.length).toBeLessThanOrEqual(240);
+  });
+
+  it('locks confirmation actions before an unresolved response settles', () => {
+    let resolveResponse: (() => void) | undefined;
+    client.respond.mockImplementation(() => new Promise<void>((resolve) => {
+      resolveResponse = resolve;
+    }));
+    renderMessage(client, {
+      id: 'assistant-locked-confirmation',
+      role: 'assistant',
+      parts: [{
+        type: 'data-confirmation',
+        data: {
+          id: 'confirm-locked',
+          title: 'Continue?',
+          status: 'pending',
+        },
+      }],
+    });
+
+    const accept = screen.getByRole('button', { name: 'Confirm' });
+    const decline = screen.getByRole('button', { name: "Don't proceed" });
+    act(() => {
+      accept.click();
+      decline.click();
+      accept.click();
+    });
+
+    expect(accept).toBeDisabled();
+    expect(decline).toBeDisabled();
+    expect(client.respond).toHaveBeenCalledOnce();
+    expect(client.respond).toHaveBeenCalledWith('confirm-locked', {
+      action: 'accept',
+    });
+    resolveResponse?.();
   });
 
   it('declines a pending confirmation', async () => {
@@ -243,6 +337,34 @@ describe('typed travel message parts', () => {
         action: 'cancel',
       });
     });
+  });
+
+  it('keeps input cancellation locked after a rejected response', async () => {
+    client.respond.mockRejectedValue(new Error('raw service failure'));
+    renderMessage(client, {
+      id: 'assistant-rejected-input',
+      role: 'assistant',
+      parts: [{
+        type: 'data-input-request',
+        data: {
+          id: 'input-rejected',
+          message: 'Sensitive request text',
+          requestedSchema: { type: 'object' },
+          expiresAt: '2026-08-27T18:00:00.000Z',
+          status: 'pending',
+        },
+      }],
+    });
+
+    const cancel = screen.getByRole('button', { name: 'Cancel request' });
+    act(() => {
+      cancel.click();
+      cancel.click();
+    });
+
+    await waitFor(() => expect(client.respond).toHaveBeenCalledOnce());
+    expect(cancel).toBeDisabled();
+    expect(screen.queryByText(/raw service failure/)).not.toBeInTheDocument();
   });
 
   it('shows a safe fallback for a supported SDK part the template does not render', () => {
