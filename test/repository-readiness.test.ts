@@ -131,6 +131,51 @@ describe('public repository contracts', () => {
     ]) expect(rootPackage.scripts['ci:offline']).toContain(command);
   });
 
+  it('runs the primary website in the offline repository gate', async () => {
+    const rootPackage = await repositoryJson('package.json');
+
+    expect(rootPackage.scripts['dev:web']).toBe(
+      'pnpm --filter @nuitee-travel-starter/web dev',
+    );
+    expect(rootPackage.scripts['build:web']).toBe(
+      'pnpm --filter @nuitee-travel-starter/web build',
+    );
+    expect(rootPackage.scripts['test:web']).toBe(
+      'pnpm --filter @nuitee-travel-starter/web test',
+    );
+    expect(rootPackage.scripts['check:web']).toContain(
+      '@nuitee-travel-starter/web typecheck',
+    );
+    expect(rootPackage.scripts['check:web']).toContain(
+      '@nuitee-travel-starter/web test',
+    );
+    expect(rootPackage.scripts['check:web']).toContain(
+      '@nuitee-travel-starter/web test:browser',
+    );
+    expect(rootPackage.scripts['check:web']).toContain(
+      '@nuitee-travel-starter/web build',
+    );
+    expect(rootPackage.scripts['ci:offline']).toContain('pnpm check:web');
+    expect(rootPackage.scripts['ci:offline']).toContain(
+      'pnpm check:embedded-host',
+    );
+  });
+
+  it('keeps website environment examples within the public credential boundary', async () => {
+    const [rootEnvironment, websiteEnvironment] = await Promise.all([
+      repositoryFile('.env.example'),
+      repositoryFile('apps/web/.env.example'),
+    ]);
+
+    expect(rootEnvironment).not.toMatch(/NOODLE_ASSISTANT_CLIENT_(?:ID|SECRET)/);
+    expect(rootEnvironment).not.toContain('NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID');
+    expect(websiteEnvironment.trim().split('\n')).toEqual([
+      'NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID=',
+      'NEXT_PUBLIC_NOODLE_SERVICE_URL=https://cloud.noodleseed.dev',
+    ]);
+    expect(websiteEnvironment).not.toMatch(/CLIENT_(?:ID|SECRET)|NUITEE_API_KEY/);
+  });
+
   it('keeps mutable generated examples behind a fail-closed release-only gate', async () => {
     const [rootPackage, checklist, generatedGuide] = await Promise.all([
       repositoryJson('package.json'),
@@ -258,6 +303,18 @@ describe('public repository contracts', () => {
     expect(checklist).toContain('[ ] Configure one real public embed ID');
     expect(checklist).toContain('[ ] Configure and monitor a real HTTPS privacy URL');
     expect(checklist).toContain('[ ] Prove the 30-minute selection TTL');
+  });
+
+  it('records generic and app-mapped public preflights without claiming hosted readiness', async () => {
+    const checklist = await repositoryFile('PUBLIC_RELEASE_CHECKLIST.md');
+
+    expect(checklist).toContain('Exact generic host preflight');
+    expect(checklist).toContain('App-mapped local preflight');
+    expect(checklist).toContain(
+      '`NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID` as the only missing name',
+    );
+    expect(checklist).toContain('process-only loopback coordinates');
+    expect(checklist).toContain('does not prove hosted readiness');
   });
 
   it('documents the safe widget-domain customization path without claiming a default domain', async () => {

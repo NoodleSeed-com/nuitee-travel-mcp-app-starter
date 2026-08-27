@@ -5,8 +5,8 @@ const port = 3108;
 export default defineConfig({
   testDir: './test/browser',
   outputDir: './.next/playwright-results',
-  fullyParallel: true,
   reporter: 'line',
+  workers: 1,
   use: {
     baseURL: `http://127.0.0.1:${port}`,
     trace: 'retain-on-failure',

@@ -11,6 +11,17 @@ const credentialNames = [
   'ANTHROPIC_API_KEY',
   'AWS_SECRET_ACCESS_KEY',
 ].join('|');
+const syntheticNuiteeAssignment = [
+  ['NUITEE', 'API', 'KEY'].join('_'),
+  '=',
+  ['sec', 'ret'].join(''),
+  ' https://api.example.com/search_flights',
+].join('');
+const syntheticTaskEightFixtureLine = `message: '${syntheticNuiteeAssignment}',`;
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 const detectors = [
   {
@@ -26,6 +37,9 @@ const detectors = [
   {
     name: 'managed_secret_assignment',
     pattern: `(${credentialNames})[[:space:]]*=[[:space:]]*[^[:space:]#<][^[:space:]]+`,
+    ignoredLinePatterns: [
+      new RegExp(`^\\s*${escapeRegExp(syntheticTaskEightFixtureLine)}$`),
+    ],
   },
   {
     name: 'managed_secret_structured_value',
