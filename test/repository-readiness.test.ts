@@ -43,8 +43,28 @@ describe('public repository contracts', () => {
 
     expect(oauth).toContain('Website login');
     expect(oauth).toContain('createAssistantSession');
+    expect(oauth).toContain('authenticatedWebsite({');
+    expect(oauth).toContain('capabilities: [...capabilities.publicSurface]');
+    expect(oauth).toContain('publicWebsite({ signIn: true');
+    expect(oauth).toContain('On sign-out or an account, principal, or tenant change');
+    expect(oauth).toContain('unmount and reset the current Assistant client and session');
+    expect(oauth).toContain('clear the transcript, trip projection, and activity');
+    expect(oauth).toContain('fresh principal-scoped session');
     expect(oauth).toContain('customerAuth.oidc');
     expect(oauth).toContain('does not make your website an OIDC authorization server');
+  });
+
+  it('describes the embedded entrypoint as the primary guest Next.js surface', async () => {
+    const [entrypoint, server] = await Promise.all([
+      repositoryFile('src/embedded-server.ts'),
+      repositoryFile('src/travel-server.ts'),
+    ]);
+    const comments = `${entrypoint}\n${server}`;
+
+    expect(comments).toContain('primary guest Next.js website');
+    expect(comments).toContain('exact Next.js loopback origin');
+    expect(comments).not.toContain('companion demo');
+    expect(comments).not.toContain('Optional website/SaaS entrypoint');
   });
 
   it('keeps the documented flight response limits aligned with the implementation', async () => {

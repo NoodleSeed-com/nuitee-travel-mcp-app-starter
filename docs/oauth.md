@@ -10,7 +10,29 @@ Add authentication only when a real capability needs persistence, personalizatio
 
 Consuming an OAuth/OIDC provider for website login does not make your website an OIDC authorization server. A login access token is not an Assistant client secret, a Nuitee key, or automatically a valid bearer token for direct MCP customer access.
 
-## 2. Assistant session exchange
+## 2. Choose one Assistant access path
+
+The repository default remains the guest-public `publicWebsite(...)` surface in `src/travel-server.ts`. Do not add authentication merely to decorate the template. When a real capability needs identity, choose one of the two supported paths below and test its complete browser, backend, and surface boundary.
+
+### Path A — Authenticated-only website
+
+Use this path when every Assistant visitor must already have a verified website session. In `src/travel-server.ts`, import the installed authoring helper and replace the default `publicWebsite(...)` access declaration; do not keep both declarations for the same origin:
+
+```ts
+import { authenticatedWebsite } from '@noodleseed/one';
+
+// Inside the existing embeddedAssistant({ ... }) declaration:
+access: authenticatedWebsite({
+  origins: [...starterConfig.embeddedAssistant.origins],
+  capabilities: [...capabilities.publicSurface],
+}),
+```
+
+This is the installed `@noodleseed/one` `AuthenticatedWebsiteInput` shape. `capabilities` is optional in the SDK, but this template keeps the explicit `capabilities.publicSurface` projection so the authenticated surface does not silently widen when another server capability is added. The array contains the same four registered instances: `open_travel_starter`, `search_flights`, `verify_flight_offer`, and `select_flight_offer`. The selection helper's tool declaration remains `visibility: ['app']`, so it stays available to the linked App bridge without becoming model-visible.
+
+Keep `origins` on the same exact configured allowlist and run validation/check before any separately authorized deployment. The repository default remains guest-public until a developer deliberately makes this source change for an identity-bound product.
+
+#### Backend session exchange
 
 After website login succeeds, a same-origin backend route exchanges the backend-verified user for one short-lived Assistant session. Install and use `@noodleseed/assistant/server`; keep every environment value in this snippet backend-only.
 
@@ -51,17 +73,41 @@ useNoodleAssistant({
 });
 ```
 
-The route is an optional extension, not part of the guest template. Do not add a disabled login button or dead session endpoint before the product has an identity-bound capability.
+The route is an optional extension, not part of the guest template. Do not add a disabled login button or dead session endpoint before the product has an identity-bound capability. For Path A, the authored `authenticatedWebsite(...)` surface and the browser's `sessionEndpoint` must be introduced together; changing only one side fails closed.
 
-## Mixed guest-to-signed-in conversations
+### Path B — Mixed guest-to-signed-in conversation
 
 A mixed surface is a separate product decision. Configure `publicWebsite({ signIn: true, ... })` only when an allowlisted capability really requires identity. When the Assistant requests sign-in, the browser receives a short-lived, single-use `signInTicket` and hands control to the website's existing login flow.
+
+Preserve the exact guest origins and capability projection while opting into the installed SDK's mixed mode:
+
+```ts
+access: publicWebsite({
+  origins: [...starterConfig.embeddedAssistant.origins],
+  capabilities: [...capabilities.publicSurface],
+  signIn: true,
+}),
+```
+
+This path keeps anonymous Search → Select → Verify available and adds ticket-based elevation only for a newly authored identity-dependent capability. It is not the authenticated-only replacement above, and the current repository does not enable it.
 
 After login, the backend spends that ticket through `createAssistantSession({ ..., signInTicket })` using the website's Assistant client credentials. Possession of the ticket alone grants nothing. Persist it only long enough to cross the login redirect, never put it in logs, and handle typed expiry or tenant-mismatch refusals without retry loops.
 
 If login and the continuing conversation use different origins, finish the exchange on the origin where the conversation will continue and expose a same-origin session endpoint there. The client sends cookies with `credentials: "same-origin"`; a cross-origin session endpoint will not receive the website session cookie.
 
 The Assistant can retain server-side conversation state through elevation, but a full-page navigation does not repaint the earlier browser transcript. Tell users that the assistant remembers the conversation, not that the transcript will reappear.
+
+### Sign-out and principal changes
+
+On sign-out or an account, principal, or tenant change, perform this browser lifecycle in order:
+
+1. Stop accepting new sends and unmount and reset the current Assistant client and session through the application-owned parent boundary. Let `useNoodleAssistant` own its underlying abort/reset cleanup rather than manually disposing the same client twice.
+2. Then clear the transcript, trip projection, and activity, including any selected fare or retry state held by the renderer.
+3. Complete the website's server-side sign-out or account/tenant switch and discard any pending sign-in ticket or prior session response.
+4. Derive a new browser-memory `principalKey` for the newly verified user-and-tenant boundary, remount the hook, and create or use a fresh principal-scoped session from the same-origin endpoint.
+5. Never reuse the previous token, transcript, trip projection, selection, or interaction decision across that boundary.
+
+Changing the `principalKey` is a lifecycle signal, not authorization; the backend must still authenticate the new website session and derive claims/tenant routing from server-owned state. This procedure is integration guidance only. The guest template ships no login, sign-out, account-switch, or tenant-switch UI.
 
 ## 3. Direct MCP customer authentication
 
