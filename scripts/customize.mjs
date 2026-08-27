@@ -51,6 +51,37 @@ function color(value, label) {
   return value;
 }
 
+function internalPath(value, label) {
+  if (typeof value !== 'string' || value !== value.trim() || CONTROL_CHARACTERS.test(value) ||
+    !value.startsWith('/') || value.startsWith('//') || value.includes('?')) {
+    fail(`${label} must be an internal absolute path.`);
+  }
+  try {
+    const parsed = new URL(value, 'https://starter.invalid');
+    if (parsed.origin !== 'https://starter.invalid') fail(`${label} must be an internal absolute path.`);
+  } catch {
+    fail(`${label} must be an internal absolute path.`);
+  }
+  return value;
+}
+
+function httpsUrlOrNull(value, label) {
+  if (value === null) return null;
+  if (typeof value !== 'string' || value !== value.trim() || CONTROL_CHARACTERS.test(value)) {
+    fail(`${label} must be null or an exact HTTPS URL.`);
+  }
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    fail(`${label} must be null or an exact HTTPS URL.`);
+  }
+  if (parsed.protocol !== 'https:' || parsed.username || parsed.password || value !== parsed.href) {
+    fail(`${label} must be null or an exact HTTPS URL.`);
+  }
+  return value;
+}
+
 function isReservedHostname(hostname) {
   const canonical = hostname.endsWith('.') ? hostname.slice(0, -1) : hostname;
   return canonical === 'localhost' || canonical.endsWith('.localhost') ||
@@ -98,9 +129,16 @@ export function validateWidgetDomain(value) {
 
 export function validateStarterConfig(input) {
   const config = object(input, 'Starter config');
-  exactKeys(config, ['brand', 'widgets', 'embeddedAssistant'], 'Starter config');
+  exactKeys(config, ['brand', 'website', 'prompts', 'widgets', 'embeddedAssistant'], 'Starter config');
   const brand = object(config.brand, 'Brand config');
-  exactKeys(brand, ['name', 'mark', 'tagline', 'accent', 'surface', 'surfaceDark'], 'Brand config');
+  exactKeys(brand, ['name', 'mark', 'assistantName', 'tagline', 'accent', 'signal', 'canvas', 'surface', 'surfaceDark', 'ink', 'muted', 'boundary'], 'Brand config');
+  const website = object(config.website, 'Website config');
+  exactKeys(website, ['developerPath', 'supportPath', 'privacyUrl', 'termsUrl'], 'Website config');
+  if (!Array.isArray(config.prompts) || config.prompts.length !== 3) {
+    fail('Starter prompts must contain exactly three prompts.');
+  }
+  const prompts = config.prompts.map((prompt) => boundedText(prompt, 'Starter prompt', 3, 80));
+  if (new Set(prompts).size !== prompts.length) fail('Starter prompts must be unique.');
   const widgets = object(config.widgets, 'Widget config');
   exactKeys(widgets, ['domain'], 'Widget config');
   const assistant = object(config.embeddedAssistant, 'Embedded Assistant config');
@@ -114,11 +152,24 @@ export function validateStarterConfig(input) {
     brand: {
       name: boundedText(brand.name, 'Brand name', 2, 60),
       mark: boundedText(brand.mark, 'Brand mark', 1, 3),
+      assistantName: boundedText(brand.assistantName, 'Assistant name', 2, 60),
       tagline: boundedText(brand.tagline, 'Brand tagline', 3, 120),
       accent: color(brand.accent, 'Accent color'),
+      signal: color(brand.signal, 'Signal color'),
+      canvas: color(brand.canvas, 'Canvas color'),
       surface: color(brand.surface, 'Surface color'),
       surfaceDark: color(brand.surfaceDark, 'Dark surface color'),
+      ink: color(brand.ink, 'Ink color'),
+      muted: color(brand.muted, 'Muted color'),
+      boundary: color(brand.boundary, 'Boundary color'),
     },
+    website: {
+      developerPath: internalPath(website.developerPath, 'Developer path'),
+      supportPath: internalPath(website.supportPath, 'Support path'),
+      privacyUrl: httpsUrlOrNull(website.privacyUrl, 'Privacy URL'),
+      termsUrl: httpsUrlOrNull(website.termsUrl, 'Terms URL'),
+    },
+    prompts,
     widgets: { domain: validateWidgetDomain(widgets.domain) },
     embeddedAssistant: { origins },
   };
@@ -126,7 +177,7 @@ export function validateStarterConfig(input) {
 
 export function renderStarterConfig(input) {
   const validated = validateStarterConfig(input);
-  return `export const starterConfig = ${JSON.stringify(validated, null, 2)} as const;\n`;
+  return `export const starterConfig = ${JSON.stringify(validated, null, 2)} as const;\n\nexport type StarterConfig = typeof starterConfig;\n`;
 }
 
 export function applyCustomization(current, options = {}) {
@@ -147,6 +198,7 @@ export function applyCustomization(current, options = {}) {
   const validated = validateStarterConfig(current);
   const next = {
     brand: {
+      ...validated.brand,
       name: options.brandName ?? validated.brand.name,
       mark: options.brandMark ?? validated.brand.mark,
       tagline: options.tagline ?? validated.brand.tagline,
@@ -154,6 +206,8 @@ export function applyCustomization(current, options = {}) {
       surface: options.surface ?? validated.brand.surface,
       surfaceDark: options.surfaceDark ?? validated.brand.surfaceDark,
     },
+    website: { ...validated.website },
+    prompts: [...validated.prompts],
     widgets: {
       domain: options.widgetDomain ?? validated.widgets.domain,
     },
@@ -162,7 +216,7 @@ export function applyCustomization(current, options = {}) {
         ? validated.embeddedAssistant.origins
         : [
             ...(options.keepLocalDemo
-              ? ['http://localhost:5173']
+              ? ['http://localhost:3000']
               : []),
             options.productionOrigin,
           ],

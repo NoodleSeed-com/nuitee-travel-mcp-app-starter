@@ -1,8 +1,8 @@
 import {
   annotations,
-  authenticatedWebsite,
   embeddedAssistant,
   openAICompatible,
+  publicWebsite,
   secret,
   server,
   tool,
@@ -210,7 +210,7 @@ function offlineSelectFlightOffer() {
     title: 'Remember selected fare',
     visibility: ['app'],
     description: 'Remember the fare selected inside the flight-results widget for a later verification turn.',
-    annotations: annotations.action({ confirm: false }),
+    annotations: annotations.action({ confirm: true }),
     input: z.object({ selectionId: selectionIdSchema }),
     output: selectFlightOutputSchema,
     fulfil: () => ({
@@ -225,7 +225,7 @@ function liveSelectFlightOffer() {
     title: 'Remember selected fare',
     visibility: ['app'],
     description: 'Remember the fare selected inside the flight-results widget for a later verification turn.',
-    annotations: annotations.action({ confirm: false }),
+    annotations: annotations.action({ confirm: true }),
     input: z.object({ selectionId: selectionIdSchema }),
     output: selectFlightOutputSchema,
     fulfil: ({ input, connectors }) => {
@@ -249,11 +249,24 @@ function liveSelectFlightOffer() {
   });
 }
 
+function createTravelCapabilities(live: boolean) {
+  const open = openTravelStarter();
+  const search = live ? liveSearchFlights() : offlineSearchFlights();
+  const verify = live ? liveVerifyFlightOffer() : offlineVerifyFlightOffer();
+  const select = live ? liveSelectFlightOffer() : offlineSelectFlightOffer();
+
+  return {
+    all: [open, search, verify, select] as const,
+    publicSurface: [open, search, verify, select] as const,
+  };
+}
+
 export function createTravelServer(mode: 'credential-free' | 'live' | 'embedded') {
   // All entrypoints share this product factory. Only the connector/model
   // credentials differ, which prevents local tests and external MCP hosts from
   // inheriting optional embedded-assistant requirements.
   const live = mode !== 'credential-free';
+  const capabilities = createTravelCapabilities(live);
   const assistant = mode === 'embedded'
     ? embeddedAssistant({
         model: openAICompatible({
@@ -261,14 +274,15 @@ export function createTravelServer(mode: 'credential-free' | 'live' | 'embedded'
           model: variable('ASSISTANT_MODEL'),
           apiKey: secret('ASSISTANT_MODEL_API_KEY'),
         }),
-        // The loopback origin is only for this repository's companion demo.
-        // The starter ships with the exact local demo origin only. Add the
-        // deployment-owned HTTPS origin explicitly before production use and
-        // remove localhost from production-only deployments.
-        access: authenticatedWebsite({
+        // The starter ships with exact Next.js loopback origins for the
+        // primary guest website's standard and fallback preview ports. Add the
+        // deployment-owned HTTPS origin explicitly before hosted use and
+        // remove loopback from hosted-only deployments.
+        access: publicWebsite({
           origins: [...starterConfig.embeddedAssistant.origins],
+          capabilities: [...capabilities.publicSurface],
         }),
-        layout: { mode: 'floating', position: 'bottom-right' },
+        layout: { mode: 'inline' },
       })
     : undefined;
   const options = live
@@ -318,11 +332,6 @@ export function createTravelServer(mode: 'credential-free' | 'live' | 'embedded'
   return server(
     'nuitee_travel_mcp_app_starter',
     options,
-    [
-      openTravelStarter(),
-      live ? liveSearchFlights() : offlineSearchFlights(),
-      live ? liveVerifyFlightOffer() : offlineVerifyFlightOffer(),
-      live ? liveSelectFlightOffer() : offlineSelectFlightOffer(),
-    ],
+    capabilities.all,
   );
 }

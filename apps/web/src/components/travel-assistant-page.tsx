@@ -1,0 +1,79 @@
+'use client';
+
+import { useState } from 'react';
+import type { PublicAssistantRuntime } from '../lib/assistant-config';
+import { EMPTY_TRIP, type TripProjection } from '../lib/trip-projection';
+import { SettingsSheet } from './settings-sheet';
+import { TravelConversation } from './travel-conversation';
+import { TravelZeroState } from './travel-zero-state';
+import { TripContextRail } from './trip-context-rail';
+
+type PageMode = 'zero' | 'starting';
+
+interface TravelAssistantPageProps {
+  readonly runtime: PublicAssistantRuntime;
+}
+
+export function TravelAssistantPage({
+  runtime,
+}: Readonly<TravelAssistantPageProps>) {
+  const [mode, setMode] = useState<PageMode>('zero');
+  const [initialPrompt, setInitialPrompt] = useState<string | null>(null);
+  const [launchError, setLaunchError] = useState<string | null>(null);
+  const [projection, setProjection] = useState<TripProjection>(EMPTY_TRIP);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  function reset() {
+    setMode('zero');
+    setInitialPrompt(null);
+    setLaunchError(null);
+    setProjection(EMPTY_TRIP);
+  }
+
+  function startConversation(prompt: string) {
+    const normalized = prompt.trim();
+    if (!normalized) return;
+    if (runtime.status === 'setup-required') {
+      setLaunchError(runtime.message);
+      return;
+    }
+    setLaunchError(null);
+    setInitialPrompt(normalized);
+    setMode('starting');
+  }
+
+  return (
+    <>
+      <div className="travel-workspace" inert={settingsOpen || undefined}>
+        <a className="skip-link" href="#travel-canvas">
+          Skip to content
+        </a>
+        <main className="workspace-shell">
+          <TripContextRail
+            projection={projection}
+            onNewTrip={reset}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
+          {mode === 'zero' || !initialPrompt || runtime.status !== 'ready' ? (
+            <TravelZeroState
+              launchError={launchError}
+              onStart={startConversation}
+            />
+          ) : (
+            <TravelConversation
+              initialPrompt={initialPrompt}
+              onProjectionChange={setProjection}
+              onReset={reset}
+              runtime={runtime}
+            />
+          )}
+        </main>
+      </div>
+      <SettingsSheet
+        open={settingsOpen}
+        onClearConversation={reset}
+        onClose={() => setSettingsOpen(false)}
+      />
+    </>
+  );
+}

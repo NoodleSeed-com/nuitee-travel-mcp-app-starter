@@ -1,5 +1,9 @@
 packages:
+  - 'apps/*'
   - 'examples/*'
+
+allowBuilds:
+  sharp: true
 
 # Hold newly published dependencies for 24 hours by default. These two exact
 # Noodle versions were reviewed as one compatibility set during the controlled

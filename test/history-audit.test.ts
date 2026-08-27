@@ -9,6 +9,18 @@ const auditScript = fileURLToPath(new URL('../scripts/audit-git-history.mjs', im
 const reviewedBinaryArtifact = readFileSync(
   fileURLToPath(new URL('../docs/images/flight-results.png', import.meta.url)),
 );
+const nuiteeCredentialName = ['NUITEE', 'API', 'KEY'].join('_');
+const openAiCredentialName = ['OPENAI', 'API', 'KEY'].join('_');
+
+function managedAssignment(name: string, value: string) {
+  return [name, '=', value].join('');
+}
+
+const syntheticErrorAssignment = managedAssignment(
+  nuiteeCredentialName,
+  ['sec', 'ret https://api.example.com/search_flights'].join(''),
+);
+const exactSyntheticFixtureLine = `      message: '${syntheticErrorAssignment}',`;
 
 function repositoryWith(files: Record<string, string | Uint8Array>) {
   const directory = mkdtempSync(join(tmpdir(), 'nuitee-history-audit-'));
@@ -37,6 +49,83 @@ function audit(directory: string) {
 }
 
 describe('Git-history release audit', () => {
+  it('ignores only the complete synthetic Task 8 fixture source line', () => {
+    const directory = repositoryWith({
+      'assistant-error.test.ts': `${exactSyntheticFixtureLine}\n`,
+    });
+
+    const result = audit(directory);
+
+    expect(result.status).toBe(0);
+    expect(result.envelope).toMatchObject({
+      ok: true,
+      data: { findings: 0 },
+    });
+  });
+
+  it('rejects a suffix extension of the synthetic fixture line', () => {
+    const suffix = ' // extended';
+    const directory = repositoryWith({
+      'assistant-error.test.ts': `${exactSyntheticFixtureLine}${suffix}\n`,
+    });
+
+    const result = audit(directory);
+
+    expect(result.status).toBe(1);
+    expect(result.envelope.error).toMatchObject({
+      code: 'secret_pattern_detected',
+      findings: [{
+        detector: 'managed_secret_assignment',
+        paths: ['assistant-error.test.ts'],
+      }],
+    });
+    expect(JSON.stringify(result.envelope)).not.toContain(syntheticErrorAssignment);
+  });
+
+  it('rejects the exact fixture followed by a second assignment on the same line', () => {
+    const secondAssignment = managedAssignment(
+      openAiCredentialName,
+      'synthetic-second-value',
+    );
+    const directory = repositoryWith({
+      'assistant-error.test.ts': `${exactSyntheticFixtureLine} ${secondAssignment}\n`,
+    });
+
+    const result = audit(directory);
+
+    expect(result.status).toBe(1);
+    expect(result.envelope.error).toMatchObject({
+      code: 'secret_pattern_detected',
+      findings: [{
+        detector: 'managed_secret_assignment',
+        paths: ['assistant-error.test.ts'],
+      }],
+    });
+    expect(JSON.stringify(result.envelope)).not.toContain(secondAssignment);
+  });
+
+  it('still rejects a distinct Nuitee assignment without printing its value', () => {
+    const distinctAssignment = managedAssignment(
+      nuiteeCredentialName,
+      'synthetic-non-placeholder-value',
+    );
+    const directory = repositoryWith({
+      '.env.local': `${distinctAssignment}\n`,
+    });
+
+    const result = audit(directory);
+
+    expect(result.status).toBe(1);
+    expect(result.envelope.error.code).toBe('secret_pattern_detected');
+    expect(result.envelope.error.findings).toEqual([
+      {
+        detector: 'managed_secret_assignment',
+        paths: ['.env.local'],
+      },
+    ]);
+    expect(JSON.stringify(result.envelope)).not.toContain(distinctAssignment);
+  });
+
   it('detects declared secret names in structured key-value data without printing values', () => {
     const secretName = ['NUITEE', 'API', 'KEY'].join('_');
     const directory = repositoryWith({

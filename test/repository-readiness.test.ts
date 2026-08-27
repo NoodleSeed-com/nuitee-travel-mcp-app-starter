@@ -1,4 +1,6 @@
+import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 async function repositoryFile(path: string) {
@@ -9,7 +11,62 @@ async function repositoryJson(path: string) {
   return JSON.parse(await repositoryFile(path)) as Record<string, any>;
 }
 
+async function noodleValidate() {
+  const executable = fileURLToPath(new URL('../node_modules/.bin/noodle', import.meta.url));
+  const cwd = fileURLToPath(new URL('../', import.meta.url));
+  return new Promise<{ code: number | null; stdout: string; stderr: string }>((resolve, reject) => {
+    const child = spawn(executable, ['validate', '--json'], { cwd });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (chunk) => { stdout += chunk; });
+    child.stderr.on('data', (chunk) => { stderr += chunk; });
+    child.once('error', reject);
+    child.once('close', (code) => resolve({ code, stdout, stderr }));
+  });
+}
+
 describe('public repository contracts', () => {
+  it('makes the Next.js guest website the primary README path', async () => {
+    const readme = await repositoryFile('README.md');
+
+    expect(readme).toContain('pnpm dev:web');
+    expect(readme).toContain('External MCP hosts');
+    expect(readme.indexOf('pnpm dev:web')).toBeLessThan(
+      readme.indexOf('External MCP hosts'),
+    );
+    expect(readme).toContain('Search → Select → Verify');
+    expect(readme).toContain('does not book');
+  });
+
+  it('documents OAuth without claiming that login consumption is an OIDC issuer', async () => {
+    const oauth = await repositoryFile('docs/oauth.md');
+
+    expect(oauth).toContain('Website login');
+    expect(oauth).toContain('createAssistantSession');
+    expect(oauth).toContain('authenticatedWebsite({');
+    expect(oauth).toContain('capabilities: [...capabilities.publicSurface]');
+    expect(oauth).toContain('publicWebsite({ signIn: true');
+    expect(oauth).toContain('On sign-out or an account, principal, or tenant change');
+    expect(oauth).toContain('unmount and reset the current Assistant client and session');
+    expect(oauth).toContain('clear the transcript, trip projection, and activity');
+    expect(oauth).toContain('fresh principal-scoped session');
+    expect(oauth).toContain('customerAuth.oidc');
+    expect(oauth).toContain('does not make your website an OIDC authorization server');
+  });
+
+  it('describes the embedded entrypoint as the primary guest Next.js surface', async () => {
+    const [entrypoint, server] = await Promise.all([
+      repositoryFile('src/embedded-server.ts'),
+      repositoryFile('src/travel-server.ts'),
+    ]);
+    const comments = `${entrypoint}\n${server}`;
+
+    expect(comments).toContain('primary guest Next.js website');
+    expect(comments).toContain('exact Next.js loopback origin');
+    expect(comments).not.toContain('companion demo');
+    expect(comments).not.toContain('Optional website/SaaS entrypoint');
+  });
+
   it('keeps the documented flight response limits aligned with the implementation', async () => {
     const [spec, security, connector, runtime] = await Promise.all([
       repositoryFile('SPEC.md'),
@@ -30,6 +87,14 @@ describe('public repository contracts', () => {
     const source = await repositoryFile('src/travel-server.ts');
     expect(source).not.toContain('https://app.example.com');
   });
+
+  it('keeps Noodle validation able to load the canonical authoring config', async () => {
+    const result = await noodleValidate();
+
+    expect(result.code).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(JSON.parse(result.stdout)).toMatchObject({ ok: true });
+  }, 15_000);
 
   it('keeps Noodle runtime dependencies exact and aligned with the lockfile and install', async () => {
     const [rootPackage, hostPackage, lockfile, installedOne, installedAssistant] = await Promise.all([
@@ -64,6 +129,51 @@ describe('public repository contracts', () => {
       'pnpm agent:check:assistant',
       'pnpm check:embedded-host',
     ]) expect(rootPackage.scripts['ci:offline']).toContain(command);
+  });
+
+  it('runs the primary website in the offline repository gate', async () => {
+    const rootPackage = await repositoryJson('package.json');
+
+    expect(rootPackage.scripts['dev:web']).toBe(
+      'pnpm --filter @nuitee-travel-starter/web dev',
+    );
+    expect(rootPackage.scripts['build:web']).toBe(
+      'pnpm --filter @nuitee-travel-starter/web build',
+    );
+    expect(rootPackage.scripts['test:web']).toBe(
+      'pnpm --filter @nuitee-travel-starter/web test',
+    );
+    expect(rootPackage.scripts['check:web']).toContain(
+      '@nuitee-travel-starter/web typecheck',
+    );
+    expect(rootPackage.scripts['check:web']).toContain(
+      '@nuitee-travel-starter/web test',
+    );
+    expect(rootPackage.scripts['check:web']).toContain(
+      '@nuitee-travel-starter/web test:browser',
+    );
+    expect(rootPackage.scripts['check:web']).toContain(
+      '@nuitee-travel-starter/web build',
+    );
+    expect(rootPackage.scripts['ci:offline']).toContain('pnpm check:web');
+    expect(rootPackage.scripts['ci:offline']).toContain(
+      'pnpm check:embedded-host',
+    );
+  });
+
+  it('keeps website environment examples within the public credential boundary', async () => {
+    const [rootEnvironment, websiteEnvironment] = await Promise.all([
+      repositoryFile('.env.example'),
+      repositoryFile('apps/web/.env.example'),
+    ]);
+
+    expect(rootEnvironment).not.toMatch(/NOODLE_ASSISTANT_CLIENT_(?:ID|SECRET)/);
+    expect(rootEnvironment).not.toContain('NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID');
+    expect(websiteEnvironment.trim().split('\n')).toEqual([
+      'NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID=',
+      'NEXT_PUBLIC_NOODLE_SERVICE_URL=https://cloud.noodleseed.dev',
+    ]);
+    expect(websiteEnvironment).not.toMatch(/CLIENT_(?:ID|SECRET)|NUITEE_API_KEY/);
   });
 
   it('keeps mutable generated examples behind a fail-closed release-only gate', async () => {
@@ -180,16 +290,31 @@ describe('public repository contracts', () => {
     expect(checklist).toContain('- [ ] Publish or deploy only under separate explicit authorization.');
   });
 
-  it('keeps hosted Embedded Assistant proof outside the first release boundary', async () => {
+  it('makes hosted guest-assistant proof an explicit promotion gate', async () => {
     const [readme, guide, checklist] = await Promise.all([
       repositoryFile('README.md'),
       repositoryFile('docs/EMBEDDED_ASSISTANT.md'),
       repositoryFile('PUBLIC_RELEASE_CHECKLIST.md'),
     ]);
 
-    expect(readme).toContain('excluded from the first public release');
-    expect(guide).toContain('First-release status');
-    expect(checklist).toContain('[x] Exclude hosted Embedded Assistant end-to-end claims');
+    expect(readme).toContain('primary guest website');
+    expect(guide).toContain('Guest-first architecture');
+    expect(guide).toContain('temporary authenticated migration reference');
+    expect(checklist).toContain('[ ] Configure one real public embed ID');
+    expect(checklist).toContain('[ ] Configure and monitor a real HTTPS privacy URL');
+    expect(checklist).toContain('[ ] Prove the 30-minute selection TTL');
+  });
+
+  it('records generic and app-mapped public preflights without claiming hosted readiness', async () => {
+    const checklist = await repositoryFile('PUBLIC_RELEASE_CHECKLIST.md');
+
+    expect(checklist).toContain('Exact generic host preflight');
+    expect(checklist).toContain('App-mapped local preflight');
+    expect(checklist).toContain(
+      '`NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID` as the only missing name',
+    );
+    expect(checklist).toContain('process-only loopback coordinates');
+    expect(checklist).toContain('does not prove hosted readiness');
   });
 
   it('documents the safe widget-domain customization path without claiming a default domain', async () => {
@@ -201,7 +326,7 @@ describe('public repository contracts', () => {
 
     expect(readme).toContain('pnpm customize -- --widget-domain');
     expect(customization).toContain('--widget-domain "$DEPLOYMENT_WIDGET_ORIGIN"');
-    expect(config).toContain('"domain": null');
+    expect(config).toContain('domain: null');
   });
 
   it('keeps public-facing docs free of private upstream trackers and internal feedback IDs', async () => {
