@@ -22,6 +22,9 @@ export function TravelZeroState({
     >
       <div className="travel-zero-state">
         <RouteAssistantMark />
+        <p className="assistant-identity">
+          {starterConfig.brand.assistantName}
+        </p>
         <h1 id="travel-home-title">Where would you like to go?</h1>
         <p className="travel-zero-state__description">
           Search, compare, select, and verify flights through conversation.

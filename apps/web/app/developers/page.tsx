@@ -111,6 +111,9 @@ export default function DevelopersPage() {
               {starterConfig.website.privacyUrl ? (
                 <a href={starterConfig.website.privacyUrl}>Privacy</a>
               ) : null}
+              {starterConfig.website.termsUrl ? (
+                <a href={starterConfig.website.termsUrl}>Terms</a>
+              ) : null}
             </nav>
           </section>
         </article>

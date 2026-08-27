@@ -2,6 +2,7 @@
 
 import { useNoodleAssistant } from '@noodleseed/assistant/react/client';
 import { useEffect, useRef, useState } from 'react';
+import { starterConfig } from '../../../../starter.config';
 import { presentAssistantError } from '../lib/assistant-error';
 import type { ReadyPublicAssistantRuntime } from '../lib/assistant-config';
 import { isNearTranscriptEnd } from '../lib/conversation-scroll';
@@ -94,6 +95,9 @@ export function TravelConversation({
   const transcriptViewportRef = useRef<HTMLDivElement>(null);
   const followLatestRef = useRef(true);
   const [activity, setActivity] = useState<ToolActivity | null>(null);
+  const [stopRequested, setStopRequested] = useState(false);
+  const stopRequestedRef = useRef(false);
+  const busy = status === 'submitted' || status === 'streaming';
   const terminal = status === 'error' || Boolean(error);
   const terminalRef = useRef(terminal);
   terminalRef.current = terminal;
@@ -123,11 +127,17 @@ export function TravelConversation({
   }, []);
 
   useEffect(() => {
+    if (busy) return;
+    stopRequestedRef.current = false;
+    setStopRequested(false);
+  }, [busy]);
+
+  useEffect(() => {
     const activeActivities = activeActivitiesRef.current;
     activeActivities.clear();
     setActivity(null);
     const unsubscribe = client.subscribe((event) => {
-      if (terminalRef.current) {
+      if (terminalRef.current || stopRequestedRef.current) {
         activeActivities.clear();
         return;
       }
@@ -183,10 +193,20 @@ export function TravelConversation({
     void client.sendMessage(prompt).catch(() => undefined);
   }
 
-  const busy = status === 'submitted' || status === 'streaming';
+  function stopGenerating() {
+    if (stopRequestedRef.current) return;
+    stopRequestedRef.current = true;
+    activeActivitiesRef.current.clear();
+    setActivity(null);
+    setStopRequested(true);
+    client.abort();
+  }
+
   const statusLabel = terminal
     ? ''
-    : activity?.label ?? (busy ? 'Assistant is responding' : '');
+    : stopRequested
+      ? ''
+      : activity?.label ?? (busy ? 'Assistant is responding' : '');
   const errorPresentation = error ? presentAssistantError(error) : null;
 
   return (
@@ -199,7 +219,12 @@ export function TravelConversation({
     >
       <div className="travel-conversation">
         <header>
-          <h1>Trip conversation</h1>
+          <div>
+            <p className="assistant-identity">
+              {starterConfig.brand.assistantName}
+            </p>
+            <h1>Trip conversation</h1>
+          </div>
           <button type="button" onClick={resetConversation}>
             Reset conversation
           </button>
@@ -245,7 +270,9 @@ export function TravelConversation({
           </section>
         ) : null}
         <TravelComposer
+          busy={busy}
           formLabel="Continue trip"
+          onStop={stopGenerating}
           onSubmit={sendFollowUp}
           submitLabel="Continue trip"
         />

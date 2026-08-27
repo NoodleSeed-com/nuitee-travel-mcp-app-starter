@@ -326,6 +326,15 @@ code {
   line-height: 1.05;
 }
 
+.assistant-identity {
+  margin: 0.85rem 0 0;
+  color: var(--travel-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 .travel-zero-state__description {
   max-width: 36rem;
   margin: 1rem auto 0;
@@ -465,6 +474,16 @@ code {
   font-size: clamp(1.35rem, 2.5vw, 1.75rem);
   font-weight: 500;
   letter-spacing: -0.035em;
+}
+
+.travel-conversation > header .assistant-identity {
+  margin: 0 0 0.25rem;
+}
+
+.travel-composer__stop svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  fill: currentColor;
 }
 
 .travel-conversation > header button,

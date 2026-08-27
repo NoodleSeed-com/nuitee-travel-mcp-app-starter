@@ -55,6 +55,7 @@ describe('travel assistant zero state', () => {
     expect(screen.getByRole('heading', {
       name: 'Where would you like to go?',
     })).toBeVisible();
+    expect(screen.getByText(starterConfig.brand.assistantName)).toBeVisible();
     expect(screen.getByRole('textbox', {
       name: 'Ask about a flight',
     })).toBeVisible();
@@ -98,12 +99,39 @@ describe('travel assistant zero state', () => {
     expect(screen.getByRole('group', { name: 'Theme' })).toBeVisible();
     expect(screen.getByRole('radio', { name: 'System' })).toBeChecked();
     expect(screen.getByText('Privacy')).toBeVisible();
+    expect(screen.getByText('Terms')).toBeVisible();
+    expect(screen.getAllByText('Not configured')).toHaveLength(2);
+    expect(screen.queryByRole('link', { name: 'Terms' }))
+      .not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Support' })).toHaveAttribute(
       'href',
       starterConfig.website.supportPath,
     );
     expect(screen.getByRole('button', { name: 'Clear conversation' }))
       .toBeVisible();
+  });
+
+  it('links configured Terms in settings without inventing a fallback URL', () => {
+    const website = starterConfig.website as {
+      termsUrl: string | null;
+    };
+    const originalTermsUrl = website.termsUrl;
+    website.termsUrl = 'https://travel.example.co/terms';
+    try {
+      render(
+        <TravelAssistantPage
+          runtime={{ status: 'setup-required', message: 'setup' }}
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+
+      expect(screen.getByRole('link', { name: 'Terms' })).toHaveAttribute(
+        'href',
+        'https://travel.example.co/terms',
+      );
+    } finally {
+      website.termsUrl = originalTermsUrl;
+    }
   });
 
   it('contains modal focus, closes on Escape, and restores the trigger', () => {

@@ -12,6 +12,7 @@ import {
 } from '@testing-library/react';
 import { StrictMode, useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { starterConfig } from '../../../starter.config';
 import { TravelAssistantPage } from '../src/components/travel-assistant-page';
 
 const assistantMock = vi.hoisted(() => ({
@@ -111,6 +112,7 @@ describe('guest travel conversation lifecycle', () => {
         'JFK to Lisbon next month',
       );
     });
+    expect(screen.getByText(starterConfig.brand.assistantName)).toBeVisible();
     expect(client.sendMessage).toHaveBeenCalledTimes(1);
     expect(assistantMock.useNoodleAssistant).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -212,6 +214,80 @@ describe('guest travel conversation lifecycle', () => {
     expect(screen.getByRole('button', { name: 'Continue trip' })).toBeVisible();
     expect(composer).toHaveValue('');
   });
+
+  it.each(['submitted', 'streaming'] as const)(
+    'preserves a %s follow-up and stops the active turn without a second send',
+    async (busyStatus) => {
+      let hookStatus: 'ready' | 'submitted' | 'streaming' = 'ready';
+      assistantMock.useNoodleAssistant.mockImplementation(() => {
+        const activeClient = client;
+        useEffect(() => () => {
+          activeClient.abort();
+          activeClient.resetSession();
+        }, [activeClient]);
+        return {
+          client: activeClient,
+          messages: [],
+          status: hookStatus,
+          error: undefined,
+        };
+      });
+      const view = render(<TravelAssistantPage runtime={readyRuntime} />);
+      submitPrompt('JFK to Lisbon next month');
+      await waitFor(() => expect(client.sendMessage).toHaveBeenCalledOnce());
+      client.sendMessage.mockClear();
+      client.abort.mockClear();
+
+      hookStatus = busyStatus;
+      view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
+      act(() => {
+        client.emit({
+          event: 'tool_started',
+          data: { id: 'call-search-active', tool: 'search_flights' },
+        });
+      });
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'Searching current flights',
+      );
+
+      const composer = screen.getByRole('textbox', {
+        name: 'Ask about a flight',
+      });
+      fireEvent.change(composer, {
+        target: { value: 'Keep this follow-up for after the stop' },
+      });
+      const form = screen.getByRole('form', { name: 'Continue trip' });
+      const stop = screen.getByRole('button', { name: 'Stop generating' });
+      expect(stop).toBeInstanceOf(HTMLButtonElement);
+      expect(stop).toHaveAttribute('type', 'button');
+      stop.focus();
+      expect(stop).toHaveFocus();
+
+      fireEvent.submit(form);
+      expect(client.sendMessage).not.toHaveBeenCalled();
+      expect(composer).toHaveValue('Keep this follow-up for after the stop');
+
+      fireEvent.click(stop);
+      expect(client.abort).toHaveBeenCalledOnce();
+      expect(client.resetSession).not.toHaveBeenCalled();
+      expect(screen.getByRole('status')).toBeEmptyDOMElement();
+      expect(composer).toHaveValue('Keep this follow-up for after the stop');
+
+      hookStatus = 'ready';
+      view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
+      expect(screen.queryByRole('button', { name: 'Stop generating' }))
+        .not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Continue trip' }))
+        .toBeEnabled();
+
+      fireEvent.submit(form);
+      expect(client.sendMessage).toHaveBeenCalledOnce();
+      expect(client.sendMessage).toHaveBeenCalledWith(
+        'Keep this follow-up for after the stop',
+      );
+      expect(composer).toHaveValue('');
+    },
+  );
 
   it('does not announce busy work for a terminal error and keeps raw details private', async () => {
     assistantMock.useNoodleAssistant.mockImplementation(() => ({
@@ -564,12 +640,62 @@ describe('guest travel conversation lifecycle', () => {
   });
 
   it('aborts and resets the session before returning to a fresh zero state', async () => {
+    assistantMock.useNoodleAssistant.mockImplementation(() => {
+      const activeClient = client;
+      useEffect(() => () => {
+        activeClient.abort();
+        activeClient.resetSession();
+      }, [activeClient]);
+      return {
+        client: activeClient,
+        messages: [{
+          id: 'assistant-selected-fare',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'data-tool-result',
+              data: {
+                id: 'call-search-reset',
+                tool: 'search_flights',
+                result: {
+                  status: 'success',
+                  searchContext: {
+                    origin: 'JFK',
+                    destination: 'LIS',
+                    departureDate: '2026-10-12',
+                    returnDate: '2026-10-18',
+                    adults: 2,
+                    children: 0,
+                    infants: 0,
+                  },
+                },
+              },
+            },
+            {
+              type: 'data-tool-result',
+              data: {
+                id: 'call-select-reset',
+                tool: 'select_flight_offer',
+                result: {
+                  status: 'selected',
+                  selectionId: 'sel_0123456789abcdef0123456789abcdef',
+                },
+              },
+            },
+          ],
+        }],
+        status: 'ready',
+        error: undefined,
+      };
+    });
     render(<TravelAssistantPage runtime={readyRuntime} />);
     submitPrompt('JFK to Lisbon next month');
 
     expect(await screen.findByRole('log', {
       name: 'Conversation transcript',
     })).toBeVisible();
+    expect(await screen.findByText('JFK → LIS')).toBeVisible();
+    expect(screen.getByText('Fare selected')).toBeVisible();
     fireEvent.click(screen.getByRole('button', {
       name: 'Reset conversation',
     }));

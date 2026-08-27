@@ -134,6 +134,14 @@ export function SettingsSheet({
             <small>Not configured</small>
           </span>
         )}
+        {starterConfig.website.termsUrl ? (
+          <a href={starterConfig.website.termsUrl}>Terms</a>
+        ) : (
+          <span className="settings-sheet__unconfigured">
+            <span>Terms</span>
+            <small>Not configured</small>
+          </span>
+        )}
       </section>
 
       <button

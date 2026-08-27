@@ -1,6 +1,7 @@
 import type {
   AssistantClient,
   AssistantUIMessage,
+  AssistantViewData,
 } from '@noodleseed/assistant/client';
 import {
   act,
@@ -58,7 +59,21 @@ afterEach(() => {
 });
 
 describe('typed travel message parts', () => {
-  it('renders text and every approved linked App without printing tool JSON', () => {
+  it('passes both distinct linked view identities to the official App host without printing tool JSON', () => {
+    const firstView: AssistantViewData = {
+      id: 'view-1',
+      tool: 'search_flights',
+      resourceUri: 'ui://nuitee_travel/flight-results',
+      title: 'Flight results',
+      result: { status: 'success' },
+    };
+    const secondView: AssistantViewData = {
+      id: 'view-2',
+      tool: 'search_flights',
+      resourceUri: 'ui://nuitee_travel/flight-results',
+      title: 'Updated flight results',
+      result: { status: 'success' },
+    };
     const message: AssistantUIMessage = {
       id: 'assistant-1',
       role: 'assistant',
@@ -77,23 +92,11 @@ describe('typed travel message parts', () => {
         },
         {
           type: 'data-view',
-          data: {
-            id: 'view-1',
-            tool: 'search_flights',
-            resourceUri: 'ui://nuitee_travel/flight-results',
-            title: 'Flight results',
-            result: { status: 'success' },
-          },
+          data: firstView,
         },
         {
           type: 'data-view',
-          data: {
-            id: 'view-2',
-            tool: 'search_flights',
-            resourceUri: 'ui://nuitee_travel/flight-results',
-            title: 'Updated flight results',
-            result: { status: 'success' },
-          },
+          data: secondView,
         },
       ],
     };
@@ -101,7 +104,14 @@ describe('typed travel message parts', () => {
     const { container } = renderMessage(client, message);
 
     expect(screen.getByText('I found current options.')).toBeVisible();
-    expect(container.querySelectorAll('noodle-app-view')).toHaveLength(2);
+    const linkedViews = Array.from(
+      container.querySelectorAll('noodle-app-view'),
+      (element) => element.view,
+    );
+    expect(linkedViews).toHaveLength(2);
+    expect(linkedViews.map((view) => view?.id)).toEqual(['view-1', 'view-2']);
+    expect(linkedViews[0]).toBe(firstView);
+    expect(linkedViews[1]).toBe(secondView);
     expect(screen.queryByText(/searchContext/)).not.toBeInTheDocument();
   });
 

@@ -1,16 +1,20 @@
 'use client';
 
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, Square } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 
 interface TravelComposerProps {
+  readonly busy?: boolean;
   readonly formLabel?: string;
+  readonly onStop?: () => void;
   readonly onSubmit: (prompt: string) => void;
   readonly submitLabel?: string;
 }
 
 export function TravelComposer({
+  busy = false,
   formLabel = 'Start a trip',
+  onStop,
   onSubmit,
   submitLabel = 'Start trip',
 }: Readonly<TravelComposerProps>) {
@@ -18,6 +22,7 @@ export function TravelComposer({
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (busy) return;
     const prompt = draft.trim();
     if (!prompt) return;
     onSubmit(prompt);
@@ -40,14 +45,25 @@ export function TravelComposer({
         rows={1}
         value={draft}
       />
-      <button
-        aria-label={submitLabel}
-        className="travel-composer__send"
-        disabled={!draft.trim()}
-        type="submit"
-      >
-        <ArrowUp aria-hidden="true" />
-      </button>
+      {busy && onStop ? (
+        <button
+          aria-label="Stop generating"
+          className="travel-composer__send travel-composer__stop"
+          onClick={onStop}
+          type="button"
+        >
+          <Square aria-hidden="true" />
+        </button>
+      ) : (
+        <button
+          aria-label={submitLabel}
+          className="travel-composer__send"
+          disabled={!draft.trim()}
+          type="submit"
+        >
+          <ArrowUp aria-hidden="true" />
+        </button>
+      )}
     </form>
   );
 }
