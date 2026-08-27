@@ -2,7 +2,9 @@
 
 import { useNoodleAssistant } from '@noodleseed/assistant/react/client';
 import { useEffect, useRef, useState } from 'react';
+import { presentAssistantError } from '../lib/assistant-error';
 import type { ReadyPublicAssistantRuntime } from '../lib/assistant-config';
+import { isNearTranscriptEnd } from '../lib/conversation-scroll';
 import {
   EMPTY_TRIP,
   projectTrip,
@@ -85,8 +87,12 @@ export function TravelConversation({
     }),
   });
   const initialPromptSentRef = useRef(false);
+  const lastPromptRef = useRef(initialPrompt);
   const publishedProjectionRef = useRef<TripProjection>(EMPTY_TRIP);
   const activeActivitiesRef = useRef(new Map<string, ToolActivity>());
+  const transcriptContentRef = useRef<HTMLOListElement>(null);
+  const transcriptViewportRef = useRef<HTMLDivElement>(null);
+  const followLatestRef = useRef(true);
   const [activity, setActivity] = useState<ToolActivity | null>(null);
   const theme = useResolvedTheme();
 
@@ -101,6 +107,17 @@ export function TravelConversation({
       active = false;
     };
   }, [client, initialPrompt]);
+
+  useEffect(() => {
+    const content = transcriptContentRef.current;
+    const viewport = transcriptViewportRef.current;
+    if (!content || !viewport || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => {
+      if (followLatestRef.current) viewport.scrollTop = viewport.scrollHeight;
+    });
+    observer.observe(content);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const activeActivities = activeActivitiesRef.current;
@@ -143,14 +160,26 @@ export function TravelConversation({
   }
 
   function sendFollowUp(prompt: string) {
+    const viewport = transcriptViewportRef.current;
+    followLatestRef.current = true;
+    if (viewport) viewport.scrollTop = viewport.scrollHeight;
+    lastPromptRef.current = prompt;
     void client.sendMessage(prompt).catch(() => undefined);
   }
 
+  const busy = status === 'submitted' || status === 'streaming';
   const statusLabel = activity?.label
-    ?? (status !== 'ready' ? 'Assistant is responding' : '');
+    ?? (busy ? 'Assistant is responding' : '');
+  const errorPresentation = error ? presentAssistantError(error) : null;
 
   return (
-    <section className="travel-canvas" aria-label="Travel conversation">
+    <section
+      className="travel-canvas"
+      aria-busy={busy}
+      aria-label="Travel conversation"
+      id="travel-canvas"
+      tabIndex={-1}
+    >
       <div className="travel-conversation">
         <header>
           <h1>Trip conversation</h1>
@@ -158,22 +187,51 @@ export function TravelConversation({
             Reset conversation
           </button>
         </header>
-        <ol aria-label="Conversation transcript" role="log">
-          {messages.map((message) => (
-            <li key={message.id}>
-              <TravelMessage
-                client={client}
-                message={message}
-                theme={theme}
-              />
-            </li>
-          ))}
-        </ol>
+        <div
+          className="travel-transcript"
+          onScroll={(event) => {
+            followLatestRef.current = isNearTranscriptEnd(event.currentTarget);
+          }}
+          ref={transcriptViewportRef}
+        >
+          <ol
+            aria-label="Conversation transcript"
+            ref={transcriptContentRef}
+            role="log"
+          >
+            {messages.map((message) => (
+              <li key={message.id}>
+                <TravelMessage
+                  client={client}
+                  message={message}
+                  theme={theme}
+                />
+              </li>
+            ))}
+          </ol>
+        </div>
         <p aria-live="polite" role="status">
           {statusLabel}
         </p>
-        {error ? <p role="alert">{error.message}</p> : null}
-        <TravelComposer formLabel="Continue trip" onSubmit={sendFollowUp} />
+        {errorPresentation ? (
+          <section className="assistant-error" role="alert">
+            <h2>{errorPresentation.title}</h2>
+            <p>{errorPresentation.message}</p>
+            {errorPresentation.canRetry ? (
+              <button
+                type="button"
+                onClick={() => sendFollowUp(lastPromptRef.current)}
+              >
+                Try again
+              </button>
+            ) : null}
+          </section>
+        ) : null}
+        <TravelComposer
+          formLabel="Continue trip"
+          onSubmit={sendFollowUp}
+          submitLabel="Continue trip"
+        />
       </div>
     </section>
   );

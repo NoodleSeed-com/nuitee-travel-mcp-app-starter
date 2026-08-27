@@ -33,28 +33,34 @@ export function TripContextRail({
           <span className="travel-wordmark__mark" aria-hidden="true">
             {starterConfig.brand.mark}
           </span>
-          <span>{starterConfig.brand.name}</span>
+          <span className="trip-context-rail__label">
+            {starterConfig.brand.name}
+          </span>
         </a>
 
         <nav aria-label="Travel workspace">
           <ul className="trip-navigation">
             <li>
               <button
+                aria-label="New trip"
                 className="trip-navigation__item trip-navigation__item--active"
                 type="button"
                 onClick={onNewTrip}
               >
                 <Plus aria-hidden="true" />
-                New trip
+                <span className="trip-context-rail__label">New trip</span>
               </button>
             </li>
             <li>
               <a
+                aria-label="Developer guide"
                 className="trip-navigation__item"
                 href={starterConfig.website.developerPath}
               >
                 <BookOpen aria-hidden="true" />
-                Developer guide
+                <span className="trip-context-rail__label">
+                  Developer guide
+                </span>
               </a>
             </li>
           </ul>
@@ -64,11 +70,13 @@ export function TripContextRail({
           className="current-trip"
           aria-labelledby="current-trip-heading"
         >
-          <h2 id="current-trip-heading">Current trip</h2>
+          <h2 className="trip-context-rail__label" id="current-trip-heading">
+            Current trip
+          </h2>
           {!hasTrip ? (
-            <p>No trip started</p>
+            <p className="trip-context-rail__details">No trip started</p>
           ) : (
-            <dl>
+            <dl className="trip-context-rail__details">
               {(projection.origin || projection.destination) ? (
                 <div>
                   <dt>Route</dt>
@@ -107,12 +115,13 @@ export function TripContextRail({
       <div className="trip-context-rail__footer">
         <p className="guest-session">Guest session</p>
         <button
+          aria-label="Settings"
           className="trip-navigation__item"
           type="button"
           onClick={onOpenSettings}
         >
           <Settings aria-hidden="true" />
-          Settings
+          <span className="trip-context-rail__label">Settings</span>
         </button>
       </div>
     </aside>

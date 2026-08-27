@@ -45,10 +45,10 @@ export function TravelAssistantPage({
   return (
     <>
       <div className="travel-workspace" inert={settingsOpen || undefined}>
-        <a className="skip-link" href="#main-content">
+        <a className="skip-link" href="#travel-canvas">
           Skip to content
         </a>
-        <main className="workspace-shell" id="main-content" tabIndex={-1}>
+        <main className="workspace-shell">
           <TripContextRail
             projection={projection}
             onNewTrip={reset}

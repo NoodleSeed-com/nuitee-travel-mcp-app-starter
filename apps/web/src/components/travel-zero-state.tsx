@@ -14,7 +14,12 @@ export function TravelZeroState({
   onStart,
 }: Readonly<TravelZeroStateProps>) {
   return (
-    <section className="travel-canvas" aria-labelledby="travel-home-title">
+    <section
+      className="travel-canvas"
+      aria-labelledby="travel-home-title"
+      id="travel-canvas"
+      tabIndex={-1}
+    >
       <div className="travel-zero-state">
         <RouteAssistantMark />
         <h1 id="travel-home-title">Where would you like to go?</h1>

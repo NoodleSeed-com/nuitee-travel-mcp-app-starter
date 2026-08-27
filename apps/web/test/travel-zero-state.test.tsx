@@ -61,6 +61,11 @@ describe('travel assistant zero state', () => {
     expect(screen.getByText('No trip started')).toBeVisible();
     expect(screen.getByText('Guest session')).toBeVisible();
     expect(screen.queryByText(/conversation history/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Skip to content' }))
+      .toHaveAttribute('href', '#travel-canvas');
+    expect(screen.getByRole('region', {
+      name: 'Where would you like to go?',
+    })).toHaveAttribute('id', 'travel-canvas');
   });
 
   it('submits a configured prompt through the same first-message callback', () => {

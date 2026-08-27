@@ -52,10 +52,12 @@ html[data-theme="dark"] {
 html,
 body {
   min-height: 100%;
+  max-width: 100%;
 }
 
 body {
   margin: 0;
+  overflow-x: hidden;
   background: var(--travel-canvas);
 }
 
@@ -89,6 +91,8 @@ button:disabled {
   left: 1rem;
   z-index: 20;
   padding: 0.75rem 1rem;
+  min-height: 44px;
+  align-items: center;
   background: var(--travel-ink);
   color: var(--travel-canvas);
   transform: translateY(-200%);
@@ -394,7 +398,7 @@ button:disabled {
 }
 
 .starter-prompts button {
-  min-height: 42px;
+  min-height: 44px;
   padding: 0.55rem 0.8rem;
   border: 1px solid var(--travel-boundary);
   border-radius: 999px;
@@ -431,6 +435,124 @@ button:disabled {
 .travel-starting small {
   max-width: 40rem;
   text-align: center;
+}
+
+.travel-conversation {
+  display: grid;
+  width: min(100%, 52rem);
+  height: min(48rem, calc(100svh - (var(--travel-gutter) * 2) - 3rem));
+  min-height: 32rem;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: 0.75rem;
+}
+
+.travel-conversation > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--travel-boundary);
+}
+
+.travel-conversation > header h1 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+}
+
+.travel-conversation > header button,
+.assistant-error button,
+.travel-confirmation button,
+.travel-input-request button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--travel-boundary);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--travel-ink);
+}
+
+.travel-transcript {
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.travel-transcript ol {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 1.25rem 0.35rem 1.75rem;
+  list-style: none;
+}
+
+.travel-message {
+  max-width: min(100%, 42rem);
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+
+.travel-message > :first-child {
+  margin-top: 0;
+}
+
+.travel-message > :last-child {
+  margin-bottom: 0;
+}
+
+.travel-message--user {
+  justify-self: end;
+  padding: 0.75rem 1rem;
+  border-radius: 16px 16px 4px;
+  background: var(--travel-surface);
+}
+
+.travel-message--assistant {
+  justify-self: start;
+}
+
+.travel-conversation > [role="status"] {
+  min-height: 1.5rem;
+  margin: 0;
+  color: var(--travel-muted);
+  font-size: 0.82rem;
+}
+
+.assistant-error {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.35rem 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--travel-boundary);
+  border-radius: 14px;
+  background: var(--travel-surface);
+}
+
+.assistant-error h2,
+.assistant-error p {
+  margin: 0;
+}
+
+.assistant-error h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.assistant-error p {
+  color: var(--travel-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.assistant-error button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
 }
 
 .settings-sheet {
@@ -590,43 +712,104 @@ button:disabled {
   background: var(--travel-surface);
 }
 
+@media (max-width: 62rem) and (min-width: 701px) {
+  :root {
+    --travel-rail-width: 4.5rem;
+    --travel-gutter: 12px;
+  }
+
+  .trip-context-rail {
+    align-items: center;
+    padding-inline: 0.75rem;
+  }
+
+  .trip-context-rail__primary,
+  .trip-context-rail__footer {
+    width: 100%;
+  }
+
+  .trip-context-rail__label,
+  .trip-context-rail__details,
+  .guest-session,
+  .current-trip {
+    display: none;
+  }
+
+  .travel-wordmark,
+  .trip-navigation__item {
+    width: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+}
+
 @media (max-width: 700px) {
   :root {
-    --travel-gutter: 12px;
+    --travel-gutter: 0px;
   }
 
   .workspace-shell {
     display: grid;
     align-content: start;
     gap: 0;
+    padding: 0;
   }
 
   .trip-context-rail {
-    position: relative;
-    inset: auto;
-    width: 100%;
+    position: sticky;
+    z-index: 4;
+    inset: 0;
+    display: grid;
+    width: auto;
     max-height: none;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-rows: auto auto;
+    gap: 0.5rem;
     overflow: visible;
-    padding: 0.85rem;
+    padding: 0.65rem 1rem;
+    border-radius: 0;
+    background: color-mix(in srgb, var(--travel-canvas) 94%, transparent);
+    backdrop-filter: blur(16px);
   }
 
   .trip-context-rail__primary {
-    gap: 0.75rem;
+    display: contents;
   }
 
   .travel-wordmark {
-    padding-inline: 0.25rem;
+    min-width: 0;
+    grid-column: 1;
+    grid-row: 1;
+    padding-inline: 0;
+  }
+
+  .travel-wordmark .trip-context-rail__label,
+  .trip-navigation .trip-context-rail__label,
+  .trip-context-rail__footer .trip-context-rail__label,
+  .guest-session {
+    display: none;
+  }
+
+  .trip-context-rail nav {
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .trip-navigation {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
   }
 
-  .trip-navigation__item {
-    padding-inline: 0.65rem;
+  .trip-navigation__item,
+  .travel-wordmark {
+    width: 44px;
+    padding: 0;
+    justify-content: center;
   }
 
   .current-trip {
+    min-width: 0;
+    grid-column: 1 / -1;
+    grid-row: 2;
     display: flex;
     align-items: baseline;
     justify-content: space-between;
@@ -641,17 +824,23 @@ button:disabled {
 
   .current-trip dl {
     flex: 1;
+    min-width: 0;
   }
 
   .trip-context-rail__footer {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: center;
+    display: contents;
+  }
+
+  .trip-context-rail__footer .trip-navigation__item {
+    grid-column: 3;
+    grid-row: 1;
   }
 
   .travel-canvas {
-    min-height: auto;
+    min-width: 0;
+    min-height: calc(100svh - 64px);
     margin-left: 0;
-    padding: clamp(4rem, 10vh, 6.5rem) 0.25rem 3rem;
+    padding: 16px;
   }
 
   .travel-zero-state h1 {
@@ -659,6 +848,8 @@ button:disabled {
   }
 
   .travel-composer {
+    min-width: 0;
+    margin-top: 1.5rem;
     padding-left: 1rem;
   }
 
@@ -671,16 +862,42 @@ button:disabled {
   }
 
   .settings-sheet {
-    right: var(--travel-gutter);
-    bottom: var(--travel-gutter);
-    left: var(--travel-gutter);
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
     width: auto;
+  }
+
+  .travel-conversation {
+    width: 100%;
+    height: calc(100svh - 96px);
+    min-height: 28rem;
+  }
+
+  .travel-conversation > header {
+    align-items: flex-start;
+  }
+
+  .travel-conversation > header button {
+    flex: 0 0 auto;
+  }
+
+  .assistant-error {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .assistant-error button {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .route-assistant-mark {
+  .route-assistant-mark,
+  .assistant-skeleton {
     animation: none;
+    transition: none;
   }
 
   *,

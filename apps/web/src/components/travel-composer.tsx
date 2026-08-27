@@ -6,11 +6,13 @@ import { type FormEvent, useState } from 'react';
 interface TravelComposerProps {
   readonly formLabel?: string;
   readonly onSubmit: (prompt: string) => void;
+  readonly submitLabel?: string;
 }
 
 export function TravelComposer({
   formLabel = 'Start a trip',
   onSubmit,
+  submitLabel = 'Start trip',
 }: Readonly<TravelComposerProps>) {
   const [draft, setDraft] = useState('');
 
@@ -39,7 +41,7 @@ export function TravelComposer({
         value={draft}
       />
       <button
-        aria-label="Start trip"
+        aria-label={submitLabel}
         className="travel-composer__send"
         disabled={!draft.trim()}
         type="submit"

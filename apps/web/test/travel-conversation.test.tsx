@@ -49,8 +49,25 @@ function submitPrompt(prompt: string) {
 }
 
 let client = createClient();
+let resizeCallback: ResizeObserverCallback | undefined;
+let resizeDisconnect = vi.fn<() => void>();
 
 beforeEach(() => {
+  resizeCallback = undefined;
+  resizeDisconnect = vi.fn<() => void>();
+  vi.stubGlobal('ResizeObserver', class ResizeObserverStub {
+    constructor(callback: ResizeObserverCallback) {
+      resizeCallback = callback;
+    }
+
+    observe() {}
+
+    unobserve() {}
+
+    disconnect() {
+      resizeDisconnect();
+    }
+  });
   client = createClient();
   assistantMock.useNoodleAssistant.mockReset();
   assistantMock.useNoodleAssistant.mockImplementation(() => {
@@ -71,6 +88,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('guest travel conversation lifecycle', () => {
@@ -188,7 +206,98 @@ describe('guest travel conversation lifecycle', () => {
     expect(client.sendMessage).toHaveBeenCalledWith(
       'Avoid overnight connections',
     );
+    expect(screen.getByRole('button', { name: 'Continue trip' })).toBeVisible();
     expect(composer).toHaveValue('');
+  });
+
+  it('does not announce busy work for a terminal error and keeps raw details private', async () => {
+    assistantMock.useNoodleAssistant.mockImplementation(() => ({
+      client,
+      messages: [],
+      status: 'error',
+      error: {
+        name: 'AssistantClientError',
+        message: 'token secret at https://private.example.com/search_flights',
+        detail: {
+          code: 'turn_failed',
+          status: 400,
+          retryable: false,
+        },
+      },
+    }));
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+
+    submitPrompt('JFK to Lisbon next month');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'The travel assistant could not continue',
+    );
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    expect(document.body).not.toHaveTextContent(
+      /Assistant is responding|token secret|https?:|search_flights/i,
+    );
+  });
+
+  it('retries the last message only when the client marks a service error retryable', async () => {
+    assistantMock.useNoodleAssistant.mockImplementation(() => ({
+      client,
+      messages: [],
+      status: 'error',
+      error: {
+        name: 'AssistantClientError',
+        message: 'temporary service failure',
+        detail: {
+          code: 'turn_failed',
+          status: 503,
+          retryable: true,
+        },
+      },
+    }));
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+
+    submitPrompt('JFK to Lisbon next month');
+    await waitFor(() => expect(client.sendMessage).toHaveBeenCalledOnce());
+    client.sendMessage.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+
+    expect(client.sendMessage).toHaveBeenCalledWith('JFK to Lisbon next month');
+  });
+
+  it('preserves upward reading, follows near-end growth, and disconnects its observer', async () => {
+    const view = render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('JFK to Lisbon next month');
+    const transcript = await screen.findByRole('log', {
+      name: 'Conversation transcript',
+    });
+    const viewport = transcript.parentElement;
+    expect(viewport).not.toBeNull();
+    if (!viewport) return;
+    Object.defineProperties(viewport, {
+      clientHeight: { configurable: true, value: 100 },
+      scrollHeight: { configurable: true, value: 1_000 },
+    });
+
+    viewport.scrollTop = 600;
+    fireEvent.scroll(viewport);
+    expect(resizeCallback).toBeTypeOf('function');
+    resizeCallback?.([], {} as ResizeObserver);
+    expect(viewport.scrollTop).toBe(600);
+
+    viewport.scrollTop = 870;
+    fireEvent.scroll(viewport);
+    resizeCallback?.([], {} as ResizeObserver);
+    expect(viewport.scrollTop).toBe(1_000);
+
+    viewport.scrollTop = 600;
+    fireEvent.scroll(viewport);
+    fireEvent.change(screen.getByRole('textbox', {
+      name: 'Ask about a flight',
+    }), { target: { value: 'Avoid overnight connections' } });
+    fireEvent.submit(screen.getByRole('form', { name: 'Continue trip' }));
+    expect(viewport.scrollTop).toBe(1_000);
+
+    view.unmount();
+    expect(resizeDisconnect).toHaveBeenCalledOnce();
   });
 
   it('renders the typed transcript instead of role placeholders', async () => {
