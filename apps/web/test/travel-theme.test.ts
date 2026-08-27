@@ -1,4 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { starterConfig } from '../../../starter.config';
 import { DARK_THEME_TOKENS } from '../src/lib/travel-theme';
 
 type Rgb = readonly [number, number, number];
@@ -38,6 +40,7 @@ function contrastRatio(first: string, second: string): number {
 
 describe('dark travel theme', () => {
   const rail = mix(DARK_THEME_TOKENS.surface, DARK_THEME_TOKENS.canvas, 0.82);
+  const composer = mix(DARK_THEME_TOKENS.canvas, '#ffffff', 0.94);
 
   it.each([
     ['boundary against canvas', DARK_THEME_TOKENS.boundary, DARK_THEME_TOKENS.canvas],
@@ -46,5 +49,20 @@ describe('dark travel theme', () => {
     ['focus against rail', DARK_THEME_TOKENS.focus, rail],
   ])('%s meets 3:1 non-text contrast', (_label, foreground, background) => {
     expect(contrastRatio(foreground, background)).toBeGreaterThanOrEqual(3);
+  });
+
+  it('keeps the composer focus indicator distinct from its surface', () => {
+    const stylesheet = readFileSync('app/globals.css', 'utf8');
+    const focusToken = stylesheet.match(
+      /\.travel-composer:focus-within\s*\{[^}]*border-color:\s*var\((--[\w-]+)/,
+    )?.[1];
+    const tokenColors: Record<string, string> = {
+      '--travel-accent': starterConfig.brand.accent,
+      '--travel-focus': DARK_THEME_TOKENS.focus,
+    };
+
+    expect(focusToken).toBeDefined();
+    expect(contrastRatio(tokenColors[focusToken ?? ''] ?? '', composer))
+      .toBeGreaterThanOrEqual(3);
   });
 });

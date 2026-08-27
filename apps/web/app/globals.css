@@ -342,7 +342,7 @@ button:disabled {
 }
 
 .travel-composer:focus-within {
-  border-color: var(--travel-accent, #2b6f6d);
+  border-color: var(--travel-focus);
 }
 
 .travel-composer__input {
