@@ -33,7 +33,6 @@ try {
   const page = await context.newPage();
 
   for (const preview of [
-    { name: 'home', file: 'travel-home.png' },
     { name: 'results', file: 'flight-results.png' },
   ]) {
     const markup = renderWidgetPreview(preview.name);
@@ -62,4 +61,4 @@ try {
   await vite.close();
 }
 
-process.stdout.write(`${JSON.stringify({ ok: true, data: { previews: 2, network: 'blocked' } })}\n`);
+process.stdout.write(`${JSON.stringify({ ok: true, data: { previews: 1, network: 'blocked' } })}\n`);
