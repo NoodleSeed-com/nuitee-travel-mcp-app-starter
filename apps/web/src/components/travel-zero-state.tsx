@@ -31,6 +31,7 @@ export function TravelZeroState({
       <div aria-hidden="true" className="travel-hero__scrim" />
       <div className="travel-hero__content">
         <div className="travel-hero__copy">
+          <p className="travel-hero__brand">{starterConfig.brand.name}</p>
           <p className="assistant-identity">A new way to find your flight</p>
           <h1 id="travel-home-title">
             Tell us <span className="travel-hero__headline-phrase">where you want to be.</span>
