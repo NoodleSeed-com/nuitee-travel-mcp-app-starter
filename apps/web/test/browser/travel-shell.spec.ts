@@ -428,37 +428,127 @@ test('starts one destination prompt through one assistant turn', async ({ page }
   expect(sessionRequests).toBe(1);
 });
 
-test('keeps one current flight App in the responsive journey workspace', async ({
+test('keeps approved Apps inline in one centered chronological conversation', async ({
   page,
 }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium');
+
   let turnRequests = 0;
+  const firstAssistantCopy = [
+    'I found a useful set of options for your trip.',
+    'RouteReferenceISBtoJFKWithoutWhitespace1234567890',
+  ].join(' ');
+  const secondAssistantCopy = 'You can also adjust the trip details here.';
   const result = {
     status: 'success',
     message: 'Current flight options',
     fallback: 'Current flight options',
     searchContext: {
       origin: 'ISB',
-      destination: 'NYC',
+      destination: 'JFK',
       departureDate: '2026-09-18',
-      adults: 1,
-      children: 0,
+      returnDate: '2026-09-27',
+      adults: 2,
+      children: 1,
       infants: 0,
-      childrenAges: [],
+      childrenAges: [8],
       infantAges: [],
-      cabinClass: 'ECONOMY',
-      currency: 'USD',
-      country: 'US',
+      cabinClass: 'BUSINESS',
+      currency: 'EUR',
+      country: 'GB',
     },
     itineraries: [],
   };
-  const view = (id: string) => ({
-    id,
+  const approvedAppHtml = (label: string, copy: string) => `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      * { box-sizing: border-box; }
+      html, body { width: 100%; max-width: 100%; margin: 0; overflow-x: hidden; }
+      body { padding: 8px; font: 1rem/1.4 system-ui, sans-serif; }
+      main, p { width: 100%; max-width: 100%; margin: 0; overflow-wrap: anywhere; }
+      button {
+        min-width: 44px;
+        min-height: 44px;
+        margin-top: 8px;
+        border: 1px solid #64748b;
+        border-radius: 8px;
+        padding: 10px 14px;
+        background: #ffffff;
+        color: #0f172a;
+        font: inherit;
+      }
+      button:focus-visible { outline: 4px solid #075985; outline-offset: -4px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p>${copy}</p>
+      <button type="button" aria-label="${label}">${label}</button>
+    </main>
+    <script>
+      const initializeId = 1;
+      addEventListener('message', (event) => {
+        if (event.source !== parent || event.data?.id !== initializeId) return;
+        parent.postMessage({
+          jsonrpc: '2.0',
+          method: 'ui/notifications/initialized',
+          params: {},
+        }, '*');
+        parent.postMessage({
+          jsonrpc: '2.0',
+          method: 'ui/notifications/size-changed',
+          params: { height: document.documentElement.scrollHeight },
+        }, '*');
+      });
+      parent.postMessage({
+        jsonrpc: '2.0',
+        id: initializeId,
+        method: 'ui/initialize',
+        params: {
+          appInfo: { name: 'Wayfare browser fixture', version: '1.0.0' },
+          appCapabilities: {},
+          protocolVersion: '2025-11-21',
+        },
+      }, '*');
+    </script>
+  </body>
+</html>`;
+  const searchViewForTurn = (turn: number) => ({
+    id: `search-view-turn-${turn}`,
     tool: 'search_flights',
     resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget',
-    title: 'Flight results',
-    result,
-    html: '<!doctype html><html><body><main>Flight results</main></body></html>',
+    title: `Flight results turn ${turn}`,
+    result: { status: 'success', itineraries: [] },
+    html: approvedAppHtml(
+      `Select search option turn ${turn}`,
+      `FlightResultsReferenceISBtoJFKWithoutWhitespace${turn}1234567890`,
+    ),
   });
+  const starterViewForTurn = (turn: number) => ({
+    id: `starter-view-turn-${turn}`,
+    tool: 'open_travel_starter',
+    resourceUri: 'ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget',
+    title: `Travel starter turn ${turn}`,
+    result: { status: 'ready' },
+    html: approvedAppHtml(
+      `Adjust trip turn ${turn}`,
+      `TravelStarterReferenceWithoutWhitespace${turn}1234567890`,
+    ),
+  });
+  const mismatchedViewForTurn = (turn: number) => ({
+    id: `mismatched-view-turn-${turn}`,
+    tool: 'search_flights',
+    resourceUri: 'ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget',
+    title: `Mismatched travel view turn ${turn}`,
+    result: { status: 'success' },
+    html: '<!doctype html><html><body><main>Must not mount</main></body></html>',
+  });
+  const searchView = searchViewForTurn(1);
+  const starterView = starterViewForTurn(1);
+  const mismatchedView = mismatchedViewForTurn(1);
   const frame = (event: string, data: unknown) => (
     `event: ${event}\ndata: ${JSON.stringify(data)}`
   );
@@ -479,91 +569,337 @@ test('keeps one current flight App in the responsive journey workspace', async (
   });
   await page.route('**/browser-fixture/turns', async (route) => {
     turnRequests += 1;
+    const searchViewForRequest = searchViewForTurn(turnRequests);
+    const starterViewForRequest = starterViewForTurn(turnRequests);
+    const mismatchedViewForRequest = mismatchedViewForTurn(turnRequests);
     await route.fulfill({
       status: 200,
       contentType: 'text/event-stream',
       body: [
-        frame('tool_completed', { id: 'view-1', tool: 'search_flights', result }),
-        frame('view_available', view('view-1')),
-        frame('tool_completed', { id: 'view-2', tool: 'search_flights', result }),
-        frame('view_available', view('view-2')),
+        frame('content', {
+          delta: firstAssistantCopy,
+        }),
+        frame('view_available', searchViewForRequest),
+        frame('content', {
+          delta: secondAssistantCopy,
+        }),
+        frame('view_available', starterViewForRequest),
+        frame('view_available', mismatchedViewForRequest),
+        frame('tool_completed', {
+          id: `typed-search-result-turn-${turnRequests}`,
+          tool: 'search_flights',
+          result,
+        }),
         frame('done', {}),
         '',
       ].join('\n\n'),
     });
   });
 
-  const width = testInfo.project.name === 'mobile-chromium' ? 390 : 1440;
-  await page.setViewportSize({ width, height: testInfo.project.name === 'mobile-chromium' ? 844 : 900 });
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   await page.getByRole('textbox', { name: 'Ask about a flight' })
-    .fill('Islamabad to New York on September 18');
+    .fill('Karachi to London tomorrow for nine people in First class, paid in EUR');
   await page.getByRole('button', { name: 'Find flights' }).click();
   await expect.poll(() => turnRequests).toBe(1);
 
-  const travelWorkspace = page.getByRole('region', { name: 'Travel workspace' });
-  const flightWorkspace = page.getByRole('region', { name: 'Flight workspace' });
   const conversation = page.getByRole('region', { name: 'Travel conversation' });
-  const currentApp = flightWorkspace.locator('noodle-app-view');
-  await expect(travelWorkspace).toBeVisible();
-  await expect(currentApp).toHaveCount(1);
-  await expect(conversation.locator('noodle-app-view')).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'Current trip' }))
-    .toContainText('ISB → NYC');
-  await expect.poll(() => currentApp.evaluate((element) => (
-    (element as HTMLElement & { view?: { id?: string } }).view?.id
-  ))).toBe('view-2');
-  await currentApp.evaluate((element) => {
-    element.setAttribute('data-browser-instance', 'current-flight-app');
-  });
-
-  const order = await travelWorkspace.evaluate((workspace) => {
-    const canvas = workspace.querySelector<HTMLElement>('.travel-journey-canvas');
-    const controller = workspace.querySelector<HTMLElement>('.travel-conversation-shell');
-    if (!canvas || !controller) return null;
-    const canvasBounds = canvas.getBoundingClientRect();
-    const controllerBounds = controller.getBoundingClientRect();
+  const transcript = conversation.getByRole('log', {
+    name: 'Conversation transcript',
+  }).locator('..');
+  const apps = transcript.locator('noodle-app-view');
+  const appSurfaceAt = (index: number) => {
+    const turn = Math.floor(index / 2) + 1;
+    const isSearch = index % 2 === 0;
+    const host = apps.nth(index);
+    const outerFrame = host.locator('iframe').first();
+    const proxyDocument = outerFrame.contentFrame();
+    const innerFrame = proxyDocument.locator('iframe');
+    const appDocument = innerFrame.contentFrame();
+    const controlName = isSearch
+      ? `Select search option turn ${turn}`
+      : `Adjust trip turn ${turn}`;
     return {
-      canvasBeforeController: Boolean(
-        canvas.compareDocumentPosition(controller) & Node.DOCUMENT_POSITION_FOLLOWING,
-      ),
-      canvasBottom: canvasBounds.bottom,
-      controllerBeforeCanvas: Boolean(
-        controller.compareDocumentPosition(canvas) & Node.DOCUMENT_POSITION_FOLLOWING,
-      ),
-      controllerTop: controllerBounds.top,
-      controllerRight: controllerBounds.right,
-      canvasLeft: canvasBounds.left,
+      appDocument,
+      control: appDocument.getByRole('button', { name: controlName }),
+      host,
+      innerFrame,
+      main: appDocument.locator('main'),
+      outerFrame,
+      turn,
+    };
+  };
+  const appTextMetricsAt = (index: number) => appSurfaceAt(index).main.evaluate((main) => {
+    const paragraph = main.querySelector('p');
+    const control = main.querySelector('button');
+    if (!paragraph || !control) throw new Error('Expected fixture text and control');
+    return {
+      controlFontSize: Number.parseFloat(getComputedStyle(control).fontSize),
+      paragraphFontSize: Number.parseFloat(getComputedStyle(paragraph).fontSize),
     };
   });
-  expect(order).not.toBeNull();
-  if (width === 390) {
-    expect(order!.canvasBeforeController).toBe(true);
-    expect(order!.canvasBottom).toBeLessThanOrEqual(order!.controllerTop);
-  } else {
-    expect(order!.controllerBeforeCanvas).toBe(true);
-    expect(order!.controllerRight).toBeLessThanOrEqual(order!.canvasLeft);
+  const assertHorizontallyContained = (
+    bounds: { x: number; width: number } | null,
+    containerBounds: { x: number; width: number } | null,
+    viewportWidth: number,
+  ) => {
+    expect(bounds).not.toBeNull();
+    expect(containerBounds).not.toBeNull();
+    if (!bounds || !containerBounds) return;
+    expect(bounds.width).toBeGreaterThan(0);
+    expect(bounds.x).toBeGreaterThanOrEqual(Math.max(0, containerBounds.x) - 1);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(
+      Math.min(viewportWidth, containerBounds.x + containerBounds.width) + 1,
+    );
+  };
+  const assertAppSurfaceFits = async (
+    index: number,
+    conversationBounds: { x: number; width: number } | null,
+    viewportWidth: number,
+  ) => {
+    const surface = appSurfaceAt(index);
+    const [hostBounds, outerFrameBounds, innerFrameBounds, mainBounds, controlBounds] = await Promise.all([
+      surface.host.boundingBox(),
+      surface.outerFrame.boundingBox(),
+      surface.innerFrame.boundingBox(),
+      surface.main.boundingBox(),
+      surface.control.boundingBox(),
+    ]);
+    assertHorizontallyContained(hostBounds, conversationBounds, viewportWidth);
+    assertHorizontallyContained(outerFrameBounds, hostBounds, viewportWidth);
+    assertHorizontallyContained(innerFrameBounds, outerFrameBounds, viewportWidth);
+    assertHorizontallyContained(mainBounds, innerFrameBounds, viewportWidth);
+    assertHorizontallyContained(controlBounds, innerFrameBounds, viewportWidth);
+
+    const hostFit = await surface.host.evaluate((host) => {
+      const shadowRoot = host.shadowRoot;
+      return {
+        hostFits: host.scrollWidth <= host.clientWidth,
+        hasOpenShadowBoundary: shadowRoot !== null,
+        shadowSurfacesFit: shadowRoot
+          ? Array.from(shadowRoot.querySelectorAll<HTMLElement>('*')).every((element) => (
+            element.scrollWidth <= element.clientWidth
+          ))
+          : false,
+      };
+    });
+    expect(hostFit).toEqual({
+      hostFits: true,
+      hasOpenShadowBoundary: true,
+      shadowSurfacesFit: true,
+    });
+    const appContentFit = await surface.main.evaluate((main) => {
+      const documentElement = document.documentElement;
+      const body = document.body;
+      const paragraph = main.querySelector('p');
+      return {
+        bodyFits: body.scrollWidth <= body.clientWidth,
+        documentFits: documentElement.scrollWidth <= documentElement.clientWidth,
+        mainFits: main.scrollWidth <= main.clientWidth,
+        paragraphFits: paragraph !== null
+          && paragraph.scrollWidth <= paragraph.clientWidth,
+      };
+    });
+    expect(appContentFit).toEqual({
+      bodyFits: true,
+      documentFits: true,
+      mainFits: true,
+      paragraphFits: true,
+    });
+  };
+  await expect(conversation).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Travel workspace' }))
+    .toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Flight workspace' }))
+    .toHaveCount(0);
+  await expect(page.locator('.travel-journey-workspace, .travel-journey-canvas'))
+    .toHaveCount(0);
+  await expect(apps).toHaveCount(2);
+  for (const index of [0, 1]) {
+    await expect(appSurfaceAt(index).control).toBeVisible();
   }
+  await expect(conversation.getByText('This travel view is unavailable.'))
+    .toBeVisible();
+
+  const renderedPartOrder = await transcript
+    .locator('article.travel-message--assistant')
+    .evaluate((message) => Array.from(message.children).map((child) => {
+      if (child.tagName === 'NOODLE-APP-VIEW') {
+        return (child as HTMLElement & { view?: { id?: string } }).view?.id;
+      }
+      return child.textContent?.trim();
+    }));
+  expect(renderedPartOrder).toEqual([
+    firstAssistantCopy,
+    'search-view-turn-1',
+    secondAssistantCopy,
+    'starter-view-turn-1',
+    'This travel view is unavailable.',
+  ]);
+  await expect.poll(() => apps.evaluateAll((elements) => elements.map((element) => {
+    const view = (element as HTMLElement & {
+      view?: { id?: string; tool?: string; resourceUri?: string };
+    }).view;
+    return {
+      id: view?.id,
+      tool: view?.tool,
+      resourceUri: view?.resourceUri,
+    };
+  }))).toEqual([
+    {
+      id: searchView.id,
+      tool: searchView.tool,
+      resourceUri: searchView.resourceUri,
+    },
+    {
+      id: starterView.id,
+      tool: starterView.tool,
+      resourceUri: starterView.resourceUri,
+    },
+  ]);
+  expect(await apps.evaluateAll((elements, mismatchedId) => elements.some((element) => (
+    (element as HTMLElement & { view?: { id?: string } }).view?.id === mismatchedId
+  )), mismatchedView.id)).toBe(false);
+  await apps.evaluateAll((elements) => elements.forEach((element, index) => {
+    (element as HTMLElement).dataset.initialViewIdentity = index === 0
+      ? 'search-view-turn-1'
+      : 'starter-view-turn-1';
+  }));
+
+  const currentTrip = page.getByRole('region', { name: 'Current trip' });
+  await expect(currentTrip).toContainText('ISB → JFK');
+  await expect(currentTrip).toContainText('2026-09-18');
+  await expect(currentTrip).toContainText('2026-09-27');
+  await expect(currentTrip).toContainText('2 adults, 1 child');
+  await expect(currentTrip).toContainText('Business');
+  await expect(currentTrip).toContainText('EUR');
+  await expect(currentTrip).toContainText('GB market');
+  await expect(currentTrip).not.toContainText('Karachi');
+  await expect(currentTrip).not.toContainText('London');
+  await expect(currentTrip).not.toContainText('First');
 
   for (const requiredWidth of [320, 390, 768, 1440]) {
-    await expectHorizontalFit(page, requiredWidth);
-  }
-  await expect(currentApp).toHaveAttribute(
-    'data-browser-instance',
-    'current-flight-app',
-  );
+    await page.setViewportSize({ width: requiredWidth, height: 900 });
+    await expect.poll(() => page.evaluate(() => (
+      document.documentElement.scrollWidth
+    ))).toBe(requiredWidth);
+    const conversationBounds = await conversation.boundingBox();
+    expect(conversationBounds).not.toBeNull();
+    expect(conversationBounds!.width).toBeLessThanOrEqual(1024);
+    expect(Math.abs(
+      conversationBounds!.x + (conversationBounds!.width / 2) - (requiredWidth / 2),
+    )).toBeLessThanOrEqual(2);
+    await expect(apps).toHaveCount(2);
 
-  const finalWidth = testInfo.project.name === 'mobile-chromium' ? 390 : 1440;
-  await page.setViewportSize({
-    width: finalWidth,
-    height: testInfo.project.name === 'mobile-chromium' ? 844 : 900,
-  });
+    const prose = transcript.getByText(firstAssistantCopy, { exact: true });
+    const [transcriptBounds, proseBounds, travelerMessageBounds] = await Promise.all([
+      transcript.boundingBox(),
+      prose.boundingBox(),
+      transcript.getByRole('article', { name: 'Traveler message' }).first().boundingBox(),
+    ]);
+    assertHorizontallyContained(transcriptBounds, conversationBounds, requiredWidth);
+    assertHorizontallyContained(proseBounds, conversationBounds, requiredWidth);
+    assertHorizontallyContained(travelerMessageBounds, conversationBounds, requiredWidth);
+    expect(await transcript.evaluate((element) => (
+      element.scrollWidth <= element.clientWidth
+    ))).toBe(true);
+
+    const proseFit = await prose.evaluate((element) => {
+      const token = 'RouteReferenceISBtoJFKWithoutWhitespace1234567890';
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+      let node: Node | null;
+      while ((node = walker.nextNode())) {
+        const start = node.textContent?.indexOf(token) ?? -1;
+        if (start < 0) continue;
+        const range = document.createRange();
+        range.setStart(node, start);
+        range.setEnd(node, start + token.length);
+        return {
+          contentFits: element.scrollWidth <= element.clientWidth,
+          rects: Array.from(range.getClientRects()).map((rect) => ({
+            left: rect.left,
+            right: rect.right,
+          })),
+        };
+      }
+      return { contentFits: false, rects: [] };
+    });
+    expect(proseFit.contentFits).toBe(true);
+    expect(proseFit.rects.length).toBeGreaterThan(0);
+    for (const rect of proseFit.rects) {
+      expect(rect.left).toBeGreaterThanOrEqual(conversationBounds!.x - 1);
+      expect(rect.right).toBeLessThanOrEqual(
+        Math.min(requiredWidth, conversationBounds!.x + conversationBounds!.width) + 1,
+      );
+    }
+
+    for (const index of [0, 1]) {
+      await assertAppSurfaceFits(index, conversationBounds, requiredWidth);
+    }
+  }
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const [assistantCopyBounds, firstAppBounds, travelerBounds, conversationBounds] = await Promise.all([
+    transcript.getByText('I found a useful set of options for your trip.').boundingBox(),
+    apps.first().boundingBox(),
+    transcript.getByRole('article', { name: 'Traveler message' }).first().boundingBox(),
+    conversation.boundingBox(),
+  ]);
+  for (const bounds of [assistantCopyBounds, firstAppBounds, travelerBounds, conversationBounds]) {
+    expect(bounds).not.toBeNull();
+  }
+  expect(assistantCopyBounds!.width).toBeLessThan(firstAppBounds!.width);
+  expect(travelerBounds!.x).toBeGreaterThan(assistantCopyBounds!.x);
+  expect(Math.abs(
+    travelerBounds!.x + travelerBounds!.width
+      - (conversationBounds!.x + conversationBounds!.width),
+  )).toBeLessThanOrEqual(8);
+
   const continueInput = conversation.getByRole('textbox', {
     name: 'Ask about a flight',
   });
   const continueButton = conversation.getByRole('button', {
     name: 'Continue trip',
   });
+  const firstSearchControl = appSurfaceAt(0).control;
+  const firstStarterControl = appSurfaceAt(1).control;
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  });
+  const keyboardOrder: string[] = [];
+  for (let index = 0; index < 16 && keyboardOrder.length < 3; index += 1) {
+    await page.keyboard.press('Tab');
+    if (await firstSearchControl.evaluate((control) => document.activeElement === control)) {
+      keyboardOrder.push('search App control');
+    } else if (await firstStarterControl.evaluate((control) => document.activeElement === control)) {
+      keyboardOrder.push('starter App control');
+    } else if (await continueInput.evaluate((input) => document.activeElement === input)) {
+      keyboardOrder.push('conversation composer');
+    }
+  }
+  expect(keyboardOrder).toEqual([
+    'search App control',
+    'starter App control',
+    'conversation composer',
+  ]);
+  for (const appControl of [firstSearchControl, firstStarterControl]) {
+    await appControl.focus();
+    await expect(appControl).toBeFocused();
+    const appFocusAppearance = await appControl.evaluate((control) => {
+      const style = getComputedStyle(control);
+      return {
+        focusVisible: control.matches(':focus-visible'),
+        outlineColor: style.outlineColor,
+        outlineStyle: style.outlineStyle,
+        outlineWidth: Number.parseFloat(style.outlineWidth),
+      };
+    });
+    expect(appFocusAppearance.focusVisible).toBe(true);
+    expect(appFocusAppearance.outlineStyle).not.toBe('none');
+    expect(appFocusAppearance.outlineWidth).toBeGreaterThanOrEqual(4);
+    expect(appFocusAppearance.outlineColor).not.toBe('rgba(0, 0, 0, 0)');
+    await expectMinimumTargetSize(appControl);
+  }
   await continueInput.fill('Avoid overnight connections');
   await continueInput.press('Tab');
   await expect(continueButton).toBeFocused();
@@ -581,58 +917,197 @@ test('keeps one current flight App in the responsive journey workspace', async (
   await expectMinimumTargetSize(continueInput);
   await expectMinimumTargetSize(continueButton);
 
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  const activeMotion = await travelWorkspace.locator('*').evaluateAll((elements) => (
-    elements.flatMap((element) => {
-      if (element.getClientRects().length === 0) return [];
-      const style = getComputedStyle(element);
-      const timing = {
-        animation: Number.parseFloat(style.animationDuration) || 0,
-        transition: Number.parseFloat(style.transitionDuration) || 0,
-      };
-      return timing.animation > 0 || timing.transition > 0.00001
-        ? [{
-          ...timing,
-          className: element.className,
-          tagName: element.tagName,
-        }]
-        : [];
-    })
-  ));
-  expect(activeMotion).toEqual([]);
-
-  if (testInfo.project.name === 'mobile-chromium') {
+  for (let index = 0; index < 4; index += 1) {
+    await continueInput.fill(`Keep preference ${index + 1} in the trip`);
     await continueButton.click();
-    await expect.poll(() => turnRequests).toBe(2);
-    for (let index = 0; index < 12; index += 1) {
-      await continueInput.fill(`Keep option ${index + 1} in view`);
-      await continueButton.click();
-      await expect.poll(() => turnRequests).toBe(index + 3);
-    }
-
-    const transcript = conversation.getByRole('log', {
-      name: 'Conversation transcript',
-    }).locator('..');
-    await expect.poll(() => transcript.evaluate((viewport) => (
-      viewport.scrollHeight > viewport.clientHeight
-    ))).toBe(true);
-    const transcriptScroll = await transcript.evaluate((viewport) => ({
-      clientHeight: viewport.clientHeight,
-      scrollHeight: viewport.scrollHeight,
-      scrollTop: viewport.scrollTop,
+    await expect.poll(() => turnRequests).toBe(index + 2);
+  }
+  await expect.poll(() => transcript.evaluate((viewport) => (
+    viewport.scrollHeight > viewport.clientHeight
+  ))).toBe(true);
+  const transcriptScroll = await transcript.evaluate((viewport) => ({
+    clientHeight: viewport.clientHeight,
+    overflowY: getComputedStyle(viewport).overflowY,
+    scrollHeight: viewport.scrollHeight,
+    scrollTop: viewport.scrollTop,
+  }));
+  expect(transcriptScroll.scrollHeight).toBeGreaterThan(transcriptScroll.clientHeight);
+  expect(transcriptScroll.overflowY).toBe('auto');
+  expect(transcriptScroll.scrollTop).toBeGreaterThan(0);
+  const composer = conversation.getByRole('form', { name: 'Continue trip' });
+  await expect(composer).toBeVisible();
+  const composerBounds = await composer.boundingBox();
+  expect(composerBounds).not.toBeNull();
+  expect(composerBounds!.y).toBeGreaterThanOrEqual(0);
+  expect(composerBounds!.y + composerBounds!.height).toBeLessThanOrEqual(900);
+  await expect(apps).toHaveCount(10);
+  expect(await apps.evaluateAll((elements) => elements.map((element) => (
+    (element as HTMLElement & { view?: { id?: string } }).view?.id
+  )))).toEqual([
+    'search-view-turn-1',
+    'starter-view-turn-1',
+    'search-view-turn-2',
+    'starter-view-turn-2',
+    'search-view-turn-3',
+    'starter-view-turn-3',
+    'search-view-turn-4',
+    'starter-view-turn-4',
+    'search-view-turn-5',
+    'starter-view-turn-5',
+  ]);
+  const approvedViewIds = await apps.evaluateAll((elements) => elements.map((element) => (
+    (element as HTMLElement & { view?: { id?: string } }).view?.id
+  )));
+  expect(new Set(approvedViewIds).size).toBe(approvedViewIds.length);
+  const initialHostsAfterLaterTurns = await transcript
+    .locator('[data-initial-view-identity]')
+    .evaluateAll((elements) => elements.map((element) => {
+      const host = element as HTMLElement & { view?: { id?: string } };
+      return {
+        connected: host.isConnected,
+        initialIdentity: host.dataset.initialViewIdentity,
+        currentIdentity: host.view?.id,
+      };
     }));
-    expect(transcriptScroll.scrollHeight).toBeGreaterThan(transcriptScroll.clientHeight);
-    expect(transcriptScroll.scrollTop + transcriptScroll.clientHeight)
-      .toBeGreaterThanOrEqual(transcriptScroll.scrollHeight - 32);
+  expect(initialHostsAfterLaterTurns).toEqual([
+    {
+      connected: true,
+      initialIdentity: 'search-view-turn-1',
+      currentIdentity: 'search-view-turn-1',
+    },
+    {
+      connected: true,
+      initialIdentity: 'starter-view-turn-1',
+      currentIdentity: 'starter-view-turn-1',
+    },
+  ]);
+  const mismatchedViewIds = Array.from(
+    { length: 5 },
+    (_, index) => mismatchedViewForTurn(index + 1).id,
+  );
+  expect(await apps.evaluateAll((elements, rejectedIds) => elements.some((element) => (
+    rejectedIds.includes(
+      (element as HTMLElement & { view?: { id?: string } }).view?.id ?? '',
+    )
+  )), mismatchedViewIds)).toBe(false);
+  const chronologicalTranscript = await transcript.locator('article').evaluateAll((articles) => (
+    articles.map((article) => ({
+      label: article.getAttribute('aria-label'),
+      parts: Array.from(article.children).map((child) => (
+        child.tagName === 'NOODLE-APP-VIEW'
+          ? (child as HTMLElement & { view?: { id?: string } }).view?.id
+          : child.textContent?.trim()
+      )),
+    }))
+  ));
+  expect(chronologicalTranscript.map(({ label }) => label)).toEqual([
+    'Traveler message',
+    'Assistant message',
+    'Traveler message',
+    'Assistant message',
+    'Traveler message',
+    'Assistant message',
+    'Traveler message',
+    'Assistant message',
+    'Traveler message',
+    'Assistant message',
+  ]);
+  for (let turn = 1; turn <= 5; turn += 1) {
+    expect(chronologicalTranscript[(turn * 2) - 1]?.parts).toEqual([
+      firstAssistantCopy,
+      searchViewForTurn(turn).id,
+      secondAssistantCopy,
+      starterViewForTurn(turn).id,
+      'This travel view is unavailable.',
+    ]);
+  }
 
-    const composer = conversation.getByRole('form', { name: 'Continue trip' });
-    await composer.scrollIntoViewIfNeeded();
-    await expect(composer).toBeVisible();
-    const composerBounds = await composer.boundingBox();
-    expect(composerBounds).not.toBeNull();
-    expect(composerBounds!.y).toBeGreaterThanOrEqual(0);
-    expect(composerBounds!.y + composerBounds!.height).toBeLessThanOrEqual(844);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  for (const target of await conversation.locator(
+    'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href]',
+  ).all()) {
+    if (await target.isVisible()) await expectMinimumTargetSize(target);
+  }
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const motionScan = await page.locator('.travel-workspace, .travel-workspace *')
+    .evaluateAll((elements) => {
+    const seconds = (durationList: string) => durationList.split(',').map((entry) => {
+      const duration = entry.trim();
+      const value = Number.parseFloat(duration) || 0;
+      return duration.endsWith('ms') ? value / 1000 : value;
+    });
+    return {
+      scannedWorkspaceRoot: elements.some((element) => element.classList.contains('travel-workspace')),
+      active: elements.flatMap((element) => {
+        if (element.getClientRects().length === 0) return [];
+        const style = getComputedStyle(element);
+        const timing = {
+          animation: seconds(style.animationDuration),
+          transition: seconds(style.transitionDuration),
+        };
+        return timing.animation.some((duration) => duration > 0)
+          || timing.transition.some((duration) => duration > 0.00001)
+          ? [{
+            ...timing,
+            className: element.className,
+            tagName: element.tagName,
+          }]
+          : [];
+      }),
+    };
+  });
+  expect(motionScan.scannedWorkspaceRoot).toBe(true);
+  expect(motionScan.active).toEqual([]);
+
+  const normalAppTextMetrics = await Promise.all(
+    Array.from({ length: 10 }, (_, index) => appTextMetricsAt(index)),
+  );
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%';
+  });
+  for (let index = 0; index < 10; index += 1) {
+    await appSurfaceAt(index).appDocument.locator('html').evaluate((documentElement) => {
+      documentElement.style.fontSize = '200%';
+    });
+  }
+  const zoomedAppTextMetrics = await Promise.all(
+    Array.from({ length: 10 }, (_, index) => appTextMetricsAt(index)),
+  );
+  for (let index = 0; index < 10; index += 1) {
+    expect(zoomedAppTextMetrics[index]!.controlFontSize).toBeCloseTo(
+      normalAppTextMetrics[index]!.controlFontSize * 2,
+      1,
+    );
+    expect(zoomedAppTextMetrics[index]!.paragraphFontSize).toBeCloseTo(
+      normalAppTextMetrics[index]!.paragraphFontSize * 2,
+      1,
+    );
+  }
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+    .toBe(390);
+  await expect(composer).toBeVisible();
+  const zoomedComposerBounds = await composer.boundingBox();
+  expect(zoomedComposerBounds).not.toBeNull();
+  expect(zoomedComposerBounds!.y).toBeGreaterThanOrEqual(0);
+  expect(zoomedComposerBounds!.y + zoomedComposerBounds!.height).toBeLessThanOrEqual(900);
+  await expect(apps).toHaveCount(10);
+  const [zoomedConversationBounds, zoomedTranscriptBounds, zoomedProseBounds] = await Promise.all([
+    conversation.boundingBox(),
+    transcript.boundingBox(),
+    transcript.getByText(firstAssistantCopy, { exact: true }).first().boundingBox(),
+  ]);
+  assertHorizontallyContained(zoomedTranscriptBounds, zoomedConversationBounds, 390);
+  assertHorizontallyContained(zoomedProseBounds, zoomedConversationBounds, 390);
+  expect(await conversation.evaluate((element) => (
+    element.scrollWidth <= element.clientWidth
+  ))).toBe(true);
+  expect(await transcript.evaluate((element) => (
+    element.scrollWidth <= element.clientWidth
+  ))).toBe(true);
+  for (let index = 0; index < 10; index += 1) {
+    await assertAppSurfaceFits(index, zoomedConversationBounds, 390);
+    await expectMinimumTargetSize(appSurfaceAt(index).control);
   }
 });
 
@@ -837,15 +1312,35 @@ test('stacks every below-fold landing section at 390px', async ({
     .toBe(390);
 });
 
-test('centers the idle mobile conversation without a contradictory trip brief', async ({
+test('keeps the transcript as the sole flexible row before trip context exists', async ({
   page,
 }, testInfo) => {
-  test.skip(testInfo.project.name !== 'mobile-chromium');
+  test.skip(testInfo.project.name !== 'desktop-chromium');
   await page.route('**/v1/assistant/public-sessions', async (route) => {
     await route.fulfill({
-      status: 503,
+      status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ error: 'deterministic browser fixture' }),
+      body: JSON.stringify({
+        token: 'browser-fixture-token',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        endpoints: {
+          turns: 'http://127.0.0.1:3108/browser-fixture/turns',
+          toolConfirmations: 'http://127.0.0.1:3108/browser-fixture/confirmations',
+        },
+      }),
+    });
+  });
+  await page.route('**/browser-fixture/turns', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: [
+        `event: content\ndata: ${JSON.stringify({
+          delta: 'Tell me one more detail and I will narrow the options.',
+        })}`,
+        'event: done\ndata: {}',
+        '',
+      ].join('\n\n'),
     });
   });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -854,29 +1349,123 @@ test('centers the idle mobile conversation without a contradictory trip brief', 
     .fill('Islamabad to Rome for two, next weekend');
   await page.getByRole('button', { name: 'Find flights' }).click();
 
-  await expect(page.getByRole('heading', {
-    name: 'Plan your flight',
-  })).toBeVisible();
-  await expect(page.getByRole('complementary', { name: 'Live trip brief' }))
+  const conversation = page.getByRole('region', { name: 'Travel conversation' });
+  await expect(conversation.getByText(
+    'Tell me one more detail and I will narrow the options.',
+  )).toBeVisible();
+  await expect(conversation.getByRole('region', { name: 'Current trip' }))
     .toHaveCount(0);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
-
-  const centered = await page.evaluate(() => {
-    const workspace = document.querySelector<HTMLElement>('.travel-journey-workspace');
-    const canvas = document.querySelector<HTMLElement>('.travel-journey-canvas');
-    const conversation = document.querySelector<HTMLElement>('.travel-conversation-shell');
-    if (!workspace || !canvas || !conversation) return false;
-    const workspaceBounds = workspace.getBoundingClientRect();
-    const canvasBounds = canvas.getBoundingClientRect();
-    const conversationBounds = conversation.getBoundingClientRect();
-    return workspaceBounds.left >= 0
-      && workspaceBounds.right <= 390
-      && conversationBounds.left >= 16
-      && conversationBounds.right <= 374
-      && Boolean(
-        canvas.compareDocumentPosition(conversation) & Node.DOCUMENT_POSITION_FOLLOWING,
-      )
-      && canvasBounds.bottom <= conversationBounds.top;
+  const layout = await conversation.evaluate((element) => {
+    const children = Array.from(element.children) as HTMLElement[];
+    const transcript = children[2]!;
+    const lowerChrome = children[3]!;
+    const composer = children[4]!;
+    const transcriptBounds = transcript.getBoundingClientRect();
+    const lowerBounds = lowerChrome.getBoundingClientRect();
+    const composerBounds = composer.getBoundingClientRect();
+    const status = lowerChrome.querySelector<HTMLElement>('[role="status"]')!;
+    return {
+      childCount: children.length,
+      areas: children.map((child) => getComputedStyle(child).gridArea),
+      transcriptHeight: transcriptBounds.height,
+      statusHeight: status.getBoundingClientRect().height,
+      transcriptToChrome: lowerBounds.top - transcriptBounds.bottom,
+      chromeToComposer: composerBounds.top - lowerBounds.bottom,
+      composerBottom: composerBounds.bottom,
+      viewportHeight: window.innerHeight,
+    };
   });
-  expect(centered).toBe(true);
+  expect(layout.childCount).toBe(6);
+  expect(layout.areas).toEqual([
+    'header',
+    'context',
+    'transcript',
+    'lower-chrome',
+    'composer',
+    'attribution',
+  ]);
+  expect(layout.transcriptHeight).toBeGreaterThan(100);
+  expect(layout.statusHeight).toBeLessThanOrEqual(32);
+  expect(layout.transcriptToChrome).toBeGreaterThanOrEqual(0);
+  expect(layout.transcriptToChrome).toBeLessThanOrEqual(16);
+  expect(layout.chromeToComposer).toBeGreaterThanOrEqual(0);
+  expect(layout.chromeToComposer).toBeLessThanOrEqual(16);
+  expect(layout.composerBottom).toBeLessThanOrEqual(layout.viewportHeight);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+});
+
+test('keeps terminal errors bounded in the stable lower chrome row', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium');
+  await page.route('**/v1/assistant/public-sessions', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        token: 'browser-fixture-token',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        endpoints: {
+          turns: 'http://127.0.0.1:3108/browser-fixture/terminal-error',
+          toolConfirmations: 'http://127.0.0.1:3108/browser-fixture/confirmations',
+        },
+      }),
+    });
+  });
+  await page.route('**/browser-fixture/terminal-error', async (route) => {
+    await route.fulfill({
+      status: 400,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 'deterministic_browser_fixture' }),
+    });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('textbox', { name: 'Ask about a flight' })
+    .fill('Islamabad to Rome for two, next weekend');
+  await page.getByRole('button', { name: 'Find flights' }).click();
+
+  const conversation = page.getByRole('region', { name: 'Travel conversation' });
+  await expect(conversation.getByRole('alert')).toBeVisible();
+  await expect(conversation.getByRole('region', { name: 'Current trip' }))
+    .toHaveCount(0);
+  const layout = await conversation.evaluate((element) => {
+    const children = Array.from(element.children) as HTMLElement[];
+    const transcript = children[2]!;
+    const lowerChrome = children[3]!;
+    const composer = children[4]!;
+    const transcriptBounds = transcript.getBoundingClientRect();
+    const lowerBounds = lowerChrome.getBoundingClientRect();
+    const composerBounds = composer.getBoundingClientRect();
+    const status = lowerChrome.querySelector<HTMLElement>('[role="status"]')!;
+    return {
+      childCount: children.length,
+      areas: children.map((child) => getComputedStyle(child).gridArea),
+      transcriptHeight: transcriptBounds.height,
+      lowerHeight: lowerBounds.height,
+      statusHeight: status.getBoundingClientRect().height,
+      transcriptToChrome: lowerBounds.top - transcriptBounds.bottom,
+      chromeToComposer: composerBounds.top - lowerBounds.bottom,
+      composerBottom: composerBounds.bottom,
+      viewportHeight: window.innerHeight,
+    };
+  });
+  expect(layout.childCount).toBe(6);
+  expect(layout.areas).toEqual([
+    'header',
+    'context',
+    'transcript',
+    'lower-chrome',
+    'composer',
+    'attribution',
+  ]);
+  expect(layout.transcriptHeight).toBeGreaterThan(100);
+  expect(layout.lowerHeight).toBeLessThanOrEqual(160);
+  expect(layout.statusHeight).toBeLessThanOrEqual(32);
+  expect(layout.transcriptToChrome).toBeGreaterThanOrEqual(0);
+  expect(layout.transcriptToChrome).toBeLessThanOrEqual(16);
+  expect(layout.chromeToComposer).toBeGreaterThanOrEqual(0);
+  expect(layout.chromeToComposer).toBeLessThanOrEqual(16);
+  expect(layout.composerBottom).toBeLessThanOrEqual(layout.viewportHeight);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });

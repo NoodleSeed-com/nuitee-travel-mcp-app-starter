@@ -8,7 +8,7 @@ This is an independent starter, not an official Nuitee connector, airline partne
 
 ## Primary guest website
 
-The Next.js application in `apps/web/` is the main developer path. Its cinematic conversation-first hero starts with the traveler’s own words, then moves into delayed anonymous Assistant admission, an application-owned typed renderer, plain-language progress, structured trip projection, and the existing Noodle MCP App views. Once the journey starts, the conversation controls a separate journey canvas rather than containing it. The website owns one persistent current flight-results slot: only the newest exact FlightResults view mounts there through the official Noodle App host, while known linked Apps never mount inside the transcript.
+The Next.js application in `apps/web/` is the main developer path. Its cinematic conversation-first hero starts with the traveler’s own words, then moves into one centered chronological conversation with delayed anonymous Assistant admission, plain-language progress, typed trip projection, and official linked MCP Apps. Apps render inline at the message part that needs interaction; every distinct view ID remains in history rather than being moved to a separate canvas or generically deduplicated. Only `search_flights` with `ui://nuitee_travel_mcp_app_starter/search_flights_widget` and `open_travel_starter` with `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget` may reach `NoodleAppView`. The compact Current trip summary is derived only from validated structured tool results, never from conversation prose.
 
 ```sh
 corepack enable

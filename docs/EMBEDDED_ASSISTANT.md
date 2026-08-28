@@ -15,7 +15,14 @@ Next.js guest browser
   → Nuitee Flights API
 ```
 
-The browser uses the custom renderer in `apps/web/` with `useNoodleAssistant` and `NoodleAppView`. It does not implement a second chat transport, fetch `ui://` resources, copy the linked Apps, or call Nuitee directly. The conversation controls a separate journey canvas rather than containing it. The website owns one persistent current flight-results slot, mounts only the newest exact FlightResults view there through the official Noodle App host, and omits known linked Apps from the transcript.
+The browser uses the custom renderer in `apps/web/` with `useNoodleAssistant` and `NoodleAppView`. It does not implement a second chat transport, fetch `ui://` resources, copy linked Apps, or call Nuitee directly. Wayfare is one centered chronological conversation. Linked Apps render inline at their original message part, and distinct view IDs remain distinct invocations in history rather than being generically deduplicated.
+
+Only two exact tool/resource identities may reach `NoodleAppView`:
+
+- `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget`;
+- `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget`.
+
+Every mismatch fails closed as an unavailable inline view. The compact Current trip summary uses validated typed tool results only; traveler and Assistant prose cannot populate it.
 
 `src/embedded-server.ts` calls the same `createTravelServer('embedded')` product factory as the other entrypoints. Its public surface allowlists the same five tool instances registered on the server:
 
@@ -123,7 +130,7 @@ Use synthetic or explicitly approved provider input and prove all of the followi
 9. Desktop, 390px mobile, keyboard, 200% text zoom, dark mode, and reduced motion remain usable.
 10. The privacy and support destinations resolve, are monitored, and describe the actual data flow.
 
-Local Playwright coverage includes a deterministic loopback Assistant fixture that sends two typed FlightResults views into one turn and proves the newest view is the single App in the website-owned slot across desktop and mobile composition. It also proves local keyboard, target-size, reduced-motion, overflow, and long-transcript behavior. The fixture is not a deployed Assistant or embed binding, so hosted behavior remains unproven until a separately authorized deployment and exact embed-binding verification complete this hosted smoke.
+Local Playwright coverage includes a deterministic loopback Assistant fixture that interleaves prose, both approved exact App identities, one mismatched identity, and a structured tool result in one chronological turn. It proves both distinct Apps remain inline in order, the mismatch never reaches `NoodleAppView`, typed projection supplies the Current trip summary, and the centered conversation remains usable across required widths, keyboard focus, target size, reduced motion, text zoom, and genuine transcript overflow. The fixture is not a deployed Assistant or embed binding, so hosted behavior remains unproven until a separately authorized deployment and exact embed-binding verification complete this hosted smoke.
 
 ## State and TTL proof
 

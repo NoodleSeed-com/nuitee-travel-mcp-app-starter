@@ -339,6 +339,38 @@ describe('public repository contracts', () => {
     expect(checklist).toContain('[ ] Prove the 30-minute selection TTL');
   });
 
+  it('keeps the primary website on the exact-pair inline conversation architecture', async () => {
+    const [
+      conversation,
+      message,
+      registry,
+      policy,
+      architecture,
+    ] = await Promise.all([
+      repositoryFile('apps/web/src/components/travel-conversation.tsx'),
+      repositoryFile('apps/web/src/components/travel-message.tsx'),
+      repositoryFile('apps/web/src/components/travel-view-registry.tsx'),
+      repositoryFile('apps/web/src/lib/travel-view-policy.ts'),
+      repositoryFile('docs/architecture.md'),
+    ]);
+
+    expect(conversation).toContain('aria-label="Travel conversation"');
+    expect(message).toContain('<TravelViewRegistry client={client} view={part.data} />');
+    expect(registry).toContain('isInlineTravelView(view)');
+    expect(registry).toContain('<NoodleAppView client={client} theme="light" view={view} />');
+    expect(policy).toContain("search_flights: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget'");
+    expect(policy).toContain("open_travel_starter: 'ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget'");
+    expect(architecture).toContain('Every distinct view ID is a distinct chronological invocation');
+    await expect(access(new URL(
+      '../apps/web/src/components/travel-journey-canvas.tsx',
+      import.meta.url,
+    ))).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(access(new URL(
+      '../apps/web/src/lib/journey-view.ts',
+      import.meta.url,
+    ))).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
   it('records generic and app-mapped public preflights without claiming hosted readiness', async () => {
     const checklist = await repositoryFile('PUBLIC_RELEASE_CHECKLIST.md');
 

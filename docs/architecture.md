@@ -27,7 +27,14 @@ Noodle public Assistant surface ───── External MCP host
            official Flights API
 ```
 
-`apps/web/` is the primary product surface. It owns the conversation shell, delayed guest admission, typed message renderer, plain-language activity, read-only trip projection, and one persistent current flight-results slot. The conversation controls a separate journey canvas rather than containing linked Apps. Only the newest exact FlightResults view mounts in that slot through `NoodleAppView` and the official App host; known linked views are omitted from transcript rendering. Responsive DOM composition keeps conversation-before-canvas source order on desktop and canvas-before-conversation source order on mobile without remounting the linked App. The website calls neither Nuitee nor MCP tools directly. On the first submitted message, the official Assistant hook uses the public embed ID to open an anonymous session.
+`apps/web/` is the primary product surface. It owns one centered chronological conversation, delayed guest admission, typed message rendering, plain-language activity, and a compact read-only trip projection. `TravelMessage` preserves message-part order and delegates admitted Apps to the official `NoodleAppView` host inline. Every distinct view ID is a distinct chronological invocation and remains mounted in history; the website has no newest-only selector, generic App deduplication, separate journey canvas, or viewport-dependent DOM reordering. The website calls neither Nuitee nor MCP tools directly. On the first submitted message, the official Assistant hook uses the public embed ID to open an anonymous session.
+
+The website admits only these exact linked-App identities:
+
+- `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget`;
+- `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget`.
+
+A tool/URI mismatch fails closed inline and never reaches `NoodleAppView`.
 
 `src/` owns the MCP server, model-facing workflows, exact public capability allowlist, connector, tools, state, and linked Apps. External MCP hosts enter the same server and provide their own model. No browser-specific or host-specific copy of the business tools exists.
 
@@ -78,7 +85,7 @@ Deterministic local browser evidence proves this composition only against a loop
 7. Every provider offer ID becomes a private caller-scoped record. Public output receives only an application-issued `sel_…` handle.
 8. The tool replaces `flight_selections` using revision control and a 30-minute TTL; a new search begins with no active selection.
 9. At most three itineraries display inline. The same App may show up to ten only when the host grants fullscreen presentation.
-10. Validated planning and search results drive the website's read-only trip rail. The rail never parses Assistant prose or stores identifiers.
+10. Validated planning and search results drive the compact Current trip summary inside the conversation. The summary never parses Assistant prose or stores identifiers.
 
 If validation or the provider fails, the application returns bounded sanitized state and consults no fixture. A valid empty result clears stale route projection and reports no fares found.
 
