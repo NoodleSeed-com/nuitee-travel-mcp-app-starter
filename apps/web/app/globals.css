@@ -17,6 +17,7 @@
   --travel-on-action: var(--travel-paper);
   --travel-focus: var(--travel-blue);
   --travel-gutter: 16px;
+  --travel-header-height: 72px;
   background: var(--travel-canvas);
   color: var(--travel-ink);
   font-family: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
@@ -706,27 +707,42 @@ code {
 
 .travel-conversation-shell {
   display: grid;
-  width: auto;
+  width: min(100%, 64rem);
   min-width: 0;
-  height: min(48rem, calc(100svh - 11rem));
-  min-height: 36rem;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
   margin: 0;
   padding: 0;
-  grid-template-rows: auto minmax(12rem, 1fr) auto auto auto;
+  grid-template-areas:
+    "header"
+    "context"
+    "transcript"
+    "lower-chrome"
+    "composer"
+    "attribution";
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
   gap: 0.75rem;
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+  overflow: hidden;
 }
 
 .travel-conversation__header {
   display: flex;
+  grid-area: header;
   align-items: center;
   justify-content: flex-start;
   gap: 1rem;
   padding-bottom: 0.85rem;
   border-bottom: 1px solid var(--travel-boundary);
+}
+
+.travel-conversation__context {
+  min-width: 0;
+  grid-area: context;
 }
 
 .travel-conversation__header h1 {
@@ -842,6 +858,7 @@ code {
 .travel-transcript {
   min-width: 0;
   min-height: 0;
+  grid-area: transcript;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -856,9 +873,15 @@ code {
   list-style: none;
 }
 
+.travel-transcript li {
+  display: grid;
+  min-width: 0;
+}
+
 .travel-message {
-  max-width: min(100%, 42rem);
-  overflow-wrap: anywhere;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: normal;
   line-height: 1.6;
 }
 
@@ -871,6 +894,8 @@ code {
 }
 
 .travel-message--user {
+  width: fit-content;
+  max-width: min(100%, 42rem);
   justify-self: end;
   padding: 0.75rem 1rem;
   border-radius: 16px 16px 4px;
@@ -878,10 +903,39 @@ code {
 }
 
 .travel-message--assistant {
+  width: 100%;
   justify-self: start;
 }
 
-.travel-conversation-shell > [role="status"] {
+.travel-message--assistant > p,
+.travel-message--assistant > h1,
+.travel-message--assistant > h2,
+.travel-message--assistant > h3,
+.travel-message--assistant > h4,
+.travel-message--assistant > h5,
+.travel-message--assistant > h6,
+.travel-message--assistant > ul,
+.travel-message--assistant > ol,
+.travel-message--assistant > pre,
+.travel-message--assistant > blockquote,
+.travel-message--assistant > table {
+  max-width: 48rem;
+}
+
+.travel-message noodle-app-view {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}
+
+.travel-conversation__lower-chrome {
+  display: grid;
+  min-width: 0;
+  grid-area: lower-chrome;
+  gap: 0.75rem;
+}
+
+.travel-conversation__lower-chrome > [role="status"] {
   min-height: 1.5rem;
   margin: 0;
   color: var(--travel-muted);
@@ -920,11 +974,18 @@ code {
 }
 
 .travel-composer--conversation {
+  position: relative;
+  z-index: 2;
+  grid-area: composer;
   margin: 0;
+  background: var(--travel-raised);
 }
 
 .travel-attribution--workspace {
+  grid-area: attribution;
+  margin: 0;
   color: var(--travel-muted);
+  font-size: 0.72rem;
 }
 
 .settings-sheet {
@@ -1563,26 +1624,17 @@ code {
 }
 
 .conversation-workspace {
-  display: block;
-  min-height: calc(100svh - 74px);
+  display: grid;
+  height: calc(100svh - var(--travel-header-height));
+  height: calc(100dvh - var(--travel-header-height));
+  min-height: 0;
+  place-items: stretch center;
   padding: clamp(1.25rem, 3vw, 2.5rem);
   background:
     radial-gradient(circle at 88% 2%, #dbe7ef 0, transparent 34%),
     radial-gradient(circle at 8% 92%, #f4e9da 0, transparent 28%),
     var(--travel-paper);
-}
-
-.travel-journey-workspace {
-  width: min(100%, 90rem);
-  margin-inline: auto;
-}
-
-.travel-journey-workspace__body {
-  display: grid;
-  min-width: 0;
-  grid-template-columns: minmax(20rem, 24rem) minmax(0, 1fr);
-  align-items: stretch;
-  gap: clamp(1.25rem, 3vw, 2.5rem);
+  overflow: hidden;
 }
 
 .trip-brief {
@@ -1590,9 +1642,9 @@ code {
   min-width: 0;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.75rem 1.25rem;
-  margin: 0 0 1.25rem;
-  padding: 0 0 1rem;
+  gap: 0.65rem 1rem;
+  margin: 0;
+  padding: 0 0 0.75rem;
   border-bottom: 1px solid var(--travel-boundary);
 }
 
@@ -1608,10 +1660,9 @@ code {
 .trip-brief__route {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.4rem;
   margin: 0;
-  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
-  font-size: 1rem;
+  font-size: 0.92rem;
 }
 
 .trip-brief__route strong {
@@ -1621,15 +1672,15 @@ code {
 .trip-brief dl {
   display: flex;
   min-width: 0;
-  flex: 1 1 30rem;
+  flex: 1 1 26rem;
   flex-wrap: wrap;
-  gap: 0.65rem 1.25rem;
+  gap: 0.4rem 1rem;
   margin: 0;
 }
 
 .trip-brief dl div {
-  display: grid;
-  gap: 0.1rem;
+  display: flex;
+  gap: 0.3rem;
 }
 
 .trip-brief dt,
@@ -1644,55 +1695,13 @@ code {
 
 .trip-brief__status {
   margin: 0 0 0 auto;
-  padding: 0.4rem 0.7rem;
+  padding: 0.3rem 0.6rem;
   border: 1px solid color-mix(in srgb, var(--travel-blue) 24%, var(--travel-boundary));
   border-radius: 999px;
   background: color-mix(in srgb, var(--travel-blue) 7%, transparent);
   color: var(--travel-blue);
   font-size: 0.82rem;
   font-weight: 700;
-}
-
-.travel-journey-canvas {
-  min-width: 0;
-  min-height: 36rem;
-  overflow: clip;
-  border: 1px solid var(--travel-boundary);
-  border-radius: 24px;
-  background: var(--travel-raised);
-}
-
-.travel-journey-canvas noodle-app-view {
-  display: block;
-  width: 100%;
-  min-height: 100%;
-}
-
-.travel-journey-canvas__empty {
-  display: grid;
-  min-height: 36rem;
-  align-content: center;
-  justify-items: center;
-  gap: 0.75rem;
-  padding: clamp(1.5rem, 5vw, 4rem);
-  text-align: center;
-}
-
-.travel-journey-canvas__empty h2,
-.travel-journey-canvas__empty p {
-  margin: 0;
-}
-
-.travel-journey-canvas__empty h2 {
-  font-size: clamp(1.5rem, 3vw, 2.25rem);
-  font-weight: 560;
-  letter-spacing: -0.04em;
-}
-
-.travel-journey-canvas__empty p {
-  max-width: 32rem;
-  color: var(--travel-muted);
-  line-height: 1.6;
 }
 
 .settings-sheet {
@@ -1702,6 +1711,10 @@ code {
 }
 
 @media (max-width: 760px) {
+  :root {
+    --travel-header-height: 64px;
+  }
+
   .travel-header {
     min-height: 64px;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -1738,47 +1751,16 @@ code {
   }
 
   .conversation-workspace {
-    min-height: 0;
-    padding: 0;
-  }
-
-  .travel-journey-workspace {
-    width: 100%;
-    padding: 1rem;
-  }
-
-  .travel-journey-workspace__body {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
+    padding: 0.75rem;
   }
 
   .trip-brief {
     align-items: flex-start;
-    margin-bottom: 1rem;
-  }
-
-  .travel-conversation-shell {
-    height: 75vh;
-    min-height: 0;
-    max-height: 40rem;
-    padding: 0;
-    overflow: hidden;
-  }
-
-  .travel-journey-canvas {
-    min-height: min(34rem, 64svh);
-  }
-
-  .travel-journey-canvas__empty {
-    min-height: min(34rem, 64svh);
+    gap: 0.5rem 0.75rem;
   }
 
   .travel-composer--conversation {
-    position: sticky;
-    z-index: 2;
-    bottom: 0;
     padding-block: 0.5rem;
-    background: var(--travel-paper);
   }
 
   .travel-conversation__header {

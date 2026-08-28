@@ -75,7 +75,7 @@ export function SettingsSheet({
     >
       <header className="settings-sheet__header">
         <div>
-          <p className="settings-sheet__eyebrow">Travel workspace</p>
+          <p className="settings-sheet__eyebrow">Wayfare</p>
           <h2 id="settings-title">Settings</h2>
         </div>
         <button

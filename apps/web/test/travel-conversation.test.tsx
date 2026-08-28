@@ -58,36 +58,6 @@ function conversationStatus() {
     .getByRole('status');
 }
 
-function stubWorkspaceMediaQuery(initialMatches: boolean) {
-  let matches = initialMatches;
-  const listeners = new Set<EventListener>();
-  const mediaQuery = {
-    get matches() {
-      return matches;
-    },
-    media: '(max-width: 760px)',
-    onchange: null,
-    addEventListener: vi.fn((_type: string, listener: EventListener) => {
-      listeners.add(listener);
-    }),
-    removeEventListener: vi.fn((_type: string, listener: EventListener) => {
-      listeners.delete(listener);
-    }),
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    dispatchEvent: vi.fn(() => true),
-  } as unknown as MediaQueryList;
-  vi.stubGlobal('matchMedia', vi.fn(() => mediaQuery));
-
-  return {
-    setMatches(nextMatches: boolean) {
-      matches = nextMatches;
-      const event = { matches, media: mediaQuery.media } as MediaQueryListEvent;
-      for (const listener of listeners) listener(event);
-    },
-  };
-}
-
 let client = createClient();
 let resizeCallback: ResizeObserverCallback | undefined;
 let resizeDisconnect = vi.fn<() => void>();
@@ -193,13 +163,16 @@ describe('guest travel conversation lifecycle', () => {
     expect(screen.getAllByRole('button', { name: 'New trip' })).toHaveLength(1);
     expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
       .toHaveAttribute('placeholder', 'Tell Wayfare what you need…');
-    const workspace = screen.getByRole('region', { name: 'Travel workspace' });
-    expect(workspace).toContainElement(screen.getByRole('region', {
-      name: 'Travel conversation',
-    }));
-    expect(workspace).toContainElement(screen.getByRole('region', {
-      name: 'Flight workspace',
-    }));
+    expect(screen.getAllByRole('region', { name: 'Travel conversation' }))
+      .toHaveLength(1);
+    expect(screen.queryByRole('region', { name: 'Travel workspace' }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Flight workspace' }))
+      .not.toBeInTheDocument();
+    expect(document.querySelector('.travel-journey-workspace'))
+      .not.toBeInTheDocument();
+    expect(document.querySelector('.travel-journey-canvas'))
+      .not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Current trip' }))
       .not.toBeInTheDocument();
     expect(assistantMock.useNoodleAssistant).toHaveBeenCalledWith(
@@ -218,6 +191,76 @@ describe('guest travel conversation lifecycle', () => {
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
     expect(options.clientContext()).not.toHaveProperty('principalKey');
+  });
+
+  it('keeps stable semantic grid slots when trip context and errors are absent', async () => {
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+
+    submitPrompt('JFK to Lisbon next month');
+
+    const conversation = await screen.findByRole('region', {
+      name: 'Travel conversation',
+    });
+    const contextSlot = conversation.children.item(1);
+    const transcript = within(conversation).getByRole('log', {
+      name: 'Conversation transcript',
+    }).parentElement;
+    const lowerChrome = conversation.children.item(3);
+    const composer = within(conversation).getByRole('form', {
+      name: 'Continue trip',
+    });
+    const attribution = within(conversation).getByText(
+      'Built on Noodle Seed · Powered by Nuitee',
+    );
+
+    expect(contextSlot).toHaveClass('travel-conversation__context');
+    expect(contextSlot).toBeEmptyDOMElement();
+    expect(conversation.children.item(2)).toBe(transcript);
+    expect(lowerChrome).toHaveClass('travel-conversation__lower-chrome');
+    expect(lowerChrome).toContainElement(conversationStatus());
+    expect(within(lowerChrome as HTMLElement).queryByRole('alert'))
+      .not.toBeInTheDocument();
+    expect(conversation.children.item(4)).toBe(composer);
+    expect(conversation.children.item(5)).toBe(attribution);
+  });
+
+  it('keeps errors inside the stable lower-chrome grid slot', async () => {
+    assistantMock.useNoodleAssistant.mockImplementation(() => ({
+      client,
+      messages: [],
+      status: 'error',
+      error: {
+        name: 'AssistantClientError',
+        message: 'terminal turn failure',
+        detail: {
+          code: 'turn_failed',
+          status: 400,
+          retryable: false,
+        },
+      },
+    }));
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+
+    submitPrompt('JFK to Lisbon next month');
+
+    const conversation = await screen.findByRole('region', {
+      name: 'Travel conversation',
+    });
+    const lowerChrome = conversation.children.item(3);
+    const alert = within(conversation).getByRole('alert');
+    const composer = within(conversation).getByRole('form', {
+      name: 'Continue trip',
+    });
+
+    expect(conversation.children.item(1)).toHaveClass(
+      'travel-conversation__context',
+    );
+    expect(conversation.children.item(2)).toHaveClass('travel-transcript');
+    expect(lowerChrome).toHaveClass('travel-conversation__lower-chrome');
+    expect(lowerChrome).toContainElement(conversationStatus());
+    expect(lowerChrome).toContainElement(alert);
+    expect(conversation.children.item(4)).toBe(composer);
+    expect(conversation.children).toHaveLength(6);
   });
 
   it('uses the typed plan to align the heading, composer, and live brief', async () => {
@@ -257,16 +300,19 @@ describe('guest travel conversation lifecycle', () => {
       .toBeVisible();
     expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
       .toHaveAttribute('placeholder', 'Adjust the trip or add a preference…');
-    const workspace = screen.getByRole('region', { name: 'Travel workspace' });
     const conversation = screen.getByRole('region', { name: 'Travel conversation' });
     const brief = screen.getByRole('region', { name: 'Current trip' });
+    const transcript = within(conversation).getByRole('log', {
+      name: 'Conversation transcript',
+    });
     expect(brief).toHaveTextContent('ISB → NYC');
-    expect(conversation.parentElement).toHaveClass('travel-journey-workspace__body');
-    expect(workspace).toContainElement(brief);
+    expect(conversation).toContainElement(brief);
+    expect(brief.compareDocumentPosition(transcript)
+      & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByText('Ready to search')).toBeVisible();
   });
 
-  it('composes one conversation-controlled workspace from typed journey parts', async () => {
+  it('renders every linked App inline in chronological conversation order', async () => {
     const firstView = {
       id: 'view-search-first',
       tool: 'search_flights',
@@ -319,26 +365,40 @@ describe('guest travel conversation lifecycle', () => {
 
     submitPrompt('Islamabad to New York');
 
-    const workspace = await screen.findByRole('region', { name: 'Travel workspace' });
-    const conversation = within(workspace).getByRole('region', { name: 'Travel conversation' });
-    const canvas = within(workspace).getByRole('region', { name: 'Flight workspace' });
-    expect(workspace).toContainElement(conversation);
-    expect(workspace).toContainElement(canvas);
-    expect(within(conversation).queryByText('Flight results')).not.toBeInTheDocument();
-    expect(within(conversation).getByText('This travel view is unavailable.'))
-      .toBeVisible();
-    expect(within(canvas).queryByText('This travel view is unavailable.'))
+    const conversation = await screen.findByRole('region', {
+      name: 'Travel conversation',
+    });
+    const transcript = within(conversation).getByRole('log', {
+      name: 'Conversation transcript',
+    });
+    const message = within(transcript).getByRole('article', {
+      name: 'Assistant message',
+    });
+    const linkedApps = message.querySelectorAll('noodle-app-view');
+    const unavailable = within(message).getByText(
+      'This travel view is unavailable.',
+    );
+    const prose = within(message).getByText('I refreshed the current choices.');
+    expect(linkedApps).toHaveLength(2);
+    expect(linkedApps[0]?.view).toBe(firstView);
+    expect(linkedApps[1]?.view).toBe(secondView);
+    expect(linkedApps[0]?.compareDocumentPosition(unavailable)
+      & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(unavailable.compareDocumentPosition(prose)
+      & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(prose.compareDocumentPosition(linkedApps[1]!)
+      & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Travel workspace' }))
       .not.toBeInTheDocument();
-    expect(canvas.querySelectorAll('noodle-app-view')).toHaveLength(1);
-    expect(canvas.querySelector('noodle-app-view')?.view).toBe(secondView);
+    expect(screen.queryByRole('region', { name: 'Flight workspace' }))
+      .not.toBeInTheDocument();
     expect(screen.queryByRole('complementary', { name: 'Live trip brief' }))
       .not.toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Current trip' }))
       .toHaveTextContent('ISB → NYC');
   });
 
-  it('keeps mobile DOM and focus order canvas-first without remounting the linked App', async () => {
-    const media = stubWorkspaceMediaQuery(false);
+  it('keeps one inline App and composer in chronological keyboard order', async () => {
     const mobileView = {
       id: 'view-mobile-order',
       tool: 'search_flights',
@@ -359,39 +419,25 @@ describe('guest travel conversation lifecycle', () => {
     render(<TravelAssistantPage runtime={readyRuntime} />);
     submitPrompt('Show current flights');
 
-    const body = (await screen.findByRole('region', { name: 'Flight workspace' }))
-      .parentElement;
-    expect(body).not.toBeNull();
-    if (!body) return;
-    const linkedApp = body.querySelector<HTMLElement>('noodle-app-view');
-    expect(linkedApp).not.toBeNull();
-    if (!linkedApp) return;
-    const conversation = screen.getByRole('region', {
+    const conversation = await screen.findByRole('region', {
       name: 'Travel conversation',
     });
-    expect(body.firstElementChild).toBe(conversation);
-
-    act(() => media.setMatches(true));
-
-    await waitFor(() => {
-      expect(body.firstElementChild).toBe(screen.getByRole('region', {
-        name: 'Flight workspace',
-      }));
+    const transcript = within(conversation).getByRole('log', {
+      name: 'Conversation transcript',
     });
-    expect(body.querySelectorAll('noodle-app-view')).toHaveLength(1);
-    expect(body.querySelector('noodle-app-view')).toBe(linkedApp);
-    expect(screen.getByRole('region', { name: 'Travel conversation' }))
-      .toBe(conversation);
+    const linkedApp = transcript.querySelector<HTMLElement>('noodle-app-view');
+    expect(linkedApp).not.toBeNull();
+    if (!linkedApp) return;
+    expect(conversation.querySelectorAll('noodle-app-view')).toHaveLength(1);
     linkedApp.tabIndex = 0;
     const composer = screen.getByRole('textbox', { name: 'Ask about a flight' });
-    const focusable = Array.from(body.querySelectorAll<HTMLElement>(
+    const focusable = Array.from(conversation.querySelectorAll<HTMLElement>(
       'noodle-app-view, textarea, button:not(:disabled)',
     )).filter((element) => element.tabIndex >= 0);
     expect(focusable.indexOf(linkedApp)).toBeLessThan(focusable.indexOf(composer));
   });
 
-  it('bounds a long mobile conversation and keeps the transcript as its scroll container', async () => {
-    stubWorkspaceMediaQuery(true);
+  it('bounds a long conversation with the transcript as its only scroll owner', async () => {
     assistantMock.useNoodleAssistant.mockImplementation(() => ({
       client,
       messages: Array.from({ length: 48 }, (_, index) => ({
@@ -415,13 +461,7 @@ describe('guest travel conversation lifecycle', () => {
     expect(transcript).not.toBeNull();
     if (!transcript) return;
     expect(within(log).getAllByRole('article')).toHaveLength(48);
-    expect(conversation).toHaveStyle({
-      height: '75vh',
-      maxHeight: '40rem',
-      minHeight: '0',
-      overflow: 'hidden',
-    });
-    expect(transcript).toHaveStyle({ overflowY: 'auto' });
+    expect(conversation).not.toHaveAttribute('style');
     const composer = within(conversation).getByRole('form', {
       name: 'Continue trip',
     });

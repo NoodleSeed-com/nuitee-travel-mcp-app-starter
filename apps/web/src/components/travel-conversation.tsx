@@ -6,47 +6,23 @@ import {
   useMemo,
   useRef,
   useState,
-  useSyncExternalStore,
 } from 'react';
 import { starterConfig } from '../../../../starter.config';
 import { presentAssistantError } from '../lib/assistant-error';
 import type { ReadyPublicAssistantRuntime } from '../lib/assistant-config';
 import { isNearTranscriptEnd } from '../lib/conversation-scroll';
-import { latestJourneyView } from '../lib/journey-view';
 import { projectTrip, type TripProjection } from '../lib/trip-projection';
 import {
   progressForEvent,
   type ToolActivity,
 } from '../lib/travel-progress';
 import { TravelComposer } from './travel-composer';
-import { TravelJourneyCanvas } from './travel-journey-canvas';
 import { TravelMessage } from './travel-message';
 import { TripBrief } from './trip-brief';
 
 interface TravelConversationProps {
   readonly runtime: ReadyPublicAssistantRuntime;
   readonly initialPrompt: string;
-}
-
-const MOBILE_WORKSPACE_QUERY = '(max-width: 760px)';
-
-function subscribeToMobileWorkspace(onChange: () => void) {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-    return () => undefined;
-  }
-  const mediaQuery = window.matchMedia(MOBILE_WORKSPACE_QUERY);
-  if (typeof mediaQuery.addEventListener === 'function') {
-    mediaQuery.addEventListener('change', onChange);
-    return () => mediaQuery.removeEventListener('change', onChange);
-  }
-  mediaQuery.addListener(onChange);
-  return () => mediaQuery.removeListener(onChange);
-}
-
-function mobileWorkspaceSnapshot() {
-  return typeof window !== 'undefined'
-    && typeof window.matchMedia === 'function'
-    && window.matchMedia(MOBILE_WORKSPACE_QUERY).matches;
 }
 
 function conversationCopy(projection: TripProjection) {
@@ -106,12 +82,6 @@ export function TravelConversation({
   const terminal = status === 'error' || Boolean(error);
   const terminalRef = useRef(terminal);
   terminalRef.current = terminal;
-  const mobileWorkspace = useSyncExternalStore(
-    subscribeToMobileWorkspace,
-    mobileWorkspaceSnapshot,
-    () => false,
-  );
-
   useEffect(() => {
     let active = true;
     queueMicrotask(() => {
@@ -183,8 +153,6 @@ export function TravelConversation({
     messages,
     terminal ? undefined : activity?.phase,
   ), [activity?.phase, messages, terminal]);
-  const journeyView = useMemo(() => latestJourneyView(messages), [messages]);
-
   const copy = conversationCopy(projection);
 
   function sendFollowUp(prompt: string) {
@@ -211,18 +179,11 @@ export function TravelConversation({
       : activity?.label ?? (busy ? 'Assistant is responding' : '');
   const errorPresentation = error ? presentAssistantError(error) : null;
 
-  const conversationController = (
+  return (
     <section
       aria-busy={busy}
       aria-label="Travel conversation"
       className="travel-conversation-shell"
-      key="conversation-controller"
-      style={mobileWorkspace ? {
-        height: '75vh',
-        maxHeight: '40rem',
-        minHeight: 0,
-        overflow: 'hidden',
-      } : undefined}
     >
       <header className="travel-conversation__header">
         <div>
@@ -232,13 +193,15 @@ export function TravelConversation({
           <h1>{copy.title}</h1>
         </div>
       </header>
+      <div className="travel-conversation__context">
+        <TripBrief projection={projection} />
+      </div>
       <div
         className="travel-transcript"
         onScroll={(event) => {
           followLatestRef.current = isNearTranscriptEnd(event.currentTarget);
         }}
         ref={transcriptViewportRef}
-        style={mobileWorkspace ? { overflowY: 'auto' } : undefined}
       >
         <ol
           aria-label="Conversation transcript"
@@ -252,23 +215,25 @@ export function TravelConversation({
           ))}
         </ol>
       </div>
-      <p aria-live="polite" role="status">
-        {statusLabel}
-      </p>
-      {errorPresentation ? (
-        <section className="assistant-error" role="alert">
-          <h2>{errorPresentation.title}</h2>
-          <p>{errorPresentation.message}</p>
-          {errorPresentation.canRetry ? (
-            <button
-              type="button"
-              onClick={() => sendFollowUp(lastPromptRef.current)}
-            >
-              Try again
-            </button>
-          ) : null}
-        </section>
-      ) : null}
+      <div className="travel-conversation__lower-chrome">
+        <p aria-live="polite" role="status">
+          {statusLabel}
+        </p>
+        {errorPresentation ? (
+          <section className="assistant-error" role="alert">
+            <h2>{errorPresentation.title}</h2>
+            <p>{errorPresentation.message}</p>
+            {errorPresentation.canRetry ? (
+              <button
+                type="button"
+                onClick={() => sendFollowUp(lastPromptRef.current)}
+              >
+                Try again
+              </button>
+            ) : null}
+          </section>
+        ) : null}
+      </div>
       <TravelComposer
         busy={busy}
         formLabel="Continue trip"
@@ -281,25 +246,6 @@ export function TravelConversation({
       <p className="travel-attribution travel-attribution--workspace">
         Built on Noodle Seed · Powered by Nuitee
       </p>
-    </section>
-  );
-  const journeyCanvas = (
-    <TravelJourneyCanvas
-      client={client}
-      key="journey-canvas"
-      projection={projection}
-      view={journeyView}
-    />
-  );
-
-  return (
-    <section aria-label="Travel workspace" className="travel-journey-workspace">
-      <TripBrief projection={projection} />
-      <div className="travel-journey-workspace__body">
-        {mobileWorkspace
-          ? [journeyCanvas, conversationController]
-          : [conversationController, journeyCanvas]}
-      </div>
     </section>
   );
 }
