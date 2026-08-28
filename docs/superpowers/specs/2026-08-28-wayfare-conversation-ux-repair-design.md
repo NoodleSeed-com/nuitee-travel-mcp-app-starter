@@ -50,7 +50,7 @@ Linked Apps remain the source of truth for MCP UI. The browser must continue mou
 
 Known travel views are assigned to explicit application-owned slots:
 
-- `search_flights` / `flight-results` owns the primary journey canvas.
+- `search_flights` with the manifest-owned `ui://nuitee_travel_mcp_app_starter/search_flights_widget` resource owns the primary journey canvas.
 - `open_travel_starter` remains available to external MCP hosts but does not replace the website's native landing experience.
 
 Verification has no linked App view in the current capability set, so this repair does not invent a verification slot or browser-owned fare UI.
