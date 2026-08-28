@@ -70,6 +70,16 @@ describe('travel assistant zero state', () => {
     expect(onStart).toHaveBeenCalledWith(starterConfig.prompts[0]);
   });
 
+  it('assigns the shared Plan a trip input ref to the travel prompt textarea', () => {
+    const inputRef = createRef<HTMLTextAreaElement>();
+    render(<TravelZeroState inputRef={inputRef} onStart={vi.fn()} />);
+
+    expect(inputRef.current).toBe(
+      screen.getByRole('textbox', { name: 'Ask about a flight' }),
+    );
+    expect(inputRef.current).toHaveAttribute('id', 'travel-prompt');
+  });
+
   it('links the hero discovery cue to the destination section', () => {
     render(<TravelZeroState inputRef={createRef()} onStart={vi.fn()} />);
 

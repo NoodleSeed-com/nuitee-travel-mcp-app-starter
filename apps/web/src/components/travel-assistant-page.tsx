@@ -32,6 +32,10 @@ export function TravelAssistantPage({
     setProjection(EMPTY_TRIP);
   }
 
+  function focusPlanTrip() {
+    heroInputRef.current?.focus();
+  }
+
   function startConversation(prompt: string) {
     const normalized = prompt.trim();
     if (!normalized) return;
@@ -55,6 +59,7 @@ export function TravelAssistantPage({
             mode="hero"
             onNewTrip={reset}
             onOpenSettings={() => setSettingsOpen(true)}
+            onPlanTrip={focusPlanTrip}
           />
           <main id="travel-canvas" tabIndex={-1}>
             <TravelZeroState
@@ -73,6 +78,7 @@ export function TravelAssistantPage({
             mode="conversation"
             onNewTrip={reset}
             onOpenSettings={() => setSettingsOpen(true)}
+            onPlanTrip={reset}
           />
           <main className="conversation-workspace" id="travel-canvas" tabIndex={-1}>
             <TravelConversation

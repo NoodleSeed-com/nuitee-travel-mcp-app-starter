@@ -1328,14 +1328,14 @@ code {
   background: var(--travel-raised);
 }
 
-.travel-header nav {
+.travel-header__actions {
   display: flex;
   align-items: center;
   gap: 0.35rem;
 }
 
-.travel-header nav a,
-.travel-header nav button {
+.travel-header__actions a,
+.travel-header__actions button {
   display: inline-flex;
   min-height: 44px;
   align-items: center;
@@ -1351,15 +1351,51 @@ code {
   white-space: nowrap;
 }
 
-.travel-header nav a:hover,
-.travel-header nav button:hover {
+.travel-header__actions a:hover,
+.travel-header__actions button:hover {
   border-color: var(--travel-boundary);
   background: var(--travel-surface);
 }
 
-.travel-header .guest-session {
-  padding: 0.45rem 0;
-  white-space: nowrap;
+.travel-header__menu {
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--travel-boundary);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--travel-ink);
+}
+
+.travel-header__menu-icon,
+.travel-header__menu-icon::before,
+.travel-header__menu-icon::after {
+  display: block;
+  width: 1.1rem;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+  content: "";
+}
+
+.travel-header__menu-icon {
+  position: relative;
+}
+
+.travel-header__menu-icon::before,
+.travel-header__menu-icon::after {
+  position: absolute;
+  left: 0;
+}
+
+.travel-header__menu-icon::before {
+  top: -0.34rem;
+}
+
+.travel-header__menu-icon::after {
+  top: 0.34rem;
 }
 
 .travel-header--hero {
@@ -1370,16 +1406,111 @@ code {
 }
 
 .travel-header--hero .travel-wordmark,
-.travel-header--hero nav a,
-.travel-header--hero nav button,
-.travel-header--hero .guest-session {
+.travel-header--hero .travel-header__actions a,
+.travel-header--hero .travel-header__actions button,
+.travel-header--hero .travel-header__menu {
   color: var(--travel-raised);
 }
 
-.travel-header--hero nav a:hover,
-.travel-header--hero nav button:hover {
+.travel-header--hero .travel-header__actions a:hover,
+.travel-header--hero .travel-header__actions button:hover,
+.travel-header--hero .travel-header__menu:hover {
   border-color: rgb(255 255 255 / 48%);
   background: rgb(255 255 255 / 16%);
+}
+
+.travel-header--hero .travel-header__menu {
+  border-color: rgb(255 255 255 / 48%);
+}
+
+.travel-navigation-dialog {
+  position: fixed;
+  z-index: 20;
+  top: max(5.5rem, env(safe-area-inset-top));
+  right: clamp(1rem, 4vw, 3rem);
+  bottom: auto;
+  left: auto;
+  display: grid;
+  width: min(22rem, calc(100vw - 2rem));
+  max-height: calc(100svh - 7rem);
+  gap: 1rem;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--travel-boundary);
+  border-radius: 18px;
+  background: var(--travel-raised);
+  color: var(--travel-ink);
+  box-shadow: 0 18px 48px color-mix(in srgb, var(--travel-ink) 18%, transparent);
+  overflow-y: auto;
+}
+
+.travel-navigation-dialog::backdrop {
+  background: color-mix(in srgb, var(--travel-ink) 16%, transparent);
+}
+
+.travel-navigation-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.travel-navigation-dialog__header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+.travel-navigation-dialog__close {
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--travel-boundary);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--travel-ink);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.travel-navigation-dialog__links {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.travel-navigation-dialog__links a,
+.travel-navigation-dialog__links button,
+.travel-navigation-dialog__unconfigured {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.75rem;
+  border: 1px solid var(--travel-boundary);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--travel-ink);
+  font-size: 0.82rem;
+  font-weight: 550;
+  text-align: left;
+  text-decoration: none;
+}
+
+.travel-navigation-dialog__links a:hover,
+.travel-navigation-dialog__links button:hover,
+.travel-navigation-dialog__close:hover {
+  background: var(--travel-surface);
+}
+
+.travel-navigation-dialog__unconfigured {
+  color: var(--travel-muted);
+}
+
+.travel-navigation-dialog__unconfigured small {
+  font-size: 0.68rem;
 }
 
 .conversation-workspace {
@@ -1483,14 +1614,23 @@ code {
     gap: 0;
   }
 
-  .travel-header nav a,
-  .travel-header nav button {
-    padding: 0 0.55rem;
-    font-size: 0.74rem;
+  .travel-header__actions {
+    display: none;
   }
 
-  .travel-header .guest-session {
-    display: none;
+  .travel-header__menu {
+    width: 44px;
+    height: 44px;
+  }
+
+  .travel-navigation-dialog {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-height: min(34rem, calc(100svh - 1rem));
+    border-radius: 22px 22px 0 0;
   }
 
   .conversation-workspace {
@@ -1521,6 +1661,11 @@ code {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .travel-navigation-dialog,
+  .travel-navigation-dialog * {
+    transition-duration: 0s !important;
+  }
+
   .travel-hero,
   .travel-hero * {
     transition-duration: 0s !important;

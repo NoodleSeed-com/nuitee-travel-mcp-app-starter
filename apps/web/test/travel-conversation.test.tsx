@@ -103,6 +103,16 @@ describe('guest travel conversation lifecycle', () => {
     expect(assistantMock.useNoodleAssistant).not.toHaveBeenCalled();
   });
 
+  it('focuses the shared travel prompt when Plan a trip is clicked without initializing the assistant', () => {
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Plan a trip' }));
+
+    expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
+      .toHaveFocus();
+    expect(assistantMock.useNoodleAssistant).not.toHaveBeenCalled();
+  });
+
   it('mounts the public client and sends the initial prompt once', async () => {
     render(<TravelAssistantPage runtime={readyRuntime} />);
 

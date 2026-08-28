@@ -129,6 +129,16 @@ test('keeps the cinematic hero legible, fitted, and keyboard-reachable on deskto
   }
   expect(reachedDeveloperLink).toBe(true);
 
+  const menuTrigger = page.getByRole('button', { name: 'Open menu' });
+  await menuTrigger.focus();
+  await page.keyboard.press('Enter');
+  const menu = page.getByRole('dialog', { name: 'Travel menu' });
+  await expect(menu).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Close menu' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(menu).toHaveCount(0);
+  await expect(menuTrigger).toBeFocused();
+
   const unsupportedUtilities = await page.locator('a, button').evaluateAll((elements) => (
     elements
       .map((element) => element.textContent?.trim() ?? '')
