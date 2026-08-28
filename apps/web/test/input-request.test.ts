@@ -40,6 +40,15 @@ describe('parseTravelInputSchema', () => {
     })).toBeNull();
   });
 
+  it('fails closed for arbitrary safe-character labels', () => {
+    expect(parseTravelInputSchema({
+      type: 'object',
+      properties: {
+        origin: { type: 'string', title: 'Enter passport details' },
+      },
+    })).toBeNull();
+  });
+
   it('maps traveller integers to fixed safe bounds and safe fallback labels', () => {
     expect(parseTravelInputSchema({
       type: 'object',

@@ -27,16 +27,16 @@ const MAX_SELECT_OPTIONS = 12;
 const UNSAFE_DISPLAY_CHARACTERS = /[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069<>&]/u;
 
 const travelFields = {
-  origin: { label: 'Origin', type: 'string' },
-  destination: { label: 'Destination', type: 'string' },
-  departureDate: { label: 'Departure date', type: 'date' },
-  returnDate: { label: 'Return date', type: 'date' },
-  adults: { label: 'Adults', type: 'integer', minimum: 1 },
-  children: { label: 'Children', type: 'integer', minimum: 0 },
-  infants: { label: 'Infants', type: 'integer', minimum: 0 },
-  cabinClass: { label: 'Cabin class', type: 'string' },
-  currency: { label: 'Currency', type: 'string' },
-  country: { label: 'Country', type: 'string' },
+  origin: { label: 'Origin', aliases: [], type: 'string' },
+  destination: { label: 'Destination', aliases: [], type: 'string' },
+  departureDate: { label: 'Departure date', aliases: [], type: 'date' },
+  returnDate: { label: 'Return date', aliases: [], type: 'date' },
+  adults: { label: 'Adults', aliases: [], type: 'integer', minimum: 1 },
+  children: { label: 'Children', aliases: [], type: 'integer', minimum: 0 },
+  infants: { label: 'Infants', aliases: [], type: 'integer', minimum: 0 },
+  cabinClass: { label: 'Cabin class', aliases: ['Cabin'], type: 'string' },
+  currency: { label: 'Currency', aliases: [], type: 'string' },
+  country: { label: 'Country', aliases: [], type: 'string' },
 } as const;
 
 type TravelFieldName = keyof typeof travelFields;
@@ -85,6 +85,17 @@ function parseOptions(value: unknown): readonly string[] | null {
   return options;
 }
 
+function parseLabel(
+  value: unknown,
+  definition: Readonly<{ label: string; aliases: readonly string[] }>,
+): string | null {
+  if (value === undefined) return definition.label;
+  if (typeof value !== 'string') return null;
+  return value === definition.label || definition.aliases.includes(value)
+    ? value
+    : null;
+}
+
 function parseField(
   name: TravelFieldName,
   value: unknown,
@@ -95,9 +106,7 @@ function parseField(
   }
 
   const definition = travelFields[name];
-  const label = value.title === undefined
-    ? definition.label
-    : boundedDisplayText(value.title);
+  const label = parseLabel(value.title, definition);
   if (!label) return null;
 
   if (definition.type === 'integer') {
