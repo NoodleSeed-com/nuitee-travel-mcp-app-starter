@@ -21,13 +21,34 @@ the official [Passenger Standards Conference attachment](https://www.iata.org/co
 
 ## Asset boundary
 
-The reviewed Git tree contains no bundled third-party airline artwork or
-webfonts. The only tracked raster assets are first-party Chromium captures of
-the actual widgets under `docs/images/`; their adjacent provenance file records
-the fictional, network-disabled capture process. Fixture code includes one
-fictional Nuitee-shaped `marketingLogo` URL solely to test exact-origin
-normalization and rendering; ordinary and browser tests never fetch it, and
-public fixture previews omit the image.
+The reviewed Git tree contains no bundled third-party airline artwork. It does
+bundle Inter Variable from `@fontsource-variable/inter@5.3.0`, whose package
+declares and includes the SIL Open Font License 1.1 (`OFL-1.1`). The font is
+loaded locally by the website and MCP App bundles; there is no runtime request
+to a third-party font host. Dependency-license metadata and the repository
+license audit do not replace the outstanding owner/legal review of copyright,
+NOTICE treatment, provenance/compatibility, and public redistribution.
+
+The tracked raster boundary is explicit:
+
+- `apps/web/public/images/conversation-hero-v1.png` is the reviewed local,
+  decorative landing hero;
+- the four JPEGs under `apps/web/public/images/destinations/` are generated
+  editorial demo derivatives whose OpenAI `image_gen` prompts, dimensions,
+  conversion details, and visual review are recorded in
+  `docs/visual-assets/airline-editorial-homepage.md`; and
+- `docs/images/flight-results.png` and `docs/images/travel-home.png` are
+  first-party Chromium captures governed by `docs/images/README.md`.
+
+Raw destination-generation sources stay outside git. Every tracked raster is
+covered by an exact reviewed blob ID in `security/reviewed-binary-blobs.txt`.
+That review is a privacy/obvious-content check, not final copyright, trademark,
+generation-provider-terms, or public-distribution clearance; those release
+gates remain open.
+
+Fixture code includes one fictional Nuitee-shaped `marketingLogo` URL solely to
+test exact-origin normalization and rendering; ordinary and browser tests never
+fetch it, and public fixture previews omit the image.
 
 Live search results may render an allowlisted Nuitee-hosted carrier image and
 the real carrier name/code returned with that inventory. That is data
@@ -36,4 +57,5 @@ text and fictional initials remain the safe fallback.
 
 Do not add copied airline, airport, travel-agency, or reference-application
 assets. Any new demonstration asset needs an explicit origin, license, and
-public-distribution review.
+public-distribution review. Any changed binary also needs a new exact blob-ID
+review entry; approval does not carry forward by path.

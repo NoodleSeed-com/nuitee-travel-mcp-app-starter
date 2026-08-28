@@ -124,6 +124,38 @@ afterEach(() => {
 });
 
 describe('real-browser widget readiness', () => {
+  it.each([
+    ['loading', { state: 'loading' as const }, 'Opening your travel starting point…'],
+    ['error', { state: 'error' as const }, 'The travel starter could not open. Try again.'],
+    ['malformed', { state: 'malformed' as const }, 'The travel starter result was incomplete.'],
+    ['success', { data: home }, 'Flights available'],
+  ])('renders the TravelHome %s state and nested primitives in Inter', async (
+    _state,
+    props,
+    visibleText,
+  ) => {
+    await page.viewport(320, 1_000);
+    mount(
+      <TravelHomeView
+        {...props}
+        theme="light"
+        onSearchPrompt={vi.fn()}
+      />,
+    );
+    await expect.element(page.getByText(visibleText)).toBeVisible();
+    await document.fonts.ready;
+
+    const frame = document.querySelector<HTMLElement>('.cc-app');
+    const primitive = frame?.querySelector<HTMLElement>('.nsr-feedback, .nsr-flow');
+
+    expect(frame).not.toBeNull();
+    expect(primitive).not.toBeNull();
+    expect(getComputedStyle(frame!).fontFamily).toContain('Inter Variable');
+    expect(getComputedStyle(frame!).getPropertyValue('--font-sans'))
+      .toContain('Inter Variable');
+    expect(getComputedStyle(primitive!).fontFamily).toContain('Inter Variable');
+  });
+
   it.each([280, 320])('renders TravelHome at %ipx without horizontal overflow', async (width) => {
     await page.viewport(width, 1_000);
     mount(<TravelHomeView data={home} theme="light" onSearchPrompt={vi.fn()} />);

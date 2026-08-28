@@ -34,7 +34,9 @@ export function DestinationInspiration({
                 className="destination-card__image"
                 fill
                 loading={index === 0 ? 'eager' : 'lazy'}
-                sizes="(max-width: 700px) 100vw, (max-width: 1023px) 50vw, 33vw"
+                sizes={index === 2
+                  ? '(max-width: 700px) 100vw, (max-width: 1023px) 100vw, 33vw'
+                  : '(max-width: 700px) 100vw, (max-width: 1023px) 50vw, 33vw'}
                 src={destination.imageSrc}
                 style={{ objectPosition: destination.imagePosition }}
               />

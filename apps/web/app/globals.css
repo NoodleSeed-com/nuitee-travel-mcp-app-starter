@@ -1238,6 +1238,7 @@ code {
 
   .travel-editorial {
     min-height: 0;
+    padding-inline: min(1rem, 4vw);
   }
 
   .travel-editorial__image {
@@ -1248,13 +1249,16 @@ code {
   .travel-editorial__copy {
     justify-items: stretch;
     min-width: 0;
-    padding: 2rem 1.25rem 2.25rem;
+    padding: 2rem min(1.25rem, 4vw) 2.25rem;
   }
 
   .travel-editorial__copy h2 {
     max-width: 100%;
-    overflow-wrap: anywhere;
-    text-wrap: wrap;
+    font-size: min(2rem, 10vw);
+    hyphens: none;
+    overflow-wrap: normal;
+    text-wrap: balance;
+    word-break: normal;
   }
 
   .travel-footer nav {

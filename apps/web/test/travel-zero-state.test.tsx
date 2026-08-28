@@ -142,22 +142,55 @@ describe('travel assistant zero state', () => {
     )).toHaveLength(0);
   });
 
-  it('keeps counted landing copy within the 120-word ceiling', () => {
+  it('keeps the complete landing and sibling footer copy within the 120-word ceiling', () => {
     const { container } = render(
-      <TravelZeroState inputRef={{ current: null }} onStart={vi.fn()} />,
+      <TravelAssistantPage
+        runtime={{ status: 'setup-required', message: 'setup' }}
+      />,
     );
 
-    const countedCopy = container.querySelector('.travel-landing')!.cloneNode(
-      true,
-    ) as HTMLElement;
+    const main = container.querySelector<HTMLElement>('main#travel-canvas');
+    const footer = main?.nextElementSibling;
+    expect(main).not.toBeNull();
+    expect(footer).toHaveClass('travel-footer');
+
+    const countedCopy = container.ownerDocument.createElement('div');
+    countedCopy.append(main!.cloneNode(true), footer!.cloneNode(true));
     for (const excluded of countedCopy.querySelectorAll(
       '.travel-starter-prompts, .travel-footer nav, .travel-footer__attribution',
     )) {
       excluded.remove();
     }
+    expect(countedCopy).toHaveTextContent(starterConfig.brand.tagline);
+    expect(countedCopy).toHaveTextContent(
+      'No account is required to plan a trip.',
+    );
     const words = (countedCopy.textContent ?? '').trim().split(/\s+/);
 
     expect(words.length).toBeLessThanOrEqual(120);
+  });
+
+  it('requests the full tablet row width for the spanning destination image', () => {
+    const { container } = render(
+      <TravelZeroState inputRef={{ current: null }} onStart={vi.fn()} />,
+    );
+    const images = container.querySelectorAll<HTMLImageElement>(
+      '.destination-card img',
+    );
+
+    expect(images).toHaveLength(3);
+    expect(images[0]).toHaveAttribute(
+      'sizes',
+      '(max-width: 700px) 100vw, (max-width: 1023px) 50vw, 33vw',
+    );
+    expect(images[1]).toHaveAttribute(
+      'sizes',
+      '(max-width: 700px) 100vw, (max-width: 1023px) 50vw, 33vw',
+    );
+    expect(images[2]).toHaveAttribute(
+      'sizes',
+      '(max-width: 700px) 100vw, (max-width: 1023px) 100vw, 33vw',
+    );
   });
 
   it.each(landingDestinations)(

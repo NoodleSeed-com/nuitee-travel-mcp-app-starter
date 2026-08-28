@@ -538,7 +538,8 @@ describe('FlightResults', () => {
 
   it('uses bundled Inter and includes responsive accessibility safeguards', () => {
     const css = readFileSync(new URL('../src/views/travel.css', import.meta.url), 'utf8');
-    expect(css).toContain('font-family: "Inter Variable", Inter');
+    expect(css).toContain('--font-sans: "Inter Variable", Inter');
+    expect(css).toContain('font-family: var(--font-sans)');
     expect(readFileSync(new URL('../src/views/travel-home.tsx', import.meta.url), 'utf8'))
       .toContain("import '@fontsource-variable/inter';");
     expect(readFileSync(new URL('../src/views/flight-results.tsx', import.meta.url), 'utf8'))

@@ -1,10 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import { starterConfig } from '../../../../starter.config';
 
-async function headlineLines(page: Page) {
-  return page.locator('#travel-home-title').evaluate((heading) => {
+async function renderedTextLines(page: Page, selector: string) {
+  return page.locator(selector).evaluate((element) => {
     const lines = new Map<number, string[]>();
-    const walker = document.createTreeWalker(heading, NodeFilter.SHOW_TEXT);
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     let node: Node | null;
 
     while ((node = walker.nextNode())) {
@@ -27,7 +27,7 @@ async function headlineLines(page: Page) {
 }
 
 async function expectHeadlineDoesNotOrphanFinalWords(page: Page) {
-  const lines = await headlineLines(page);
+  const lines = await renderedTextLines(page, '#travel-home-title');
   const finalLine = lines.at(-1) ?? [];
 
   expect(finalLine.length).toBeGreaterThanOrEqual(2);
@@ -70,6 +70,39 @@ async function expectStarterPromptsFit(page: Page, width: number) {
   }
 
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+}
+
+async function landingMidwordBreaks(page: Page) {
+  return page.locator('.travel-landing, .travel-footer').evaluateAll((roots) => {
+    const breaks: Array<{ text: string; word: string }> = [];
+
+    for (const root of roots) {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      let node: Node | null;
+
+      while ((node = walker.nextNode())) {
+        const text = node.textContent ?? '';
+        for (const match of text.matchAll(/\S+/g)) {
+          const range = document.createRange();
+          range.setStart(node, match.index ?? 0);
+          range.setEnd(node, (match.index ?? 0) + match[0].length);
+          const lineTops = new Set(
+            Array.from(range.getClientRects())
+              .filter((rect) => rect.width > 0 && rect.height > 0)
+              .map((rect) => Math.round(rect.top * 10) / 10),
+          );
+          if (lineTops.size > 1) {
+            breaks.push({
+              text: node.parentElement?.textContent?.trim() ?? text.trim(),
+              word: match[0],
+            });
+          }
+        }
+      }
+    }
+
+    return breaks;
+  });
 }
 
 test('renders the cinematic guest shell without opening an assistant session', async ({
@@ -375,6 +408,12 @@ test('fits 320px, 390px, and 200 percent text zoom without orphaning the headlin
   });
   await expectHorizontalFit(page, 390);
   await expectHeadlineDoesNotOrphanFinalWords(page);
+  expect(await landingMidwordBreaks(page)).toEqual([]);
+  const editorialLines = await renderedTextLines(
+    page,
+    '.travel-editorial__copy h2',
+  );
+  expect(editorialLines.at(-1)?.length).toBeGreaterThanOrEqual(2);
   const composerFits = await page.locator('.travel-composer--hero').evaluate((composer) => {
     const bounds = composer.getBoundingClientRect();
     return bounds.left >= 0 && bounds.right <= window.innerWidth;

@@ -49,23 +49,25 @@ export function TravelHomeView({
   readonly onSearchPrompt?: (draft: SearchDraft) => void;
   readonly brandStyle?: CSSProperties;
 }) {
+  const frameClassName = theme === 'dark' ? 'cc-app cc-theme-dark' : 'cc-app';
+
   if (state === 'loading') {
     return (
-      <Frame className={theme === 'dark' ? 'cc-theme-dark' : ''} displayMode="auto" title={starterConfig.brand.name}>
+      <Frame className={frameClassName} style={brandStyle} displayMode="auto" title={starterConfig.brand.name}>
         <Feedback status="loading">Opening your travel starting point…</Feedback>
       </Frame>
     );
   }
   if (state === 'error') {
     return (
-      <Frame className={theme === 'dark' ? 'cc-theme-dark' : ''} displayMode="auto" title={starterConfig.brand.name}>
+      <Frame className={frameClassName} style={brandStyle} displayMode="auto" title={starterConfig.brand.name}>
         <Feedback status="error">The travel starter could not open. Try again.</Feedback>
       </Frame>
     );
   }
   if (state === 'malformed' || !data) {
     return (
-      <Frame className={theme === 'dark' ? 'cc-theme-dark' : ''} displayMode="auto" title={starterConfig.brand.name}>
+      <Frame className={frameClassName} style={brandStyle} displayMode="auto" title={starterConfig.brand.name}>
         <Feedback status="error">The travel starter result was incomplete.</Feedback>
       </Frame>
     );
@@ -73,7 +75,7 @@ export function TravelHomeView({
 
   return (
     <Frame
-      className={`cc-app ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
+      className={frameClassName}
       style={brandStyle}
       displayMode="auto"
       title="Flight search"

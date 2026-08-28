@@ -6,6 +6,21 @@ Customize the existing flights-first product before adding scope. Keep Cedar & C
 
 Replace `apps/web/public/images/conversation-hero-v1.png` with an owned or licensed landscape image using the same filename, or update the explicit image import. Keep a 16:9 source, preserve calm left-side copy space and a lower composer-safe region, and verify the deterministic navy scrim at desktop, 390px, 320px, and 200% text zoom. Do not bundle airline trademarks, liveries, copyrighted campaign art, or destination imagery you do not have authority to redistribute.
 
+## Bundled typography
+
+The website and repository-owned MCP Apps bundle Inter Variable through exact
+dependency `@fontsource-variable/inter@5.3.0`; browsers do not fetch the font
+from Google or another runtime font host. The package declares the SIL Open
+Font License 1.1 (`OFL-1.1`) and includes its license text. Code and command
+samples retain a semantic monospace stack.
+
+If you replace Inter, update both package boundaries, the website import, both
+MCP App entry imports, the shared `--font-sans` widget token, browser-computed
+font tests, and the dependency-license evidence together. The bundled license
+record is evidence of the current dependency metadata, not a completed legal
+approval: copyright, NOTICE treatment, dependency provenance/compatibility,
+and public redistribution still require owner/legal review before release.
+
 ## Editorial landing content
 
 Edit `apps/web/src/lib/landing-content.ts` to customize the editorial destination
@@ -28,6 +43,14 @@ exception is not sufficient. Use realistic editorial imagery only as
 non-evidentiary inspiration. Do not fabricate a fare, discount, availability,
 airline partnership, destination guarantee, or any other commercial claim in an
 image or its prompt copy.
+
+The four committed destination derivatives were generated with OpenAI
+`image_gen`; their exact prompts, dimensions, conversion settings, crop notes,
+and visual-review results are recorded in
+`docs/visual-assets/airline-editorial-homepage.md`. Raw generation sources stay
+outside git. Exact-blob review proves which bytes were inspected for obvious
+logos, signage, faces, private data, and visual defects; it does not complete
+copyright, trademark, model/provider terms, or public-distribution review.
 
 ## Branding
 
@@ -71,7 +94,7 @@ The command deliberately does not rename the package, server ID, tool names, Nui
 
 - Use your own name, short copy, and restrained accent token; keep structural surfaces and text host-neutral.
 - Let the host-supplied app identity carry the logo. Do not repeat a brand mark inside a compact response widget.
-- Keep the explicit platform system-font stack, compact type scale, and system sizing. The primary website stays light-only; portable MCP widgets retain semantic light/dark colors for external hosts that own their presentation.
+- Keep bundled Inter for repository-owned non-code UI, the compact type scale, and semantic monospace only for code. The primary website stays light-only; portable MCP widgets retain semantic light/dark colors for external hosts that own their presentation.
 - Follow the current [OpenAI Apps SDK UI guidelines](https://developers.openai.com/plugins/concepts/ui-guidelines) when changing typography, color, spacing, actions, or navigation.
 - Do not bundle airline/provider logos. FlightResults may render the documented `marketingLogo` from a live result only after the runtime accepts its exact Nuitee Flights asset origin/path; keep carrier text and initials as the failure fallback. A remote image request still reveals normal network metadata to the Nuitee asset host, so disable the image path if that tradeoff does not fit the deployment's privacy policy.
 - Never imply a partnership or call this an “official Nuitee connector” without authorization.
