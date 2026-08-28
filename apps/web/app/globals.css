@@ -706,18 +706,24 @@ code {
 
 .travel-conversation-shell {
   display: grid;
-  width: min(100%, 54rem);
+  width: auto;
   min-width: 0;
-  margin-inline: auto;
-  padding: clamp(1.25rem, 4vw, 3rem);
-  grid-template-rows: auto minmax(20rem, 1fr) auto auto auto;
+  height: min(48rem, calc(100svh - 11rem));
+  min-height: 36rem;
+  margin: 0;
+  padding: 0;
+  grid-template-rows: auto minmax(12rem, 1fr) auto auto auto;
   gap: 0.75rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .travel-conversation__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 1rem;
   padding-bottom: 0.85rem;
   border-bottom: 1px solid var(--travel-boundary);
@@ -728,6 +734,22 @@ code {
   font-size: clamp(1.35rem, 2.5vw, 1.75rem);
   font-weight: 500;
   letter-spacing: -0.035em;
+}
+
+.travel-workspace button,
+.travel-header__actions a,
+.travel-wordmark {
+  transition:
+    transform 160ms ease-out,
+    border-color 160ms ease-out,
+    background-color 160ms ease-out,
+    color 160ms ease-out;
+}
+
+.travel-workspace button:not(:disabled):active,
+.travel-header__actions a:active,
+.travel-wordmark:active {
+  transform: scale(0.97);
 }
 
 .travel-conversation__header .assistant-identity {
@@ -760,6 +782,13 @@ code {
   border: 1px solid var(--travel-boundary);
   border-radius: 16px;
   background: var(--travel-surface);
+}
+
+.travel-input-request h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
 }
 
 .travel-input-request form,
@@ -1534,26 +1563,41 @@ code {
 }
 
 .conversation-workspace {
-  display: grid;
+  display: block;
   min-height: calc(100svh - 74px);
-  grid-template-columns: minmax(0, 1fr) minmax(18rem, 21rem);
-  gap: clamp(1.5rem, 4vw, 4rem);
+  padding: clamp(1.25rem, 3vw, 2.5rem);
   background:
-    radial-gradient(circle at 82% 0%, #dbe7ef 0, transparent 30%),
+    radial-gradient(circle at 88% 2%, #dbe7ef 0, transparent 34%),
+    radial-gradient(circle at 8% 92%, #f4e9da 0, transparent 28%),
     var(--travel-paper);
 }
 
+.travel-journey-workspace {
+  width: min(100%, 90rem);
+  margin-inline: auto;
+}
+
+.travel-journey-workspace__body {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(20rem, 24rem) minmax(0, 1fr);
+  align-items: stretch;
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+}
+
 .trip-brief {
-  align-self: center;
-  padding: 1.25rem;
-  border: 1px solid var(--travel-boundary);
-  border-radius: 18px;
-  background: var(--travel-raised);
-  box-shadow: 0 14px 38px color-mix(in srgb, var(--travel-ink) 6%, transparent);
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1.25rem;
+  padding: 0 0 1rem;
+  border-bottom: 1px solid var(--travel-boundary);
 }
 
 .trip-brief__eyebrow {
-  margin: 0 0 0.55rem;
+  margin: 0;
   color: var(--travel-muted);
   font-size: 0.68rem;
   font-weight: 700;
@@ -1561,18 +1605,11 @@ code {
   text-transform: uppercase;
 }
 
-.trip-brief h2 {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 600;
-  letter-spacing: -0.025em;
-}
-
 .trip-brief__route {
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  margin: 1.25rem 0;
+  margin: 0;
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
   font-size: 1rem;
 }
@@ -1582,15 +1619,17 @@ code {
 }
 
 .trip-brief dl {
-  display: grid;
-  gap: 0.7rem;
-  margin: 1.25rem 0 0;
+  display: flex;
+  min-width: 0;
+  flex: 1 1 30rem;
+  flex-wrap: wrap;
+  gap: 0.65rem 1.25rem;
+  margin: 0;
 }
 
 .trip-brief dl div {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
+  display: grid;
+  gap: 0.1rem;
 }
 
 .trip-brief dt,
@@ -1604,12 +1643,56 @@ code {
 }
 
 .trip-brief__status {
-  margin: 1.25rem 0 0;
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--travel-boundary);
+  margin: 0 0 0 auto;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--travel-blue) 24%, var(--travel-boundary));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--travel-blue) 7%, transparent);
   color: var(--travel-blue);
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.travel-journey-canvas {
+  min-width: 0;
+  min-height: 36rem;
+  overflow: clip;
+  border: 1px solid var(--travel-boundary);
+  border-radius: 24px;
+  background: var(--travel-raised);
+}
+
+.travel-journey-canvas noodle-app-view {
+  display: block;
+  width: 100%;
+  min-height: 100%;
+}
+
+.travel-journey-canvas__empty {
+  display: grid;
+  min-height: 36rem;
+  align-content: center;
+  justify-items: center;
+  gap: 0.75rem;
+  padding: clamp(1.5rem, 5vw, 4rem);
+  text-align: center;
+}
+
+.travel-journey-canvas__empty h2,
+.travel-journey-canvas__empty p {
+  margin: 0;
+}
+
+.travel-journey-canvas__empty h2 {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 560;
+  letter-spacing: -0.04em;
+}
+
+.travel-journey-canvas__empty p {
+  max-width: 32rem;
+  color: var(--travel-muted);
+  line-height: 1.6;
 }
 
 .settings-sheet {
@@ -1618,7 +1701,7 @@ code {
   width: min(28rem, calc(100vw - (var(--travel-gutter) * 2)));
 }
 
-@media (max-width: 700px) {
+@media (max-width: 760px) {
   .travel-header {
     min-height: 64px;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -1656,18 +1739,46 @@ code {
 
   .conversation-workspace {
     min-height: 0;
+    padding: 0;
+  }
+
+  .travel-journey-workspace {
+    width: 100%;
+    padding: 1rem;
+  }
+
+  .travel-journey-workspace__body {
     grid-template-columns: minmax(0, 1fr);
-    gap: 0;
+    gap: 1rem;
   }
 
   .trip-brief {
-    grid-row: 1;
-    margin: 1rem 1rem 0;
+    align-items: flex-start;
+    margin-bottom: 1rem;
   }
 
   .travel-conversation-shell {
     grid-row: 2;
-    padding: 1rem;
+    height: auto;
+    min-height: 32rem;
+    padding: 0;
+  }
+
+  .travel-journey-canvas {
+    grid-row: 1;
+    min-height: min(34rem, 64svh);
+  }
+
+  .travel-journey-canvas__empty {
+    min-height: min(34rem, 64svh);
+  }
+
+  .travel-composer--conversation {
+    position: sticky;
+    z-index: 2;
+    bottom: 0;
+    padding-block: 0.5rem;
+    background: var(--travel-paper);
   }
 
   .travel-conversation__header {
@@ -1682,6 +1793,12 @@ code {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .travel-workspace button:not(:disabled):active,
+  .travel-header__actions a:active,
+  .travel-wordmark:active {
+    transform: none;
+  }
+
   .travel-navigation-dialog,
   .travel-navigation-dialog * {
     transition-duration: 0s !important;

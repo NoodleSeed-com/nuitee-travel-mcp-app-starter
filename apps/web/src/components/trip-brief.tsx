@@ -2,6 +2,7 @@ import type { TripProjection } from '../lib/trip-projection';
 
 const PHASE_LABELS: Readonly<Record<TripProjection['phase'], string>> = {
   idle: 'No trip started',
+  planned: 'Ready to search',
   searching: 'Searching',
   comparing: 'Comparing fares',
   'no-results': 'No fares found',
@@ -14,10 +15,11 @@ const PHASE_LABELS: Readonly<Record<TripProjection['phase'], string>> = {
 export function TripBrief({
   projection,
 }: Readonly<{ projection: TripProjection }>) {
+  if (projection.phase === 'idle') return null;
+
   return (
-    <aside aria-label="Live trip brief" className="trip-brief">
-      <p className="trip-brief__eyebrow">Live trip brief</p>
-      <h2>What we understand</h2>
+    <section aria-label="Current trip" className="trip-brief">
+      <p className="trip-brief__eyebrow">Current trip</p>
       {projection.origin || projection.destination ? (
         <p className="trip-brief__route">
           <strong>{projection.origin ?? '—'}</strong>
@@ -25,7 +27,12 @@ export function TripBrief({
           <strong>{projection.destination ?? '—'}</strong>
         </p>
       ) : null}
-      {projection.departureDate || projection.returnDate || projection.travelers ? (
+      {projection.departureDate
+      || projection.returnDate
+      || projection.travelers
+      || projection.cabinClass
+      || projection.currency
+      || projection.country ? (
         <dl>
           {projection.departureDate ? (
             <div>
@@ -45,9 +52,27 @@ export function TripBrief({
               <dd>{projection.travelers}</dd>
             </div>
           ) : null}
+          {projection.cabinClass ? (
+            <div>
+              <dt>Cabin</dt>
+              <dd>{projection.cabinClass}</dd>
+            </div>
+          ) : null}
+          {projection.currency ? (
+            <div>
+              <dt>Currency</dt>
+              <dd>{projection.currency}</dd>
+            </div>
+          ) : null}
+          {projection.country ? (
+            <div>
+              <dt>Market</dt>
+              <dd>{projection.country} market</dd>
+            </div>
+          ) : null}
         </dl>
       ) : null}
       <p className="trip-brief__status">{PHASE_LABELS[projection.phase]}</p>
-    </aside>
+    </section>
   );
 }

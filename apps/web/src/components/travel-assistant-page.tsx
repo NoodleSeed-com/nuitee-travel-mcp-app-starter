@@ -2,13 +2,11 @@
 
 import { useRef, useState } from 'react';
 import type { PublicAssistantRuntime } from '../lib/assistant-config';
-import { EMPTY_TRIP, type TripProjection } from '../lib/trip-projection';
 import { SettingsSheet } from './settings-sheet';
 import { TravelConversation } from './travel-conversation';
 import { TravelFooter } from './travel-footer';
 import { TravelHeader } from './travel-header';
 import { TravelZeroState } from './travel-zero-state';
-import { TripBrief } from './trip-brief';
 
 type PageMode = 'zero' | 'starting';
 
@@ -22,7 +20,6 @@ export function TravelAssistantPage({
   const [mode, setMode] = useState<PageMode>('zero');
   const [initialPrompt, setInitialPrompt] = useState<string | null>(null);
   const [launchError, setLaunchError] = useState<string | null>(null);
-  const [projection, setProjection] = useState<TripProjection>(EMPTY_TRIP);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const heroInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -30,7 +27,6 @@ export function TravelAssistantPage({
     setMode('zero');
     setInitialPrompt(null);
     setLaunchError(null);
-    setProjection(EMPTY_TRIP);
   }
 
   function focusPlanTrip() {
@@ -83,13 +79,7 @@ export function TravelAssistantPage({
             onPlanTrip={reset}
           />
           <main className="conversation-workspace" id="travel-canvas" tabIndex={-1}>
-            <TravelConversation
-              initialPrompt={initialPrompt}
-              onProjectionChange={setProjection}
-              onReset={reset}
-              runtime={runtime}
-            />
-            <TripBrief projection={projection} />
+            <TravelConversation initialPrompt={initialPrompt} runtime={runtime} />
           </main>
         </div>
       )}

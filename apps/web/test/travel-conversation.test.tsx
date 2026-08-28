@@ -53,6 +53,11 @@ function submitPrompt(prompt: string) {
   fireEvent.submit(screen.getByRole('form', { name: 'Plan a trip' }));
 }
 
+function conversationStatus() {
+  return within(screen.getByRole('region', { name: 'Travel conversation' }))
+    .getByRole('status');
+}
+
 let client = createClient();
 let resizeCallback: ResizeObserverCallback | undefined;
 let resizeDisconnect = vi.fn<() => void>();
@@ -143,7 +148,7 @@ describe('guest travel conversation lifecycle', () => {
         'JFK to Lisbon next month',
       );
     });
-    expect(screen.getByRole('heading', { name: 'Your trip, refined together' }))
+    expect(screen.getByRole('heading', { name: 'Plan your flight' }))
       .toBeVisible();
     expect(screen.getByRole('region', { name: 'Travel conversation' }))
       .toHaveClass('travel-conversation-shell');
@@ -153,6 +158,20 @@ describe('guest travel conversation lifecycle', () => {
       .toBeVisible();
     expect(screen.getByText(starterConfig.brand.assistantName)).toBeVisible();
     expect(client.sendMessage).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Reset conversation' }))
+      .not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'New trip' })).toHaveLength(1);
+    expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
+      .toHaveAttribute('placeholder', 'Tell Wayfare what you need…');
+    const workspace = screen.getByRole('region', { name: 'Travel workspace' });
+    expect(workspace).toContainElement(screen.getByRole('region', {
+      name: 'Travel conversation',
+    }));
+    expect(workspace).toContainElement(screen.getByRole('region', {
+      name: 'Flight workspace',
+    }));
+    expect(screen.queryByRole('region', { name: 'Current trip' }))
+      .not.toBeInTheDocument();
     expect(assistantMock.useNoodleAssistant).toHaveBeenCalledWith(
       expect.objectContaining({
         embedId: readyRuntime.embedId,
@@ -169,6 +188,111 @@ describe('guest travel conversation lifecycle', () => {
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
     expect(options.clientContext()).not.toHaveProperty('principalKey');
+  });
+
+  it('uses the typed plan to align the heading, composer, and live brief', async () => {
+    assistantMock.useNoodleAssistant.mockImplementation(() => ({
+      client,
+      messages: [{
+        id: 'assistant-plan',
+        role: 'assistant',
+        parts: [{
+          type: 'data-tool-result',
+          data: {
+            id: 'call-plan',
+            tool: 'plan_flight_search',
+            result: {
+              status: 'planned',
+              message: 'Trip details are ready. Search current fares now.',
+              origin: 'ISB',
+              destination: 'NYC',
+              departureDate: '2026-09-18',
+              returnDate: '2026-09-27',
+              adults: 1,
+              cabinClass: 'ECONOMY',
+              currency: 'USD',
+              country: 'US',
+            },
+          },
+        }],
+      }],
+      status: 'ready',
+      error: undefined,
+    }));
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+
+    submitPrompt('Islamabad to New York');
+
+    expect(await screen.findByRole('heading', { name: 'ISB to NYC' }))
+      .toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
+      .toHaveAttribute('placeholder', 'Adjust the trip or add a preference…');
+    const workspace = screen.getByRole('region', { name: 'Travel workspace' });
+    const conversation = screen.getByRole('region', { name: 'Travel conversation' });
+    const brief = screen.getByRole('region', { name: 'Current trip' });
+    expect(brief).toHaveTextContent('ISB → NYC');
+    expect(conversation.parentElement).toHaveClass('travel-journey-workspace__body');
+    expect(workspace).toContainElement(brief);
+    expect(screen.getByText('Ready to search')).toBeVisible();
+  });
+
+  it('composes one conversation-controlled workspace from typed journey parts', async () => {
+    const firstView = {
+      id: 'view-search-first',
+      tool: 'search_flights',
+      resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget',
+      title: 'Flight results',
+      result: { status: 'success' },
+    };
+    const secondView = { ...firstView, id: 'view-search-second' };
+    assistantMock.useNoodleAssistant.mockImplementation(() => ({
+      client,
+      messages: [{
+        id: 'assistant-workspace',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'data-tool-result',
+            data: {
+              id: 'call-plan-workspace',
+              tool: 'plan_flight_search',
+              result: {
+                status: 'planned',
+                message: 'Trip details are ready. Search current fares now.',
+                origin: 'ISB',
+                destination: 'NYC',
+                departureDate: '2026-09-18',
+                adults: 1,
+                cabinClass: 'ECONOMY',
+                currency: 'USD',
+                country: 'US',
+              },
+            },
+          },
+          { type: 'data-view', data: firstView },
+          { type: 'text', text: 'I refreshed the current choices.' },
+          { type: 'data-view', data: secondView },
+        ],
+      }],
+      status: 'ready',
+      error: undefined,
+    }));
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+
+    submitPrompt('Islamabad to New York');
+
+    const workspace = await screen.findByRole('region', { name: 'Travel workspace' });
+    const conversation = within(workspace).getByRole('region', { name: 'Travel conversation' });
+    const canvas = within(workspace).getByRole('region', { name: 'Flight workspace' });
+    expect(workspace).toContainElement(conversation);
+    expect(workspace).toContainElement(canvas);
+    expect(within(conversation).queryByText('Flight results')).not.toBeInTheDocument();
+    expect(canvas.querySelectorAll('noodle-app-view')).toHaveLength(1);
+    expect(canvas.querySelector('noodle-app-view')?.view).toBe(secondView);
+    expect(screen.queryByRole('complementary', { name: 'Live trip brief' }))
+      .not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Current trip' }))
+      .toHaveTextContent('ISB → NYC');
   });
 
   it.each([
@@ -203,7 +327,7 @@ describe('guest travel conversation lifecycle', () => {
           data: {
             id: 'view-light-only',
             tool: 'search_flights',
-            resourceUri: 'ui://nuitee_travel/flight-results',
+            resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget',
             title: 'Flight results',
             result: { status: 'success' },
           },
@@ -343,7 +467,7 @@ describe('guest travel conversation lifecycle', () => {
           data: { id: 'call-search-active', tool: 'search_flights' },
         });
       });
-      expect(screen.getByRole('status')).toHaveTextContent(
+      expect(conversationStatus()).toHaveTextContent(
         'Searching current flights',
       );
 
@@ -367,7 +491,7 @@ describe('guest travel conversation lifecycle', () => {
       fireEvent.click(stop);
       expect(client.abort).toHaveBeenCalledOnce();
       expect(client.resetSession).not.toHaveBeenCalled();
-      expect(screen.getByRole('status')).toBeEmptyDOMElement();
+      expect(conversationStatus()).toBeEmptyDOMElement();
       expect(composer).toHaveValue('Keep this follow-up for after the stop');
 
       hookStatus = 'ready';
@@ -408,7 +532,7 @@ describe('guest travel conversation lifecycle', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'The travel assistant could not continue',
     );
-    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    expect(conversationStatus()).toBeEmptyDOMElement();
     expect(document.body).not.toHaveTextContent(
       /Assistant is responding|token secret|https?:|search_flights/i,
     );
@@ -443,7 +567,7 @@ describe('guest travel conversation lifecycle', () => {
         data: { id: 'call-search-stale', tool: 'search_flights' },
       });
     });
-    expect(screen.getByRole('status')).toHaveTextContent(
+    expect(conversationStatus()).toHaveTextContent(
       'Searching current flights',
     );
     expect(screen.getByText('Searching')).toBeVisible();
@@ -465,13 +589,13 @@ describe('guest travel conversation lifecycle', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       'The travel assistant could not continue',
     );
-    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    expect(conversationStatus()).toBeEmptyDOMElement();
     expect(screen.queryByText('Searching')).not.toBeInTheDocument();
-    expect(screen.getByText('No trip started')).toBeVisible();
+    expect(screen.queryByText('No trip started')).not.toBeInTheDocument();
 
     hookState = { ...hookState, status: 'streaming' };
     view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
-    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    expect(conversationStatus()).toBeEmptyDOMElement();
   });
 
   it('retries the last message only when the client marks a service error retryable', async () => {
@@ -628,16 +752,17 @@ describe('guest travel conversation lifecycle', () => {
 
     submitPrompt('JFK to Lisbon in October');
 
-    expect(await screen.findByRole('complementary', {
-      name: 'Live trip brief',
+    expect(await screen.findByRole('region', {
+      name: 'Current trip',
     })).toHaveTextContent('SFO → NRT');
-    expect(screen.getByRole('complementary', {
-      name: 'Live trip brief',
+    expect(screen.getByRole('region', {
+      name: 'Current trip',
     })).not.toHaveTextContent('JFK → LIS');
     expect(screen.getByText('No fares found')).toBeVisible();
-    const activityRegion = screen.getByRole('status');
+    const conversation = screen.getByRole('region', { name: 'Travel conversation' });
+    const activityRegion = within(conversation).getByRole('status');
     expect(activityRegion).toBeEmptyDOMElement();
-    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(within(conversation).getAllByRole('status')).toHaveLength(1);
 
     act(() => {
       client.emit({
@@ -652,7 +777,7 @@ describe('guest travel conversation lifecycle', () => {
     expect(activityRegion).toHaveTextContent('Searching current flights');
     expect(screen.getByText('Searching')).toBeVisible();
     expect(document.body).not.toHaveTextContent('search_flights');
-    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(within(conversation).getAllByRole('status')).toHaveLength(1);
 
     act(() => {
       client.emit({
@@ -673,7 +798,7 @@ describe('guest travel conversation lifecycle', () => {
     render(<TravelAssistantPage runtime={readyRuntime} />);
     submitPrompt('JFK to Lisbon in October');
 
-    const activityRegion = await screen.findByRole('status');
+    const activityRegion = conversationStatus();
     act(() => {
       client.emit({
         event: 'tool_started',
@@ -721,7 +846,7 @@ describe('guest travel conversation lifecycle', () => {
     render(<TravelAssistantPage runtime={readyRuntime} />);
     submitPrompt('JFK to Lisbon in October');
 
-    const activityRegion = await screen.findByRole('status');
+    const activityRegion = conversationStatus();
     act(() => {
       client.emit({
         event: 'tool_started',
@@ -795,8 +920,8 @@ describe('guest travel conversation lifecycle', () => {
     expect(await screen.findByRole('log', {
       name: 'Conversation transcript',
     })).toBeVisible();
-    expect(await screen.findByRole('complementary', {
-      name: 'Live trip brief',
+    expect(await screen.findByRole('region', {
+      name: 'Current trip',
     })).toHaveTextContent('JFK → LIS');
     expect(screen.getByText('Fare selected')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'New trip' }));
@@ -826,9 +951,7 @@ describe('guest travel conversation lifecycle', () => {
 
     submitPrompt('First trip');
     await waitFor(() => expect(client.sendMessage).toHaveBeenCalledOnce());
-    fireEvent.click(screen.getByRole('button', {
-      name: 'Reset conversation',
-    }));
+    fireEvent.click(screen.getByRole('button', { name: 'New trip' }));
     submitPrompt('Second trip');
 
     await waitFor(() => {

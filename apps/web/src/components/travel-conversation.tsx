@@ -1,37 +1,47 @@
 'use client';
 
 import { useNoodleAssistant } from '@noodleseed/assistant/react/client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { starterConfig } from '../../../../starter.config';
 import { presentAssistantError } from '../lib/assistant-error';
 import type { ReadyPublicAssistantRuntime } from '../lib/assistant-config';
 import { isNearTranscriptEnd } from '../lib/conversation-scroll';
-import {
-  EMPTY_TRIP,
-  projectTrip,
-  type TripProjection,
-} from '../lib/trip-projection';
+import { latestJourneyView } from '../lib/journey-view';
+import { projectTrip, type TripProjection } from '../lib/trip-projection';
 import {
   progressForEvent,
   type ToolActivity,
 } from '../lib/travel-progress';
 import { TravelComposer } from './travel-composer';
+import { TravelJourneyCanvas } from './travel-journey-canvas';
 import { TravelMessage } from './travel-message';
+import { TripBrief } from './trip-brief';
 
 interface TravelConversationProps {
   readonly runtime: ReadyPublicAssistantRuntime;
   readonly initialPrompt: string;
-  readonly onReset: () => void;
-  readonly onProjectionChange: (projection: TripProjection) => void;
 }
 
-function sameProjection(left: TripProjection, right: TripProjection) {
-  return left.phase === right.phase
-    && left.origin === right.origin
-    && left.destination === right.destination
-    && left.departureDate === right.departureDate
-    && left.returnDate === right.returnDate
-    && left.travelers === right.travelers;
+function conversationCopy(projection: TripProjection) {
+  const title = projection.origin && projection.destination
+    ? `${projection.origin} to ${projection.destination}`
+    : 'Plan your flight';
+  switch (projection.phase) {
+    case 'planned':
+    case 'searching':
+      return { title, placeholder: 'Adjust the trip or add a preference…' };
+    case 'comparing':
+    case 'no-results':
+      return { title, placeholder: 'Compare fares or refine this search…' };
+    case 'selected':
+    case 'verifying':
+    case 'verified':
+      return { title, placeholder: 'Ask about or verify this fare…' };
+    case 'error':
+      return { title, placeholder: 'Tell Wayfare what to change…' };
+    case 'idle':
+      return { title, placeholder: 'Tell Wayfare what you need…' };
+  }
 }
 
 function newestActivity(
@@ -45,8 +55,6 @@ function newestActivity(
 export function TravelConversation({
   runtime,
   initialPrompt,
-  onReset,
-  onProjectionChange,
 }: Readonly<TravelConversationProps>) {
   const [principalKey] = useState(() => crypto.randomUUID());
   const { client, messages, status, error } = useNoodleAssistant({
@@ -60,7 +68,6 @@ export function TravelConversation({
   });
   const initialPromptSentRef = useRef(false);
   const lastPromptRef = useRef(initialPrompt);
-  const publishedProjectionRef = useRef<TripProjection>(EMPTY_TRIP);
   const activeActivitiesRef = useRef(new Map<string, ToolActivity>());
   const transcriptContentRef = useRef<HTMLOListElement>(null);
   const transcriptViewportRef = useRef<HTMLDivElement>(null);
@@ -140,20 +147,13 @@ export function TravelConversation({
     setActivity(null);
   }, [terminal]);
 
-  useEffect(() => {
-    const projection = projectTrip(
-      messages,
-      terminal ? undefined : activity?.phase,
-    );
-    if (sameProjection(projection, publishedProjectionRef.current)) return;
-    publishedProjectionRef.current = projection;
-    onProjectionChange(projection);
-  }, [activity?.phase, messages, onProjectionChange, terminal]);
+  const projection = useMemo(() => projectTrip(
+    messages,
+    terminal ? undefined : activity?.phase,
+  ), [activity?.phase, messages, terminal]);
+  const journeyView = useMemo(() => latestJourneyView(messages), [messages]);
 
-  function resetConversation() {
-    onProjectionChange(EMPTY_TRIP);
-    onReset();
-  }
+  const copy = conversationCopy(projection);
 
   function sendFollowUp(prompt: string) {
     const viewport = transcriptViewportRef.current;
@@ -180,70 +180,77 @@ export function TravelConversation({
   const errorPresentation = error ? presentAssistantError(error) : null;
 
   return (
-    <section
-      className="travel-conversation-shell"
-      aria-busy={busy}
-      aria-label="Travel conversation"
-    >
-      <header className="travel-conversation__header">
-        <div>
-          <p className="assistant-identity">
-            {starterConfig.brand.assistantName}
-          </p>
-          <h1>Your trip, refined together</h1>
-        </div>
-        <button type="button" onClick={resetConversation}>
-          Reset conversation
-        </button>
-      </header>
-      <div
-        className="travel-transcript"
-        onScroll={(event) => {
-          followLatestRef.current = isNearTranscriptEnd(event.currentTarget);
-        }}
-        ref={transcriptViewportRef}
-      >
-        <ol
-          aria-label="Conversation transcript"
-          ref={transcriptContentRef}
-          role="log"
+    <section aria-label="Travel workspace" className="travel-journey-workspace">
+      <TripBrief projection={projection} />
+      <div className="travel-journey-workspace__body">
+        <section
+          className="travel-conversation-shell"
+          aria-busy={busy}
+          aria-label="Travel conversation"
         >
-          {messages.map((message) => (
-            <li key={message.id}>
-              <TravelMessage client={client} message={message} />
-            </li>
-          ))}
-        </ol>
-      </div>
-      <p aria-live="polite" role="status">
-        {statusLabel}
-      </p>
-      {errorPresentation ? (
-        <section className="assistant-error" role="alert">
-          <h2>{errorPresentation.title}</h2>
-          <p>{errorPresentation.message}</p>
-          {errorPresentation.canRetry ? (
-            <button
-              type="button"
-              onClick={() => sendFollowUp(lastPromptRef.current)}
+          <header className="travel-conversation__header">
+            <div>
+              <p className="assistant-identity">
+                {starterConfig.brand.assistantName}
+              </p>
+              <h1>{copy.title}</h1>
+            </div>
+          </header>
+          <div
+            className="travel-transcript"
+            onScroll={(event) => {
+              followLatestRef.current = isNearTranscriptEnd(event.currentTarget);
+            }}
+            ref={transcriptViewportRef}
+          >
+            <ol
+              aria-label="Conversation transcript"
+              ref={transcriptContentRef}
+              role="log"
             >
-              Try again
-            </button>
+              {messages.map((message) => (
+                <li key={message.id}>
+                  <TravelMessage client={client} message={message} />
+                </li>
+              ))}
+            </ol>
+          </div>
+          <p aria-live="polite" role="status">
+            {statusLabel}
+          </p>
+          {errorPresentation ? (
+            <section className="assistant-error" role="alert">
+              <h2>{errorPresentation.title}</h2>
+              <p>{errorPresentation.message}</p>
+              {errorPresentation.canRetry ? (
+                <button
+                  type="button"
+                  onClick={() => sendFollowUp(lastPromptRef.current)}
+                >
+                  Try again
+                </button>
+              ) : null}
+            </section>
           ) : null}
+          <TravelComposer
+            busy={busy}
+            formLabel="Continue trip"
+            onStop={stopGenerating}
+            onSubmit={sendFollowUp}
+            placeholder={copy.placeholder}
+            submitLabel="Continue trip"
+            variant="conversation"
+          />
+          <p className="travel-attribution travel-attribution--workspace">
+            Built on Noodle Seed · Powered by Nuitee
+          </p>
         </section>
-      ) : null}
-      <TravelComposer
-        busy={busy}
-        formLabel="Continue trip"
-        onStop={stopGenerating}
-        onSubmit={sendFollowUp}
-        placeholder="Ask to compare, adjust, or verify…"
-        submitLabel="Continue trip"
-        variant="conversation"
-      />
-      <p className="travel-attribution travel-attribution--workspace">
-        Built on Noodle Seed · Powered by Nuitee
-      </p>
+        <TravelJourneyCanvas
+          client={client}
+          projection={projection}
+          view={journeyView}
+        />
+      </div>
     </section>
   );
 }
