@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { execFile as execFileCallback } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import embeddedApp from '../src/embedded-server.js';
-import { flightPlanDatesSchema, flightPlanInputSchema } from '../src/flight-schemas.js';
+import { flightPlanDatesSchema } from '../src/flight-schemas.js';
 import liveApp from '../src/live-server.js';
 import offlineApp from '../src/server.js';
 import { starterConfig } from '../src/starter-config.js';
@@ -27,6 +30,8 @@ const forbiddenFragments = [
   'loyalty',
   'http_request',
 ];
+const execFile = promisify(execFileCallback);
+const noodleCli = fileURLToPath(new URL('../node_modules/.bin/noodle', import.meta.url));
 
 describe('server contract', () => {
   it('exposes exactly the four working model tools and no unfinished domain tools', async () => {
@@ -174,11 +179,34 @@ describe('server contract', () => {
     expect(search.inputSchema.properties.cabinClass.default).toBe('ECONOMY');
   });
 
-  it('rejects lower-case airport codes at the fulfilled flight-plan boundary', () => {
-    expect(flightPlanInputSchema.safeParse({
-      origin: 'isb',
-      destination: 'NYC',
-    }).success).toBe(false);
+  it('rejects lower-case airport codes through the registered flight-plan tool', async () => {
+    const error = await execFile(noodleCli, [
+      'tools',
+      'call',
+      'plan_flight_search',
+      'src/server.ts',
+      '--args',
+      JSON.stringify({ origin: 'isb', destination: 'NYC' }),
+      '--json',
+    ]).then(
+      () => undefined,
+      (failure) => failure,
+    );
+
+    expect(error).toBeDefined();
+    const response = JSON.parse(String((error as { stdout?: string }).stdout));
+    expect(response).toMatchObject({
+      ok: false,
+      error: {
+        code: 'mcp_error',
+        detail: {
+          data: {
+            reason: 'invalid_tool_arguments',
+            validation: [expect.objectContaining({ path: 'origin' })],
+          },
+        },
+      },
+    });
   });
 
   it('rejects an impossible calendar date from the flight-plan elicitation form', () => {
