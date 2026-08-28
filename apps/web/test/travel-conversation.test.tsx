@@ -141,6 +141,26 @@ describe('guest travel conversation lifecycle', () => {
     expect(options.clientContext()).not.toHaveProperty('principalKey');
   });
 
+  it.each([
+    {
+      action: 'Plan a trip to Rome',
+      prompt: 'Help me plan a long-weekend flight to Rome for two.',
+    },
+    {
+      action: 'Start with a flexible trip',
+      prompt: 'Help me find a trip somewhere warm with flexible dates.',
+    },
+  ])('starts $action as exactly one conversation', async ({ action, prompt }) => {
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+
+    fireEvent.click(screen.getByRole('button', { name: action }));
+
+    await waitFor(() => {
+      expect(client.sendMessage).toHaveBeenCalledWith(prompt);
+    });
+    expect(client.sendMessage).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps linked App views light when the surrounding document requests dark mode', async () => {
     document.documentElement.dataset.theme = 'light';
     assistantMock.useNoodleAssistant.mockImplementation(() => ({

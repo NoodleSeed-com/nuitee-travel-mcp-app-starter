@@ -66,7 +66,10 @@ test('uses Inter throughout the consumer and developer UI', async ({ page }) => 
   await page.goto('/');
   await page.evaluate(() => document.fonts.ready);
 
-  const consumerFonts = await page.locator('body, h1, button, textarea')
+  await expect(page.locator('body')).toHaveCSS('font-family', /Inter Variable/);
+  const consumerFonts = await page.locator(
+    '.travel-workspace, .travel-workspace h1, .travel-workspace button, .travel-workspace textarea',
+  )
     .evaluateAll((elements) => elements.map((element) => (
       getComputedStyle(element).fontFamily
     )));
@@ -113,7 +116,9 @@ test('keeps the cinematic hero legible, fitted, and keyboard-reachable on deskto
   expect(heroAppearance.headingColor).toBe('rgb(255, 255, 255)');
   expect(heroAppearance.scrim).toContain('linear-gradient');
 
-  const developerLink = page.getByRole('link', { name: 'For developers' });
+  const developerLink = page.getByRole('navigation', {
+    name: 'Primary navigation',
+  }).getByRole('link', { name: 'For developers' });
   let reachedDeveloperLink = false;
   for (let index = 0; index < 8; index += 1) {
     await page.keyboard.press('Tab');
@@ -154,6 +159,14 @@ test('fits 320px, 390px, and 200 percent text zoom without orphaning the headlin
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
   await expect(page.getByRole('button', { name: 'Find flights' }))
     .toHaveCSS('min-height', '44px');
+  const [mobileInput, mobileSubmit] = await Promise.all([
+    page.getByRole('textbox', { name: 'Ask about a flight' }).boundingBox(),
+    page.getByRole('button', { name: 'Find flights' }).boundingBox(),
+  ]);
+  expect(mobileInput).not.toBeNull();
+  expect(mobileSubmit).not.toBeNull();
+  expect(mobileInput!.y + mobileInput!.height)
+    .toBeLessThanOrEqual(mobileSubmit!.y);
   await expectHeadlineDoesNotOrphanFinalWords(page);
 
   await expectHorizontalFit(page, 390);

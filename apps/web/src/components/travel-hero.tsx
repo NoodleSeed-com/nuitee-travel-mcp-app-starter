@@ -29,7 +29,9 @@ export function TravelHero({
       <div aria-hidden="true" className="travel-hero__scrim" />
       <div className="travel-hero__content">
         <div className="travel-hero__copy">
-          <h1 id="travel-home-title">Where will you go next?</h1>
+          <h1 id="travel-home-title">
+            Where will you <span>go next?</span>
+          </h1>
           <p>Tell us the trip. We’ll find the flights and verify the fare.</p>
         </div>
         <TravelComposer
@@ -54,6 +56,9 @@ export function TravelHero({
         {launchError ? (
           <p className="travel-zero-state__error" role="alert">{launchError}</p>
         ) : null}
+        <a className="travel-hero__explore" href="#places-to-start">
+          Explore destinations
+        </a>
       </div>
     </section>
   );
