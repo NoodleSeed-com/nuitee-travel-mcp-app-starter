@@ -184,8 +184,6 @@ export function TravelConversation({
       className="travel-canvas"
       aria-busy={busy}
       aria-label="Travel conversation"
-      id="travel-canvas"
-      tabIndex={-1}
     >
       <div className="travel-conversation">
         <header>

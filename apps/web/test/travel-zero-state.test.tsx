@@ -20,7 +20,10 @@ describe('travel assistant zero state', () => {
       name: 'Tell us where you want to be.',
     })).toBeVisible();
     expect(screen.getByText('A new way to find your flight')).toBeVisible();
-    expect(screen.getByText(starterConfig.brand.name)).toBeVisible();
+    expect(screen.getAllByText(starterConfig.brand.name).at(0)).toBeVisible();
+    expect(screen.getByText('Guest trip')).toBeVisible();
+    expect(screen.getByRole('link', { name: 'For developers' }))
+      .toHaveAttribute('href', starterConfig.website.developerPath);
     expect(screen.getByText(
       'Built on Noodle Seed · Powered by Nuitee',
     )).toBeVisible();

@@ -570,8 +570,12 @@ describe('guest travel conversation lifecycle', () => {
 
     submitPrompt('JFK to Lisbon in October');
 
-    expect(await screen.findByText('SFO → NRT')).toBeVisible();
-    expect(screen.queryByText('JFK → LIS')).not.toBeInTheDocument();
+    expect(await screen.findByRole('complementary', {
+      name: 'Live trip brief',
+    })).toHaveTextContent('SFO → NRT');
+    expect(screen.getByRole('complementary', {
+      name: 'Live trip brief',
+    })).not.toHaveTextContent('JFK → LIS');
     expect(screen.getByText('No fares found')).toBeVisible();
     const activityRegion = screen.getByRole('status');
     expect(activityRegion).toBeEmptyDOMElement();
@@ -733,11 +737,11 @@ describe('guest travel conversation lifecycle', () => {
     expect(await screen.findByRole('log', {
       name: 'Conversation transcript',
     })).toBeVisible();
-    expect(await screen.findByText('JFK → LIS')).toBeVisible();
+    expect(await screen.findByRole('complementary', {
+      name: 'Live trip brief',
+    })).toHaveTextContent('JFK → LIS');
     expect(screen.getByText('Fare selected')).toBeVisible();
-    fireEvent.click(screen.getByRole('button', {
-      name: 'Reset conversation',
-    }));
+    fireEvent.click(screen.getByRole('button', { name: 'New trip' }));
 
     await waitFor(() => {
       expect(client.abort).toHaveBeenCalledOnce();

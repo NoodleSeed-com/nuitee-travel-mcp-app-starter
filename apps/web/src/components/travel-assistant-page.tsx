@@ -5,9 +5,9 @@ import type { PublicAssistantRuntime } from '../lib/assistant-config';
 import { EMPTY_TRIP, type TripProjection } from '../lib/trip-projection';
 import { SettingsSheet } from './settings-sheet';
 import { TravelConversation } from './travel-conversation';
+import { TravelHeader } from './travel-header';
 import { TravelZeroState } from './travel-zero-state';
-import { TripContextRail } from './trip-context-rail';
-import { WorkspaceAtmosphere } from './workspace-atmosphere';
+import { TripBrief } from './trip-brief';
 
 type PageMode = 'zero' | 'starting';
 
@@ -50,6 +50,11 @@ export function TravelAssistantPage({
           <a className="skip-link" href="#travel-canvas">
             Skip to content
           </a>
+          <TravelHeader
+            mode="hero"
+            onNewTrip={reset}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
           <main>
             <TravelZeroState
               launchError={launchError}
@@ -62,19 +67,19 @@ export function TravelAssistantPage({
           <a className="skip-link" href="#travel-canvas">
             Skip to content
           </a>
-          <main className="workspace-shell">
-            <WorkspaceAtmosphere />
-            <TripContextRail
-              projection={projection}
-              onNewTrip={reset}
-              onOpenSettings={() => setSettingsOpen(true)}
-            />
+          <TravelHeader
+            mode="conversation"
+            onNewTrip={reset}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
+          <main className="conversation-workspace" id="travel-canvas" tabIndex={-1}>
             <TravelConversation
               initialPrompt={initialPrompt}
               onProjectionChange={setProjection}
               onReset={reset}
               runtime={runtime}
             />
+            <TripBrief projection={projection} />
           </main>
         </div>
       )}
