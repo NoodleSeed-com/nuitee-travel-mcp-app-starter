@@ -4,6 +4,7 @@ import type {
   AssistantClient,
   AssistantViewData,
 } from '@noodleseed/assistant/client';
+import { travelViewPlacement } from '../lib/journey-view';
 import type { TripProjection } from '../lib/trip-projection';
 import { TravelViewRegistry } from './travel-view-registry';
 
@@ -37,10 +38,15 @@ export function TravelJourneyCanvas({
   projection,
   view,
 }: Readonly<Props>) {
+  const placement = view ? travelViewPlacement(view) : null;
+  const journeyView = placement === 'journey-canvas' ? view : null;
+  const unrecognizedView = placement === null ? view : null;
+  const viewForRegistry = journeyView ?? unrecognizedView;
+
   return (
     <section aria-label="Flight workspace" className="travel-journey-canvas">
-      {view ? (
-        <TravelViewRegistry client={client} view={view} />
+      {viewForRegistry ? (
+        <TravelViewRegistry client={client} view={viewForRegistry} />
       ) : (
         <div className="travel-journey-canvas__empty" role="status">
           <h2>

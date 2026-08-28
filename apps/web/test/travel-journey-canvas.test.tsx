@@ -130,4 +130,24 @@ describe('TravelJourneyCanvas', () => {
     );
     expect(document.querySelector('noodle-app-view')).not.toBeInTheDocument();
   });
+
+  it('keeps an exact native-home view out of the Flight workspace', () => {
+    const client = createClient();
+    const nativeHomeView: AssistantViewData = {
+      ...view,
+      tool: 'open_travel_starter',
+      resourceUri: 'ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget',
+    };
+
+    render(
+      <TravelJourneyCanvas
+        client={client}
+        projection={searchProjection}
+        view={nativeHomeView}
+      />,
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent('Searching current flights');
+    expect(document.querySelector('noodle-app-view')).not.toBeInTheDocument();
+  });
 });
