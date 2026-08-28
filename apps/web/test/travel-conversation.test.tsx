@@ -49,7 +49,7 @@ function submitPrompt(prompt: string) {
   fireEvent.change(screen.getByRole('textbox', {
     name: 'Ask about a flight',
   }), { target: { value: prompt } });
-  fireEvent.submit(screen.getByRole('form', { name: 'Start a trip' }));
+  fireEvent.submit(screen.getByRole('form', { name: 'Plan a trip' }));
 }
 
 let client = createClient();
@@ -234,7 +234,7 @@ describe('guest travel conversation lifecycle', () => {
     submitPrompt('JFK to Lisbon next month');
 
     expect(screen.getByRole('heading', {
-      name: 'Tell us where you want to be.',
+      name: 'Where will you go next?',
     })).toBeVisible();
     expect(screen.getAllByRole('alert')).toHaveLength(1);
     expect(screen.getByRole('alert')).toHaveTextContent('Add the public embed.');
@@ -760,7 +760,7 @@ describe('guest travel conversation lifecycle', () => {
     })).not.toBeInTheDocument();
     expect(screen.queryByText('No trip started')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', {
-      name: 'Tell us where you want to be.',
+      name: 'Where will you go next?',
     })).toBeVisible();
   });
 

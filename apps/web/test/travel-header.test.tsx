@@ -15,7 +15,7 @@ describe('travel header', () => {
     expect(screen.getByRole('link', { name: 'For developers' })).toHaveAttribute(
       'href', starterConfig.website.developerPath,
     );
-    expect(screen.getByText('Guest trip')).toBeVisible();
+    expect(screen.queryByText('Guest trip')).not.toBeInTheDocument();
     expect(screen.queryByText(/Manage booking|Check in|Flight status/i))
       .not.toBeInTheDocument();
   });

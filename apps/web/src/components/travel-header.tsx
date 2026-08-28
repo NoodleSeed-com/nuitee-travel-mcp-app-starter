@@ -26,7 +26,9 @@ export function TravelHeader({
         <a href={starterConfig.website.developerPath}>For developers</a>
         <button type="button" onClick={onOpenSettings}>Settings</button>
       </nav>
-      <span className="guest-session">Guest trip</span>
+      {mode === 'conversation' ? (
+        <span className="guest-session">Guest trip</span>
+      ) : null}
     </header>
   );
 }

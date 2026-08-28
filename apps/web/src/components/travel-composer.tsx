@@ -1,11 +1,13 @@
 'use client';
 
 import { ArrowUp, Square } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, type Ref, useState } from 'react';
 
 interface TravelComposerProps {
   readonly busy?: boolean;
   readonly formLabel?: string;
+  readonly inputId?: string;
+  readonly inputRef?: Ref<HTMLTextAreaElement>;
   readonly onStop?: () => void;
   readonly onSubmit: (prompt: string) => void;
   readonly placeholder?: string;
@@ -17,6 +19,8 @@ interface TravelComposerProps {
 export function TravelComposer({
   busy = false,
   formLabel = 'Start a trip',
+  inputId,
+  inputRef,
   onStop,
   onSubmit,
   placeholder = 'Ask about dates, airports, or a route',
@@ -46,6 +50,7 @@ export function TravelComposer({
       <textarea
         aria-label="Ask about a flight"
         className="travel-composer__input"
+        id={inputId}
         onChange={(event) => setDraft(event.currentTarget.value)}
         onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.shiftKey) {
@@ -54,6 +59,7 @@ export function TravelComposer({
           }
         }}
         placeholder={placeholder}
+        ref={inputRef}
         rows={1}
         value={draft}
       />

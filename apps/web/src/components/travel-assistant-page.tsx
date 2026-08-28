@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { PublicAssistantRuntime } from '../lib/assistant-config';
 import { EMPTY_TRIP, type TripProjection } from '../lib/trip-projection';
 import { SettingsSheet } from './settings-sheet';
@@ -23,6 +23,7 @@ export function TravelAssistantPage({
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [projection, setProjection] = useState<TripProjection>(EMPTY_TRIP);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const heroInputRef = useRef<HTMLTextAreaElement>(null);
 
   function reset() {
     setMode('zero');
@@ -55,8 +56,9 @@ export function TravelAssistantPage({
             onNewTrip={reset}
             onOpenSettings={() => setSettingsOpen(true)}
           />
-          <main>
+          <main id="travel-canvas" tabIndex={-1}>
             <TravelZeroState
+              inputRef={heroInputRef}
               launchError={launchError}
               onStart={startConversation}
             />

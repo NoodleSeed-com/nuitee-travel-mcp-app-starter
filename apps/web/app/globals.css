@@ -244,13 +244,6 @@ code {
   color: var(--travel-raised);
 }
 
-.travel-hero__brand {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 650;
-  letter-spacing: -0.02em;
-}
-
 .travel-hero__copy .assistant-identity {
   margin: 0;
   color: rgb(255 255 255 / 78%);
@@ -258,14 +251,13 @@ code {
 
 .travel-hero__copy h1 {
   margin: 0.75rem 0 0;
+  max-width: 12ch;
+  font-family: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: clamp(2.75rem, 7vw, 6.5rem);
-  font-weight: 400;
+  font-weight: 620;
   letter-spacing: -0.055em;
   line-height: 0.94;
-}
-
-.travel-hero__headline-phrase {
-  white-space: nowrap;
+  text-wrap: balance;
 }
 
 .travel-hero__copy > p:last-child {
@@ -851,10 +843,6 @@ code {
     align-content: end;
     gap: 1rem;
     padding: 5.5rem 1rem 1rem;
-  }
-
-  .travel-hero__headline-phrase {
-    white-space: normal;
   }
 
   .travel-composer {

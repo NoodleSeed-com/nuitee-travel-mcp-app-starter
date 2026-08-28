@@ -50,7 +50,7 @@ test('renders the cinematic guest shell without opening an assistant session', a
   await page.goto('/');
 
   await expect(page.getByRole('heading', {
-    name: 'Tell us where you want to be.',
+    name: 'Where will you go next?',
   })).toBeVisible();
   await expect(page.locator('main')).toHaveCount(1);
   await expect(page.locator('h1')).toHaveCount(1);
@@ -93,7 +93,7 @@ test('keeps the cinematic hero legible, fitted, and keyboard-reachable on deskto
   expect(viewport).not.toBeNull();
   const [composer, submit] = await Promise.all([
     page.locator('.travel-composer--hero').boundingBox(),
-    page.getByRole('button', { name: 'Plan my flight' }).boundingBox(),
+    page.getByRole('button', { name: 'Find flights' }).boundingBox(),
   ]);
   for (const bounds of [composer, submit]) {
     expect(bounds).not.toBeNull();
@@ -152,7 +152,7 @@ test('fits 320px, 390px, and 200 percent text zoom without orphaning the headlin
   await page.setViewportSize({ width: 320, height: 720 });
   await page.goto('/');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
-  await expect(page.getByRole('button', { name: 'Plan my flight' }))
+  await expect(page.getByRole('button', { name: 'Find flights' }))
     .toHaveCSS('min-height', '44px');
   await expectHeadlineDoesNotOrphanFinalWords(page);
 
@@ -184,7 +184,7 @@ test('stacks the trip brief in a ready-runtime mobile conversation without overf
   await page.goto('/');
   await page.getByRole('textbox', { name: 'Ask about a flight' })
     .fill('Islamabad to Rome for two, next weekend');
-  await page.getByRole('button', { name: 'Plan my flight' }).click();
+  await page.getByRole('button', { name: 'Find flights' }).click();
 
   await expect(page.getByRole('heading', {
     name: 'Your trip, refined together',

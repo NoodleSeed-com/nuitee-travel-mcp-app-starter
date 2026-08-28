@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { createRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { starterConfig } from '../../../starter.config';
 import { TravelAssistantPage } from '../src/components/travel-assistant-page';
@@ -9,7 +10,7 @@ afterEach(() => {
 });
 
 describe('travel assistant zero state', () => {
-  it('renders a cinematic consumer entry without mounting developer chrome', () => {
+  it('renders the approved hero copy without mounting developer chrome', () => {
     const { container } = render(
       <TravelAssistantPage
         runtime={{ status: 'setup-required', message: 'setup' }}
@@ -17,17 +18,23 @@ describe('travel assistant zero state', () => {
     );
 
     expect(screen.getByRole('heading', {
-      name: 'Tell us where you want to be.',
+      level: 1,
+      name: 'Where will you go next?',
     })).toBeVisible();
-    expect(screen.getByText('A new way to find your flight')).toBeVisible();
-    expect(screen.getAllByText(starterConfig.brand.name).at(0)).toBeVisible();
-    expect(screen.getByText('Guest trip')).toBeVisible();
+    expect(screen.getByText(
+      'Tell us the trip. We’ll find the flights and verify the fare.',
+    )).toBeVisible();
+    expect(screen.getAllByText(starterConfig.brand.name)).toHaveLength(1);
+    expect(screen.queryByText('Guest trip')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'For developers' }))
       .toHaveAttribute('href', starterConfig.website.developerPath);
-    expect(screen.getByText(
+    expect(screen.queryByText('A new way to find your flight')).not.toBeInTheDocument();
+    expect(screen.queryByText(
       'Built on Noodle Seed · Powered by Nuitee',
-    )).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Plan my flight' })).toBeDisabled();
+    )).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Find flights' })).toBeDisabled();
+    expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
+      .toHaveAttribute('id', 'travel-prompt');
     expect(container.querySelector('img[alt=""]')).toHaveAttribute(
       'src',
       expect.stringContaining('conversation-hero-v1'),
@@ -37,13 +44,17 @@ describe('travel assistant zero state', () => {
     expect(screen.getByRole('link', { name: 'Skip to content' }))
       .toHaveAttribute('href', '#travel-canvas');
     expect(screen.getByRole('region', {
-      name: 'Tell us where you want to be.',
-    })).toHaveAttribute('id', 'travel-canvas');
+      name: 'Where will you go next?',
+    })).not.toHaveAttribute('id', 'travel-canvas');
+    expect(container.querySelector('main#travel-canvas')).toHaveAttribute(
+      'tabindex',
+      '-1',
+    );
   });
 
   it('submits a configured prompt through the same first-message callback', () => {
     const onStart = vi.fn();
-    render(<TravelZeroState onStart={onStart} />);
+    render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
 
     fireEvent.click(screen.getByRole('button', {
       name: starterConfig.prompts[0],
@@ -54,7 +65,7 @@ describe('travel assistant zero state', () => {
 
   it('submits a typed prompt on Enter', () => {
     const onStart = vi.fn();
-    render(<TravelZeroState onStart={onStart} />);
+    render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
     const composer = screen.getByRole('textbox', { name: 'Ask about a flight' });
 
     fireEvent.change(composer, { target: { value: 'JFK to Lisbon next month' } });
@@ -69,7 +80,7 @@ describe('travel assistant zero state', () => {
 
   it('keeps Shift+Enter available for a multiline prompt', () => {
     const onStart = vi.fn();
-    render(<TravelZeroState onStart={onStart} />);
+    render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
     const composer = screen.getByRole('textbox', { name: 'Ask about a flight' });
 
     fireEvent.change(composer, { target: { value: 'JFK to Lisbon' } });
