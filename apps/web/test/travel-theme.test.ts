@@ -54,4 +54,26 @@ describe('Wayfare premium travel theme', () => {
 
     expect(globals).not.toContain('var(--travel-surface)');
   });
+
+  it('uses one contrast-preserving foreground token for primary interactions', async () => {
+    const globals = await readFile(
+      resolve(process.cwd(), 'app/globals.css'),
+      'utf8',
+    );
+    const accent = globals.match(
+      /--travel-blue:\s*(#[a-f\d]{6});/iu,
+    )?.[1];
+    const onAccent = globals.match(
+      /--travel-on-accent:\s*(#[a-f\d]{6});/iu,
+    )?.[1];
+    const primaryInteraction = globals.match(
+      /\.travel-interaction-card__actions > button:first-child\s*\{([^}]*)\}/u,
+    )?.[1];
+
+    expect(accent).toBeDefined();
+    expect(onAccent).toBe('#ffffff');
+    expect(primaryInteraction).toContain('color: var(--travel-on-accent);');
+    expect(contrastRatio(accent ?? '#ffffff', onAccent ?? '#ffffff'))
+      .toBeGreaterThanOrEqual(4);
+  });
 });

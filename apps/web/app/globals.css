@@ -4,6 +4,7 @@
   --travel-canvas: #f7f8fa;
   --travel-raised: #ffffff;
   --travel-blue: #3478f6;
+  --travel-on-accent: #ffffff;
   --travel-sea-glass: #4db8ae;
   --travel-muted: #526173;
   --travel-boundary: #d8dee7;
@@ -817,7 +818,7 @@ code {
 .travel-interaction-card__actions > button:first-child {
   border-color: var(--travel-blue);
   background: var(--travel-blue);
-  color: #ffffff;
+  color: var(--travel-on-accent);
 }
 
 .travel-interaction-card__actions > button:not(:first-child) {
