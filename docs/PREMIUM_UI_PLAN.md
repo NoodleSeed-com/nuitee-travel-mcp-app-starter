@@ -55,7 +55,14 @@ The UI continues to expose only two tool-linked entry widgets:
 
 They share a unified Search/Edit → Results → Verified fare-review journey. Familiar labelled search inputs are included, with natural place names sent through an explicit host follow-up for safe resolution. The journey adds no website navigation, hamburger menu, tabs, loyalty controls, checkout, booking, payment, or unfinished travel-domain actions.
 
-In the primary website, the conversation controls a separate journey canvas rather than containing linked Apps. The website owns one persistent current FlightResults slot and mounts only the newest exact view through the official Noodle App host; known linked views are omitted from transcript messages. Local responsive browser proof covers this composition, but hosted behavior remains unproven until a separately authorized deployment and embed-binding verification.
+The primary website remains one centered chronological conversation.
+
+- Linked Apps stay inline at their original message-part positions.
+- Only `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget` and `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget` are admitted.
+- Distinct view IDs are not generically deduplicated.
+- Mismatched tool/resource pairs fail closed.
+- The typed Current trip summary stays inside the conversation.
+- Local proof is not hosted proof. Local responsive browser proof covers this composition, but hosted behavior remains unproven until a separately authorized deployment and embed-binding verification.
 
 A hamburger menu is familiar when a product has hidden navigation. These focused widgets have no internal navigation to hide, so adding one would create false affordance. If a future embedded website shell owns broader navigation, that shell may use its normal standard menu independently of the widgets.
 

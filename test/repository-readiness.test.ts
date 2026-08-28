@@ -371,6 +371,34 @@ describe('public repository contracts', () => {
     ))).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
+  it('keeps active developer guides on the inline exact-pair presentation contract', async () => {
+    const activeGuides = await Promise.all([
+      repositoryFile('docs/oauth.md'),
+      repositoryFile('docs/nuitee-flights-contract.md'),
+      repositoryFile('docs/PREMIUM_UI_PLAN.md'),
+    ]);
+
+    for (const guide of activeGuides) {
+      expect(guide).toContain('one centered chronological conversation');
+      expect(guide).toContain('Linked Apps stay inline at their original message-part positions.');
+      expect(guide).toContain('Distinct view IDs are not generically deduplicated.');
+      expect(guide).toContain(
+        '`search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget`',
+      );
+      expect(guide).toContain(
+        '`open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget`',
+      );
+      expect(guide).toContain('Mismatched tool/resource pairs fail closed.');
+      expect(guide).toMatch(/Current trip[^.]*inside the conversation\./);
+      expect(guide).toContain('Local proof is not hosted proof.');
+      expect(guide).not.toMatch(/journey[- ]canvas/i);
+      expect(guide).not.toMatch(/newest(?: exact)? (?:FlightResults )?view/i);
+      expect(guide).not.toMatch(/persistent current flight-results slot/i);
+      expect(guide).not.toMatch(/known linked (?:Apps|views)[^.]*transcript/i);
+      expect(guide).not.toContain('outside the conversation');
+    }
+  });
+
   it('records generic and app-mapped public preflights without claiming hosted readiness', async () => {
     const checklist = await repositoryFile('PUBLIC_RELEASE_CHECKLIST.md');
 

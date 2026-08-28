@@ -74,7 +74,14 @@ The public comparison duration is the sum of documented per-leg elapsed duration
 
 The public output intentionally omits provider logos, arbitrary carrier image URLs, provider IDs, raw responses, `segmentKey`, fare-basis and booking codes, fee objects and unrestricted/full terms, ancillary pricing, coordinates, and every unused nested object. The optional Nuitee-hosted marketing-carrier image is the only image exception. The starter does not try to mirror the full provider response: it keeps only decision-useful fields with explicit caps.
 
-In the primary website, this bounded result drives the read-only Current trip projection and the newest exact FlightResults view. The website owns one persistent journey-canvas slot for that linked App and mounts it through the official Noodle App host; the conversation controls the canvas but does not contain or duplicate the App in its transcript. This is locally verified behavior, not hosted evidence. Hosted behavior remains unproven until a separately authorized deployment and exact embed-binding verification.
+In the primary website, this bounded result drives the read-only Current trip projection inside one centered chronological conversation.
+
+- Linked Apps stay inline at their original message-part positions.
+- Only `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget` and `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget` are admitted.
+- Distinct view IDs are not generically deduplicated.
+- Mismatched tool/resource pairs fail closed.
+- The typed Current trip summary stays inside the conversation.
+- Local proof is not hosted proof. Hosted behavior remains unproven until a separately authorized deployment and exact embed-binding verification.
 
 ## Verification
 

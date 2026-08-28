@@ -2,7 +2,14 @@
 
 The default Next.js template is intentionally guest-first. Its current Search → Select → Verify tools do not require a website identity, so `apps/web/` uses a public embed ID and ships no login UI, application session route, or identity database.
 
-Authentication does not change presentation ownership: the website keeps one persistent current flight-results slot in a journey canvas controlled by, but separate from, the conversation; the selected linked App still mounts through the official Noodle App host and not inside transcript messages. Local tests do not establish an authenticated or public hosted embed. Hosted behavior remains unproven until a separately authorized deployment and exact embed-binding verification for the chosen identity mode.
+Authentication does not change presentation ownership: the website remains one centered chronological conversation.
+
+- Linked Apps stay inline at their original message-part positions.
+- Only `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget` and `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget` are admitted.
+- Distinct view IDs are not generically deduplicated.
+- Mismatched tool/resource pairs fail closed.
+- The typed Current trip summary stays inside the conversation.
+- Local proof is not hosted proof. An authenticated or public hosted embed remains unproven until a separately authorized deployment and exact embed-binding verification for the chosen identity mode.
 
 Add authentication only when a real capability needs persistence, personalization, authorization, tenant routing, or another backend-verified user fact. Keep these three identity layers separate.
 
