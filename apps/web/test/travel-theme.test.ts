@@ -31,7 +31,7 @@ function contrastRatio(first: string, second: string): number {
 describe('Wayfare premium travel theme', () => {
   it('keeps the approved checked-in colors and accessible contrast pairs', () => {
     expect(starterConfig.brand).toMatchObject({
-      accent: '#3478F6',
+      accent: '#2F70E8',
       signal: '#0B1F33',
       canvas: '#F7F8FA',
       surface: '#FFFFFF',
@@ -43,7 +43,7 @@ describe('Wayfare premium travel theme', () => {
 
     expect(contrastRatio('#0B1F33', '#F7F8FA')).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio('#526173', '#F7F8FA')).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio('#3478F6', '#F7F8FA')).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio('#2F70E8', '#F7F8FA')).toBeGreaterThanOrEqual(3);
   });
 
   it('uses the approved raised token for surface backgrounds', async () => {
@@ -71,9 +71,10 @@ describe('Wayfare premium travel theme', () => {
     )?.[1];
 
     expect(accent).toBeDefined();
+    expect(accent).toBe(starterConfig.brand.accent.toLowerCase());
     expect(onAccent).toBe('#ffffff');
     expect(primaryInteraction).toContain('color: var(--travel-on-accent);');
     expect(contrastRatio(accent ?? '#ffffff', onAccent ?? '#ffffff'))
-      .toBeGreaterThanOrEqual(4);
+      .toBeGreaterThanOrEqual(4.5);
   });
 });

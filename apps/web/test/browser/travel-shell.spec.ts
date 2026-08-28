@@ -1,5 +1,28 @@
+import { writeFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
 import { starterConfig } from '../../../../starter.config';
+
+function renderedContrastRatio(
+  foreground: string,
+  background: string,
+): number {
+  const luminance = (color: string) => {
+    const channels = color.match(/[\d.]+/gu)?.slice(0, 3).map(Number);
+    if (!channels || channels.length !== 3) {
+      throw new Error(`Expected rendered RGB color, received ${color}`);
+    }
+    const [red, green, blue] = channels.map((channel) => {
+      const value = channel / 255;
+      return value <= 0.04045
+        ? value / 12.92
+        : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    return (0.2126 * red!) + (0.7152 * green!) + (0.0722 * blue!);
+  };
+  const values = [luminance(foreground), luminance(background)]
+    .sort((first, second) => second - first);
+  return ((values[0] ?? 0) + 0.05) / ((values[1] ?? 0) + 0.05);
+}
 
 async function renderedTextLines(page: Page, selector: string) {
   return page.locator(selector).evaluate((element) => {
@@ -105,7 +128,7 @@ async function landingMidwordBreaks(page: Page) {
   });
 }
 
-test('renders the cinematic guest shell without opening an assistant session', async ({
+test('renders the premium zero-state first fold without opening an assistant session', async ({
   page,
 }) => {
   const assistantRequests: string[] = [];
@@ -133,12 +156,12 @@ test('renders the cinematic guest shell without opening an assistant session', a
   await expect(page.getByRole('link', { name: 'Skip to content' }))
     .toHaveAttribute('href', '#travel-canvas');
   await expect(page.locator('.travel-hero__image')).toHaveAttribute('alt', '');
-  await expect(page.locator('.travel-hero__scrim')).toBeVisible();
+  await expect(page.locator('.travel-hero__scrim')).toHaveCount(0);
   await expect(page.locator('[data-atmosphere-canvas]')).toHaveCount(0);
   expect(assistantRequests).toEqual([]);
 });
 
-test('centers the Wayfare conversation and rounds the primary visual surfaces', async ({
+test('keeps the premium desktop hero heading on one line with rounded visual surfaces', async ({
   page,
 }) => {
   await page.goto('/');
@@ -239,11 +262,11 @@ test('keeps the cinematic hero legible, fitted, and keyboard-reachable on deskto
 
   const heroAppearance = await page.evaluate(() => {
     const heading = getComputedStyle(document.querySelector('h1')!);
-    const scrim = getComputedStyle(document.querySelector('.travel-hero__scrim')!);
-    return { headingColor: heading.color, scrim: scrim.backgroundImage };
+    const image = getComputedStyle(document.querySelector('.travel-hero__image')!);
+    return { headingColor: heading.color, imageFit: image.objectFit };
   });
-  expect(heroAppearance.headingColor).toBe('rgb(255, 255, 255)');
-  expect(heroAppearance.scrim).toContain('linear-gradient');
+  expect(heroAppearance.headingColor).toBe('rgb(11, 31, 51)');
+  expect(heroAppearance.imageFit).toBe('cover');
 
   const developerLink = page.getByRole('navigation', {
     name: 'Primary navigation',
@@ -324,7 +347,7 @@ test('keeps the next section discoverable with desktop targets at least 44px', a
   for (const target of targets) await expectMinimumTargetSize(target);
 });
 
-test('uses three desktop and one mobile destination columns by breakpoint', async ({
+test('uses a premium desktop destination row and a 390px scroll-snap peek', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium');
@@ -345,8 +368,29 @@ test('uses three desktop and one mobile destination columns by breakpoint', asyn
     const bounds = card.getBoundingClientRect();
     return { bottom: bounds.bottom, left: bounds.left, right: bounds.right, top: bounds.top };
   }));
-  expect(boxes[0]!.bottom).toBeLessThanOrEqual(boxes[1]!.top);
-  expect(boxes[1]!.bottom).toBeLessThanOrEqual(boxes[2]!.top);
+  const mobileRail = await page.locator('.destination-inspiration__grid')
+    .evaluate((rail) => {
+      const style = getComputedStyle(rail);
+      return {
+        clientWidth: rail.clientWidth,
+        gridAutoFlow: style.gridAutoFlow,
+        overflowX: style.overflowX,
+        scrollSnapType: style.scrollSnapType,
+        scrollWidth: rail.scrollWidth,
+      };
+    });
+  expect(mobileRail.gridAutoFlow).toBe('column');
+  expect(mobileRail.overflowX).toBe('auto');
+  expect(mobileRail.scrollSnapType).toBe('x mandatory');
+  expect(mobileRail.scrollWidth).toBeGreaterThan(mobileRail.clientWidth);
+  expect(boxes.map(({ top }) => top)).toEqual([
+    boxes[0]!.top,
+    boxes[0]!.top,
+    boxes[0]!.top,
+  ]);
+  expect(boxes[0]!.right).toBeLessThan(390);
+  expect(boxes[1]!.left).toBeLessThan(390);
+  expect(boxes[1]!.right).toBeGreaterThan(390);
 });
 
 test('keeps tablet destination cards compact and comparable', async ({
@@ -370,15 +414,55 @@ test('keeps tablet destination cards compact and comparable', async ({
   expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1);
 });
 
-test('fits the landing document at every required viewport width', async ({
+test('captures premium landing visual evidence at every required viewport', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium');
   await page.goto('/');
 
-  for (const width of [320, 390, 768, 1440]) {
-    await expectHorizontalFit(page, width);
+  const landingMeasurements: Array<{
+    headingLines: number;
+    height: number;
+    heroHeight: number;
+    heroWidth: number;
+    width: number;
+  }> = [];
+  for (const { height, width } of [
+    { width: 320, height: 568 },
+    { width: 390, height: 844 },
+    { width: 768, height: 1024 },
+    { width: 1440, height: 1000 },
+  ]) {
+    await page.setViewportSize({ width, height });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    const [headingLines, heroBounds] = await Promise.all([
+      renderedTextLines(page, '#travel-home-title'),
+      page.locator('.travel-hero__media').boundingBox(),
+    ]);
+    expect(heroBounds).not.toBeNull();
+    landingMeasurements.push({
+      headingLines: headingLines.length,
+      height,
+      heroHeight: heroBounds!.height,
+      heroWidth: heroBounds!.width,
+      width,
+    });
+    await page.screenshot({
+      animations: 'disabled',
+      path: testInfo.outputPath(`task-6-landing-${width}x${height}.png`),
+    });
   }
+  const landingMeasurementsPath = testInfo.outputPath(
+    'task-6-landing-measurements.json',
+  );
+  await writeFile(
+    landingMeasurementsPath,
+    `${JSON.stringify(landingMeasurements, null, 2)}\n`,
+  );
+  await testInfo.attach('task-6-landing-measurements', {
+    path: landingMeasurementsPath,
+    contentType: 'application/json',
+  });
 });
 
 test('starts one destination prompt through one assistant turn', async ({ page }) => {
@@ -424,10 +508,11 @@ test('starts one destination prompt through one assistant turn', async ({ page }
   expect(sessionRequests).toBe(1);
 });
 
-test('keeps approved Apps inline in one centered chronological conversation', async ({
+test('proves premium active conversation, chronological nested Apps, keyboard order, text zoom, reduced motion, and transcript overflow', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium');
+  test.setTimeout(120_000);
 
   let turnRequests = 0;
   const firstAssistantCopy = [
@@ -486,6 +571,23 @@ test('keeps approved Apps inline in one centered chronological conversation', as
     </main>
     <script>
       const initializeId = 1;
+      let lastReportedHeight = 0;
+      const reportSize = () => {
+        const height = document.documentElement.scrollHeight;
+        if (height === lastReportedHeight) return;
+        lastReportedHeight = height;
+        document.documentElement.dataset.lastReportedHeight = String(height);
+        document.documentElement.dataset.reportCount = String(
+          Number(document.documentElement.dataset.reportCount || 0) + 1,
+        );
+        parent.postMessage({
+          jsonrpc: '2.0',
+          method: 'ui/notifications/size-changed',
+          params: { height },
+        }, '*');
+      };
+      window.reportFixtureSize = reportSize;
+      addEventListener('resize', () => queueMicrotask(reportSize));
       addEventListener('message', (event) => {
         if (event.source !== parent || event.data?.id !== initializeId) return;
         parent.postMessage({
@@ -493,11 +595,7 @@ test('keeps approved Apps inline in one centered chronological conversation', as
           method: 'ui/notifications/initialized',
           params: {},
         }, '*');
-        parent.postMessage({
-          jsonrpc: '2.0',
-          method: 'ui/notifications/size-changed',
-          params: { height: document.documentElement.scrollHeight },
-        }, '*');
+        reportSize();
       });
       parent.postMessage({
         jsonrpc: '2.0',
@@ -575,6 +673,36 @@ test('keeps approved Apps inline in one centered chronological conversation', as
         frame('content', {
           delta: firstAssistantCopy,
         }),
+        ...(turnRequests === 1 ? [
+          frame('tool_proposed', {
+            id: 'confirm-search-turn-1',
+            tool: 'select_flight_offer',
+            title: 'Save this fare?',
+            description: 'Keep this selection ready for verification.',
+            arguments: { origin: 'ISB', destination: 'JFK' },
+          }),
+          frame('input_requested', {
+            id: 'input-search-turn-1',
+            message: 'Complete the remaining trip details.',
+            expiresAt: '2099-01-01T00:00:00.000Z',
+            requestedSchema: {
+              type: 'object',
+              properties: {
+                departureDate: {
+                  type: 'string',
+                  format: 'date',
+                  title: 'Departure date',
+                },
+                cabinClass: {
+                  type: 'string',
+                  title: 'Cabin',
+                  enum: ['ECONOMY', 'BUSINESS'],
+                },
+              },
+              required: ['departureDate'],
+            },
+          }),
+        ] : []),
         frame('view_available', searchViewForRequest),
         frame('content', {
           delta: secondAssistantCopy,
@@ -690,7 +818,9 @@ test('keeps approved Apps inline in one centered chronological conversation', as
       const paragraph = main.querySelector('p');
       return {
         bodyFits: body.scrollWidth <= body.clientWidth,
+        bodyVerticalFits: body.scrollHeight <= body.clientHeight,
         documentFits: documentElement.scrollWidth <= documentElement.clientWidth,
+        documentVerticalFits: documentElement.scrollHeight <= documentElement.clientHeight,
         mainFits: main.scrollWidth <= main.clientWidth,
         paragraphFits: paragraph !== null
           && paragraph.scrollWidth <= paragraph.clientWidth,
@@ -698,7 +828,9 @@ test('keeps approved Apps inline in one centered chronological conversation', as
     });
     expect(appContentFit).toEqual({
       bodyFits: true,
+      bodyVerticalFits: true,
       documentFits: true,
+      documentVerticalFits: true,
       mainFits: true,
       paragraphFits: true,
     });
@@ -720,13 +852,17 @@ test('keeps approved Apps inline in one centered chronological conversation', as
   const renderedPartOrder = await transcript
     .locator('article.travel-message--assistant')
     .evaluate((message) => Array.from(message.children).map((child) => {
-      if (child.tagName === 'NOODLE-APP-VIEW') {
-        return (child as HTMLElement & { view?: { id?: string } }).view?.id;
-      }
+      const app = child.matches('noodle-app-view')
+        ? child
+        : child.querySelector('noodle-app-view');
+      if (app) return (app as HTMLElement & { view?: { id?: string } }).view?.id;
+      if (child.getAttribute('aria-label')) return child.getAttribute('aria-label');
       return child.textContent?.trim();
     }));
   expect(renderedPartOrder).toEqual([
     firstAssistantCopy,
+    'Confirmation request',
+    'Input request',
     'search-view-turn-1',
     secondAssistantCopy,
     'starter-view-turn-1',
@@ -765,15 +901,56 @@ test('keeps approved Apps inline in one centered chronological conversation', as
   const currentTrip = page.getByRole('region', { name: 'Current trip' });
   await expect(currentTrip).toContainText('ISB → JFK');
   await expect(currentTrip).toContainText('2026-09-18');
-  await expect(currentTrip).toContainText('2026-09-27');
   await expect(currentTrip).toContainText('2 adults, 1 child');
   await expect(currentTrip).toContainText('Business');
+  await expect(currentTrip).not.toContainText('2026-09-27');
+  await expect(currentTrip).not.toContainText('EUR');
+  await expect(currentTrip).not.toContainText('GB market');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.screenshot({
+    animations: 'disabled',
+    path: testInfo.outputPath('task-6-active-compact-1440x1000.png'),
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await currentTrip.getByRole('button', { name: 'Show trip details' }).click();
+  await expect(currentTrip).toContainText('2026-09-27');
   await expect(currentTrip).toContainText('EUR');
   await expect(currentTrip).toContainText('GB market');
+  await currentTrip.getByRole('button', { name: 'Hide trip details' }).click();
+  await expect(currentTrip).not.toContainText('2026-09-27');
   await expect(currentTrip).not.toContainText('Karachi');
   await expect(currentTrip).not.toContainText('London');
   await expect(currentTrip).not.toContainText('First');
+  const routeProgress = currentTrip.getByLabel('Trip progress');
+  await expect(routeProgress).toHaveAttribute('data-phase', 'comparing');
+  await expect(routeProgress.locator('[data-complete="true"]')).toHaveCount(3);
 
+  const primaryAction = transcript.getByRole('button', { name: 'Confirm' });
+  const primaryActionAppearance = await primaryAction.evaluate((button) => {
+    const style = getComputedStyle(button);
+    return {
+      backgroundColor: style.backgroundColor,
+      color: style.color,
+      fontSize: Number.parseFloat(style.fontSize),
+      fontWeight: Number.parseInt(style.fontWeight, 10),
+    };
+  });
+  expect(primaryActionAppearance.fontSize).toBeLessThan(24);
+  expect(primaryActionAppearance.fontWeight).toBeLessThan(700);
+  const primaryActionContrast = renderedContrastRatio(
+    primaryActionAppearance.color,
+    primaryActionAppearance.backgroundColor,
+  );
+  expect(primaryActionAppearance.fontSize).toBe(16);
+  expect(primaryActionAppearance.fontWeight).toBe(400);
+  expect(primaryActionContrast).toBeGreaterThanOrEqual(4.5);
+
+  const responsiveMeasurements: Array<{
+    appCount: number;
+    conversationWidth: number;
+    conversationX: number;
+    width: number;
+  }> = [];
   for (const requiredWidth of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width: requiredWidth, height: 900 });
     await expect.poll(() => page.evaluate(() => (
@@ -786,6 +963,12 @@ test('keeps approved Apps inline in one centered chronological conversation', as
       conversationBounds!.x + (conversationBounds!.width / 2) - (requiredWidth / 2),
     )).toBeLessThanOrEqual(2);
     await expect(apps).toHaveCount(2);
+    responsiveMeasurements.push({
+      appCount: await apps.count(),
+      conversationWidth: conversationBounds!.width,
+      conversationX: conversationBounds!.x,
+      width: requiredWidth,
+    });
 
     const prose = transcript.getByText(firstAssistantCopy, { exact: true });
     const [transcriptBounds, proseBounds, travelerMessageBounds] = await Promise.all([
@@ -859,25 +1042,44 @@ test('keeps approved Apps inline in one centered chronological conversation', as
   });
   const firstSearchControl = appSurfaceAt(0).control;
   const firstStarterControl = appSurfaceAt(1).control;
+  const declineConfirmation = transcript.getByRole('button', {
+    name: "Don't proceed",
+  });
+  const departureDate = transcript.getByLabel('Departure date');
+  const cabin = transcript.getByRole('combobox', { name: 'Cabin' });
+  const submitInput = transcript.getByRole('button', { name: 'Continue' });
+  const cancelInput = transcript.getByRole('button', { name: 'Cancel request' });
   await page.evaluate(() => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   });
+  const keyboardTargets = [
+    { label: 'confirmation accept', locator: primaryAction },
+    { label: 'confirmation decline', locator: declineConfirmation },
+    { label: 'input departure date', locator: departureDate },
+    { label: 'input cabin', locator: cabin },
+    { label: 'input continue', locator: submitInput },
+    { label: 'input cancel', locator: cancelInput },
+    { label: 'search App control', locator: firstSearchControl },
+    { label: 'starter App control', locator: firstStarterControl },
+    { label: 'conversation composer', locator: continueInput },
+  ] as const;
   const keyboardOrder: string[] = [];
-  for (let index = 0; index < 16 && keyboardOrder.length < 3; index += 1) {
+  for (
+    let index = 0;
+    index < 32 && keyboardOrder.length < keyboardTargets.length;
+    index += 1
+  ) {
     await page.keyboard.press('Tab');
-    if (await firstSearchControl.evaluate((control) => document.activeElement === control)) {
-      keyboardOrder.push('search App control');
-    } else if (await firstStarterControl.evaluate((control) => document.activeElement === control)) {
-      keyboardOrder.push('starter App control');
-    } else if (await continueInput.evaluate((input) => document.activeElement === input)) {
-      keyboardOrder.push('conversation composer');
+    for (const target of keyboardTargets) {
+      if (
+        !keyboardOrder.includes(target.label)
+        && await target.locator.evaluate((control) => document.activeElement === control)
+      ) {
+        keyboardOrder.push(target.label);
+      }
     }
   }
-  expect(keyboardOrder).toEqual([
-    'search App control',
-    'starter App control',
-    'conversation composer',
-  ]);
+  expect(keyboardOrder).toEqual(keyboardTargets.map(({ label }) => label));
   for (const appControl of [firstSearchControl, firstStarterControl]) {
     await appControl.focus();
     await expect(appControl).toBeFocused();
@@ -989,11 +1191,14 @@ test('keeps approved Apps inline in one centered chronological conversation', as
   const chronologicalTranscript = await transcript.locator('article').evaluateAll((articles) => (
     articles.map((article) => ({
       label: article.getAttribute('aria-label'),
-      parts: Array.from(article.children).map((child) => (
-        child.tagName === 'NOODLE-APP-VIEW'
-          ? (child as HTMLElement & { view?: { id?: string } }).view?.id
-          : child.textContent?.trim()
-      )),
+      parts: Array.from(article.children).map((child) => {
+        const app = child.matches('noodle-app-view')
+          ? child
+          : child.querySelector('noodle-app-view');
+        if (app) return (app as HTMLElement & { view?: { id?: string } }).view?.id;
+        if (child.getAttribute('aria-label')) return child.getAttribute('aria-label');
+        return child.textContent?.trim();
+      }),
     }))
   ));
   expect(chronologicalTranscript.map(({ label }) => label)).toEqual([
@@ -1011,6 +1216,7 @@ test('keeps approved Apps inline in one centered chronological conversation', as
   for (let turn = 1; turn <= 5; turn += 1) {
     expect(chronologicalTranscript[(turn * 2) - 1]?.parts).toEqual([
       firstAssistantCopy,
+      ...(turn === 1 ? ['Confirmation request', 'Input request'] : []),
       searchViewForTurn(turn).id,
       secondAssistantCopy,
       starterViewForTurn(turn).id,
@@ -1054,6 +1260,10 @@ test('keeps approved Apps inline in one centered chronological conversation', as
   });
   expect(motionScan.scannedWorkspaceRoot).toBe(true);
   expect(motionScan.active).toEqual([]);
+  await page.screenshot({
+    animations: 'disabled',
+    path: testInfo.outputPath('task-6-active-reduced-motion-1440x900.png'),
+  });
 
   const normalAppTextMetrics = await Promise.all(
     Array.from({ length: 10 }, (_, index) => appTextMetricsAt(index)),
@@ -1065,7 +1275,22 @@ test('keeps approved Apps inline in one centered chronological conversation', as
   for (let index = 0; index < 10; index += 1) {
     await appSurfaceAt(index).appDocument.locator('html').evaluate((documentElement) => {
       documentElement.style.fontSize = '200%';
+      (window as Window & { reportFixtureSize?: () => void })
+        .reportFixtureSize?.();
     });
+    const surface = appSurfaceAt(index);
+    await expect.poll(async () => {
+      const [frameBounds, resizeEvidence] = await Promise.all([
+        surface.innerFrame.boundingBox(),
+        surface.appDocument.locator('html').evaluate((documentElement) => ({
+          documentHeight: documentElement.scrollHeight,
+          lastReportedHeight: Number(documentElement.dataset.lastReportedHeight),
+        })),
+      ]);
+      return frameBounds !== null
+        && resizeEvidence.lastReportedHeight >= resizeEvidence.documentHeight
+        && frameBounds.height >= resizeEvidence.documentHeight;
+    }).toBe(true);
   }
   const zoomedAppTextMetrics = await Promise.all(
     Array.from({ length: 10 }, (_, index) => appTextMetricsAt(index)),
@@ -1087,6 +1312,34 @@ test('keeps approved Apps inline in one centered chronological conversation', as
   expect(zoomedComposerBounds).not.toBeNull();
   expect(zoomedComposerBounds!.y).toBeGreaterThanOrEqual(0);
   expect(zoomedComposerBounds!.y + zoomedComposerBounds!.height).toBeLessThanOrEqual(900);
+  const zoomedComposerContents = await composer.evaluate((form) => {
+    const formBounds = form.getBoundingClientRect();
+    const input = form.querySelector('textarea');
+    const action = form.querySelector('button');
+    if (!input || !action) throw new Error('Expected composer input and action');
+    const inputBounds = input.getBoundingClientRect();
+    const actionBounds = action.getBoundingClientRect();
+    return {
+      actionBottom: actionBounds.bottom,
+      actionTop: actionBounds.top,
+      formBottom: formBounds.bottom,
+      formTop: formBounds.top,
+      inputBottom: inputBounds.bottom,
+      inputClientHeight: input.clientHeight,
+      inputScrollHeight: input.scrollHeight,
+      inputTop: inputBounds.top,
+    };
+  });
+  expect(zoomedComposerContents.inputScrollHeight)
+    .toBeLessThanOrEqual(zoomedComposerContents.inputClientHeight);
+  expect(zoomedComposerContents.inputTop)
+    .toBeGreaterThanOrEqual(zoomedComposerContents.formTop);
+  expect(zoomedComposerContents.inputBottom)
+    .toBeLessThanOrEqual(zoomedComposerContents.formBottom);
+  expect(zoomedComposerContents.actionTop)
+    .toBeGreaterThanOrEqual(zoomedComposerContents.formTop);
+  expect(zoomedComposerContents.actionBottom)
+    .toBeLessThanOrEqual(zoomedComposerContents.formBottom);
   await expect(apps).toHaveCount(10);
   const [zoomedConversationBounds, zoomedTranscriptBounds, zoomedProseBounds] = await Promise.all([
     conversation.boundingBox(),
@@ -1095,9 +1348,24 @@ test('keeps approved Apps inline in one centered chronological conversation', as
   ]);
   assertHorizontallyContained(zoomedTranscriptBounds, zoomedConversationBounds, 390);
   assertHorizontallyContained(zoomedProseBounds, zoomedConversationBounds, 390);
-  expect(await conversation.evaluate((element) => (
-    element.scrollWidth <= element.clientWidth
-  ))).toBe(true);
+  const zoomedOverflow = await conversation.locator(':scope, :scope *')
+    .evaluateAll((elements) => elements.flatMap((element) => {
+      const bounds = element.getBoundingClientRect();
+      const overflowsOwnBox = element.scrollWidth > element.clientWidth + 1;
+      const exceedsViewport = bounds.left < -1 || bounds.right > window.innerWidth + 1;
+      return overflowsOwnBox || exceedsViewport
+        ? [{
+          className: element.className,
+          clientWidth: element.clientWidth,
+          left: bounds.left,
+          right: bounds.right,
+          role: element.getAttribute('role'),
+          scrollWidth: element.scrollWidth,
+          tagName: element.tagName,
+        }]
+        : [];
+    }));
+  expect(zoomedOverflow).toEqual([]);
   expect(await transcript.evaluate((element) => (
     element.scrollWidth <= element.clientWidth
   ))).toBe(true);
@@ -1105,6 +1373,42 @@ test('keeps approved Apps inline in one centered chronological conversation', as
     await assertAppSurfaceFits(index, zoomedConversationBounds, 390);
     await expectMinimumTargetSize(appSurfaceAt(index).control);
   }
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({
+    animations: 'disabled',
+    path: testInfo.outputPath('task-6-active-zoom-390x900.png'),
+  });
+  await page.setViewportSize({ width: 390, height: 1600 });
+  for (let index = 0; index < 10; index += 1) {
+    const surface = appSurfaceAt(index);
+    await surface.host.scrollIntoViewIfNeeded();
+    await expect(surface.control).toBeVisible();
+    await surface.main.screenshot({
+      animations: 'disabled',
+      path: testInfo.outputPath(`task-6-zoomed-app-${index + 1}.png`),
+    });
+  }
+  const measurementsPath = testInfo.outputPath('task-6-measurements.json');
+  await writeFile(measurementsPath, `${JSON.stringify({
+      composer: composerBounds,
+      primaryAction: {
+        ...primaryActionAppearance,
+        contrast: primaryActionContrast,
+      },
+      responsive: responsiveMeasurements,
+      routeProgress: { completedSegments: 3, phase: 'comparing' },
+      transcript: transcriptScroll,
+      zoomedAppText: zoomedAppTextMetrics[0],
+      zoomedComposer: zoomedComposerBounds,
+      zoomedComposerContents,
+      zoomedOverflowCount: zoomedOverflow.length,
+      zoomedPageWidth: await page.evaluate(() => document.documentElement.scrollWidth),
+      zoomedNormalAppText: normalAppTextMetrics[0],
+    }, null, 2)}\n`);
+  await testInfo.attach('task-6-measurements', {
+    path: measurementsPath,
+    contentType: 'application/json',
+  });
 });
 
 test('keeps the developer route static, legal-safe, and set in Inter', async ({ page }) => {
@@ -1228,7 +1532,7 @@ test('uses a full-width mobile navigation sheet at 320px without overflow', asyn
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
 });
 
-test('stacks every below-fold landing section at 390px', async ({
+test('keeps 390px below-fold sections compact around the horizontal destination rail', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-chromium');
@@ -1251,16 +1555,23 @@ test('stacks every below-fold landing section at 390px', async ({
   ));
   for (const [index, bounds] of destinationBoxes.entries()) {
     expect(bounds.left).toBeGreaterThanOrEqual(0);
-    expect(bounds.right).toBeLessThanOrEqual(390);
     expect(bounds.width).toBe(destinationBoxes[0]?.width);
     if (index > 0) {
-      expect(destinationBoxes[index - 1]!.bottom)
-        .toBeLessThanOrEqual(bounds.top);
+      expect(destinationBoxes[index - 1]!.right)
+        .toBeLessThanOrEqual(bounds.left);
     }
   }
+  expect(destinationBoxes.map(({ top }) => top)).toEqual([
+    destinationBoxes[0]!.top,
+    destinationBoxes[0]!.top,
+    destinationBoxes[0]!.top,
+  ]);
+  expect(destinationBoxes[0]!.right).toBeLessThan(390);
+  expect(destinationBoxes[1]!.left).toBeLessThan(390);
+  expect(destinationBoxes[1]!.right).toBeGreaterThan(390);
 
   const capabilityItems = page.getByRole('list', {
-    name: 'How the travel assistant works',
+    name: 'How Wayfare plans flights',
   }).locator(':scope > li');
   await expect(capabilityItems).toHaveCount(3);
   const capabilityBoxes = await capabilityItems.evaluateAll((items) => (
@@ -1372,14 +1683,13 @@ test('keeps the transcript as the sole flexible row before trip context exists',
       viewportHeight: window.innerHeight,
     };
   });
-  expect(layout.childCount).toBe(6);
+  expect(layout.childCount).toBe(5);
   expect(layout.areas).toEqual([
     'header',
     'context',
     'transcript',
     'lower-chrome',
     'composer',
-    'attribution',
   ]);
   expect(layout.transcriptHeight).toBeGreaterThan(100);
   expect(layout.statusHeight).toBeLessThanOrEqual(32);
@@ -1447,14 +1757,13 @@ test('keeps terminal errors bounded in the stable lower chrome row', async ({
       viewportHeight: window.innerHeight,
     };
   });
-  expect(layout.childCount).toBe(6);
+  expect(layout.childCount).toBe(5);
   expect(layout.areas).toEqual([
     'header',
     'context',
     'transcript',
     'lower-chrome',
     'composer',
-    'attribution',
   ]);
   expect(layout.transcriptHeight).toBeGreaterThan(100);
   expect(layout.lowerHeight).toBeLessThanOrEqual(160);

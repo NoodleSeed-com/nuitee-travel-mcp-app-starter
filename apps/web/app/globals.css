@@ -3,7 +3,7 @@
   --travel-ink: #0b1f33;
   --travel-canvas: #f7f8fa;
   --travel-raised: #ffffff;
-  --travel-blue: #3478f6;
+  --travel-blue: #2f70e8;
   --travel-on-accent: #ffffff;
   --travel-sea-glass: #4db8ae;
   --travel-muted: #526173;
@@ -175,6 +175,7 @@ code {
   width: 100%;
   min-height: 44px;
   max-height: 9rem;
+  field-sizing: content;
   padding: 0.65rem 0;
   resize: vertical;
   border: 0;
@@ -387,6 +388,9 @@ code {
   text-align: left;
   box-shadow: 0 12px 30px rgb(20 33 61 / 7%);
   isolation: isolate;
+  transition:
+    box-shadow 160ms var(--travel-ease-out),
+    transform 160ms var(--travel-ease-out);
 }
 
 .destination-card__image {
@@ -619,6 +623,7 @@ code {
 
   .destination-card:hover {
     box-shadow: 0 16px 38px rgb(20 33 61 / 16%);
+    transform: translateY(-2px);
   }
 
   .travel-editorial__copy button:hover {
@@ -839,6 +844,7 @@ code {
 
 .travel-input-request__field {
   display: grid;
+  min-width: 0;
   gap: 0.35rem;
   color: var(--travel-muted);
   font-size: 0.82rem;
@@ -848,6 +854,8 @@ code {
 .travel-input-request__field input,
 .travel-input-request__field select {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 44px;
   padding: 0.55rem 0.65rem;
   border: 1px solid var(--travel-boundary);
@@ -1332,7 +1340,7 @@ code {
 
   .travel-hero__copy h1 {
     max-width: 10ch;
-    font-size: clamp(2.8rem, 14vw, 4.25rem);
+    font-size: clamp(2rem, 14vw, 4.25rem);
   }
 
   .travel-hero__media {
@@ -1354,7 +1362,6 @@ code {
   }
 
   .travel-composer--hero .travel-composer__input {
-    field-sizing: content;
     padding-inline: 0.35rem;
   }
 
@@ -1762,8 +1769,31 @@ code {
 
 .trip-brief__actions {
   display: flex;
+  min-width: 0;
   align-items: center;
   gap: 0.25rem;
+}
+
+.trip-progress {
+  display: grid;
+  width: clamp(4.5rem, 10vw, 6.5rem);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.2rem;
+}
+
+.trip-progress span {
+  height: 3px;
+  border-radius: 999px;
+  background-color: var(--travel-boundary);
+  opacity: 0.64;
+  transition:
+    background-color 160ms var(--travel-ease-out),
+    opacity 160ms var(--travel-ease-out);
+}
+
+.trip-progress span[data-complete="true"] {
+  background-color: var(--travel-blue);
+  opacity: 1;
 }
 
 .trip-brief__status {
@@ -1886,16 +1916,45 @@ code {
     padding: 0.75rem;
   }
 
+  .travel-conversation-shell {
+    gap: 0.5rem;
+  }
+
   .trip-brief {
     align-items: flex-start;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .trip-brief__facts {
     gap: 0.35rem 0.65rem;
   }
 
+  .trip-brief__actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .trip-brief__status {
+    min-width: 0;
+    white-space: normal;
+  }
+
+  .trip-brief__toggle {
+    margin-left: auto;
+  }
+
   .travel-composer--conversation {
-    padding-block: 0.5rem;
+    min-height: max-content;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 0.35rem;
+    padding: 0.65rem;
+    border-radius: 22px;
+  }
+
+  .travel-composer--conversation .travel-composer__controls {
+    width: 100%;
+    justify-content: flex-end;
   }
 
   .travel-conversation__header {
@@ -1910,6 +1969,13 @@ code {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .destination-card,
+  .travel-app-surface,
+  .trip-progress span {
+    transform: none;
+    transition-property: color, background-color, border-color, opacity;
+  }
+
   .travel-workspace button:not(:disabled):active,
   .travel-header__actions a:active,
   .travel-wordmark:active {

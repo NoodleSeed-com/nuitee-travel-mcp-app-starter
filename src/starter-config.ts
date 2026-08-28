@@ -4,7 +4,7 @@ export const starterConfig = {
     mark: 'W',
     assistantName: 'Travel assistant',
     tagline: 'Travel, planned around you.',
-    accent: '#3478F6',
+    accent: '#2F70E8',
     signal: '#0B1F33',
     canvas: '#F7F8FA',
     surface: '#FFFFFF',

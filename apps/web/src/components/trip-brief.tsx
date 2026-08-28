@@ -22,11 +22,24 @@ const PHASE_LABELS: Readonly<Record<TripProjection['phase'], string>> = {
   error: 'Needs attention',
 };
 
+const COMPLETED_SEGMENTS: Readonly<Record<TripProjection['phase'], number>> = {
+  idle: 0,
+  planned: 1,
+  searching: 2,
+  comparing: 3,
+  'no-results': 3,
+  selected: 4,
+  verifying: 5,
+  verified: 6,
+  error: 0,
+};
+
 export function TripBrief({
   projection,
 }: Readonly<{ projection: TripProjection }>) {
   const [expanded, setExpanded] = useState(false);
   if (projection.phase === 'idle') return null;
+  const completedSegments = COMPLETED_SEGMENTS[projection.phase];
   const hasSecondaryDetails = Boolean(
     projection.returnDate || projection.currency || projection.country,
   );
@@ -62,6 +75,20 @@ export function TripBrief({
         ) : null}
       </div>
       <div className="trip-brief__actions">
+        <div
+          aria-label="Trip progress"
+          className="trip-progress"
+          data-phase={projection.phase}
+          role="img"
+        >
+          {Array.from({ length: 6 }, (_, index) => (
+            <span
+              aria-hidden="true"
+              data-complete={index < completedSegments ? 'true' : 'false'}
+              key={index}
+            />
+          ))}
+        </div>
         <p className="trip-brief__status">{PHASE_LABELS[projection.phase]}</p>
         {hasSecondaryDetails ? (
           <button

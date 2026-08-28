@@ -1063,6 +1063,11 @@ describe('guest travel conversation lifecycle', () => {
 
     expect(activityRegion).toHaveTextContent('Searching current flights');
     expect(screen.getByText('Searching')).toBeVisible();
+    const progress = within(
+      await screen.findByRole('region', { name: 'Current trip' }),
+    ).getByLabelText('Trip progress');
+    expect(progress).toHaveAttribute('data-phase', 'searching');
+    expect(progress.querySelectorAll('[data-complete="true"]')).toHaveLength(2);
     expect(document.body).not.toHaveTextContent('search_flights');
     expect(within(conversation).getAllByRole('status')).toHaveLength(1);
 
