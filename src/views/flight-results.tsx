@@ -698,8 +698,8 @@ export default function FlightResults() {
     : undefined;
   const theme = layout.theme === 'dark' ? 'dark' : 'light';
   const brandStyle = {
-    '--cc-accent': branding.theme?.[layout.theme]?.accent ?? branding.accent ?? '#1E6049',
-    '--cc-focus': branding.theme?.[layout.theme]?.focus ?? '#0B6B52',
+    '--cc-accent': branding.theme?.[layout.theme]?.accent ?? branding.accent ?? '#14213d',
+    '--cc-focus': branding.theme?.[layout.theme]?.focus ?? '#245aa8',
   } as CSSProperties;
   const selectedItinerary = result?.itineraries.find((itinerary) => itinerary.selectionId === selected);
   const selectedVerification = verification?.selectionId === selected ? verification : undefined;

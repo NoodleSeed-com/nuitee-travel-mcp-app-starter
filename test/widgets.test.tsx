@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import * as helpers from '../src/helpers.js';
 
 vi.mock('../src/helpers.js', () => {
   const container = ({ children, title, subtitle, displayMode: _displayMode, ...props }: any) =>
@@ -31,6 +32,7 @@ vi.mock('../src/helpers.js', () => {
   };
 });
 import {
+  default as FlightResults,
   FlightResultsView,
   isGatewayError,
   isSearchOutput,
@@ -156,6 +158,23 @@ describe('TravelHome', () => {
 });
 
 describe('FlightResults', () => {
+  it('uses neutral navy runtime fallbacks when host branding is absent', () => {
+    vi.mocked(helpers.useWidgetReady).mockReturnValue(true);
+    vi.mocked(helpers.useLayout).mockReturnValue({ theme: 'light', displayMode: 'inline', supports: {} } as never);
+    vi.mocked(helpers.useBranding).mockReturnValue({} as never);
+    vi.mocked(helpers.useToolInfo).mockReturnValue({} as never);
+    vi.mocked(helpers.useCallTool).mockReturnValue({ status: 'idle', isPending: false, reset: vi.fn(), callToolAsync: vi.fn() } as never);
+    vi.mocked(helpers.useAppFlow).mockReturnValue({ activeView: 'results', navigate: vi.fn(), back: vi.fn() } as never);
+    vi.mocked(helpers.useRequestDisplayMode).mockReturnValue(vi.fn() as never);
+    vi.mocked(helpers.useSendFollowUpMessage).mockReturnValue(vi.fn() as never);
+    vi.mocked(helpers.useUpdateModelContext).mockReturnValue(vi.fn() as never);
+    vi.mocked(helpers.useViewState).mockReturnValue([undefined, vi.fn()] as never);
+
+    const html = renderToStaticMarkup(<FlightResults />);
+
+    expect(html).toContain('style="--cc-accent:#14213d;--cc-focus:#245aa8"');
+  });
+
   it('presents current options for selection without booking claims', () => {
     const result = {
       status: 'success' as const,
