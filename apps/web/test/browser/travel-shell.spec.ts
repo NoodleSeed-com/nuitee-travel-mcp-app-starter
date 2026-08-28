@@ -182,6 +182,86 @@ test('fits 320px, 390px, and 200 percent text zoom without orphaning the headlin
   expect(composerFits).toBe(true);
 });
 
+test('stacks every below-fold landing section at 390px', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+
+  const destinationCards = page.locator('.destination-card');
+  await expect(destinationCards).toHaveCount(3);
+  const destinationBoxes = await destinationCards.evaluateAll((cards) => (
+    cards.map((card) => {
+      const bounds = card.getBoundingClientRect();
+      return {
+        bottom: bounds.bottom,
+        left: bounds.left,
+        right: bounds.right,
+        top: bounds.top,
+        width: bounds.width,
+      };
+    })
+  ));
+  for (const [index, bounds] of destinationBoxes.entries()) {
+    expect(bounds.left).toBeGreaterThanOrEqual(0);
+    expect(bounds.right).toBeLessThanOrEqual(390);
+    expect(bounds.width).toBe(destinationBoxes[0]?.width);
+    if (index > 0) {
+      expect(destinationBoxes[index - 1]!.bottom)
+        .toBeLessThanOrEqual(bounds.top);
+    }
+  }
+
+  const capabilityItems = page.getByRole('list', {
+    name: 'How the travel assistant works',
+  }).locator(':scope > li');
+  await expect(capabilityItems).toHaveCount(3);
+  const capabilityBoxes = await capabilityItems.evaluateAll((items) => (
+    items.map((item) => {
+      const bounds = item.getBoundingClientRect();
+      return { bottom: bounds.bottom, top: bounds.top };
+    })
+  ));
+  for (let index = 1; index < capabilityBoxes.length; index += 1) {
+    expect(capabilityBoxes[index - 1]!.bottom)
+      .toBeLessThanOrEqual(capabilityBoxes[index]!.top);
+  }
+
+  const [editorialImage, editorialCopy] = await Promise.all([
+    page.locator('.travel-editorial__image').boundingBox(),
+    page.locator('.travel-editorial__copy').boundingBox(),
+  ]);
+  expect(editorialImage).not.toBeNull();
+  expect(editorialCopy).not.toBeNull();
+  expect(editorialImage!.y + editorialImage!.height)
+    .toBeLessThanOrEqual(editorialCopy!.y);
+  for (const bounds of [editorialImage!, editorialCopy!]) {
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+  }
+
+  const footer = page.locator('.travel-footer');
+  const footerBounds = await footer.boundingBox();
+  expect(footerBounds).not.toBeNull();
+  expect(footerBounds!.x).toBeGreaterThanOrEqual(0);
+  expect(footerBounds!.x + footerBounds!.width).toBeLessThanOrEqual(390);
+  await expect(footer.getByText('Privacy').locator('..'))
+    .toContainText('Not configured');
+  await expect(footer.getByText('Terms').locator('..'))
+    .toContainText('Not configured');
+  for (const link of await footer.getByRole('link').all()) {
+    await expect(link).toHaveCSS('min-height', '44px');
+    const bounds = await link.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
+  }
+
+  expect(await page.evaluate(() => document.documentElement.scrollWidth))
+    .toBe(390);
+});
+
 test('stacks the trip brief in a ready-runtime mobile conversation without overflow', async ({
   page,
 }, testInfo) => {
