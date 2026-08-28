@@ -40,7 +40,7 @@ export function TravelComposer({
       aria-label={formLabel}
       className={variant === 'hero'
         ? 'travel-composer travel-composer--hero'
-        : 'travel-composer'}
+        : 'travel-composer travel-composer--conversation'}
       onSubmit={submit}
     >
       <textarea

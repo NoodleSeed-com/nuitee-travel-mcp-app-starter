@@ -113,6 +113,14 @@ describe('guest travel conversation lifecycle', () => {
         'JFK to Lisbon next month',
       );
     });
+    expect(screen.getByRole('heading', { name: 'Your trip, refined together' }))
+      .toBeVisible();
+    expect(screen.getByRole('region', { name: 'Travel conversation' }))
+      .toHaveClass('travel-conversation-shell');
+    expect(screen.getByRole('form', { name: 'Continue trip' }))
+      .toHaveClass('travel-composer--conversation');
+    expect(screen.getByText('Built on Noodle Seed · Powered by Nuitee'))
+      .toBeVisible();
     expect(screen.getByText(starterConfig.brand.assistantName)).toBeVisible();
     expect(client.sendMessage).toHaveBeenCalledTimes(1);
     expect(assistantMock.useNoodleAssistant).toHaveBeenCalledWith(

@@ -181,66 +181,69 @@ export function TravelConversation({
 
   return (
     <section
-      className="travel-canvas"
+      className="travel-conversation-shell"
       aria-busy={busy}
       aria-label="Travel conversation"
     >
-      <div className="travel-conversation">
-        <header>
-          <div>
-            <p className="assistant-identity">
-              {starterConfig.brand.assistantName}
-            </p>
-            <h1>Trip conversation</h1>
-          </div>
-          <button type="button" onClick={resetConversation}>
-            Reset conversation
-          </button>
-        </header>
-        <div
-          className="travel-transcript"
-          onScroll={(event) => {
-            followLatestRef.current = isNearTranscriptEnd(event.currentTarget);
-          }}
-          ref={transcriptViewportRef}
-        >
-          <ol
-            aria-label="Conversation transcript"
-            ref={transcriptContentRef}
-            role="log"
-          >
-            {messages.map((message) => (
-              <li key={message.id}>
-                <TravelMessage client={client} message={message} />
-              </li>
-            ))}
-          </ol>
+      <header className="travel-conversation__header">
+        <div>
+          <p className="assistant-identity">
+            {starterConfig.brand.assistantName}
+          </p>
+          <h1>Your trip, refined together</h1>
         </div>
-        <p aria-live="polite" role="status">
-          {statusLabel}
-        </p>
-        {errorPresentation ? (
-          <section className="assistant-error" role="alert">
-            <h2>{errorPresentation.title}</h2>
-            <p>{errorPresentation.message}</p>
-            {errorPresentation.canRetry ? (
-              <button
-                type="button"
-                onClick={() => sendFollowUp(lastPromptRef.current)}
-              >
-                Try again
-              </button>
-            ) : null}
-          </section>
-        ) : null}
-        <TravelComposer
-          busy={busy}
-          formLabel="Continue trip"
-          onStop={stopGenerating}
-          onSubmit={sendFollowUp}
-          submitLabel="Continue trip"
-        />
+        <button type="button" onClick={resetConversation}>
+          Reset conversation
+        </button>
+      </header>
+      <div
+        className="travel-transcript"
+        onScroll={(event) => {
+          followLatestRef.current = isNearTranscriptEnd(event.currentTarget);
+        }}
+        ref={transcriptViewportRef}
+      >
+        <ol
+          aria-label="Conversation transcript"
+          ref={transcriptContentRef}
+          role="log"
+        >
+          {messages.map((message) => (
+            <li key={message.id}>
+              <TravelMessage client={client} message={message} />
+            </li>
+          ))}
+        </ol>
       </div>
+      <p aria-live="polite" role="status">
+        {statusLabel}
+      </p>
+      {errorPresentation ? (
+        <section className="assistant-error" role="alert">
+          <h2>{errorPresentation.title}</h2>
+          <p>{errorPresentation.message}</p>
+          {errorPresentation.canRetry ? (
+            <button
+              type="button"
+              onClick={() => sendFollowUp(lastPromptRef.current)}
+            >
+              Try again
+            </button>
+          ) : null}
+        </section>
+      ) : null}
+      <TravelComposer
+        busy={busy}
+        formLabel="Continue trip"
+        onStop={stopGenerating}
+        onSubmit={sendFollowUp}
+        placeholder="Ask to compare, adjust, or verify…"
+        submitLabel="Continue trip"
+        variant="conversation"
+      />
+      <p className="travel-attribution travel-attribution--workspace">
+        Built on Noodle Seed · Powered by Nuitee
+      </p>
     </section>
   );
 }
