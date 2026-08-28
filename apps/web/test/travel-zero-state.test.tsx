@@ -90,7 +90,9 @@ describe('travel assistant zero state', () => {
   });
 
   it('renders a concise airline editorial landing structure', () => {
-    render(<TravelZeroState inputRef={{ current: null }} onStart={vi.fn()} />);
+    const { container } = render(
+      <TravelZeroState inputRef={{ current: null }} onStart={vi.fn()} />,
+    );
 
     expect(screen.getByRole('heading', { level: 2, name: 'Places to start' }))
       .toBeVisible();
@@ -104,6 +106,49 @@ describe('travel assistant zero state', () => {
     expect(screen.getByText('Built on Noodle Seed · Powered by Nuitee'))
       .toBeVisible();
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+
+    const landing = container.querySelector('.travel-landing');
+    expect(landing).not.toBeNull();
+    const orderedRegions = [
+      '.travel-hero',
+      '.destination-inspiration',
+      '.travel-capabilities',
+      '.travel-editorial',
+      '.travel-footer',
+    ].map((selector) => landing!.querySelector(selector));
+    expect(orderedRegions.every((region, index) => (
+      landing!.children.item(index) === region
+    ))).toBe(true);
+  });
+
+  it('keeps the capability strip explanatory instead of interactive', () => {
+    const { container } = render(
+      <TravelZeroState inputRef={{ current: null }} onStart={vi.fn()} />,
+    );
+
+    const capabilityStrip = container.querySelector('.travel-capabilities');
+    expect(capabilityStrip).not.toBeNull();
+    expect(capabilityStrip!.querySelectorAll(
+      'a, button, input, select, textarea, [tabindex]',
+    )).toHaveLength(0);
+  });
+
+  it('keeps counted landing copy within the 120-word ceiling', () => {
+    const { container } = render(
+      <TravelZeroState inputRef={{ current: null }} onStart={vi.fn()} />,
+    );
+
+    const countedCopy = container.querySelector('.travel-landing')!.cloneNode(
+      true,
+    ) as HTMLElement;
+    for (const excluded of countedCopy.querySelectorAll(
+      '.travel-starter-prompts, .travel-footer nav, .travel-footer__attribution',
+    )) {
+      excluded.remove();
+    }
+    const words = (countedCopy.textContent ?? '').trim().split(/\s+/);
+
+    expect(words.length).toBeLessThanOrEqual(120);
   });
 
   it.each(landingDestinations)(

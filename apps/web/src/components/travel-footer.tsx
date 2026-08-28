@@ -3,7 +3,7 @@ import { starterConfig } from '../../../../starter.config';
 
 export function TravelFooter(): React.JSX.Element {
   return (
-    <footer className="travel-footer travel-landing__section">
+    <footer className="travel-footer travel-landing__section" role="contentinfo">
       <div className="travel-footer__brand">
         <p>{starterConfig.brand.name}</p>
         <span>{starterConfig.brand.tagline}</span>
