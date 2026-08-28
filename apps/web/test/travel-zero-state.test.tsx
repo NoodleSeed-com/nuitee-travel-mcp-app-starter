@@ -34,8 +34,9 @@ describe('travel assistant zero state', () => {
       name: 'Where will you go next?',
     })).toBeVisible();
     expect(screen.getByText(
-      'Tell us the trip. We’ll find the flights and verify the fare.',
+      'Tell Wayfare the trip you have in mind.',
     )).toBeVisible();
+    expect(screen.getAllByRole('form', { name: 'Plan a trip' })).toHaveLength(1);
     expect(screen.getAllByText(starterConfig.brand.name)).toHaveLength(2);
     expect(screen.queryByText('Guest trip')).not.toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'For developers' }))
@@ -50,10 +51,6 @@ describe('travel assistant zero state', () => {
     expect(screen.getByRole('button', { name: 'Find flights' })).toBeDisabled();
     expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
       .toHaveAttribute('id', 'travel-prompt');
-    expect(container.querySelector('img[alt=""]')).toHaveAttribute(
-      'src',
-      expect.stringContaining('wayfare-coastline-hero-v1'),
-    );
     expect(screen.queryByText('No trip started')).not.toBeInTheDocument();
     expect(screen.queryByTestId('workspace-atmosphere')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Skip to content' }))
@@ -67,11 +64,26 @@ describe('travel assistant zero state', () => {
     );
   });
 
+  it('uses the accepted hybrid hero master with only two starter prompts', () => {
+    const { container } = render(
+      <TravelZeroState inputRef={createRef()} onStart={vi.fn()} />,
+    );
+
+    expect(container.querySelector('.travel-hero img[alt=""]')).toHaveAttribute(
+      'src',
+      expect.stringContaining('wayfare-hybrid-hero-v2'),
+    );
+    expect(within(screen.getByRole('list', { name: 'Suggested trips' }))
+      .getAllByRole('button')).toHaveLength(2);
+  });
+
   it('submits a configured prompt through the same first-message callback', () => {
     const onStart = vi.fn();
     render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
 
-    fireEvent.click(screen.getByRole('button', {
+    const suggestedTrips = screen.getByRole('list', { name: 'Suggested trips' });
+    expect(within(suggestedTrips).getAllByRole('button')).toHaveLength(2);
+    fireEvent.click(within(suggestedTrips).getByRole('button', {
       name: starterConfig.prompts[0],
     }));
 
@@ -88,11 +100,11 @@ describe('travel assistant zero state', () => {
     expect(inputRef.current).toHaveAttribute('id', 'travel-prompt');
   });
 
-  it('links the hero discovery cue to the destination section', () => {
+  it('keeps destination discovery directly after the singular hero hierarchy', () => {
     render(<TravelZeroState inputRef={createRef()} onStart={vi.fn()} />);
 
-    expect(screen.getByRole('link', { name: 'Explore destinations' }))
-      .toHaveAttribute('href', '#places-to-start');
+    expect(screen.queryByRole('link', { name: 'Explore destinations' }))
+      .not.toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Places to start' }))
       .toHaveAttribute('id', 'places-to-start');
   });
@@ -106,13 +118,18 @@ describe('travel assistant zero state', () => {
 
     expect(screen.getByRole('heading', { level: 2, name: 'Places to start' }))
       .toBeVisible();
+    expect(screen.getAllByRole('button', { name: /Plan a trip to/u }))
+      .toHaveLength(3);
+    expect(screen.getByRole('list', { name: 'How Wayfare plans flights' }))
+      .toBeVisible();
     expect(screen.getByText('Search live flights')).toBeVisible();
-    expect(screen.getByText('Compare your options')).toBeVisible();
+    expect(screen.getByText('Compare options')).toBeVisible();
     expect(screen.getByText('Verify the fare')).toBeVisible();
     expect(screen.getByRole('heading', {
       level: 2,
-      name: 'A few words can take you somewhere new.',
+      name: 'Plans change. Wayfare keeps up.',
     })).toBeVisible();
+    expect(screen.queryByText('Travel inspiration')).not.toBeInTheDocument();
     expect(screen.getByText('Built on Noodle Seed · Powered by Nuitee'))
       .toBeVisible();
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
@@ -189,15 +206,15 @@ describe('travel assistant zero state', () => {
     expect(images).toHaveLength(3);
     expect(images[0]).toHaveAttribute(
       'sizes',
-      '(max-width: 700px) 100vw, (max-width: 1023px) 50vw, 33vw',
+      '(max-width: 767px) 82vw, (max-width: 1023px) 50vw, 33vw',
     );
     expect(images[1]).toHaveAttribute(
       'sizes',
-      '(max-width: 700px) 100vw, (max-width: 1023px) 50vw, 33vw',
+      '(max-width: 767px) 82vw, (max-width: 1023px) 50vw, 33vw',
     );
     expect(images[2]).toHaveAttribute(
       'sizes',
-      '(max-width: 700px) 100vw, (max-width: 1023px) 100vw, 33vw',
+      '(max-width: 767px) 82vw, (max-width: 1023px) 100vw, 33vw',
     );
   });
 

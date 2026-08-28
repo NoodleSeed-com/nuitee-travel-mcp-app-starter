@@ -8,13 +8,10 @@ export interface LandingDestination {
 }
 
 export interface LandingEditorialFeature {
-  readonly eyebrow: string;
   readonly heading: string;
   readonly support: string;
   readonly action: string;
   readonly prompt: string;
-  readonly imageSrc: string;
-  readonly imagePosition: string;
 }
 
 export const landingDestinations = [
@@ -45,11 +42,8 @@ export const landingDestinations = [
 ] as const satisfies readonly LandingDestination[];
 
 export const landingEditorialFeature = {
-  eyebrow: 'Travel inspiration',
-  heading: 'A few words can take you somewhere new.',
+  heading: 'Plans change. Wayfare keeps up.',
   support: 'Refine the dates, travellers, cabin, and route as you go.',
   action: 'Start with a flexible trip',
   prompt: 'Help me find a trip somewhere warm with flexible dates.',
-  imageSrc: '/images/destinations/warm-horizon-v1.jpg',
-  imagePosition: 'center 54%',
 } as const satisfies LandingEditorialFeature;

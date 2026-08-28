@@ -1,19 +1,35 @@
+import { BadgeCheck, ListFilter, Search } from 'lucide-react';
 import type React from 'react';
 
-const capabilities = [
-  ['Search live flights', 'Use current availability from Nuitee.'],
-  ['Compare your options', 'Review schedules, stops, baggage, and price.'],
-  ['Verify the fare', 'Check availability and price before you leave.'],
+const stages = [
+  {
+    label: 'Search live flights',
+    support: 'See current schedules and availability.',
+    icon: Search,
+  },
+  {
+    label: 'Compare options',
+    support: 'Review stops, timing, baggage, and price.',
+    icon: ListFilter,
+  },
+  {
+    label: 'Verify the fare',
+    support: 'Recheck availability and price before you leave.',
+    icon: BadgeCheck,
+  },
 ] as const;
 
 export function TravelCapabilityStrip(): React.JSX.Element {
   return (
     <section className="travel-capabilities travel-landing__section">
-      <ol aria-label="How the travel assistant works">
-        {capabilities.map(([title, support]) => (
-          <li key={title}>
-            <strong>{title}</strong>
-            <span>{support}</span>
+      <ol aria-label="How Wayfare plans flights">
+        {stages.map(({ icon: Icon, label, support }) => (
+          <li key={label}>
+            <Icon aria-hidden="true" strokeWidth={1.75} />
+            <div>
+              <strong>{label}</strong>
+              <span>{support}</span>
+            </div>
           </li>
         ))}
       </ol>

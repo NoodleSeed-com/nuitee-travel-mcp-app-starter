@@ -18,21 +18,10 @@ export function TravelHero({
 }: Readonly<TravelHeroProps>) {
   return (
     <section className="travel-hero" aria-labelledby="travel-home-title">
-      <Image
-        alt=""
-        className="travel-hero__image"
-        fill
-        priority
-        sizes="100vw"
-        src="/images/wayfare-coastline-hero-v1.jpg"
-      />
-      <div aria-hidden="true" className="travel-hero__scrim" />
       <div className="travel-hero__content">
         <div className="travel-hero__copy">
-          <h1 id="travel-home-title">
-            Where will you <span>go next?</span>
-          </h1>
-          <p>Tell us the trip. We’ll find the flights and verify the fare.</p>
+          <h1 id="travel-home-title">Where will you go next?</h1>
+          <p>Tell Wayfare the trip you have in mind.</p>
         </div>
         <TravelComposer
           formLabel="Plan a trip"
@@ -56,9 +45,16 @@ export function TravelHero({
         {launchError ? (
           <p className="travel-zero-state__error" role="alert">{launchError}</p>
         ) : null}
-        <a className="travel-hero__explore" href="#places-to-start">
-          Explore destinations
-        </a>
+        <div className="travel-hero__media" aria-hidden="true">
+          <Image
+            alt=""
+            className="travel-hero__image"
+            fill
+            priority
+            sizes="(max-width: 767px) 100vw, 1200px"
+            src="/images/wayfare-hybrid-hero-v2.jpg"
+          />
+        </div>
       </div>
     </section>
   );

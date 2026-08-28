@@ -36,13 +36,10 @@ describe('airline editorial landing content', () => {
 
   it('defines one honest flexible-trip editorial prompt', () => {
     expect(landingEditorialFeature).toEqual({
-      eyebrow: 'Travel inspiration',
-      heading: 'A few words can take you somewhere new.',
+      heading: 'Plans change. Wayfare keeps up.',
       support: 'Refine the dates, travellers, cabin, and route as you go.',
       action: 'Start with a flexible trip',
       prompt: 'Help me find a trip somewhere warm with flexible dates.',
-      imageSrc: '/images/destinations/warm-horizon-v1.jpg',
-      imagePosition: 'center 54%',
     });
   });
 
