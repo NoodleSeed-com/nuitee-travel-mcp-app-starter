@@ -187,7 +187,7 @@ function ConfirmationPart({
     <section
       aria-busy={locked || undefined}
       aria-label="Confirmation request"
-      className="travel-confirmation"
+      className="travel-confirmation travel-interaction-card"
     >
       <h3>{title}</h3>
       {description ? <p>{description}</p> : null}
@@ -202,7 +202,7 @@ function ConfirmationPart({
         </dl>
       ) : null}
       {pending ? (
-        <div>
+        <div className="travel-interaction-card__actions">
           <button
             disabled={locked}
             onClick={() => {
@@ -251,7 +251,7 @@ function InputRequestPart({
       <section
         aria-busy={locked || undefined}
         aria-label="Input request"
-        className="travel-input-request"
+        className="travel-input-request travel-interaction-card"
       >
         <h3>{message}</h3>
         <form
@@ -311,7 +311,7 @@ function InputRequestPart({
                 Complete the required trip details.
               </p>
             ) : null}
-            <div className="travel-input-request__actions">
+            <div className="travel-input-request__actions travel-interaction-card__actions">
               <button type="submit">Continue</button>
               <button
                 onClick={() => {
@@ -332,7 +332,7 @@ function InputRequestPart({
     <section
       aria-busy={locked || undefined}
       aria-label="Input request"
-      className="travel-input-request"
+      className="travel-input-request travel-interaction-card"
     >
       <p>This travel template cannot collect the requested form.</p>
       {inputRequest.status === 'pending' ? (

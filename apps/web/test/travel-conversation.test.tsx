@@ -154,8 +154,9 @@ describe('guest travel conversation lifecycle', () => {
       .toHaveClass('travel-conversation-shell');
     expect(screen.getByRole('form', { name: 'Continue trip' }))
       .toHaveClass('travel-composer--conversation');
-    expect(screen.getByText('Built on Noodle Seed · Powered by Nuitee'))
-      .toBeVisible();
+    expect(screen.queryByText('Built on Noodle Seed · Powered by Nuitee'))
+      .not.toBeInTheDocument();
+    expect(screen.getByRole('form', { name: 'Continue trip' })).toBeVisible();
     expect(screen.getByText(starterConfig.brand.assistantName)).toBeVisible();
     expect(client.sendMessage).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('button', { name: 'Reset conversation' }))
@@ -174,6 +175,8 @@ describe('guest travel conversation lifecycle', () => {
     expect(document.querySelector('.travel-journey-canvas'))
       .not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Current trip' }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Refine this search' }))
       .not.toBeInTheDocument();
     expect(assistantMock.useNoodleAssistant).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -209,10 +212,6 @@ describe('guest travel conversation lifecycle', () => {
     const composer = within(conversation).getByRole('form', {
       name: 'Continue trip',
     });
-    const attribution = within(conversation).getByText(
-      'Built on Noodle Seed · Powered by Nuitee',
-    );
-
     expect(contextSlot).toHaveClass('travel-conversation__context');
     expect(contextSlot).toBeEmptyDOMElement();
     expect(conversation.children.item(2)).toBe(transcript);
@@ -221,7 +220,7 @@ describe('guest travel conversation lifecycle', () => {
     expect(within(lowerChrome as HTMLElement).queryByRole('alert'))
       .not.toBeInTheDocument();
     expect(conversation.children.item(4)).toBe(composer);
-    expect(conversation.children.item(5)).toBe(attribution);
+    expect(conversation.children).toHaveLength(5);
   });
 
   it('keeps errors inside the stable lower-chrome grid slot', async () => {
@@ -260,7 +259,7 @@ describe('guest travel conversation lifecycle', () => {
     expect(lowerChrome).toContainElement(conversationStatus());
     expect(lowerChrome).toContainElement(alert);
     expect(conversation.children.item(4)).toBe(composer);
-    expect(conversation.children).toHaveLength(6);
+    expect(conversation.children).toHaveLength(5);
   });
 
   it('uses the typed plan to align the heading, composer, and live brief', async () => {
@@ -752,6 +751,8 @@ describe('guest travel conversation lifecycle', () => {
       expect(client.abort).toHaveBeenCalledOnce();
       expect(client.resetSession).not.toHaveBeenCalled();
       expect(conversationStatus()).toBeEmptyDOMElement();
+      expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
+        .toHaveValue('Keep this follow-up for after the stop');
       expect(composer).toHaveValue('Keep this follow-up for after the stop');
 
       hookStatus = 'ready';
@@ -948,6 +949,7 @@ describe('guest travel conversation lifecycle', () => {
   });
 
   it('projects a later empty route honestly and uses one stable mapped activity region', async () => {
+    let hookStatus: 'ready' | 'streaming' = 'ready';
     assistantMock.useNoodleAssistant.mockImplementation(() => {
       const activeClient = client;
       useEffect(() => () => {
@@ -1004,11 +1006,11 @@ describe('guest travel conversation lifecycle', () => {
             }],
           },
         ],
-        status: 'ready',
+        status: hookStatus,
         error: undefined,
       };
     });
-    render(<TravelAssistantPage runtime={readyRuntime} />);
+    const view = render(<TravelAssistantPage runtime={readyRuntime} />);
 
     submitPrompt('JFK to Lisbon in October');
 
@@ -1023,6 +1025,31 @@ describe('guest travel conversation lifecycle', () => {
     const activityRegion = within(conversation).getByRole('status');
     expect(activityRegion).toBeEmptyDOMElement();
     expect(within(conversation).getAllByRole('status')).toHaveLength(1);
+
+    const refinements = screen.getByRole('group', {
+      name: 'Refine this search',
+    });
+    const nearbyAirports = within(refinements).getByRole('button', {
+      name: 'Try nearby airports',
+    });
+    const changeDates = within(refinements).getByRole('button', {
+      name: 'Change dates',
+    });
+    fireEvent.click(nearbyAirports);
+    expect(client.sendMessage).toHaveBeenLastCalledWith(
+      'Search nearby airports for this trip.',
+    );
+    fireEvent.click(changeDates);
+    expect(client.sendMessage).toHaveBeenLastCalledWith(
+      'Help me change the travel dates.',
+    );
+
+    hookStatus = 'streaming';
+    view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
+    expect(nearbyAirports).toBeDisabled();
+    expect(changeDates).toBeDisabled();
+    hookStatus = 'ready';
+    view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
 
     act(() => {
       client.emit({

@@ -156,6 +156,9 @@ code {
   background: var(--travel-raised);
   box-shadow: 0 14px 38px color-mix(in srgb, var(--travel-ink) 8%, transparent);
   text-align: left;
+  transition:
+    border-color 180ms var(--travel-ease-out),
+    box-shadow 180ms var(--travel-ease-out);
 }
 
 .travel-composer__controls {
@@ -195,6 +198,11 @@ code {
   border-radius: 50%;
   background: var(--travel-ink);
   color: var(--travel-canvas);
+  transition:
+    background-color 160ms var(--travel-ease-out),
+    color 160ms var(--travel-ease-out),
+    opacity 160ms var(--travel-ease-out),
+    transform 160ms var(--travel-ease-out);
 }
 
 .travel-composer__send:disabled {
@@ -669,9 +677,8 @@ code {
     "context"
     "transcript"
     "lower-chrome"
-    "composer"
-    "attribution";
-  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+    "composer";
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
   gap: 0.75rem;
   border: 0;
   border-radius: 0;
@@ -732,7 +739,8 @@ code {
 .travel-conversation__header button,
 .assistant-error button,
 .travel-confirmation button,
-.travel-input-request button {
+.travel-input-request button,
+.travel-search-refinements button {
   min-width: 44px;
   min-height: 44px;
   padding: 0.65rem 0.9rem;
@@ -742,20 +750,80 @@ code {
   color: var(--travel-ink);
 }
 
-.travel-input-request {
+.travel-interaction-card {
   display: grid;
-  gap: 0.75rem;
-  padding: 1rem;
+  gap: 1rem;
+  width: 100%;
+  padding: clamp(1rem, 2.5vw, 1.35rem);
   border: 1px solid var(--travel-boundary);
-  border-radius: 16px;
+  border-radius: 22px;
   background: var(--travel-raised);
+  box-shadow: 0 12px 34px color-mix(in srgb, var(--travel-ink) 6%, transparent);
 }
 
-.travel-input-request h3 {
+.travel-interaction-card h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 650;
   letter-spacing: -0.02em;
+}
+
+.travel-interaction-card > p {
+  max-width: 48rem;
+  margin: 0;
+  color: var(--travel-muted);
+  line-height: 1.55;
+}
+
+.travel-confirmation dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.travel-confirmation dl > div {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.75rem;
+  border-radius: 14px;
+  background: var(--travel-canvas);
+}
+
+.travel-confirmation dt,
+.travel-confirmation dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.travel-confirmation dt {
+  color: var(--travel-muted);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.travel-confirmation dd {
+  font-size: 0.92rem;
+}
+
+.travel-interaction-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.travel-interaction-card__actions > button:first-child {
+  border-color: var(--travel-blue);
+  background: var(--travel-blue);
+  color: #ffffff;
+}
+
+.travel-interaction-card__actions > button:not(:first-child) {
+  border-color: var(--travel-boundary);
+  background: var(--travel-raised);
+  color: var(--travel-ink);
 }
 
 .travel-input-request form,
@@ -795,9 +863,7 @@ code {
 }
 
 .travel-input-request__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  margin-top: 0.15rem;
 }
 
 .travel-input-request__error {
@@ -849,8 +915,10 @@ code {
   max-width: min(100%, 42rem);
   justify-self: end;
   padding: 0.75rem 1rem;
-  border-radius: 16px 16px 4px;
+  border: 1px solid color-mix(in srgb, var(--travel-boundary) 78%, transparent);
+  border-radius: 18px 18px 5px;
   background: var(--travel-raised);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--travel-ink) 4%, transparent);
 }
 
 .travel-message--assistant {
@@ -879,6 +947,13 @@ code {
   max-width: 100%;
 }
 
+.travel-app-surface {
+  width: 100%;
+  max-width: 64rem;
+  min-width: 0;
+  border-radius: 22px;
+}
+
 .travel-conversation__lower-chrome {
   display: grid;
   min-width: 0;
@@ -891,6 +966,27 @@ code {
   margin: 0;
   color: var(--travel-muted);
   font-size: 0.82rem;
+}
+
+.travel-search-refinements {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.travel-search-refinements button {
+  background: var(--travel-raised);
+  transition:
+    border-color 160ms var(--travel-ease-out),
+    background-color 160ms var(--travel-ease-out),
+    color 160ms var(--travel-ease-out),
+    opacity 160ms var(--travel-ease-out),
+    transform 160ms var(--travel-ease-out);
+}
+
+.travel-search-refinements button:not(:disabled):hover {
+  border-color: var(--travel-blue);
+  color: var(--travel-blue);
 }
 
 .assistant-error {
@@ -930,13 +1026,6 @@ code {
   grid-area: composer;
   margin: 0;
   background: var(--travel-raised);
-}
-
-.travel-attribution--workspace {
-  grid-area: attribution;
-  margin: 0;
-  color: var(--travel-muted);
-  font-size: 0.72rem;
 }
 
 .settings-sheet {
@@ -1396,6 +1485,17 @@ code {
     grid-column: 1;
     grid-row: auto;
     justify-self: start;
+  }
+
+  .travel-interaction-card__actions,
+  .travel-search-refinements {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .travel-interaction-card__actions button,
+  .travel-search-refinements button {
+    width: 100%;
   }
 }
 

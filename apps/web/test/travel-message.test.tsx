@@ -91,16 +91,38 @@ describe('typed travel message parts', () => {
     const firstText = screen.getByText('I found current options.');
     const secondText = screen.getByText('Choose the trip you want to refine.');
     const apps = article.querySelectorAll('noodle-app-view');
+    const surfaces = screen.getAllByTestId('travel-app-surface');
 
     expect([...article.children]).toEqual([
       firstText,
-      apps[0],
+      surfaces[0],
       secondText,
-      apps[1],
+      surfaces[1],
     ]);
     expect(apps).toHaveLength(2);
     expect(apps[0]?.view).toBe(firstView);
     expect(apps[1]?.view).toBe(secondView);
+  });
+
+  it('contains an approved App in one unlabeled visual host without rebuilding it', () => {
+    const view: AssistantViewData = {
+      id: 'view-contained',
+      tool: 'search_flights',
+      resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget',
+      title: 'Flight results',
+      result: { status: 'success' },
+    };
+    renderMessage(client, {
+      id: 'assistant-contained-view',
+      role: 'assistant',
+      parts: [{ type: 'data-view', data: view }],
+    });
+
+    const surface = screen.getByTestId('travel-app-surface');
+    const app = surface.querySelector('noodle-app-view');
+    expect(app).not.toBeNull();
+    expect(surface).not.toHaveTextContent('Flight results');
+    expect(surface.querySelector('iframe[srcdoc]')).toBeNull();
   });
 
   it('allows internal and HTTPS links with external link isolation', () => {
@@ -150,26 +172,40 @@ describe('typed travel message parts', () => {
     renderMessage(client, {
       id: 'assistant-confirm',
       role: 'assistant',
-      parts: [{
-        type: 'data-confirmation',
-        data: {
-          id: 'confirm-1',
-          tool: 'select_flight_offer',
-          title: 'Save this fare?',
-          description: 'Keep this selection for verification.',
-          arguments: {
-            origin: 'JFK',
-            adults: 2,
-            apiKey: 'must-not-render',
-            cardNumber: '4111111111111111',
-            passportNumber: 'P1234567',
-            providerOffer: { id: 'raw-provider-id' },
+      parts: [
+        {
+          type: 'data-confirmation',
+          data: {
+            id: 'confirm-1',
+            tool: 'select_flight_offer',
+            title: 'Save this fare?',
+            description: 'Keep this selection for verification.',
+            arguments: {
+              origin: 'JFK',
+              adults: 2,
+              apiKey: 'must-not-render',
+              cardNumber: '4111111111111111',
+              passportNumber: 'P1234567',
+              providerOffer: { id: 'raw-provider-id' },
+            },
+            status: 'pending',
           },
-          status: 'pending',
         },
-      }],
+        {
+          type: 'data-tool-result',
+          data: {
+            id: 'call-private-result',
+            tool: 'select_flight_offer',
+            result: { privateProviderResult: 'raw-tool-result-must-not-render' },
+          },
+        },
+      ],
     });
 
+    const confirmation = screen.getByRole('region', {
+      name: 'Confirmation request',
+    });
+    expect(confirmation).toHaveClass('travel-interaction-card');
     expect(screen.getByRole('heading', { name: 'Save this fare?' }))
       .toBeVisible();
     expect(screen.getByText('Origin')).toBeVisible();
@@ -177,9 +213,12 @@ describe('typed travel message parts', () => {
     expect(screen.getByText('Adults')).toBeVisible();
     expect(screen.getByText('2')).toBeVisible();
     expect(screen.queryByText(
-      /must-not-render|4111111111111111|P1234567|raw-provider-id/,
+      /must-not-render|4111111111111111|P1234567|raw-provider-id|raw-tool-result/,
     ))
       .not.toBeInTheDocument();
+
+    expect(screen.getByRole('button', { name: 'Confirm' })).toBeVisible();
+    expect(screen.getByRole('button', { name: "Don't proceed" })).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
 
@@ -368,9 +407,13 @@ describe('typed travel message parts', () => {
       }],
     });
 
+    const inputRequest = screen.getByRole('region', { name: 'Input request' });
+    expect(inputRequest).toHaveClass('travel-interaction-card');
     expect(screen.getByText('Complete your trip details.')).toBeVisible();
     expect(screen.getByLabelText('Departure date')).toHaveAttribute('type', 'date');
     expect(screen.getByRole('combobox', { name: 'Cabin' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Cancel request' })).toBeVisible();
 
     fireEvent.change(screen.getByLabelText('Departure date'), {
       target: { value: '2026-09-11' },

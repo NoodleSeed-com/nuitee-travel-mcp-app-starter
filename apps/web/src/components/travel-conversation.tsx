@@ -214,6 +214,32 @@ export function TravelConversation({
         </ol>
       </div>
       <div className="travel-conversation__lower-chrome">
+        {projection.phase === 'no-results' ? (
+          <div
+            aria-label="Refine this search"
+            className="travel-search-refinements"
+            role="group"
+          >
+            <button
+              disabled={busy}
+              onClick={() => sendFollowUp(
+                'Search nearby airports for this trip.',
+              )}
+              type="button"
+            >
+              Try nearby airports
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => sendFollowUp(
+                'Help me change the travel dates.',
+              )}
+              type="button"
+            >
+              Change dates
+            </button>
+          </div>
+        ) : null}
         <p aria-live="polite" role="status">
           {statusLabel}
         </p>
@@ -241,9 +267,6 @@ export function TravelConversation({
         submitLabel="Continue trip"
         variant="conversation"
       />
-      <p className="travel-attribution travel-attribution--workspace">
-        Built on Noodle Seed · Powered by Nuitee
-      </p>
     </section>
   );
 }

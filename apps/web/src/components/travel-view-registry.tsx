@@ -20,5 +20,9 @@ export function TravelViewRegistry({
     return <p role="status">This travel view is unavailable.</p>;
   }
 
-  return <NoodleAppView client={client} theme="light" view={view} />;
+  return (
+    <div className="travel-app-surface" data-testid="travel-app-surface">
+      <NoodleAppView client={client} theme="light" view={view} />
+    </div>
+  );
 }
