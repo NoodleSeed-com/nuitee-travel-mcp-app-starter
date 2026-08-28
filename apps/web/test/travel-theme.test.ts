@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { starterConfig } from '../../../starter.config';
 
@@ -42,5 +44,14 @@ describe('Wayfare premium travel theme', () => {
     expect(contrastRatio('#0B1F33', '#F7F8FA')).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio('#526173', '#F7F8FA')).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio('#3478F6', '#F7F8FA')).toBeGreaterThanOrEqual(3);
+  });
+
+  it('uses the approved raised token for surface backgrounds', async () => {
+    const globals = await readFile(
+      resolve(process.cwd(), 'app/globals.css'),
+      'utf8',
+    );
+
+    expect(globals).not.toContain('var(--travel-surface)');
   });
 });
