@@ -204,6 +204,7 @@ describe('safe starter customization', () => {
         origins: [...starterConfig.embeddedAssistant.origins],
         capabilities: [
           { kind: 'tool', name: 'open_travel_starter' },
+          { kind: 'tool', name: 'plan_flight_search' },
           { kind: 'tool', name: 'search_flights' },
           { kind: 'tool', name: 'verify_flight_offer' },
           { kind: 'tool', name: 'select_flight_offer' },

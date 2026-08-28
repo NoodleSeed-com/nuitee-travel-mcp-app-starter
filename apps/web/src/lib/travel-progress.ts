@@ -14,6 +14,8 @@ export function progressForEvent(
   switch (event.data.tool) {
     case 'open_travel_starter':
       return { label: 'Opening the travel assistant' };
+    case 'plan_flight_search':
+      return { label: 'Preparing your trip' };
     case 'search_flights':
       return { label: 'Searching current flights', phase: 'searching' };
     case 'select_flight_offer':

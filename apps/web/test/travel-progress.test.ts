@@ -5,6 +5,7 @@ import { progressForEvent } from '../src/lib/travel-progress';
 describe('plain-language assistant activity', () => {
   it.each([
     ['open_travel_starter', 'Opening the travel assistant'],
+    ['plan_flight_search', 'Preparing your trip'],
     ['search_flights', 'Searching current flights'],
     ['select_flight_offer', 'Saving your fare choice'],
     ['verify_flight_offer', 'Verifying the current fare'],
@@ -21,6 +22,10 @@ describe('plain-language assistant activity', () => {
   });
 
   it('projects only the two honest in-flight trip phases', () => {
+    expect(progressForEvent({
+      event: 'tool_started',
+      data: { id: 'call-plan', tool: 'plan_flight_search' },
+    })).toEqual({ label: 'Preparing your trip' });
     expect(progressForEvent({
       event: 'tool_started',
       data: { id: 'call-search', tool: 'search_flights' },

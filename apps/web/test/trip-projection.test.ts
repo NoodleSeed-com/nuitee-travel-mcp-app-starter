@@ -33,6 +33,45 @@ const validSearchContext = {
 } as const;
 
 describe('structured trip projection', () => {
+  it('projects an accepted typed plan before the fare search runs', () => {
+    expect(projectTrip([messageWithToolResult('plan_flight_search', {
+      status: 'planned',
+      message: 'Trip details are ready. Search current fares now.',
+      origin: 'ISB',
+      destination: 'NYC',
+      departureDate: '2026-09-18',
+      returnDate: '2026-09-27',
+      adults: 1,
+      cabinClass: 'ECONOMY',
+      currency: 'USD',
+      country: 'US',
+      providerOfferId: 'must-not-project',
+    })])).toEqual({
+      phase: 'planned',
+      origin: 'ISB',
+      destination: 'NYC',
+      departureDate: '2026-09-18',
+      returnDate: '2026-09-27',
+      travelers: '1 adult',
+      cabinClass: 'Economy',
+      currency: 'USD',
+      country: 'US',
+    });
+  });
+
+  it('ignores malformed typed plan fields instead of parsing around them', () => {
+    expect(projectTrip([messageWithToolResult('plan_flight_search', {
+      status: 'planned',
+      origin: 'isb',
+      destination: 'NYC',
+      departureDate: '2026-09-18',
+      adults: 1,
+      cabinClass: 'ECONOMY',
+      currency: 'USD',
+      country: 'US',
+    })])).toEqual(EMPTY_TRIP);
+  });
+
   it('projects only validated search result fields', () => {
     expect(projectTrip([messageWithToolResult('search_flights', {
       status: 'success',

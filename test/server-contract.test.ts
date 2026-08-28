@@ -6,7 +6,12 @@ import offlineApp from '../src/server.js';
 import { starterConfig } from '../src/starter-config.js';
 import * as travelServer from '../src/travel-server.js';
 
-const expectedTools = ['open_travel_starter', 'search_flights', 'verify_flight_offer'];
+const expectedTools = [
+  'open_travel_starter',
+  'plan_flight_search',
+  'search_flights',
+  'verify_flight_offer',
+];
 const expectedAllTools = [...expectedTools, 'select_flight_offer'];
 const forbiddenFragments = [
   'book',
@@ -23,7 +28,7 @@ const forbiddenFragments = [
 ];
 
 describe('server contract', () => {
-  it('exposes exactly the three working model tools and no unfinished domain tools', async () => {
+  it('exposes exactly the four working model tools and no unfinished domain tools', async () => {
     const manifest = await offlineApp.toManifest() as { tools: Array<{ name: string; visibility?: string[] }> };
     const visible = manifest.tools
       .filter((tool) => !tool.visibility || tool.visibility.includes('model'))
@@ -141,6 +146,65 @@ describe('server contract', () => {
     expect(search.inputSchema.properties.destination.description).toContain('Resolved');
   });
 
+  it('collects only missing dates before search and publishes a typed trip plan', async () => {
+    const manifest = await liveApp.toManifest() as any;
+    const plan = manifest.tools.find((entry: any) => entry.name === 'plan_flight_search');
+    const search = manifest.tools.find((entry: any) => entry.name === 'search_flights');
+
+    expect(plan.inputSchema.required).toEqual(['origin', 'destination']);
+    expect(plan.inputSchema.properties).toEqual(expect.objectContaining({
+      origin: expect.objectContaining({ type: 'string' }),
+      destination: expect.objectContaining({ type: 'string' }),
+    }));
+    expect(plan.inputSchema.properties).not.toHaveProperty('currency');
+    expect(plan.inputSchema.properties).not.toHaveProperty('country');
+
+    const planWire = JSON.stringify(plan);
+    expect(planWire).toContain('choose_travel_dates');
+    expect(planWire).toContain('When would you like to travel?');
+    expect(planWire).toContain('departureDate');
+    expect(planWire).toContain('returnDate');
+    expect(planWire).not.toContain('point-of-sale');
+    expect(planWire).not.toContain('NUITEE_API_KEY');
+
+    expect(search.inputSchema.properties.currency.default).toBe('USD');
+    expect(search.inputSchema.properties.country.default).toBe('US');
+    expect(search.inputSchema.properties.adults.default).toBe(1);
+    expect(search.inputSchema.properties.cabinClass.default).toBe('ECONOMY');
+  });
+
+  it('guides the assistant to make one progressive decision instead of interrogating', async () => {
+    const manifest = await embeddedApp.toManifest() as any;
+    const guide = manifest.server.agentGuide;
+
+    expect(guide.description).toContain('conversation-first flight discovery');
+    expect(guide.workflows).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'plan_and_search_flights',
+        steps: [
+          expect.objectContaining({ capability: { kind: 'tool', name: 'plan_flight_search' } }),
+          expect.objectContaining({ capability: { kind: 'tool', name: 'search_flights' } }),
+        ],
+      }),
+      expect.objectContaining({
+        id: 'search_flights_with_dates',
+        steps: [
+          expect.objectContaining({ capability: { kind: 'tool', name: 'search_flights' } }),
+        ],
+      }),
+    ]));
+    expect(guide.examples).toContainEqual(expect.objectContaining({
+      prompt: 'Show me flights from ISB to NYC on 2026-09-18.',
+      workflow: 'search_flights_with_dates',
+    }));
+    const guideWire = JSON.stringify(guide);
+    expect(guideWire).toContain('one focused question');
+    expect(guideWire).toContain('one adult');
+    expect(guideWire).toContain('Economy');
+    expect(guideWire).toContain('metro');
+    expect(guideWire).not.toContain('ask for currency');
+  });
+
   it('keeps the credential-free server free of required managed secrets', async () => {
     const manifest = await offlineApp.toManifest() as { connectors?: unknown; server?: Record<string, unknown> };
     const wire = JSON.stringify(manifest);
@@ -182,6 +246,7 @@ describe('server contract', () => {
         origins: [...starterConfig.embeddedAssistant.origins],
         capabilities: [
           { kind: 'tool', name: 'open_travel_starter' },
+          { kind: 'tool', name: 'plan_flight_search' },
           { kind: 'tool', name: 'search_flights' },
           { kind: 'tool', name: 'verify_flight_offer' },
           { kind: 'tool', name: 'select_flight_offer' },
