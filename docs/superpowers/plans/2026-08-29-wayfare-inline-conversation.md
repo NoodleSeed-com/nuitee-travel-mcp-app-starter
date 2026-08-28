@@ -139,6 +139,8 @@ git commit -m "feat: render Wayfare Apps inline in conversation"
 - Modify: `apps/web/test/trip-brief.test.tsx`
 - Delete: `apps/web/src/components/travel-journey-canvas.tsx`
 - Delete: `apps/web/test/travel-journey-canvas.test.tsx`
+- Delete: `apps/web/src/lib/journey-view.ts`
+- Delete: `apps/web/test/journey-view.test.ts`
 
 ### Step 1: Write the centered-shell regressions
 
@@ -235,7 +237,7 @@ Adapt selectors to the actual message markup instead of relying on unsupported c
 
 ### Step 5: Delete the side canvas and verify Task 2
 
-Delete `travel-journey-canvas.tsx` and its test, then run:
+Delete `travel-journey-canvas.tsx`, the temporary `journey-view.ts` compatibility bridge, and both tests, then run:
 
 ```bash
 pnpm --filter @nuitee-travel-starter/web exec vitest run test/travel-conversation.test.tsx test/trip-brief.test.tsx test/travel-message.test.tsx test/conversation-scroll.test.ts test/travel-progress.test.ts
@@ -250,7 +252,7 @@ The `rg` command must return no production references; any remaining browser ass
 Commit only the Task 2 files:
 
 ```bash
-git add apps/web/src/components/travel-conversation.tsx apps/web/src/components/trip-brief.tsx apps/web/app/globals.css apps/web/test/travel-conversation.test.tsx apps/web/test/trip-brief.test.tsx apps/web/src/components/travel-journey-canvas.tsx apps/web/test/travel-journey-canvas.test.tsx
+git add apps/web/src/components/travel-conversation.tsx apps/web/src/components/trip-brief.tsx apps/web/app/globals.css apps/web/test/travel-conversation.test.tsx apps/web/test/trip-brief.test.tsx apps/web/src/components/travel-journey-canvas.tsx apps/web/test/travel-journey-canvas.test.tsx apps/web/src/lib/journey-view.ts apps/web/test/journey-view.test.ts
 git commit -m "feat: center Wayfare on one travel conversation"
 ```
 
@@ -351,4 +353,3 @@ git commit -m "test: prove the Wayfare inline conversation"
 ```
 
 After the commit, rerun the full matrix on the exact committed SHA, run `git diff --check`, and require a clean worktree. Request a fresh whole-branch review against `fab5c1e` before preparing a PR or merge.
-
