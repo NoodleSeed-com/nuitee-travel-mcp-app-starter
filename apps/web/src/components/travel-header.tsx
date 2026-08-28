@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { starterConfig } from '../../../../starter.config';
 import { TravelNavigationDialog } from './travel-navigation-dialog';
+import { WayfareMark } from './wayfare-mark';
 
 interface TravelHeaderProps {
   readonly mode: 'hero' | 'conversation';
@@ -26,7 +27,7 @@ export function TravelHeader({
     <header className={`travel-header travel-header--${mode}`}>
       <a className="travel-wordmark" href="/">
         <span aria-hidden="true" className="travel-wordmark__mark">
-          {starterConfig.brand.mark}
+          <WayfareMark />
         </span>
         <span>{starterConfig.brand.name}</span>
       </a>

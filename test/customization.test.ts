@@ -30,6 +30,23 @@ describe('safe starter customization', () => {
     );
   });
 
+  it('preserves the public brand configuration key shape', () => {
+    expect(Object.keys(starterConfig.brand)).toEqual([
+      'name',
+      'mark',
+      'assistantName',
+      'tagline',
+      'accent',
+      'signal',
+      'canvas',
+      'surface',
+      'surfaceDark',
+      'ink',
+      'muted',
+      'boundary',
+    ]);
+  });
+
   it.each([
     '',
     'https://app.example.com',

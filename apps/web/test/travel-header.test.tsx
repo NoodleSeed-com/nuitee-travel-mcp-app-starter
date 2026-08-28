@@ -8,6 +8,27 @@ afterEach(() => {
 });
 
 describe('travel header', () => {
+  it('renders one repository-owned Wayfare route mark beside the wordmark', () => {
+    render(
+      <TravelHeader
+        mode="hero"
+        onNewTrip={vi.fn()}
+        onOpenSettings={vi.fn()}
+        onPlanTrip={vi.fn()}
+      />,
+    );
+
+    const home = screen.getByRole('link', { name: 'Wayfare' });
+    const mark = home.querySelector('svg[data-wayfare-mark="true"]');
+    expect(mark).not.toBeNull();
+    expect(mark).toHaveAttribute('aria-hidden', 'true');
+    expect(mark?.querySelector('path')).toHaveAttribute(
+      'd',
+      'M3.25 6.5L7.6 17.25L12 9L16.4 17.25L20.25 8',
+    );
+    expect(mark?.querySelector('circle')).toHaveAttribute('cx', '20.25');
+  });
+
   it('keeps hero navigation focused on planning and opens settings from the menu', () => {
     const onPlanTrip = vi.fn();
     const onOpenSettings = vi.fn();

@@ -26,14 +26,21 @@ function contrastRatio(first: string, second: string): number {
   return ((values[0] ?? 0) + 0.05) / ((values[1] ?? 0) + 0.05);
 }
 
-describe('light Neutral travel theme', () => {
-  it.each([
-    ['primary text', starterConfig.brand.ink, starterConfig.brand.canvas, 4.5],
-    ['secondary text', starterConfig.brand.muted, starterConfig.brand.canvas, 4.5],
-    ['focus indicator', starterConfig.brand.accent, starterConfig.brand.canvas, 3],
-    ['portable dark accent', starterConfig.brand.accent, starterConfig.brand.surfaceDark, 3],
-    ['action label', starterConfig.brand.canvas, starterConfig.brand.signal, 4.5],
-  ])('%s keeps accessible contrast', (_label, foreground, background, minimum) => {
-    expect(contrastRatio(foreground, background)).toBeGreaterThanOrEqual(minimum);
+describe('Wayfare premium travel theme', () => {
+  it('keeps the approved checked-in colors and accessible contrast pairs', () => {
+    expect(starterConfig.brand).toMatchObject({
+      accent: '#3478F6',
+      signal: '#0B1F33',
+      canvas: '#F7F8FA',
+      surface: '#FFFFFF',
+      surfaceDark: '#0B1F33',
+      ink: '#0B1F33',
+      muted: '#526173',
+      boundary: '#D8DEE7',
+    });
+
+    expect(contrastRatio('#0B1F33', '#F7F8FA')).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio('#526173', '#F7F8FA')).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio('#3478F6', '#F7F8FA')).toBeGreaterThanOrEqual(3);
   });
 });
