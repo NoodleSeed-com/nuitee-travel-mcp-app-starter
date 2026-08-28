@@ -265,7 +265,7 @@ git commit -m "feat: center Wayfare on one travel conversation"
 - Modify: `apps/web/test/browser/travel-shell.spec.ts`
 - Modify: `README.md`
 - Modify: `docs/architecture.md`
-- Modify: `docs/embedded-assistant-guide.md`
+- Modify: `docs/EMBEDDED_ASSISTANT.md`
 - Modify: `docs/customization.md`
 - Modify: `test/repository-readiness.test.ts`
 
@@ -348,7 +348,7 @@ If `audit:licenses` reports `ERR_PNPM_MISSING_PACKAGE_INDEX_FILE`, rerun the exa
 ### Step 5: Commit Task 3
 
 ```bash
-git add apps/web/test/browser/travel-shell.spec.ts README.md docs/architecture.md docs/embedded-assistant-guide.md docs/customization.md test/repository-readiness.test.ts
+git add apps/web/test/browser/travel-shell.spec.ts README.md docs/architecture.md docs/EMBEDDED_ASSISTANT.md docs/customization.md test/repository-readiness.test.ts
 git commit -m "test: prove the Wayfare inline conversation"
 ```
 
