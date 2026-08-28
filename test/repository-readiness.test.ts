@@ -39,17 +39,25 @@ describe('public repository contracts', () => {
   });
 
   it('ships a cinematic conversation-first hero without the obsolete shader layer', async () => {
-    const [readme, customization, heroSource, heroAsset, webPackage] = await Promise.all([
+    const [
+      readme,
+      customization,
+      heroSource,
+      footerSource,
+      heroAsset,
+      webPackage,
+    ] = await Promise.all([
       repositoryFile('README.md'),
       repositoryFile('docs/customization.md'),
-      repositoryFile('apps/web/src/components/travel-zero-state.tsx'),
+      repositoryFile('apps/web/src/components/travel-hero.tsx'),
+      repositoryFile('apps/web/src/components/travel-footer.tsx'),
       stat(new URL('../apps/web/public/images/conversation-hero-v1.png', import.meta.url)),
       repositoryJson('apps/web/package.json'),
     ]);
 
     expect(heroAsset.size).toBeGreaterThan(0);
     expect(heroSource).toContain('conversation-hero-v1.png');
-    expect(heroSource).toContain('Built on Noodle Seed · Powered by Nuitee');
+    expect(footerSource).toContain('Built on Noodle Seed · Powered by Nuitee');
     expect(webPackage.dependencies['@paper-design/shaders-react']).toBeUndefined();
     expect(readme).toContain('cinematic conversation-first');
     expect(readme).toContain('Search → Select → Verify');
