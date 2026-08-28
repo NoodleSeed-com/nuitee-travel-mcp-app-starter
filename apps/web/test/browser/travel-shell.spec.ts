@@ -192,6 +192,24 @@ test('fits 320px, 390px, and 200 percent text zoom without orphaning the headlin
   expect(composerFits).toBe(true);
 });
 
+test('uses a full-width mobile navigation sheet at 320px without overflow', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium');
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Open menu' }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Travel menu' });
+  await expect(dialog).toBeVisible();
+  const bounds = await dialog.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(bounds!.x).toBe(0);
+  expect(bounds!.width).toBe(320);
+  expect(bounds!.x + bounds!.width).toBe(320);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+});
+
 test('stacks every below-fold landing section at 390px', async ({
   page,
 }, testInfo) => {

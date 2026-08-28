@@ -9,6 +9,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import { StrictMode, useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -111,6 +112,25 @@ describe('guest travel conversation lifecycle', () => {
     expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
       .toHaveFocus();
     expect(assistantMock.useNoodleAssistant).not.toHaveBeenCalled();
+  });
+
+  it('keeps the travel prompt focused after the menu Plan a trip action closes', async () => {
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+
+    const menuTrigger = screen.getByRole('button', { name: 'Open menu' });
+    menuTrigger.focus();
+    fireEvent.click(menuTrigger);
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Travel menu' }))
+      .getByRole('button', { name: 'Plan a trip' }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Travel menu' }))
+        .not.toBeInTheDocument();
+    });
+    expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
+      .toHaveFocus();
+    expect(assistantMock.useNoodleAssistant).not.toHaveBeenCalled();
+    expect(client.sendMessage).not.toHaveBeenCalled();
   });
 
   it('mounts the public client and sends the initial prompt once', async () => {

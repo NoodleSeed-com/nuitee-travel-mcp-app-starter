@@ -1629,6 +1629,7 @@ code {
     bottom: 0;
     left: 0;
     width: 100%;
+    max-width: none;
     max-height: min(34rem, calc(100svh - 1rem));
     border-radius: 22px 22px 0 0;
   }

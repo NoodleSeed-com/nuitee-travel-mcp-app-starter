@@ -30,6 +30,7 @@ export function TravelNavigationDialog({
 }: Readonly<TravelNavigationDialogProps>) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const restoreFocusRef = useRef(true);
 
   function closeNativeDialog() {
     const dialog = dialogRef.current;
@@ -39,6 +40,7 @@ export function TravelNavigationDialog({
   }
 
   function dismiss(callback?: () => void) {
+    if (callback) restoreFocusRef.current = false;
     closeNativeDialog();
     onClose();
     callback?.();
@@ -48,6 +50,7 @@ export function TravelNavigationDialog({
     if (!open) return;
     const dialog = dialogRef.current;
     if (!dialog) return;
+    restoreFocusRef.current = true;
     const previousFocus = document.activeElement as HTMLElement | null;
     if (!dialog.open) {
       if (typeof dialog.showModal === 'function') dialog.showModal();
@@ -57,7 +60,7 @@ export function TravelNavigationDialog({
 
     return () => {
       closeNativeDialog();
-      previousFocus?.focus();
+      if (restoreFocusRef.current) previousFocus?.focus();
     };
   }, [open]);
 
