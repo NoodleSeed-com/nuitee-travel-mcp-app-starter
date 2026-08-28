@@ -6,6 +6,29 @@ Customize the existing flights-first product before adding scope. Keep Cedar & C
 
 Replace `apps/web/public/images/conversation-hero-v1.png` with an owned or licensed landscape image using the same filename, or update the explicit image import. Keep a 16:9 source, preserve calm left-side copy space and a lower composer-safe region, and verify the deterministic navy scrim at desktop, 390px, 320px, and 200% text zoom. Do not bundle airline trademarks, liveries, copyrighted campaign art, or destination imagery you do not have authority to redistribute.
 
+## Editorial landing content
+
+Edit `apps/web/src/lib/landing-content.ts` to customize the editorial destination
+cards and feature. For each entry in `landingDestinations`, change `name`,
+`descriptor`, `prompt`, `imageSrc`, and `imagePosition`. For
+`landingEditorialFeature`, change `eyebrow`, `heading`, `support`, `action`,
+`prompt`, `imageSrc`, and `imagePosition`.
+
+The starter's four local image paths are:
+
+- `/images/destinations/rome-dawn-v1.jpg`
+- `/images/destinations/london-river-v1.jpg`
+- `/images/destinations/istanbul-bosphorus-v1.jpg`
+- `/images/destinations/warm-horizon-v1.jpg`
+
+Keep replacements local and use only owned, licensed, or generated images. Review
+the exact replacement bytes and add a new exact blob-ID line to
+`security/reviewed-binary-blobs.txt` for every changed image; a path or directory
+exception is not sufficient. Use realistic editorial imagery only as
+non-evidentiary inspiration. Do not fabricate a fare, discount, availability,
+airline partnership, destination guarantee, or any other commercial claim in an
+image or its prompt copy.
+
 ## Branding
 
 The canonical customization source is `src/starter-config.ts`. Root `starter.config.ts` is the public compatibility facade consumed by `apps/web/`; it re-exports the same object and must not define a second brand. Use the deterministic command instead of replacing brand text across the repository:

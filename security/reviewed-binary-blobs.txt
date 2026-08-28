@@ -5,3 +5,7 @@
 bfa35fd295c35804ead9331f8828001d77437ba5 docs/images/travel-home.png
 2e8dadf46942006a1d88cc7bcb48a51dd44e0d71 apps/web/public/images/conversation-hero-v1.png
 1f18e33a8fec2338d12d3f64c8958b4db1e3202e docs/images/travel-home.png
+772024035f87509935379d59e8fa0af9dda36e5f apps/web/public/images/destinations/rome-dawn-v1.jpg
+7de2b25d0a011298f47896419ecbc7e2db3a1876 apps/web/public/images/destinations/london-river-v1.jpg
+5d464c247bafe10fe3319a59458c4c9510ccc53b apps/web/public/images/destinations/istanbul-bosphorus-v1.jpg
+db2dcde2bd675d5c30e69269b7147203ec40d7ba apps/web/public/images/destinations/warm-horizon-v1.jpg
