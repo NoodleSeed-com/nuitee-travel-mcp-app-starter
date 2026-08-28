@@ -5,7 +5,7 @@ import type {
   AssistantClient,
   AssistantViewData,
 } from '@noodleseed/assistant/client';
-import { travelViewPlacement } from '../lib/journey-view';
+import { isInlineTravelView } from '../lib/travel-view-policy';
 
 interface TravelViewRegistryProps {
   readonly client: AssistantClient;
@@ -16,7 +16,7 @@ export function TravelViewRegistry({
   client,
   view,
 }: Readonly<TravelViewRegistryProps>) {
-  if (!travelViewPlacement(view)) {
+  if (!isInlineTravelView(view)) {
     return <p role="status">This travel view is unavailable.</p>;
   }
 

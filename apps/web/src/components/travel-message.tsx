@@ -11,7 +11,6 @@ import {
   parseTravelInputSchema,
   type TravelInputField,
 } from '../lib/input-request';
-import { travelViewPlacement } from '../lib/journey-view';
 import { TravelMarkdown } from './travel-markdown';
 import { TravelViewRegistry } from './travel-view-registry';
 
@@ -244,6 +243,8 @@ function InputRequestPart({
   const fields = parseTravelInputSchema(inputRequest.requestedSchema);
   const [values, setValues] = useState<Record<string, string>>({});
   const [isInvalid, setIsInvalid] = useState(false);
+  const message = boundedDisplayString(inputRequest.message, 120)
+    ?? 'Complete your trip details.';
 
   if (fields && inputRequest.status === 'pending') {
     return (
@@ -252,6 +253,7 @@ function InputRequestPart({
         aria-label="Input request"
         className="travel-input-request"
       >
+        <h3>{message}</h3>
         <form
           aria-label="Complete trip details"
           onSubmit={(event) => {
@@ -372,9 +374,7 @@ function TravelMessagePart({
     case 'text':
       return <TravelMarkdown>{part.text}</TravelMarkdown>;
     case 'data-view':
-      return travelViewPlacement(part.data)
-        ? null
-        : <TravelViewRegistry client={client} view={part.data} />;
+      return <TravelViewRegistry client={client} view={part.data} />;
     case 'data-confirmation':
       return <ConfirmationPart client={client} confirmation={part.data} />;
     case 'data-input-request':

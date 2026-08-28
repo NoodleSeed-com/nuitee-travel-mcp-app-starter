@@ -59,7 +59,7 @@ afterEach(() => {
 });
 
 describe('typed travel message parts', () => {
-  it('keeps known linked travel views out of the conversational transcript', () => {
+  it('renders distinct approved Apps in chronological message-part order', () => {
     const firstView: AssistantViewData = {
       id: 'view-1',
       tool: 'search_flights',
@@ -69,9 +69,9 @@ describe('typed travel message parts', () => {
     };
     const secondView: AssistantViewData = {
       id: 'view-2',
-      tool: 'search_flights',
-      resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget',
-      title: 'Updated flight results',
+      tool: 'open_travel_starter',
+      resourceUri: 'ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget',
+      title: 'Travel starter',
       result: { status: 'success' },
     };
     const message: AssistantUIMessage = {
@@ -80,14 +80,27 @@ describe('typed travel message parts', () => {
       parts: [
         { type: 'text', text: 'I found current options.' },
         { type: 'data-view', data: firstView },
+        { type: 'text', text: 'Choose the trip you want to refine.' },
         { type: 'data-view', data: secondView },
       ],
     };
 
     renderMessage(client, message);
 
-    expect(screen.getByText('I found current options.')).toBeVisible();
-    expect(document.querySelectorAll('noodle-app-view')).toHaveLength(0);
+    const article = screen.getByRole('article', { name: 'Assistant message' });
+    const firstText = screen.getByText('I found current options.');
+    const secondText = screen.getByText('Choose the trip you want to refine.');
+    const apps = article.querySelectorAll('noodle-app-view');
+
+    expect([...article.children]).toEqual([
+      firstText,
+      apps[0],
+      secondText,
+      apps[1],
+    ]);
+    expect(apps).toHaveLength(2);
+    expect(apps[0]?.view).toBe(firstView);
+    expect(apps[1]?.view).toBe(secondView);
   });
 
   it('allows internal and HTTPS links with external link isolation', () => {
@@ -355,6 +368,7 @@ describe('typed travel message parts', () => {
       }],
     });
 
+    expect(screen.getByText('Complete your trip details.')).toBeVisible();
     expect(screen.getByLabelText('Departure date')).toHaveAttribute('type', 'date');
     expect(screen.getByRole('combobox', { name: 'Cabin' })).toBeVisible();
 

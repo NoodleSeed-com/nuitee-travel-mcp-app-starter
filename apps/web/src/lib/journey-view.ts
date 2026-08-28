@@ -2,25 +2,19 @@ import type {
   AssistantUIMessage,
   AssistantViewData,
 } from '@noodleseed/assistant/client';
+import { isInlineTravelView } from './travel-view-policy';
 
 export type TravelViewPlacement = 'journey-canvas' | 'native-home';
 
+/**
+ * Temporary compatibility for the side-canvas consumers removed in Task 2.
+ * Inline admission is owned exclusively by isInlineTravelView.
+ */
 export function travelViewPlacement(
   view: AssistantViewData,
 ): TravelViewPlacement | null {
-  if (
-    view.tool === 'search_flights'
-    && view.resourceUri === 'ui://nuitee_travel_mcp_app_starter/search_flights_widget'
-  ) {
-    return 'journey-canvas';
-  }
-  if (
-    view.tool === 'open_travel_starter'
-    && view.resourceUri === 'ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget'
-  ) {
-    return 'native-home';
-  }
-  return null;
+  if (!isInlineTravelView(view)) return null;
+  return view.tool === 'search_flights' ? 'journey-canvas' : 'native-home';
 }
 
 export function latestJourneyView(
