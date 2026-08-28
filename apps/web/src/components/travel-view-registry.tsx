@@ -5,6 +5,7 @@ import type {
   AssistantClient,
   AssistantViewData,
 } from '@noodleseed/assistant/client';
+import { travelViewPlacement } from '../lib/journey-view';
 
 interface TravelViewRegistryProps {
   readonly client: AssistantClient;
@@ -15,10 +16,7 @@ export function TravelViewRegistry({
   client,
   view,
 }: Readonly<TravelViewRegistryProps>) {
-  if (
-    view.tool !== 'open_travel_starter'
-    && view.tool !== 'search_flights'
-  ) {
+  if (!travelViewPlacement(view)) {
     return <p role="status">This travel view is unavailable.</p>;
   }
 
