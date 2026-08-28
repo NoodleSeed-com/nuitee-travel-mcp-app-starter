@@ -172,37 +172,23 @@ test('centers the Wayfare conversation and rounds the primary visual surfaces', 
   }
   await expect(page.locator('.travel-hero__image')).toHaveAttribute(
     'src',
-    /wayfare-coastline-hero-v1/,
+    /wayfare-hybrid-hero-v2/,
   );
 
   for (const selector of [
     '.travel-composer--hero',
     '.destination-card',
     '.travel-editorial',
-    '.travel-editorial__image',
   ]) {
     const radius = await page.locator(selector).first().evaluate((element) => (
       Number.parseFloat(getComputedStyle(element).borderTopLeftRadius)
     ));
     expect(radius).toBeGreaterThanOrEqual(20);
   }
-
-  const editorialCopyRadii = await page.locator('.travel-editorial__copy')
-    .evaluate((element) => {
-      const style = getComputedStyle(element);
-      return {
-        bottomLeft: Number.parseFloat(style.borderBottomLeftRadius),
-        bottomRight: Number.parseFloat(style.borderBottomRightRadius),
-        topRight: Number.parseFloat(style.borderTopRightRadius),
-      };
-    });
-  if (viewport!.width <= 700) {
-    expect(editorialCopyRadii.bottomLeft).toBeGreaterThanOrEqual(20);
-    expect(editorialCopyRadii.bottomRight).toBeGreaterThanOrEqual(20);
-  } else {
-    expect(editorialCopyRadii.topRight).toBeGreaterThanOrEqual(20);
-    expect(editorialCopyRadii.bottomRight).toBeGreaterThanOrEqual(20);
-  }
+  await expect(page.locator('.travel-editorial img')).toHaveCount(0);
+  await expect(page.locator(
+    '.travel-editorial [data-wayfare-mark="true"]',
+  )).toBeVisible();
 });
 
 test('uses Inter throughout the consumer and developer UI', async ({ page }) => {
@@ -338,7 +324,7 @@ test('keeps the next section discoverable with desktop targets at least 44px', a
   for (const target of targets) await expectMinimumTargetSize(target);
 });
 
-test('uses three, two-plus-span, and one destination columns by breakpoint', async ({
+test('uses three desktop and one mobile destination columns by breakpoint', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium');
@@ -354,17 +340,6 @@ test('uses three, two-plus-span, and one destination columns by breakpoint', asy
   expect(boxes[0]!.right).toBeLessThanOrEqual(boxes[1]!.left);
   expect(boxes[1]!.right).toBeLessThanOrEqual(boxes[2]!.left);
 
-  await page.setViewportSize({ width: 768, height: 1024 });
-  boxes = await page.locator('.destination-card').evaluateAll((cards) => cards.map((card) => {
-    const bounds = card.getBoundingClientRect();
-    return { bottom: bounds.bottom, left: bounds.left, right: bounds.right, top: bounds.top };
-  }));
-  expect(boxes[0]!.top).toBe(boxes[1]!.top);
-  expect(boxes[0]!.right).toBeLessThanOrEqual(boxes[1]!.left);
-  expect(boxes[2]!.top).toBeGreaterThanOrEqual(boxes[0]!.bottom);
-  expect(boxes[2]!.left).toBe(boxes[0]!.left);
-  expect(boxes[2]!.right).toBe(boxes[1]!.right);
-
   await page.setViewportSize({ width: 390, height: 844 });
   boxes = await page.locator('.destination-card').evaluateAll((cards) => cards.map((card) => {
     const bounds = card.getBoundingClientRect();
@@ -372,6 +347,27 @@ test('uses three, two-plus-span, and one destination columns by breakpoint', asy
   }));
   expect(boxes[0]!.bottom).toBeLessThanOrEqual(boxes[1]!.top);
   expect(boxes[1]!.bottom).toBeLessThanOrEqual(boxes[2]!.top);
+});
+
+test('keeps tablet destination cards compact and comparable', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium');
+
+  await page.setViewportSize({ width: 768, height: 1024 });
+  await page.goto('/');
+  const boxes = await page.locator('.destination-card').evaluateAll((cards) => (
+    cards.map((card) => {
+      const bounds = card.getBoundingClientRect();
+      return { height: bounds.height, width: bounds.width };
+    })
+  ));
+  const widths = boxes.map(({ width }) => width);
+  const heights = boxes.map(({ height }) => height);
+
+  expect(boxes).toHaveLength(3);
+  expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(1);
+  expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1);
 });
 
 test('fits the landing document at every required viewport width', async ({
@@ -1278,15 +1274,16 @@ test('stacks every below-fold landing section at 390px', async ({
       .toBeLessThanOrEqual(capabilityBoxes[index]!.top);
   }
 
-  const [editorialImage, editorialCopy] = await Promise.all([
-    page.locator('.travel-editorial__image').boundingBox(),
+  const [editorialMark, editorialCopy] = await Promise.all([
+    page.locator('.travel-editorial [data-wayfare-mark="true"]').boundingBox(),
     page.locator('.travel-editorial__copy').boundingBox(),
   ]);
-  expect(editorialImage).not.toBeNull();
+  await expect(page.locator('.travel-editorial img')).toHaveCount(0);
+  expect(editorialMark).not.toBeNull();
   expect(editorialCopy).not.toBeNull();
-  expect(editorialImage!.y + editorialImage!.height)
+  expect(editorialMark!.y + editorialMark!.height)
     .toBeLessThanOrEqual(editorialCopy!.y);
-  for (const bounds of [editorialImage!, editorialCopy!]) {
+  for (const bounds of [editorialMark!, editorialCopy!]) {
     expect(bounds.x).toBeGreaterThanOrEqual(0);
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
   }
