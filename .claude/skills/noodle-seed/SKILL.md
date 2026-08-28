@@ -3,7 +3,7 @@ name: noodle-seed
 description: "Use when building, validating, testing, deploying, or operating a local or hosted Noodle Seed MCP server or app authored in TypeScript with the noodle CLI."
 ---
 
-<!-- noodle-skill version:0.83.0 hash:13ddce01769caae4 -->
+<!-- noodle-skill version:0.87.1 hash:13ddce01769caae4 -->
 
 # Noodle Seed
 

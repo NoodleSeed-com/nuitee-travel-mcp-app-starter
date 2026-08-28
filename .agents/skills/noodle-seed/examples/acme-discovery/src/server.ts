@@ -1,13 +1,17 @@
 import {
   annotations,
+  authenticatedWebsite,
+  connector,
   embeddedAssistant,
   file,
   knowledge,
   noodleManaged,
   publicWebsite,
+  secret,
   server,
   site,
   tool,
+  variable,
   z,
 } from '@noodleseed/one';
 
@@ -197,6 +201,90 @@ const shortlistGetaway = tool('shortlist_getaway', {
   }),
 });
 
+// The consultative sales gateway (ADR 0214): when a visitor would rather not sign up, the assistant
+// may — with explicit confirmation — take their details and deliver them to Acme's own sink. The
+// recipe is a composition of existing primitives, not a platform feature: an ordinary confirm-gated
+// action plus a declarative HTTP connector whose endpoint and credential are operator-managed
+// (`noodle variables set LEAD_SINK_URL …`, `noodle secrets set LEAD_SINK_TOKEN …`). The payload
+// rests only in Acme's own system; the platform stores no lead. A vendor sink is the same shape as
+// data: Resend/Postmark take `auth: { kind: 'apiKey', … }`, a HubSpot private app takes
+// `auth: { kind: 'bearer', … }` — never a named vendor package.
+const leadSink = connector('lead_sink')
+  .version('1.0.0')
+  .http({
+    baseUrl: variable('LEAD_SINK_URL'),
+    allowedOrigins: ['https://acme.example'],
+    auth: { kind: 'bearer', secret: secret('LEAD_SINK_TOKEN') },
+    operations: {
+      submit_lead: {
+        type: 'action',
+        method: 'POST',
+        path: '/api/assistant-lead',
+        input: z.object({
+          name: z.string().trim().min(2).max(120),
+          workEmail: z.email().max(240),
+          company: z.string().trim().min(2).max(200),
+          note: z.string().max(500),
+        }),
+        output: z.object({ ok: z.boolean() }),
+        request: {
+          name: '${args.name}',
+          workEmail: '${args.workEmail}',
+          company: '${args.company}',
+          note: '${args.note}',
+          // Fixed attribution, set here rather than model-supplied: Acme's sink can trust it.
+          source: 'website-assistant',
+        },
+        response: { ok: '${response.ok}' },
+      },
+    },
+  });
+
+const captureLead = tool('capture_lead', {
+  title: 'Send my details to Acme',
+  description:
+    'Send the visitor’s contact details and trip interest to Acme Getaways so the team may follow ' +
+    'up. Call only after the visitor explicitly agrees to be contacted; the confirmation card is ' +
+    'their consent moment. After a confirmed success, say only that the details were sent — never ' +
+    'promise response timing.',
+  annotations: annotations.action({ confirm: true }),
+  input: z.object({
+    name: z.string().trim().min(2).max(120).meta({ title: 'Your name' }),
+    workEmail: z.email().max(240).meta({ title: 'Work email' }),
+    company: z.string().trim().min(2).max(200).meta({ title: 'Company' }),
+    note: z.string().max(500).default('').meta({ title: 'What are you planning?' }),
+  }),
+  output: z.object({ ok: z.boolean() }),
+  fulfil: ({ input, connectors }) => {
+    const result = connectors.leads.submitLead({
+      name: input.name,
+      workEmail: input.workEmail,
+      company: input.company,
+      note: input.note,
+    });
+    return { ok: result.ok };
+  },
+});
+
+// The mixed surface's sign-in trigger (ADR 0201): reading `${user.id}` classifies this tool
+// requires-identity, so an anonymous visitor who reaches for it sees the sign-in card instead of an
+// error — and after signing in on Acme's account origin, the conversation continues under the
+// authenticated surface below.
+const myTrips = tool('my_trips', {
+  title: 'My saved trips',
+  description: 'Read the signed-in traveler’s saved trips and their booking status.',
+  annotations: readOnly,
+  input: z.object({}),
+  output: z.object({
+    traveler: z.string(),
+    status: z.string(),
+  }),
+  fulfil: ({ user }) => ({
+    traveler: user.id as string,
+    status: 'No trips booked yet — shortlist a getaway to start one.',
+  }),
+});
+
 // Grounding beyond the catalog: two controlled files answer policy/pricing/support questions with
 // citations, and Acme's live public site is crawled on deploy and re-crawled on the declared
 // refresh cadence — no sync job, no handwritten search tool. One declaration, one generated
@@ -241,23 +329,49 @@ export default server(
     handoff: {
       allowedDomains: ['https://book.acme.example', 'https://acme.example'],
     },
-    // The same three tools also serve Acme's own marketing site, with no second tool set and no
-    // session backend: a visitor with no account gets the discovery carousel and the booking
-    // handoff. `capabilities` is the whole externally reachable surface — short enough to review in
-    // one glance, and closed by default when a tool is added to the server later. The knowledge
-    // component projects its generated search capability the same way a tool does.
+    use: { leads: leadSink },
+    // The same tools also serve Acme's own websites, with no second tool set. The marketing site is
+    // a **mixed** surface (`signIn: true`): a visitor with no account gets discovery, the booking
+    // handoff, and the confirm-gated lead capture — and reaching for `my_trips` raises the sign-in
+    // card instead of an error, with `signUpAction` offering account creation through Acme's own
+    // registration. After the login redirect lands on the account origin, the same conversation
+    // continues under the authenticated surface's capabilities and instructions (ADR 0201).
+    // `capabilities` is the whole externally reachable surface per front door — short enough to
+    // review in one glance, and closed by default when a tool is added to the server later.
     assistant: embeddedAssistant({
       model: noodleManaged(),
-      access: publicWebsite({
-        origins: ['https://getaways.acme.example'],
-        capabilities: [destinations, discoverGetaways, createHandoff, shortlistGetaway],
-        instructions:
-          'Be a friendly, consultative travel guide, never pushy. Help visitors narrow a getaway before suggesting the next useful step. Ground recommendations in Acme knowledge, and clearly separate discovery from booking.',
-      }),
+      access: [
+        publicWebsite({
+          origins: ['https://getaways.acme.example'],
+          capabilities: [
+            destinations,
+            discoverGetaways,
+            createHandoff,
+            shortlistGetaway,
+            captureLead,
+            myTrips,
+          ],
+          signIn: true,
+          instructions:
+            'Be a friendly, consultative travel guide, never pushy. Help visitors narrow a getaway before suggesting the next useful step. Ground recommendations in Acme knowledge, and clearly separate discovery from booking. When a visitor’s plans firm up, invite them to sign in or create an account; if they would rather not, offer — once — to send their details to the Acme team instead.',
+        }),
+        authenticatedWebsite({
+          origins: ['https://account.acme.example'],
+          capabilities: [destinations, discoverGetaways, createHandoff, myTrips],
+          instructions:
+            'The traveler is signed in. Help them plan from their saved trips, and keep booking on Acme’s own pages through the handoff.',
+        }),
+      ],
       layout: { mode: 'floating', position: 'bottom-right' },
-      labels: { welcomeHeading: 'Where would you like to go?' },
+      labels: {
+        welcomeHeading: 'Where would you like to go?',
+        signInHeading: 'Continue with your Acme account',
+        signInBody: 'Saved trips need an account.',
+        signInAction: 'Sign in',
+        signUpAction: 'Create free account',
+      },
     }),
     knowledge: [destinations],
   },
-  [discoverGetaways, createHandoff, shortlistGetaway],
+  [discoverGetaways, createHandoff, shortlistGetaway, captureLead, myTrips],
 );

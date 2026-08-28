@@ -158,6 +158,18 @@ test('centers the Wayfare conversation and rounds the primary visual surfaces', 
   }
 
   await expect(page.getByText('Wayfare', { exact: true }).first()).toBeVisible();
+  const headlineLayout = await page.locator('#travel-home-title').evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      height: element.getBoundingClientRect().height,
+      lineHeight: Number.parseFloat(style.lineHeight),
+    };
+  });
+  if (viewport!.width >= 1024) {
+    expect(headlineLayout.height).toBeLessThanOrEqual(headlineLayout.lineHeight * 1.1);
+  } else {
+    expect(headlineLayout.height).toBeGreaterThan(headlineLayout.lineHeight * 1.5);
+  }
   await expect(page.locator('.travel-hero__image')).toHaveAttribute(
     'src',
     /wayfare-coastline-hero-v1/,

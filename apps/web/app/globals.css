@@ -260,6 +260,13 @@ code {
   text-wrap: balance;
 }
 
+@media (min-width: 1024px) {
+  .travel-hero__copy h1 {
+    max-width: none;
+    white-space: nowrap;
+  }
+}
+
 .travel-hero__copy h1 span {
   white-space: nowrap;
 }

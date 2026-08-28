@@ -4,6 +4,8 @@ Notable changes to this starter will be recorded here. The repository has not pu
 
 ## Unreleased
 
+- Update the exact Noodle compatibility set to `@noodleseed/one` 0.145.1 and
+  `@noodleseed/assistant` 1.27.0 for the current public Assistant service.
 - Refresh the fictional guest website as Wayfare with a centered conversation
   hero, generated 4K coastline artwork, and rounded editorial surfaces.
 - Controlled exact-pin update to `@noodleseed/one` 0.139.0 and Assistant

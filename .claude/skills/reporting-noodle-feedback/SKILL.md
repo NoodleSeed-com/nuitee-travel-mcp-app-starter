@@ -3,7 +3,7 @@ name: reporting-noodle-feedback
 description: "Use when a Noodle Seed bug, misleading instruction, missing capability, or concrete product improvement should be proposed to the user."
 ---
 
-<!-- noodle-skill version:0.83.0 hash:0f404109f4845683 -->
+<!-- noodle-skill version:0.87.1 hash:0f404109f4845683 -->
 
 # reporting-noodle-feedback
 

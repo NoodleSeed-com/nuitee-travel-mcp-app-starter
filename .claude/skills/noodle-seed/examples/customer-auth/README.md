@@ -6,7 +6,9 @@ reads and confirmed actions to the API origin selected by the verified customer'
 
 It also owns the customer-branded embedded-assistant presentation showcase. Direct MCP calls obtain the
 route from the verified OIDC claim; embedded sessions obtain it from the authenticated customer backend's
-session exchange. Both paths keep the URL outside tool/model/browser-visible state.
+session exchange. Both paths keep the URL outside tool/model/browser-visible state. The built-in card hides
+its optional technical Additional details disclosure while retaining the business review and confirmation
+controls; this presentation setting does not weaken the exact runtime confirmation boundary.
 
 The public developer entrypoint is [`src/server.ts`](src/server.ts). It exposes a deliberately small MCP
 surface for organization discovery and app lifecycle operations:
@@ -353,9 +355,11 @@ flag, environment variable, or config surface.
 
 ## Configuration
 
-The embedded assistant uses a customer-supplied OpenAI Chat Completions-compatible endpoint. Configure its
-managed values at the Noodle deployment environment; none of these values belongs in the customer web
-application environment, and the API key never reaches the browser:
+The embedded assistant uses a customer-supplied Responses-compatible endpoint, selected explicitly with
+`transport: 'responses'` in `src/server.ts`. Use `transport: 'chat-completions'` or omit the field for a
+Chat Completions endpoint. Noodle never falls back between them. Configure its managed values at the Noodle
+deployment environment; none of these values belongs in the customer web application environment, and the
+API key never reaches the browser:
 
 The assistant session carries a verified user, tenant, deployment, roles, and scopes. For this flagship's
 routed tools, the embedding backend resolves the signed-in user's cluster from server-owned membership data
@@ -380,7 +384,15 @@ loopback development origins such as `http://localhost:3000`, `http://127.0.0.1:
 
 The bounded `presentation` object configures the panel, launcher, header, composer, and messages. Its
 primitives derive colors from shared server `branding`; raw HTML, CSS, inline SVG, renderer classes, and
-callbacks are not accepted.
+callbacks are not accepted. This example omits `presentation.panel.surface`, so the renderer keeps the
+opaque default panel treatment while the example's light/dark `branding` surfaces provide its customer colors;
+set the bounded surface to `glass` only when translucency is intentional.
+
+These TypeScript values remain the reusable developer defaults. After deployment, an environment operator
+can adjust theme, logo, launcher style, position, and the bounded color palette from the Console's
+**Assistant** tab or `noodle assistant appearance` without changing the customer's embed code. See the
+[embedded assistant guide](https://docs.noodleseed.dev/guides/embedded-assistant) for precedence and reset
+behavior.
 
 Create the backend credential after deployment. The CLI writes it to a mode-0600 file and never prints the
 secret:
@@ -566,13 +578,16 @@ secret allowlist; regenerate existing framework-owned environment binding types 
 Devtools/model exercises to synthetic data, and obtain approval before sending real connector data to an
 external model.
 
-After deployment, use the assistant doctor to verify the embed client, model, and static session boundary:
+After deployment, use the assistant doctor to verify the embed client, exact model transport, and static
+session boundary:
 
 ```sh
 noodle assistant doctor --user-id <real-test-user> --origin "$PUBLIC_APP_ORIGIN" --org <org> --app <app> --env <env>
 ```
 
-The doctor does not invent or test an application-specific customer route. Prove routed assistant tools by
+The doctor makes one bounded synthetic model request without business tools or customer conversation data;
+failures show only a redacted category, status, and retryability. It does not invent or test an
+application-specific customer route. Prove routed assistant tools by
 having the authenticated embedding backend pass the user's server-verified endpoint during session
 exchange, then invoke one representative safe read.
 

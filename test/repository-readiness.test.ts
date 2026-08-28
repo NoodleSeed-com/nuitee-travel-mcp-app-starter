@@ -239,8 +239,8 @@ describe('public repository contracts', () => {
     expect(workflow).not.toMatch(/uses:\s+[^\s]+@v\d/);
     expect(dependabot).toContain('package-ecosystem: github-actions');
     expect(workspace).toContain('minimumReleaseAge: 1440');
-    expect(workspace).toContain("'@noodleseed/one@0.139.0'");
-    expect(workspace).toContain("'@noodleseed/assistant@1.24.0'");
+    expect(workspace).toContain("'@noodleseed/one@0.145.1'");
+    expect(workspace).toContain("'@noodleseed/assistant@1.27.0'");
   });
 
   it('ships sanitized community intake and identifies generated guidance', async () => {

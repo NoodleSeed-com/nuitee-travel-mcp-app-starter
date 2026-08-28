@@ -6,7 +6,7 @@ The implementation is complete through offline/static gates plus prior owner-aut
 
 | Decision | Resolution |
 | --- | --- |
-| Package | Pin `@noodleseed/one` exactly to `0.139.0`; regenerate the lockfile and Agent Kit on every update. |
+| Package | Pin `@noodleseed/one` exactly to `0.145.1`; regenerate the lockfile and Agent Kit on every update. |
 | Operational scope | Flights search and fare verification only. |
 | API contract | Current official Nuitee Flights OpenAPI is source of truth; prose informs workflow and ambiguity notes. |
 | Entry points | Credential-free `src/server.ts`; managed-secret live composition `src/live-server.ts`. |
