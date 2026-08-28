@@ -59,18 +59,18 @@ afterEach(() => {
 });
 
 describe('typed travel message parts', () => {
-  it('passes both distinct linked view identities to the official App host without printing tool JSON', () => {
+  it('keeps known linked travel views out of the conversational transcript', () => {
     const firstView: AssistantViewData = {
       id: 'view-1',
       tool: 'search_flights',
-      resourceUri: 'ui://nuitee_travel/flight-results',
+      resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget',
       title: 'Flight results',
       result: { status: 'success' },
     };
     const secondView: AssistantViewData = {
       id: 'view-2',
       tool: 'search_flights',
-      resourceUri: 'ui://nuitee_travel/flight-results',
+      resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget',
       title: 'Updated flight results',
       result: { status: 'success' },
     };
@@ -79,40 +79,15 @@ describe('typed travel message parts', () => {
       role: 'assistant',
       parts: [
         { type: 'text', text: 'I found current options.' },
-        {
-          type: 'data-tool-result',
-          data: {
-            id: 'call-1',
-            tool: 'search_flights',
-            result: {
-              status: 'success',
-              searchContext: { origin: 'JFK' },
-            },
-          },
-        },
-        {
-          type: 'data-view',
-          data: firstView,
-        },
-        {
-          type: 'data-view',
-          data: secondView,
-        },
+        { type: 'data-view', data: firstView },
+        { type: 'data-view', data: secondView },
       ],
     };
 
-    const { container } = renderMessage(client, message);
+    renderMessage(client, message);
 
     expect(screen.getByText('I found current options.')).toBeVisible();
-    const linkedViews = Array.from(
-      container.querySelectorAll('noodle-app-view'),
-      (element) => element.view,
-    );
-    expect(linkedViews).toHaveLength(2);
-    expect(linkedViews.map((view) => view?.id)).toEqual(['view-1', 'view-2']);
-    expect(linkedViews[0]).toBe(firstView);
-    expect(linkedViews[1]).toBe(secondView);
-    expect(screen.queryByText(/searchContext/)).not.toBeInTheDocument();
+    expect(document.querySelectorAll('noodle-app-view')).toHaveLength(0);
   });
 
   it('allows internal and HTTPS links with external link isolation', () => {

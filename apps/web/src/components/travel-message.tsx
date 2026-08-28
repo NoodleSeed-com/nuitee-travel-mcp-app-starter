@@ -11,6 +11,7 @@ import {
   parseTravelInputSchema,
   type TravelInputField,
 } from '../lib/input-request';
+import { travelViewPlacement } from '../lib/journey-view';
 import { TravelMarkdown } from './travel-markdown';
 import { TravelViewRegistry } from './travel-view-registry';
 
@@ -371,9 +372,9 @@ function TravelMessagePart({
     case 'text':
       return <TravelMarkdown>{part.text}</TravelMarkdown>;
     case 'data-view':
-      return (
-        <TravelViewRegistry client={client} view={part.data} />
-      );
+      return travelViewPlacement(part.data)
+        ? null
+        : <TravelViewRegistry client={client} view={part.data} />;
     case 'data-confirmation':
       return <ConfirmationPart client={client} confirmation={part.data} />;
     case 'data-input-request':
