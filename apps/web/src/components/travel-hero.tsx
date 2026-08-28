@@ -24,7 +24,7 @@ export function TravelHero({
         fill
         priority
         sizes="100vw"
-        src="/images/conversation-hero-v1.png"
+        src="/images/wayfare-coastline-hero-v1.jpg"
       />
       <div aria-hidden="true" className="travel-hero__scrim" />
       <div className="travel-hero__content">

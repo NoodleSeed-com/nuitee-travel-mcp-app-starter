@@ -4,6 +4,8 @@ Notable changes to this starter will be recorded here. The repository has not pu
 
 ## Unreleased
 
+- Refresh the fictional guest website as Wayfare with a centered conversation
+  hero, generated 4K coastline artwork, and rounded editorial surfaces.
 - Controlled exact-pin update to `@noodleseed/one` 0.139.0 and Assistant
   1.24.0, with the lockfile and generated Agent Kit 0.83.0 refreshed together.
 - Adopt Apache License 2.0 and assign repository-wide ownership to the three

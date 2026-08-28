@@ -14,6 +14,14 @@ afterEach(() => {
 });
 
 describe('travel assistant zero state', () => {
+  it('uses the approved Wayfare identity', () => {
+    expect(starterConfig.brand).toMatchObject({
+      name: 'Wayfare',
+      mark: 'W',
+      tagline: 'Travel, planned around you.',
+    });
+  });
+
   it('renders the approved hero copy without mounting developer chrome', () => {
     const { container } = render(
       <TravelAssistantPage
@@ -44,7 +52,7 @@ describe('travel assistant zero state', () => {
       .toHaveAttribute('id', 'travel-prompt');
     expect(container.querySelector('img[alt=""]')).toHaveAttribute(
       'src',
-      expect.stringContaining('conversation-hero-v1'),
+      expect.stringContaining('wayfare-coastline-hero-v1'),
     );
     expect(screen.queryByText('No trip started')).not.toBeInTheDocument();
     expect(screen.queryByTestId('workspace-atmosphere')).not.toBeInTheDocument();

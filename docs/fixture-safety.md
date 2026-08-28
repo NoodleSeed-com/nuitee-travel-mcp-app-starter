@@ -31,8 +31,9 @@ NOTICE treatment, provenance/compatibility, and public redistribution.
 
 The tracked raster boundary is explicit:
 
-- `apps/web/public/images/conversation-hero-v1.png` is the reviewed local,
-  decorative landing hero;
+- `apps/web/public/images/wayfare-coastline-hero-v1.jpg` is the reviewed,
+  generated 4K decorative landing hero whose prompt and conversion details are
+  recorded in `docs/visual-assets/airline-editorial-homepage.md`;
 - the four JPEGs under `apps/web/public/images/destinations/` are generated
   editorial demo derivatives whose OpenAI `image_gen` prompts, dimensions,
   conversion details, and visual review are recorded in

@@ -18,7 +18,7 @@ const home: HomeOutput = {
     { name: 'Ground travel', availability: 'coming_soon' },
     { name: 'Experiences', availability: 'coming_soon' },
   ],
-  fallback: 'Cedar & Cloud Travel can search and verify flights.',
+  fallback: 'Wayfare can search and verify flights.',
 };
 
 const itinerary: Itinerary = {

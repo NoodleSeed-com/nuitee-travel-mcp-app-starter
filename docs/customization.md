@@ -1,10 +1,10 @@
 # Customization guide
 
-Customize the existing flights-first product before adding scope. Keep Cedar & Cloud Travel fictional unless you have authority to replace it with your own brand.
+Customize the existing flights-first product before adding scope. Keep Wayfare fictional unless you have authority to replace it with your own brand.
 
 ## Cinematic hero image
 
-Replace `apps/web/public/images/conversation-hero-v1.png` with an owned or licensed landscape image using the same filename, or update the explicit image import. Keep a 16:9 source, preserve calm left-side copy space and a lower composer-safe region, and verify the deterministic navy scrim at desktop, 390px, 320px, and 200% text zoom. Do not bundle airline trademarks, liveries, copyrighted campaign art, or destination imagery you do not have authority to redistribute.
+Replace `apps/web/public/images/wayfare-coastline-hero-v1.jpg` with an owned or licensed landscape image using the same filename, or update the explicit image import. Keep a 16:9 source, preserve calm central copy space and a lower composer-safe region, and verify the deterministic navy scrim at desktop, 390px, 320px, and 200% text zoom. Do not bundle airline trademarks, liveries, copyrighted campaign art, or destination imagery you do not have authority to redistribute.
 
 ## Bundled typography
 

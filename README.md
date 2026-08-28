@@ -1,6 +1,6 @@
 # Nuitee Travel MCP App Starter
 
-A guest-first Next.js developer template for building a chat-first flight experience with a Noodle embedded assistant and the official Nuitee Connect Flights API. The fictional customer-facing brand is **Cedar & Cloud Travel**.
+A guest-first Next.js developer template for building a chat-first flight experience with a Noodle embedded assistant and the official Nuitee Connect Flights API. The fictional customer-facing brand is **Wayfare**.
 
 The primary guest website guides a traveler through **Search → Select → Verify** and stops at a verified fare. It does not book, hold inventory, collect passenger details, take payment, or issue tickets. The repository also exposes the same bounded MCP tools and linked Apps to external MCP hosts; there is no website-only copy of the travel product.
 
@@ -178,7 +178,7 @@ The fixture-only Chromium captures below show the cinematic conversation-first w
 
 | Cinematic credential-free home | Fictional flight comparison |
 | --- | --- |
-| ![Cedar & Cloud Travel cinematic conversation-first home with no Assistant session before submit](docs/images/travel-home.png) | ![Cedar & Cloud Travel flight-results widget using fictional fares and no airline logo](docs/images/flight-results.png) |
+| ![Wayfare cinematic conversation-first home with no Assistant session before submit](docs/images/travel-home.png) | ![Wayfare flight-results widget using fictional fares and no airline logo](docs/images/flight-results.png) |
 
 ## Public-release status
 

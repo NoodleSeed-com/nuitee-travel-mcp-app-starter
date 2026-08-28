@@ -51,12 +51,12 @@ describe('public repository contracts', () => {
       repositoryFile('docs/customization.md'),
       repositoryFile('apps/web/src/components/travel-hero.tsx'),
       repositoryFile('apps/web/src/components/travel-footer.tsx'),
-      stat(new URL('../apps/web/public/images/conversation-hero-v1.png', import.meta.url)),
+      stat(new URL('../apps/web/public/images/wayfare-coastline-hero-v1.jpg', import.meta.url)),
       repositoryJson('apps/web/package.json'),
     ]);
 
     expect(heroAsset.size).toBeGreaterThan(0);
-    expect(heroSource).toContain('conversation-hero-v1.png');
+    expect(heroSource).toContain('wayfare-coastline-hero-v1.jpg');
     expect(footerSource).toContain('Built on Noodle Seed · Powered by Nuitee');
     expect(webPackage.dependencies['@paper-design/shaders-react']).toBeUndefined();
     expect(readme).toContain('cinematic conversation-first');

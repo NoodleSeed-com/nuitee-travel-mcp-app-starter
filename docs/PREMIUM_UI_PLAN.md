@@ -4,9 +4,9 @@ Status: implemented with committed local Chromium evidence; named-host visual ev
 
 ## Decision
 
-Adopt one coherent **Quiet Canopy** visual system for Cedar & Cloud Travel, using the disciplined route and timing hierarchy of a **Runway Grid** inside flight results.
+Adopt one coherent **Quiet Canopy** visual system for Wayfare, using the disciplined route and timing hierarchy of a **Runway Grid** inside flight results.
 
-The result should feel like a calm premium concierge, not a miniature airline website. Familiar controls and interaction patterns remain standard; distinctiveness comes from hierarchy, spacing, precise language, and the Cedar & Cloud palette.
+The result should feel like a calm premium concierge, not a miniature airline website. Familiar controls and interaction patterns remain standard; distinctiveness comes from hierarchy, spacing, precise language, and the Wayfare palette.
 
 The exploratory HTML concepts were temporary design-review artifacts and are not
 part of the cloneable starter. This document records the selected direction;
@@ -97,7 +97,7 @@ Every final combination must be measured in the rendered host. Color never carri
 - Use familiar route arrows, chevrons, status marks, and host-expand affordances.
 - Pair every meaningful icon with visible text or an accessible name.
 - Bundle no airline/provider logos and use no third-party icon asset without license review. A documented live `marketingLogo` may render only from the exact Nuitee Flights asset allowlist, with carrier text/initials as fallback.
-- Keep result cards information-led. Do not add an internal Cedar & Cloud logo or decorative hero; the host already presents app identity before the widget.
+- Keep result cards information-led. Do not add an internal Wayfare logo or decorative hero; the host already presents app identity before the widget.
 - Limit motion to 100–140ms opacity or color transitions.
 - Use no parallax, sliding cards, animated countdown, route scanner, spinner spectacle, or implied aircraft tracking. Use result-shaped shimmer placeholders only.
 - Make reduced-motion behavior effectively instant.

@@ -138,6 +138,61 @@ test('renders the cinematic guest shell without opening an assistant session', a
   expect(assistantRequests).toEqual([]);
 });
 
+test('centers the Wayfare conversation and rounds the primary visual surfaces', async ({
+  page,
+}) => {
+  await page.goto('/');
+
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
+  for (const selector of [
+    '#travel-home-title',
+    '.travel-hero__copy > p',
+    '.travel-composer--hero',
+    '.travel-starter-prompts',
+  ]) {
+    const bounds = await page.locator(selector).boundingBox();
+    expect(bounds).not.toBeNull();
+    const center = bounds!.x + (bounds!.width / 2);
+    expect(Math.abs(center - (viewport!.width / 2))).toBeLessThanOrEqual(2);
+  }
+
+  await expect(page.getByText('Wayfare', { exact: true }).first()).toBeVisible();
+  await expect(page.locator('.travel-hero__image')).toHaveAttribute(
+    'src',
+    /wayfare-coastline-hero-v1/,
+  );
+
+  for (const selector of [
+    '.travel-composer--hero',
+    '.destination-card',
+    '.travel-editorial',
+    '.travel-editorial__image',
+  ]) {
+    const radius = await page.locator(selector).first().evaluate((element) => (
+      Number.parseFloat(getComputedStyle(element).borderTopLeftRadius)
+    ));
+    expect(radius).toBeGreaterThanOrEqual(20);
+  }
+
+  const editorialCopyRadii = await page.locator('.travel-editorial__copy')
+    .evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        bottomLeft: Number.parseFloat(style.borderBottomLeftRadius),
+        bottomRight: Number.parseFloat(style.borderBottomRightRadius),
+        topRight: Number.parseFloat(style.borderTopRightRadius),
+      };
+    });
+  if (viewport!.width <= 700) {
+    expect(editorialCopyRadii.bottomLeft).toBeGreaterThanOrEqual(20);
+    expect(editorialCopyRadii.bottomRight).toBeGreaterThanOrEqual(20);
+  } else {
+    expect(editorialCopyRadii.topRight).toBeGreaterThanOrEqual(20);
+    expect(editorialCopyRadii.bottomRight).toBeGreaterThanOrEqual(20);
+  }
+});
+
 test('uses Inter throughout the consumer and developer UI', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => document.fonts.ready);
