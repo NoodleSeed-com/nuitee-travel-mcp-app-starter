@@ -1,4 +1,4 @@
-import { writeFile } from 'node:fs/promises';
+import { access, writeFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
 import { starterConfig } from '../../../../starter.config';
 
@@ -452,6 +452,33 @@ test('captures premium landing visual evidence at every required viewport', asyn
       path: testInfo.outputPath(`task-6-landing-${width}x${height}.png`),
     });
   }
+  await page.setViewportSize({ width: 390, height: 844 });
+  const destinationSection = page.locator('.destination-inspiration');
+  await destinationSection.evaluate((section) => {
+    window.scrollTo({
+      behavior: 'instant',
+      top: section.getBoundingClientRect().top + window.scrollY - 16,
+    });
+  });
+  const railCards = page.locator('.destination-card');
+  const [firstRailCard, secondRailCard] = await Promise.all([
+    railCards.nth(0).boundingBox(),
+    railCards.nth(1).boundingBox(),
+  ]);
+  expect(firstRailCard).not.toBeNull();
+  expect(secondRailCard).not.toBeNull();
+  expect(firstRailCard!.y).toBeGreaterThanOrEqual(0);
+  expect(firstRailCard!.y + firstRailCard!.height).toBeLessThanOrEqual(844);
+  expect(firstRailCard!.x + firstRailCard!.width).toBeLessThan(390);
+  expect(secondRailCard!.x).toBeLessThan(390);
+  expect(secondRailCard!.x + secondRailCard!.width).toBeGreaterThan(390);
+  await page.screenshot({
+    animations: 'disabled',
+    path: testInfo.outputPath('task-6-landing-390x844-destination-rail.png'),
+  });
+  await expect(access(testInfo.outputPath(
+    'task-6-landing-390x844-destination-rail.png',
+  ))).resolves.toBeUndefined();
   const landingMeasurementsPath = testInfo.outputPath(
     'task-6-landing-measurements.json',
   );
@@ -1388,9 +1415,157 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
       path: testInfo.outputPath(`task-6-zoomed-app-${index + 1}.png`),
     });
   }
+  const hostBoundaryMeasurements = [] as Array<{
+    composer: { height: number; width: number; x: number; y: number };
+    host: { height: number; width: number; x: number; y: number };
+    index: number;
+    innerFrame: { height: number; width: number; x: number; y: number };
+    outerFrame: { height: number; width: number; x: number; y: number };
+    position: string;
+    transcript: { height: number; width: number; x: number; y: number };
+  }>;
+  for (const { index, position } of [
+    { index: 0, position: 'first' },
+    { index: 5, position: 'middle' },
+    { index: 9, position: 'last' },
+  ]) {
+    const surface = appSurfaceAt(index);
+    await surface.host.scrollIntoViewIfNeeded();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(surface.control).toBeVisible();
+    await surface.host.evaluate((host) => {
+      host.style.outline = '4px solid #7c3aed';
+      host.style.outlineOffset = '-4px';
+    });
+    await surface.outerFrame.evaluate((frame) => {
+      frame.style.outline = '4px solid #d97706';
+      frame.style.outlineOffset = '-8px';
+    });
+    await surface.innerFrame.evaluate((frame) => {
+      frame.style.outline = '4px solid #0891b2';
+      frame.style.outlineOffset = '-12px';
+    });
+    const [hostBounds, outerFrameBounds, innerFrameBounds, transcriptBounds, composerFrameBounds] = await Promise.all([
+      surface.host.boundingBox(),
+      surface.outerFrame.boundingBox(),
+      surface.innerFrame.boundingBox(),
+      transcript.boundingBox(),
+      composer.boundingBox(),
+    ]);
+    expect(hostBounds).not.toBeNull();
+    expect(outerFrameBounds).not.toBeNull();
+    expect(innerFrameBounds).not.toBeNull();
+    expect(transcriptBounds).not.toBeNull();
+    expect(composerFrameBounds).not.toBeNull();
+    expect(hostBounds!.y).toBeGreaterThanOrEqual(transcriptBounds!.y - 1);
+    expect(hostBounds!.y + hostBounds!.height).toBeLessThanOrEqual(
+      transcriptBounds!.y + transcriptBounds!.height + 1,
+    );
+    assertHorizontallyContained(outerFrameBounds, hostBounds, 390);
+    assertHorizontallyContained(innerFrameBounds, outerFrameBounds, 390);
+    expect(composerFrameBounds!.y).toBeGreaterThanOrEqual(
+      transcriptBounds!.y + transcriptBounds!.height,
+    );
+    const bounds = {
+      composer: composerFrameBounds!,
+      host: hostBounds!,
+      index,
+      innerFrame: innerFrameBounds!,
+      outerFrame: outerFrameBounds!,
+      position,
+      transcript: transcriptBounds!,
+    };
+    hostBoundaryMeasurements.push(bounds);
+    await page.evaluate((evidence) => {
+      const layer = document.createElement('div');
+      layer.id = 'task-6-boundary-evidence';
+      Object.assign(layer.style, {
+        inset: '0',
+        pointerEvents: 'none',
+        position: 'fixed',
+        zIndex: '2147483647',
+      });
+      const addBadge = (
+        label: string,
+        color: string,
+        left: number,
+        top: number,
+      ) => {
+        const badge = document.createElement('span');
+        badge.textContent = label;
+        Object.assign(badge.style, {
+          background: color,
+          borderRadius: '3px',
+          color: '#ffffff',
+          font: '600 10px/14px system-ui, sans-serif',
+          left: `${Math.max(0, left)}px`,
+          padding: '1px 4px',
+          position: 'fixed',
+          top: `${Math.max(0, top)}px`,
+        });
+        layer.append(badge);
+      };
+      addBadge(
+        'noodle-app-view host',
+        '#7c3aed',
+        evidence.host.x + 5,
+        evidence.host.y + 5,
+      );
+      addBadge(
+        'outer proxy iframe',
+        '#d97706',
+        evidence.outerFrame.x + 5,
+        evidence.outerFrame.y + 5,
+      );
+      addBadge(
+        'inner App iframe',
+        '#0891b2',
+        evidence.innerFrame.x + 5,
+        evidence.innerFrame.y + 23,
+      );
+      addBadge(
+        'transcript viewport',
+        '#475569',
+        evidence.transcript.x + evidence.transcript.width - 108,
+        evidence.transcript.y + 5,
+      );
+      addBadge(
+        'conversation composer',
+        '#0b1f33',
+        evidence.composer.x + 5,
+        evidence.composer.y + 5,
+      );
+      document.body.append(layer);
+    }, bounds);
+    await page.screenshot({
+      animations: 'disabled',
+      path: testInfo.outputPath(
+        `task-6-zoomed-host-boundary-${position}.png`,
+      ),
+    });
+    await page.locator('#task-6-boundary-evidence').evaluate((layer) => {
+      layer.remove();
+    });
+    await surface.host.evaluate((host) => {
+      host.style.outline = '';
+      host.style.outlineOffset = '';
+    });
+    await surface.outerFrame.evaluate((frame) => {
+      frame.style.outline = '';
+      frame.style.outlineOffset = '';
+    });
+    await surface.innerFrame.evaluate((frame) => {
+      frame.style.outline = '';
+      frame.style.outlineOffset = '';
+    });
+    await expect(access(testInfo.outputPath(
+      `task-6-zoomed-host-boundary-${position}.png`,
+    ))).resolves.toBeUndefined();
+  }
   const measurementsPath = testInfo.outputPath('task-6-measurements.json');
   await writeFile(measurementsPath, `${JSON.stringify({
       composer: composerBounds,
+      hostBoundaries: hostBoundaryMeasurements,
       primaryAction: {
         ...primaryActionAppearance,
         contrast: primaryActionContrast,
