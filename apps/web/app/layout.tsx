@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { CSSProperties, ReactNode } from 'react';
+import '@fontsource-variable/inter';
 import { starterConfig } from '../../../starter.config';
 import './globals.css';
 

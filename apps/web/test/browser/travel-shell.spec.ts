@@ -62,6 +62,25 @@ test('renders the cinematic guest shell without opening an assistant session', a
   expect(assistantRequests).toEqual([]);
 });
 
+test('uses Inter throughout the consumer and developer UI', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => document.fonts.ready);
+
+  const consumerFonts = await page.locator('body, h1, button, textarea')
+    .evaluateAll((elements) => elements.map((element) => (
+      getComputedStyle(element).fontFamily
+    )));
+  expect(consumerFonts.every((font) => font.includes('Inter Variable'))).toBe(true);
+
+  await page.goto('/developers');
+  await page.evaluate(() => document.fonts.ready);
+  await expect(page.locator('body')).toHaveCSS('font-family', /Inter Variable/);
+  await expect(page.locator('code').first()).not.toHaveCSS(
+    'font-family',
+    /Inter Variable/,
+  );
+});
+
 test('keeps the cinematic hero legible, fitted, and keyboard-reachable on desktop', async ({
   page,
 }, testInfo) => {

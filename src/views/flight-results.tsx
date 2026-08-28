@@ -1,3 +1,4 @@
+import '@fontsource-variable/inter';
 import '@noodleseed/one/react/styles.css';
 import { useEffect, useRef, type CSSProperties } from 'react';
 import {

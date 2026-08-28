@@ -536,12 +536,13 @@ describe('FlightResults', () => {
     for (const falseClaim of ['Boarding pass', 'Ticket number', 'Gate', 'Seat assigned', 'Book now']) expect(review).not.toContain(falseClaim);
   });
 
-  it('uses host-native typography and includes responsive accessibility safeguards', () => {
+  it('uses bundled Inter and includes responsive accessibility safeguards', () => {
     const css = readFileSync(new URL('../src/views/travel.css', import.meta.url), 'utf8');
-    expect(css).toContain('ui-sans-serif');
-    expect(css).toContain('-apple-system');
-    expect(css).toContain('BlinkMacSystemFont');
-    expect(css).toContain('"Segoe UI"');
+    expect(css).toContain('font-family: "Inter Variable", Inter');
+    expect(readFileSync(new URL('../src/views/travel-home.tsx', import.meta.url), 'utf8'))
+      .toContain("import '@fontsource-variable/inter';");
+    expect(readFileSync(new URL('../src/views/flight-results.tsx', import.meta.url), 'utf8'))
+      .toContain("import '@fontsource-variable/inter';");
     expect(css).toContain('--cc-bg: #fbfaf7');
     expect(css).toContain('--cc-surface: #ffffff');
     expect(css).toContain('--cc-text: #19202b');
