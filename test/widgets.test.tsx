@@ -156,6 +156,33 @@ describe('TravelHome', () => {
 });
 
 describe('FlightResults', () => {
+  it('presents current options for selection without booking claims', () => {
+    const result = {
+      status: 'success' as const,
+      itineraries: [itinerary],
+      fallback: 'One flight',
+      message: 'One flight',
+      retrievedAt: itinerary.retrievedAt,
+      searchContext: {
+        origin: 'QZX', destination: 'QZY', departureDate: '2030-04-20', adults: 1, children: 0, infants: 0,
+        childrenAges: [], infantAges: [], cabinClass: 'ECONOMY' as const, currency: 'CAD', country: 'CA',
+      },
+    };
+    const html = renderToStaticMarkup(
+      <FlightResultsView result={result} displayMode="inline" onVerify={vi.fn()} />,
+    );
+
+    expect(html).toContain('Current flight options');
+    expect(html).toContain('Select fare');
+    expect(html).not.toMatch(/Book|Continue to payment|fare held/i);
+    expect(html).toContain('Lowest fare');
+
+    const withoutCheapest = renderToStaticMarkup(
+      <FlightResultsView result={{ ...result, itineraries: [{ ...itinerary, isCheapest: false }] }} displayMode="inline" onVerify={vi.fn()} />,
+    );
+    expect(withoutCheapest).not.toContain('Lowest fare');
+  });
+
   it('publishes only the active fare as bounded model context', () => {
     const third = {
       ...itinerary,
@@ -197,7 +224,7 @@ describe('FlightResults', () => {
     );
     expect((inline.match(/>Select fare<\/button>/g) ?? [])).toHaveLength(3);
     expect((fullscreen.match(/>Select fare<\/button>/g) ?? [])).toHaveLength(10);
-    expect(inline).not.toContain('Verify selected fare');
+    expect(inline).not.toContain('Verify current fare');
     const selected = renderToStaticMarkup(
       <FlightResultsView
         result={{ status: 'success', itineraries: results, fallback: '10 flights', retrievedAt: itinerary.retrievedAt }}
@@ -207,8 +234,8 @@ describe('FlightResults', () => {
         onVerify={vi.fn()}
       />,
     );
-    expect((selected.match(/>Verify selected fare<\/button>/g) ?? [])).toHaveLength(1);
-    expect((selected.match(/data-variant="primary"/g) ?? [])).toHaveLength(1);
+    expect((selected.match(/>Verify current fare<\/button>/g) ?? [])).toHaveLength(1);
+    expect((selected.match(/data-variant="primary"/g) ?? [])).toHaveLength(3);
     for (const forbidden of ['Book', 'Checkout', 'Reserve', 'Pay', 'Redeem']) expect(inline).not.toContain(forbidden);
   });
 
@@ -274,7 +301,7 @@ describe('FlightResults', () => {
     const expired = renderToStaticMarkup(<FlightResultsView {...base} verificationError={{ code: 'expired_offer', message: 'This offer expired. Search again.', retryable: false }} />);
     const retry = renderToStaticMarkup(<FlightResultsView {...base} verificationError={{ code: 'timeout', message: 'Verification timed out.', retryable: true }} />);
     expect(changed).toContain('Price changed');
-    expect(success).toContain('Fare verified');
+    expect(success).toContain('Verified, not booked');
     expect(expired).toContain('Search again');
     expect(retry).toContain('Try again');
   });
@@ -449,7 +476,7 @@ describe('FlightResults', () => {
     expect(html).toContain('Verified Apr 1');
     expect(html).toContain('Offer expires');
     expect(html).toContain('Fare remains available.');
-    expect(actionHtml).toContain('aria-label="Verify selected fare from QZX to QZY with Cedar Skies"');
+    expect(actionHtml).toContain('aria-label="Verify current fare from QZX to QZY with Cedar Skies"');
   });
 
   it('supports editable search, back navigation, and a boarding-pass-inspired fare review without claiming a ticket', () => {
@@ -482,7 +509,7 @@ describe('FlightResults', () => {
       }}
     />);
     expect(review).toContain('Verified fare review');
-    expect(review).toContain('Not a ticket or reservation');
+    expect(review).toContain('Verified, not booked');
     expect(review).toContain('Cedar Bay Test Aerodrome');
     expect(review).toContain('Cloudlight Economy');
     expect(review).toContain('Fictional Wi-Fi');
@@ -496,7 +523,14 @@ describe('FlightResults', () => {
     expect(css).toContain('-apple-system');
     expect(css).toContain('BlinkMacSystemFont');
     expect(css).toContain('"Segoe UI"');
-    expect(css).toContain('background: transparent');
+    expect(css).toContain('--cc-bg: #fbfaf7');
+    expect(css).toContain('--cc-surface: #ffffff');
+    expect(css).toContain('--cc-text: #19202b');
+    expect(css).toContain('--cc-muted: #657083');
+    expect(css).toContain('--cc-border: #d9dee6');
+    expect(css).toContain('--cc-accent: #14213d');
+    expect(css).toContain('--cc-focus: #245aa8');
+    expect(css).toContain('background: var(--cc-bg)');
     expect(css).not.toContain('font-family: inherit;');
     expect(css).not.toContain('2.7rem');
     expect(css).not.toContain('4.5rem');

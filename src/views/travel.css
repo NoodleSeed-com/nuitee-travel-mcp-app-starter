@@ -1,15 +1,16 @@
 .cc-app {
-  --cc-accent: #1e6049;
-  --cc-surface: Canvas;
-  --cc-text: CanvasText;
-  --cc-muted: color-mix(in srgb, CanvasText 62%, transparent);
-  --cc-border: color-mix(in srgb, CanvasText 14%, transparent);
-  --cc-focus: #0b6b52;
+  --cc-bg: #fbfaf7;
+  --cc-surface: #ffffff;
+  --cc-text: #19202b;
+  --cc-muted: #657083;
+  --cc-border: #d9dee6;
+  --cc-accent: #14213d;
+  --cc-focus: #245aa8;
   color-scheme: light;
   min-width: 0;
   max-width: 100%;
   color: var(--cc-text);
-  background: transparent;
+  background: var(--cc-bg);
   font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 0.9375rem;
   line-height: 1.45;
@@ -400,8 +401,9 @@
   background: var(--cc-surface);
 }
 
-.cc-results-toolbar p { display: grid; gap: 3px; }
-.cc-results-toolbar p span { color: var(--cc-muted); font-size: 0.82rem; text-transform: capitalize; }
+.cc-results-summary { display: grid; gap: 3px; }
+.cc-results-summary > span,
+.cc-results-summary > small { color: var(--cc-muted); font-size: 0.82rem; text-transform: capitalize; }
 
 .cc-result-list {
   display: grid;

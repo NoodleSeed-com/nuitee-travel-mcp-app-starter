@@ -142,7 +142,7 @@ describe('real-browser widget readiness', () => {
     expect(selectBox.width).toBeGreaterThanOrEqual(44);
 
     await select.click();
-    await expect.element(page.getByRole('button', { name: /Verify selected fare/ })).toBeVisible();
+    await expect.element(page.getByRole('button', { name: /Verify current fare/ })).toBeVisible();
     expect(hasHorizontalOverflow()).toBe(false);
   });
 

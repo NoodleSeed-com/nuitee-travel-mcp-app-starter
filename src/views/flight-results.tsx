@@ -219,6 +219,11 @@ function airportLabel(route: Itinerary['route'], side: 'origin' | 'destination')
   return name ? `${name} (${code})` : code;
 }
 
+function travellerLabel(context: SearchContext) {
+  const travellers = context.adults + context.children + context.infants;
+  return `${travellers} traveller${travellers === 1 ? '' : 's'}`;
+}
+
 export function selectedFareModelContext(itinerary: Itinerary, verification?: Verification) {
   const verified = verification?.selectionId === itinerary.selectionId ? verification : undefined;
   const currentPrice = verified?.currentPrice ?? itinerary.price;
@@ -439,7 +444,7 @@ function FareCard({ itinerary, selected, onSelect }: {
           <h3><span>{itinerary.route.origin}</span><PlaneIcon /><span>{itinerary.route.destination}</span></h3>
           <p className="cc-airport-names">{airportLabel(itinerary.route, 'origin')} to {airportLabel(itinerary.route, 'destination')}</p>
         </div>
-        {itinerary.isCheapest ? <StatusBadge tone="info">Lowest shown</StatusBadge> : null}
+        {itinerary.isCheapest ? <StatusBadge tone="info">Lowest fare</StatusBadge> : null}
       </header>
       <RouteTimeline itinerary={itinerary} />
       <div className="cc-fare-meta">
@@ -447,8 +452,8 @@ function FareCard({ itinerary, selected, onSelect }: {
         <span><CheckedBagIcon />{itinerary.baggage.checked ? 'Checked bag included' : 'Checked bag not confirmed'}</span>
         {itinerary.fare.family ? <span><TagIcon />{itinerary.fare.family}</span> : null}
       </div>
-      {itinerary.messages.length > 0 ? <ul className="cc-messages">{itinerary.messages.map((message, index) => <li key={`${index}-${message}`}>{message}</li>)}</ul> : null}
       <FareDetails itinerary={itinerary} />
+      {itinerary.messages.length > 0 ? <ul className="cc-messages">{itinerary.messages.map((message, index) => <li key={`${index}-${message}`}>{message}</li>)}</ul> : null}
       <footer className="cc-fare-footer">
         <div>
           <span>Trip total</span>
@@ -456,7 +461,7 @@ function FareCard({ itinerary, selected, onSelect }: {
           <small>Search price · must be verified</small>
         </div>
         <Action
-          variant="secondary"
+          variant={selected ? 'secondary' : 'primary'}
           aria-pressed={selected}
           aria-label={`${selected ? 'Selected fare' : 'Select fare'} from ${itinerary.route.origin} to ${itinerary.route.destination} with ${itinerary.carrier.name}`}
           onClick={() => onSelect?.(itinerary.selectionId)}
@@ -477,14 +482,14 @@ function FareReview({ itinerary, verification, onBack }: {
     <section className="cc-review" aria-labelledby="cc-review-title">
       <header className="cc-review-header">
         <Action type="button" variant="quiet" onClick={onBack}><ArrowLeftIcon />Back to results</Action>
-        <StatusBadge tone={verification.priceChanged ? 'warning' : 'success'}>{verification.priceChanged ? 'Price changed' : 'Fare verified'}</StatusBadge>
+        <StatusBadge tone={verification.priceChanged ? 'warning' : 'success'}>{verification.priceChanged ? 'Price changed' : 'Verified, not booked'}</StatusBadge>
       </header>
       <div className="cc-review-ticket">
         <div className="cc-review-title">
           <h2 id="cc-review-title">Verified fare review</h2>
           <CarrierIdentity carrier={itinerary.carrier} compact />
         </div>
-        <p className="cc-review-disclaimer">Not a ticket or reservation</p>
+        <p className="cc-review-disclaimer">Verified, not booked</p>
         <div className="cc-review-route">
           <div><strong>{itinerary.route.origin}</strong><span>{itinerary.route.originName ?? 'Origin airport'}</span></div>
           <span className="cc-review-line" aria-hidden="true"><PlaneIcon /></span>
@@ -499,10 +504,10 @@ function FareReview({ itinerary, verification, onBack }: {
         </div>
         <div className={`cc-review-price ${verification.priceChanged ? 'cc-review-price-changed' : ''}`} role="status" aria-live="polite">
           <div>
-            <span>{verification.priceChanged ? 'Current verified total' : 'Verified trip total'}</span>
+            <span>Current verified price</span>
             <strong>{money(verification.currentPrice.total, verification.currentPrice.currency)}</strong>
           </div>
-          {verification.priceChanged ? <p>Search price was {money(verification.previousPrice.total, verification.previousPrice.currency)}.</p> : <p>Price and availability were confirmed when this fare was verified.</p>}
+          <p>Previous search price was {money(verification.previousPrice.total, verification.previousPrice.currency)}.</p>
         </div>
         {itinerary.price.base !== undefined || itinerary.price.taxes !== undefined || itinerary.price.fees !== undefined ? (
           <dl className="cc-price-breakdown">
@@ -516,7 +521,7 @@ function FareReview({ itinerary, verification, onBack }: {
         <footer className="cc-review-footer">
           {verification.verifiedAt ? <span>Verified {instantTime(verification.verifiedAt)}</span> : null}
           {verification.expiresAt ? <span>Offer expires {instantTime(verification.expiresAt)}</span> : null}
-          <p>This starter stops here. A production owner can add an exact, allowlisted handoff to its own checkout or booking experience.</p>
+          <p>This starter stops here.</p>
         </footer>
       </div>
     </section>
@@ -614,15 +619,19 @@ export function FlightResultsView({
       className={`cc-app ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
       style={brandStyle}
       displayMode="auto"
-      title="Choose your flight"
+      title="Current flight options"
       subtitle={`${result.itineraries.length} option${result.itineraries.length === 1 ? '' : 's'} · prices require verification`}
       data-llm={result.fallback}
     >
       <Flow variant="stack" density={displayMode === 'inline' ? 'compact' : 'comfortable'}>
         <div className="cc-results-toolbar">
-          {result.searchContext ? (
-            <p><strong>{result.searchContext.origin} → {result.searchContext.destination}</strong><span>{result.searchContext.departureDate}{result.searchContext.returnDate ? ` – ${result.searchContext.returnDate}` : ' · One way'} · {result.searchContext.adults} adult{result.searchContext.adults === 1 ? '' : 's'} · {result.searchContext.cabinClass.replaceAll('_', ' ').toLowerCase()}</span></p>
-          ) : <p><strong>Current flight options</strong><span>Compare, select, then verify one fare.</span></p>}
+          <div className="cc-results-summary">
+            <strong>Current flight options</strong>
+            {result.searchContext ? (
+              <span>{result.searchContext.origin} → {result.searchContext.destination} · {result.searchContext.departureDate}{result.searchContext.returnDate ? ` – ${result.searchContext.returnDate}` : ' · One way'} · {travellerLabel(result.searchContext)} · {result.searchContext.cabinClass.replaceAll('_', ' ').toLowerCase()} · {result.searchContext.currency}</span>
+            ) : <span>Compare, select, then verify one fare.</span>}
+            {result.retrievedAt ? <small>Updated {instantTime(result.retrievedAt)}</small> : null}
+          </div>
           {onEdit ? <Action variant="quiet" onClick={onEdit}>Edit search</Action> : null}
         </div>
         {result.status === 'partial' ? <div className="cc-partial" role="status">Some provider results were incomplete. Showing only the options that could be interpreted safely.</div> : null}
@@ -642,9 +651,9 @@ export function FlightResultsView({
                 pending={pendingSelectionId === selected.selectionId}
                 pendingLabel="Verifying…"
                 onClick={() => onVerify(selected.selectionId)}
-                aria-label={`Verify selected fare from ${selected.route.origin} to ${selected.route.destination} with ${selected.carrier.name}`}
+                aria-label={`Verify current fare from ${selected.route.origin} to ${selected.route.destination} with ${selected.carrier.name}`}
               >
-                Verify selected fare
+                Verify current fare
               </Action>
             </ActionBar>
           </div>
@@ -658,8 +667,7 @@ export function FlightResultsView({
           </div>
         ) : null}
         <p className="cc-freshness">
-          {result.retrievedAt ? `Results retrieved ${instantTime(result.retrievedAt)}. ` : ''}
-          Search prices are indicative and can change. Verification checks current availability and price; it does not hold, reserve, prebook, or book.
+          Search prices are indicative and can change. Verification checks current availability and price; it does not create a reservation or payment.
         </p>
       </Flow>
     </Frame>
@@ -677,7 +685,7 @@ export default function FlightResults() {
   const requestDisplayMode = useRequestDisplayMode();
   const sendFollowUp = useSendFollowUpMessage();
   const updateModelContext = useUpdateModelContext();
-  const selectionRequest = useRef<{ selectionId: string; request: Promise<unknown> }>();
+  const selectionRequest = useRef<{ selectionId: string; request: Promise<unknown> } | undefined>(undefined);
   const [selected, setSelected] = useViewState<string | undefined>('selected_fare', undefined);
   const [savedVerification, setSavedVerification] = useViewState<Verification | undefined>('verified_fare', undefined);
   const pending = !ready || Object.keys(toolInfo).length === 0;
