@@ -11,6 +11,7 @@ import {
 } from '@noodleseed/one';
 import { noodleState, nuiteeGateway, nuiteeHttp } from './flight-connectors.js';
 import {
+  flightPlanDatesSchema,
   flightPlanInputSchema,
   flightPlanOutputSchema,
   homeOutputSchema,
@@ -200,15 +201,7 @@ function planFlightSearch() {
       const dates = elicit({
         id: 'choose_travel_dates',
         message: 'When would you like to travel?',
-        input: z.object({
-          departureDate: z.string()
-            .describe('Departure date')
-            .meta({ format: 'date' }),
-          returnDate: z.string()
-            .optional()
-            .describe('Return date (optional)')
-            .meta({ format: 'date' }),
-        }),
+        input: flightPlanDatesSchema,
       });
       return {
         status: 'planned' as const,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import embeddedApp from '../src/embedded-server.js';
+import { flightPlanDatesSchema, flightPlanInputSchema } from '../src/flight-schemas.js';
 import liveApp from '../src/live-server.js';
 import offlineApp from '../src/server.js';
 import { starterConfig } from '../src/starter-config.js';
@@ -171,6 +172,19 @@ describe('server contract', () => {
     expect(search.inputSchema.properties.country.default).toBe('US');
     expect(search.inputSchema.properties.adults.default).toBe(1);
     expect(search.inputSchema.properties.cabinClass.default).toBe('ECONOMY');
+  });
+
+  it('rejects lower-case airport codes at the fulfilled flight-plan boundary', () => {
+    expect(flightPlanInputSchema.safeParse({
+      origin: 'isb',
+      destination: 'NYC',
+    }).success).toBe(false);
+  });
+
+  it('rejects an impossible calendar date from the flight-plan elicitation form', () => {
+    expect(flightPlanDatesSchema.safeParse({
+      departureDate: '2026-02-31',
+    }).success).toBe(false);
   });
 
   it('guides the assistant to make one progressive decision instead of interrogating', async () => {

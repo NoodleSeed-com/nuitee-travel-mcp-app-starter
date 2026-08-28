@@ -139,8 +139,23 @@ export const searchInputSchema = z.object({
 });
 
 export const flightPlanInputSchema = z.object({
-  origin: z.string().regex(/^[A-Za-z]{3}$/).describe('Resolved origin IATA code derived from an unambiguous user-supplied city or airport name'),
-  destination: z.string().regex(/^[A-Za-z]{3}$/).describe('Resolved destination or metro IATA code derived from an unambiguous user-supplied place'),
+  origin: z.string().regex(/^[A-Z]{3}$/).describe('Resolved uppercase origin IATA code derived from an unambiguous user-supplied city or airport name'),
+  destination: z.string().regex(/^[A-Z]{3}$/).describe('Resolved uppercase destination or metro IATA code derived from an unambiguous user-supplied place'),
+});
+
+const isoCalendarDate = z.iso.date();
+
+export const flightPlanDateSchema = z.string()
+  .refine(
+    (value) => isoCalendarDate.safeParse(value).success,
+    'Expected a valid calendar date in YYYY-MM-DD format',
+  )
+  .describe('Travel date in YYYY-MM-DD format')
+  .meta({ format: 'date' });
+
+export const flightPlanDatesSchema = z.object({
+  departureDate: flightPlanDateSchema,
+  returnDate: flightPlanDateSchema.optional(),
 });
 
 export const flightPlanOutputSchema = z.object({
@@ -148,8 +163,8 @@ export const flightPlanOutputSchema = z.object({
   message: z.string().max(240),
   origin: z.string().regex(/^[A-Z]{3}$/),
   destination: z.string().regex(/^[A-Z]{3}$/),
-  departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  returnDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  departureDate: flightPlanDateSchema,
+  returnDate: flightPlanDateSchema.optional(),
   adults: z.number().int().min(1).max(9),
   cabinClass: z.enum(['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST']),
   currency: z.string().regex(/^[A-Z]{3}$/),
