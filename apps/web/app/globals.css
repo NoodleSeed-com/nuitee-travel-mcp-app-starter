@@ -1758,14 +1758,14 @@ code {
   }
 
   .travel-conversation-shell {
-    grid-row: 2;
-    height: auto;
-    min-height: 32rem;
+    height: 75vh;
+    min-height: 0;
+    max-height: 40rem;
     padding: 0;
+    overflow: hidden;
   }
 
   .travel-journey-canvas {
-    grid-row: 1;
     min-height: min(34rem, 64svh);
   }
 

@@ -58,6 +58,36 @@ function conversationStatus() {
     .getByRole('status');
 }
 
+function stubWorkspaceMediaQuery(initialMatches: boolean) {
+  let matches = initialMatches;
+  const listeners = new Set<EventListener>();
+  const mediaQuery = {
+    get matches() {
+      return matches;
+    },
+    media: '(max-width: 760px)',
+    onchange: null,
+    addEventListener: vi.fn((_type: string, listener: EventListener) => {
+      listeners.add(listener);
+    }),
+    removeEventListener: vi.fn((_type: string, listener: EventListener) => {
+      listeners.delete(listener);
+    }),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(() => true),
+  } as unknown as MediaQueryList;
+  vi.stubGlobal('matchMedia', vi.fn(() => mediaQuery));
+
+  return {
+    setMatches(nextMatches: boolean) {
+      matches = nextMatches;
+      const event = { matches, media: mediaQuery.media } as MediaQueryListEvent;
+      for (const listener of listeners) listener(event);
+    },
+  };
+}
+
 let client = createClient();
 let resizeCallback: ResizeObserverCallback | undefined;
 let resizeDisconnect = vi.fn<() => void>();
@@ -245,6 +275,13 @@ describe('guest travel conversation lifecycle', () => {
       result: { status: 'success' },
     };
     const secondView = { ...firstView, id: 'view-search-second' };
+    const unrelatedView = {
+      id: 'view-booking-unrelated',
+      tool: 'manage_booking',
+      resourceUri: 'ui://unknown/manage_booking',
+      title: 'Booking manager',
+      result: { status: 'success' },
+    };
     assistantMock.useNoodleAssistant.mockImplementation(() => ({
       client,
       messages: [{
@@ -270,6 +307,7 @@ describe('guest travel conversation lifecycle', () => {
             },
           },
           { type: 'data-view', data: firstView },
+          { type: 'data-view', data: unrelatedView },
           { type: 'text', text: 'I refreshed the current choices.' },
           { type: 'data-view', data: secondView },
         ],
@@ -287,12 +325,110 @@ describe('guest travel conversation lifecycle', () => {
     expect(workspace).toContainElement(conversation);
     expect(workspace).toContainElement(canvas);
     expect(within(conversation).queryByText('Flight results')).not.toBeInTheDocument();
+    expect(within(conversation).getByText('This travel view is unavailable.'))
+      .toBeVisible();
+    expect(within(canvas).queryByText('This travel view is unavailable.'))
+      .not.toBeInTheDocument();
     expect(canvas.querySelectorAll('noodle-app-view')).toHaveLength(1);
     expect(canvas.querySelector('noodle-app-view')?.view).toBe(secondView);
     expect(screen.queryByRole('complementary', { name: 'Live trip brief' }))
       .not.toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Current trip' }))
       .toHaveTextContent('ISB → NYC');
+  });
+
+  it('keeps mobile DOM and focus order canvas-first without remounting the linked App', async () => {
+    const media = stubWorkspaceMediaQuery(false);
+    const mobileView = {
+      id: 'view-mobile-order',
+      tool: 'search_flights',
+      resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget',
+      title: 'Flight results',
+      result: { status: 'success' },
+    };
+    assistantMock.useNoodleAssistant.mockImplementation(() => ({
+      client,
+      messages: [{
+        id: 'assistant-mobile-order',
+        role: 'assistant',
+        parts: [{ type: 'data-view', data: mobileView }],
+      }],
+      status: 'ready',
+      error: undefined,
+    }));
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Show current flights');
+
+    const body = (await screen.findByRole('region', { name: 'Flight workspace' }))
+      .parentElement;
+    expect(body).not.toBeNull();
+    if (!body) return;
+    const linkedApp = body.querySelector<HTMLElement>('noodle-app-view');
+    expect(linkedApp).not.toBeNull();
+    if (!linkedApp) return;
+    const conversation = screen.getByRole('region', {
+      name: 'Travel conversation',
+    });
+    expect(body.firstElementChild).toBe(conversation);
+
+    act(() => media.setMatches(true));
+
+    await waitFor(() => {
+      expect(body.firstElementChild).toBe(screen.getByRole('region', {
+        name: 'Flight workspace',
+      }));
+    });
+    expect(body.querySelectorAll('noodle-app-view')).toHaveLength(1);
+    expect(body.querySelector('noodle-app-view')).toBe(linkedApp);
+    expect(screen.getByRole('region', { name: 'Travel conversation' }))
+      .toBe(conversation);
+    linkedApp.tabIndex = 0;
+    const composer = screen.getByRole('textbox', { name: 'Ask about a flight' });
+    const focusable = Array.from(body.querySelectorAll<HTMLElement>(
+      'noodle-app-view, textarea, button:not(:disabled)',
+    )).filter((element) => element.tabIndex >= 0);
+    expect(focusable.indexOf(linkedApp)).toBeLessThan(focusable.indexOf(composer));
+  });
+
+  it('bounds a long mobile conversation and keeps the transcript as its scroll container', async () => {
+    stubWorkspaceMediaQuery(true);
+    assistantMock.useNoodleAssistant.mockImplementation(() => ({
+      client,
+      messages: Array.from({ length: 48 }, (_, index) => ({
+        id: `assistant-long-${index}`,
+        role: 'assistant',
+        parts: [{ type: 'text', text: `Flight note ${index + 1}` }],
+      })),
+      status: 'ready',
+      error: undefined,
+    }));
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Review a long itinerary');
+
+    const conversation = await screen.findByRole('region', {
+      name: 'Travel conversation',
+    });
+    const log = within(conversation).getByRole('log', {
+      name: 'Conversation transcript',
+    });
+    const transcript = log.parentElement;
+    expect(transcript).not.toBeNull();
+    if (!transcript) return;
+    expect(within(log).getAllByRole('article')).toHaveLength(48);
+    expect(conversation).toHaveStyle({
+      height: '75vh',
+      maxHeight: '40rem',
+      minHeight: '0',
+      overflow: 'hidden',
+    });
+    expect(transcript).toHaveStyle({ overflowY: 'auto' });
+    const composer = within(conversation).getByRole('form', {
+      name: 'Continue trip',
+    });
+    expect(conversation).toContainElement(transcript);
+    expect(conversation).toContainElement(composer);
+    expect(transcript.compareDocumentPosition(composer)
+      & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it.each([

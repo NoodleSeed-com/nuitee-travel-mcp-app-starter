@@ -1,7 +1,13 @@
 'use client';
 
 import { useNoodleAssistant } from '@noodleseed/assistant/react/client';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { starterConfig } from '../../../../starter.config';
 import { presentAssistantError } from '../lib/assistant-error';
 import type { ReadyPublicAssistantRuntime } from '../lib/assistant-config';
@@ -20,6 +26,27 @@ import { TripBrief } from './trip-brief';
 interface TravelConversationProps {
   readonly runtime: ReadyPublicAssistantRuntime;
   readonly initialPrompt: string;
+}
+
+const MOBILE_WORKSPACE_QUERY = '(max-width: 760px)';
+
+function subscribeToMobileWorkspace(onChange: () => void) {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return () => undefined;
+  }
+  const mediaQuery = window.matchMedia(MOBILE_WORKSPACE_QUERY);
+  if (typeof mediaQuery.addEventListener === 'function') {
+    mediaQuery.addEventListener('change', onChange);
+    return () => mediaQuery.removeEventListener('change', onChange);
+  }
+  mediaQuery.addListener(onChange);
+  return () => mediaQuery.removeListener(onChange);
+}
+
+function mobileWorkspaceSnapshot() {
+  return typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia(MOBILE_WORKSPACE_QUERY).matches;
 }
 
 function conversationCopy(projection: TripProjection) {
@@ -79,6 +106,11 @@ export function TravelConversation({
   const terminal = status === 'error' || Boolean(error);
   const terminalRef = useRef(terminal);
   terminalRef.current = terminal;
+  const mobileWorkspace = useSyncExternalStore(
+    subscribeToMobileWorkspace,
+    mobileWorkspaceSnapshot,
+    () => false,
+  );
 
   useEffect(() => {
     let active = true;
@@ -179,77 +211,94 @@ export function TravelConversation({
       : activity?.label ?? (busy ? 'Assistant is responding' : '');
   const errorPresentation = error ? presentAssistantError(error) : null;
 
+  const conversationController = (
+    <section
+      aria-busy={busy}
+      aria-label="Travel conversation"
+      className="travel-conversation-shell"
+      key="conversation-controller"
+      style={mobileWorkspace ? {
+        height: '75vh',
+        maxHeight: '40rem',
+        minHeight: 0,
+        overflow: 'hidden',
+      } : undefined}
+    >
+      <header className="travel-conversation__header">
+        <div>
+          <p className="assistant-identity">
+            {starterConfig.brand.assistantName}
+          </p>
+          <h1>{copy.title}</h1>
+        </div>
+      </header>
+      <div
+        className="travel-transcript"
+        onScroll={(event) => {
+          followLatestRef.current = isNearTranscriptEnd(event.currentTarget);
+        }}
+        ref={transcriptViewportRef}
+        style={mobileWorkspace ? { overflowY: 'auto' } : undefined}
+      >
+        <ol
+          aria-label="Conversation transcript"
+          ref={transcriptContentRef}
+          role="log"
+        >
+          {messages.map((message) => (
+            <li key={message.id}>
+              <TravelMessage client={client} message={message} />
+            </li>
+          ))}
+        </ol>
+      </div>
+      <p aria-live="polite" role="status">
+        {statusLabel}
+      </p>
+      {errorPresentation ? (
+        <section className="assistant-error" role="alert">
+          <h2>{errorPresentation.title}</h2>
+          <p>{errorPresentation.message}</p>
+          {errorPresentation.canRetry ? (
+            <button
+              type="button"
+              onClick={() => sendFollowUp(lastPromptRef.current)}
+            >
+              Try again
+            </button>
+          ) : null}
+        </section>
+      ) : null}
+      <TravelComposer
+        busy={busy}
+        formLabel="Continue trip"
+        onStop={stopGenerating}
+        onSubmit={sendFollowUp}
+        placeholder={copy.placeholder}
+        submitLabel="Continue trip"
+        variant="conversation"
+      />
+      <p className="travel-attribution travel-attribution--workspace">
+        Built on Noodle Seed · Powered by Nuitee
+      </p>
+    </section>
+  );
+  const journeyCanvas = (
+    <TravelJourneyCanvas
+      client={client}
+      key="journey-canvas"
+      projection={projection}
+      view={journeyView}
+    />
+  );
+
   return (
     <section aria-label="Travel workspace" className="travel-journey-workspace">
       <TripBrief projection={projection} />
       <div className="travel-journey-workspace__body">
-        <section
-          className="travel-conversation-shell"
-          aria-busy={busy}
-          aria-label="Travel conversation"
-        >
-          <header className="travel-conversation__header">
-            <div>
-              <p className="assistant-identity">
-                {starterConfig.brand.assistantName}
-              </p>
-              <h1>{copy.title}</h1>
-            </div>
-          </header>
-          <div
-            className="travel-transcript"
-            onScroll={(event) => {
-              followLatestRef.current = isNearTranscriptEnd(event.currentTarget);
-            }}
-            ref={transcriptViewportRef}
-          >
-            <ol
-              aria-label="Conversation transcript"
-              ref={transcriptContentRef}
-              role="log"
-            >
-              {messages.map((message) => (
-                <li key={message.id}>
-                  <TravelMessage client={client} message={message} />
-                </li>
-              ))}
-            </ol>
-          </div>
-          <p aria-live="polite" role="status">
-            {statusLabel}
-          </p>
-          {errorPresentation ? (
-            <section className="assistant-error" role="alert">
-              <h2>{errorPresentation.title}</h2>
-              <p>{errorPresentation.message}</p>
-              {errorPresentation.canRetry ? (
-                <button
-                  type="button"
-                  onClick={() => sendFollowUp(lastPromptRef.current)}
-                >
-                  Try again
-                </button>
-              ) : null}
-            </section>
-          ) : null}
-          <TravelComposer
-            busy={busy}
-            formLabel="Continue trip"
-            onStop={stopGenerating}
-            onSubmit={sendFollowUp}
-            placeholder={copy.placeholder}
-            submitLabel="Continue trip"
-            variant="conversation"
-          />
-          <p className="travel-attribution travel-attribution--workspace">
-            Built on Noodle Seed · Powered by Nuitee
-          </p>
-        </section>
-        <TravelJourneyCanvas
-          client={client}
-          projection={projection}
-          view={journeyView}
-        />
+        {mobileWorkspace
+          ? [journeyCanvas, conversationController]
+          : [conversationController, journeyCanvas]}
       </div>
     </section>
   );
