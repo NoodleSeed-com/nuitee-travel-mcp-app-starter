@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { access, readFile, stat } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -9,6 +10,26 @@ async function repositoryFile(path: string) {
 
 async function repositoryJson(path: string) {
   return JSON.parse(await repositoryFile(path)) as Record<string, any>;
+}
+
+function jpegDimensions(bytes: Buffer) {
+  let offset = 2;
+  while (offset < bytes.length) {
+    if (bytes[offset] !== 0xff) {
+      offset += 1;
+      continue;
+    }
+    const marker = bytes[offset + 1];
+    const length = bytes.readUInt16BE(offset + 2);
+    if (marker && marker >= 0xc0 && marker <= 0xc3) {
+      return {
+        height: bytes.readUInt16BE(offset + 5),
+        width: bytes.readUInt16BE(offset + 7),
+      };
+    }
+    offset += length + 2;
+  }
+  throw new Error('JPEG dimensions were not found');
 }
 
 async function noodleValidate() {
@@ -26,6 +47,25 @@ async function noodleValidate() {
 }
 
 describe('public repository contracts', () => {
+  it('records exact provenance for the Wayfare premium image masters', async () => {
+    const ledger = await repositoryFile('docs/visual-assets/wayfare-premium-concierge.md');
+    const expectedMasters = [
+      'apps/web/public/images/wayfare-hybrid-hero-v2.jpg',
+      'apps/web/public/images/destinations/rome-editorial-v2.jpg',
+      'apps/web/public/images/destinations/london-editorial-v2.jpg',
+      'apps/web/public/images/destinations/istanbul-editorial-v2.jpg',
+    ] as const;
+
+    for (const path of expectedMasters) {
+      const bytes = await readFile(new URL(`../${path}`, import.meta.url));
+      const dimensions = jpegDimensions(bytes);
+      const hash = createHash('sha256').update(bytes).digest('hex');
+      expect(ledger).toContain(path);
+      expect(ledger).toContain(`${dimensions.width} x ${dimensions.height}`);
+      expect(ledger).toContain(hash);
+    }
+  });
+
   it('makes the Next.js guest website the primary README path', async () => {
     const readme = await repositoryFile('README.md');
 

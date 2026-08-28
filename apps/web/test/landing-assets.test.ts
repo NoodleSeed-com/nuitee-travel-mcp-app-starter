@@ -5,6 +5,13 @@ import { landingDestinations, landingEditorialFeature } from '../src/lib/landing
 
 const publicRoot = join(import.meta.dirname, '..', 'public');
 
+const expectedMasters = [
+  '/images/wayfare-hybrid-hero-v2.jpg',
+  '/images/destinations/rome-editorial-v2.jpg',
+  '/images/destinations/london-editorial-v2.jpg',
+  '/images/destinations/istanbul-editorial-v2.jpg',
+] as const;
+
 function jpegDimensions(bytes: Buffer) {
   let offset = 2;
   while (offset < bytes.length) {
@@ -26,6 +33,17 @@ function jpegDimensions(bytes: Buffer) {
 }
 
 describe('editorial landing imagery', () => {
+  it.each(expectedMasters)('%s is a high-resolution local JPEG master', (src) => {
+    const path = join(publicRoot, src);
+    const bytes = readFileSync(path);
+    const dimensions = jpegDimensions(bytes);
+    expect([...bytes.subarray(0, 2)]).toEqual([0xff, 0xd8]);
+    expect(Math.max(dimensions.width, dimensions.height)).toBeGreaterThanOrEqual(1600);
+    expect(Math.min(dimensions.width, dimensions.height)).toBeGreaterThanOrEqual(900);
+    expect(statSync(path).size).toBeGreaterThan(500_000);
+    expect(statSync(path).size).toBeLessThan(4_000_000);
+  });
+
   it('ships the colorful Wayfare hero as a 4K local JPEG', () => {
     const path = join(publicRoot, 'images/wayfare-coastline-hero-v1.jpg');
     const bytes = readFileSync(path);

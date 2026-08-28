@@ -18,6 +18,11 @@ afterEach(() => {
 });
 
 describe('Next security headers', () => {
+  it('negotiates modern responsive image formats', async () => {
+    const config = (await import('../next.config')).default;
+    expect(config.images?.formats).toEqual(['image/avif', 'image/webp']);
+  });
+
   it('supports React development diagnostics without weakening production CSP', async () => {
     expect(await policyFor('development')).toContain("'unsafe-eval'");
     expect(await policyFor('production')).not.toContain("'unsafe-eval'");

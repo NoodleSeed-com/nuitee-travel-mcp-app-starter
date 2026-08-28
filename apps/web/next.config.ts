@@ -32,6 +32,9 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   outputFileTracingRoot: repositoryRoot,
   poweredByHeader: false,
+  images: {
+    formats: ['image/avif', 'image/webp'],
+  },
   turbopack: {
     resolveAlias: {
       './src/starter-config.js': '../../src/starter-config.ts',
