@@ -8,7 +8,7 @@ This is an independent starter, not an official Nuitee connector, airline partne
 
 ## Primary guest website
 
-The Next.js application in `apps/web/` is the main developer path. It provides the Brightdesk-derived conversation shell, delayed anonymous Assistant admission, an application-owned typed renderer, plain-language progress, structured trip projection, and the existing Noodle MCP App views.
+The Next.js application in `apps/web/` is the main developer path. Its cinematic conversation-first hero starts with the traveler’s own words, then moves into delayed anonymous Assistant admission, an application-owned typed renderer, plain-language progress, structured trip projection, and the existing Noodle MCP App views.
 
 ```sh
 corepack enable
@@ -174,11 +174,11 @@ pnpm agent:check:live
 pnpm agent:check:assistant
 ```
 
-The fixture-only Chromium captures below show the real linked Apps with fictional data; they are not live inventory or host screenshots. Their reproducible provenance is in [docs/images/README.md](docs/images/README.md).
+The fixture-only Chromium captures below show the cinematic conversation-first website and real linked Apps with fictional data; they are not live inventory or host screenshots. Their reproducible provenance is in [docs/images/README.md](docs/images/README.md).
 
-| Credential-free home | Fictional flight comparison |
+| Cinematic credential-free home | Fictional flight comparison |
 | --- | --- |
-| ![Cedar & Cloud Travel flight-search widget using fictional fields and coming-soon domains](docs/images/travel-home.png) | ![Cedar & Cloud Travel flight-results widget using fictional fares and no airline logo](docs/images/flight-results.png) |
+| ![Cedar & Cloud Travel cinematic conversation-first home with no Assistant session before submit](docs/images/travel-home.png) | ![Cedar & Cloud Travel flight-results widget using fictional fares and no airline logo](docs/images/flight-results.png) |
 
 ## Public-release status
 

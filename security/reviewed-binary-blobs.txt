@@ -3,3 +3,4 @@
 # separate change; paths alone are never sufficient.
 9122e358ee27ad1546b36a3748dae09bbd488313 docs/images/flight-results.png
 bfa35fd295c35804ead9331f8828001d77437ba5 docs/images/travel-home.png
+2e8dadf46942006a1d88cc7bcb48a51dd44e0d71 apps/web/public/images/conversation-hero-v1.png

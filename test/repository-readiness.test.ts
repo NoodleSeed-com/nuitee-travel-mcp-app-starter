@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { access, readFile, stat } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
@@ -36,6 +36,32 @@ describe('public repository contracts', () => {
     );
     expect(readme).toContain('Search → Select → Verify');
     expect(readme).toContain('does not book');
+  });
+
+  it('ships a cinematic conversation-first hero without the obsolete shader layer', async () => {
+    const [readme, customization, heroSource, heroAsset, webPackage] = await Promise.all([
+      repositoryFile('README.md'),
+      repositoryFile('docs/customization.md'),
+      repositoryFile('apps/web/src/components/travel-zero-state.tsx'),
+      stat(new URL('../apps/web/public/images/conversation-hero-v1.png', import.meta.url)),
+      repositoryJson('apps/web/package.json'),
+    ]);
+
+    expect(heroAsset.size).toBeGreaterThan(0);
+    expect(heroSource).toContain('conversation-hero-v1.png');
+    expect(heroSource).toContain('Built on Noodle Seed · Powered by Nuitee');
+    expect(webPackage.dependencies['@paper-design/shaders-react']).toBeUndefined();
+    expect(readme).toContain('cinematic conversation-first');
+    expect(readme).toContain('Search → Select → Verify');
+    expect(customization).toContain('## Cinematic hero image');
+    await expect(access(new URL(
+      '../apps/web/src/components/workspace-atmosphere.tsx',
+      import.meta.url,
+    ))).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(access(new URL(
+      '../apps/web/src/components/workspace-atmosphere-canvas.tsx',
+      import.meta.url,
+    ))).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
   it('documents OAuth without claiming that login consumption is an OIDC issuer', async () => {

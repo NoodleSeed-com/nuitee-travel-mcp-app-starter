@@ -14,7 +14,8 @@ export default defineConfig({
   webServer: {
     command: `pnpm exec next dev --hostname 127.0.0.1 --port ${port}`,
     env: {
-      NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID: '',
+      NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID: 'pub_deterministic_browser_fixture',
+      NEXT_PUBLIC_NOODLE_SERVICE_URL: `http://127.0.0.1:${port}`,
     },
     reuseExistingServer: process.env.PLAYWRIGHT_REUSE_SERVER === '1',
     url: `http://127.0.0.1:${port}`,

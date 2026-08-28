@@ -1,24 +1,43 @@
 import { expect, test, type Page } from '@playwright/test';
-import { PNG } from 'pngjs';
 
-async function captureAtmosphereFrame(page: Page) {
-  return PNG.sync.read(await page.screenshot({
-    clip: { x: 640, y: 40, width: 320, height: 240 },
-  })).data;
+async function headlineLines(page: Page) {
+  return page.locator('#travel-home-title').evaluate((heading) => {
+    const lines = new Map<number, string[]>();
+    const walker = document.createTreeWalker(heading, NodeFilter.SHOW_TEXT);
+    let node: Node | null;
+
+    while ((node = walker.nextNode())) {
+      const text = node.textContent ?? '';
+      for (const match of text.matchAll(/\S+/g)) {
+        const range = document.createRange();
+        range.setStart(node, match.index ?? 0);
+        range.setEnd(node, (match.index ?? 0) + match[0].length);
+        const rect = range.getBoundingClientRect();
+        if (rect.width === 0) continue;
+        const top = Math.round(rect.top);
+        lines.set(top, [...(lines.get(top) ?? []), match[0]]);
+      }
+    }
+
+    return [...lines.entries()]
+      .sort(([first], [second]) => first - second)
+      .map(([, words]) => words);
+  });
 }
 
-function averageRgbDelta(first: Uint8Array, second: Uint8Array) {
-  let delta = 0;
-  let channels = 0;
-  for (let index = 0; index < first.length; index += 1) {
-    if (index % 4 === 3) continue;
-    delta += Math.abs(first[index]! - second[index]!);
-    channels += 1;
-  }
-  return delta / channels;
+async function expectHeadlineDoesNotOrphanFinalWords(page: Page) {
+  const lines = await headlineLines(page);
+  const finalLine = lines.at(-1) ?? [];
+
+  expect(finalLine.length).toBeGreaterThanOrEqual(2);
 }
 
-test('renders the guest shell without opening an assistant session', async ({
+async function expectHorizontalFit(page: Page, width: number) {
+  await page.setViewportSize({ width, height: 720 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+}
+
+test('renders the cinematic guest shell without opening an assistant session', async ({
   page,
 }) => {
   const assistantRequests: string[] = [];
@@ -31,155 +50,135 @@ test('renders the guest shell without opening an assistant session', async ({
   await page.goto('/');
 
   await expect(page.getByRole('heading', {
-    name: 'Where would you like to go?',
+    name: 'Tell us where you want to be.',
   })).toBeVisible();
   await expect(page.locator('main')).toHaveCount(1);
   await expect(page.locator('h1')).toHaveCount(1);
   await expect(page.getByRole('link', { name: 'Skip to content' }))
     .toHaveAttribute('href', '#travel-canvas');
-  await expect(page.getByTestId('workspace-atmosphere')).toBeVisible();
-  await expect(page.locator('[data-atmosphere-canvas]')).toBeVisible();
-  await expect(page.locator('.route-assistant-mark')).toHaveCount(0);
+  await expect(page.locator('.travel-hero__image')).toHaveAttribute('alt', '');
+  await expect(page.locator('.travel-hero__scrim')).toBeVisible();
+  await expect(page.locator('[data-atmosphere-canvas]')).toHaveCount(0);
   expect(assistantRequests).toEqual([]);
 });
 
-test('keeps the neutral atmosphere visibly alive', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'desktop-chromium');
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/');
-  await expect(page.locator('[data-atmosphere-canvas] canvas')).toBeVisible();
-
-  const firstFrame = await captureAtmosphereFrame(page);
-  await page.waitForTimeout(1_200);
-  const secondFrame = await captureAtmosphereFrame(page);
-
-  expect(averageRgbDelta(firstFrame, secondFrame)).toBeGreaterThanOrEqual(1);
-});
-
-test('avoids an orphaned final word in the desktop hero heading', async ({
+test('keeps the cinematic hero legible, fitted, and keyboard-reachable on desktop', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium');
   await page.goto('/');
 
-  const lines = await page.locator('#travel-home-title').evaluate((heading) => {
-    const textNode = heading.firstChild;
-    if (!(textNode instanceof Text)) return [];
-    const text = textNode.textContent ?? '';
-    const words = text.trim().split(/\s+/);
-    const renderedLines = new Map<number, string[]>();
-    let cursor = 0;
+  await expectHeadlineDoesNotOrphanFinalWords(page);
 
-    for (const word of words) {
-      const start = text.indexOf(word, cursor);
-      const range = document.createRange();
-      range.setStart(textNode, start);
-      range.setEnd(textNode, start + word.length);
-      const lineTop = Math.round(range.getBoundingClientRect().top);
-      renderedLines.set(lineTop, [...(renderedLines.get(lineTop) ?? []), word]);
-      cursor = start + word.length;
-    }
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
+  const [composer, submit] = await Promise.all([
+    page.locator('.travel-composer--hero').boundingBox(),
+    page.getByRole('button', { name: 'Plan my flight' }).boundingBox(),
+  ]);
+  for (const bounds of [composer, submit]) {
+    expect(bounds).not.toBeNull();
+    expect(bounds?.x).toBeGreaterThanOrEqual(0);
+    expect(bounds?.y).toBeGreaterThanOrEqual(0);
+    expect((bounds?.x ?? 0) + (bounds?.width ?? 0))
+      .toBeLessThanOrEqual(viewport!.width);
+    expect((bounds?.y ?? 0) + (bounds?.height ?? 0))
+      .toBeLessThanOrEqual(viewport!.height);
+  }
 
-    return [...renderedLines.values()];
+  const heroAppearance = await page.evaluate(() => {
+    const heading = getComputedStyle(document.querySelector('h1')!);
+    const scrim = getComputedStyle(document.querySelector('.travel-hero__scrim')!);
+    return { headingColor: heading.color, scrim: scrim.backgroundImage };
   });
+  expect(heroAppearance.headingColor).toBe('rgb(255, 255, 255)');
+  expect(heroAppearance.scrim).toContain('linear-gradient');
 
-  expect(lines.at(-1)).not.toHaveLength(1);
+  const developerLink = page.getByRole('link', { name: 'For developers' });
+  let reachedDeveloperLink = false;
+  for (let index = 0; index < 8; index += 1) {
+    await page.keyboard.press('Tab');
+    if (await developerLink.evaluate((element) => document.activeElement === element)) {
+      reachedDeveloperLink = true;
+      break;
+    }
+  }
+  expect(reachedDeveloperLink).toBe(true);
+
+  const unsupportedUtilities = await page.locator('a, button').evaluateAll((elements) => (
+    elements
+      .map((element) => element.textContent?.trim() ?? '')
+      .filter((label) => /manage booking|check in|flight status/i.test(label))
+  ));
+  expect(unsupportedUtilities).toEqual([]);
 });
 
-test('keeps the shell keyboard-visible and motion-safe', async ({ page }) => {
+test('keeps motion reduced without restoring the retired animation layer', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
 
-  await page.keyboard.press('Tab');
-  const focused = page.locator(':focus');
-  await expect(focused).toBeVisible();
-  expect(await focused.evaluate((element) => {
-    const style = getComputedStyle(element);
-    return style.outlineStyle !== 'none'
-      && Number.parseFloat(style.outlineWidth) > 0;
-  })).toBe(true);
-  await expect(page.getByTestId('workspace-atmosphere')).toBeVisible();
-  await expect(page.locator('[data-atmosphere-fallback]')).toBeVisible();
+  const transitionDurations = await page.locator('.travel-hero, .travel-hero *')
+    .evaluateAll((elements) => elements.map((element) => (
+      getComputedStyle(element).transitionDuration
+    )));
+  expect(transitionDurations.every((duration) => duration === '0s')).toBe(true);
   await expect(page.locator('[data-atmosphere-canvas]')).toHaveCount(0);
-
-  const undersizedControls = await page.locator(
-    '.travel-workspace button, .travel-workspace a',
-  ).evaluateAll(
-    (elements) => elements
-      .filter((element) => {
-        const style = getComputedStyle(element);
-        const rect = element.getBoundingClientRect();
-        return style.display !== 'none'
-          && style.visibility !== 'hidden'
-          && (rect.width < 44 || rect.height < 44);
-      })
-      .map((element) => element.getAttribute('aria-label')
-        || element.textContent?.trim()
-        || element.tagName),
-  );
-  expect(undersizedControls).toEqual([]);
 });
 
-test('stays light and uses the Neutral palette under a dark OS preference', async ({
-  page,
-}) => {
-  await page.emulateMedia({ colorScheme: 'dark' });
-  await page.goto('/');
-
-  const theme = await page.evaluate(() => {
-    const root = getComputedStyle(document.documentElement);
-    const rail = getComputedStyle(document.querySelector('.trip-context-rail')!);
-    const heading = getComputedStyle(document.querySelector('h1')!);
-    return {
-      colorScheme: root.colorScheme,
-      canvas: root.backgroundColor,
-      railBorder: rail.borderColor,
-      heading: heading.color,
-    };
-  });
-
-  expect(theme).toEqual({
-    colorScheme: 'light',
-    canvas: 'rgb(250, 250, 250)',
-    railBorder: 'rgb(212, 212, 212)',
-    heading: 'rgb(10, 10, 10)',
-  });
-  await page.getByRole('button', { name: 'Settings' }).click();
-  await expect(page.getByRole('group', { name: 'Theme' })).toHaveCount(0);
-});
-
-test('fits the 390px mobile shell and 200 percent text zoom', async ({
+test('fits 320px, 390px, and 200 percent text zoom without orphaning the headline', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-chromium');
+
+  await page.setViewportSize({ width: 320, height: 720 });
   await page.goto('/');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+  await expect(page.getByRole('button', { name: 'Plan my flight' }))
+    .toHaveCSS('min-height', '44px');
+  await expectHeadlineDoesNotOrphanFinalWords(page);
 
-  expect(await page.evaluate(() => ({
-    innerWidth: window.innerWidth,
-    scrollWidth: document.documentElement.scrollWidth,
-  }))).toEqual({ innerWidth: 390, scrollWidth: 390 });
-  await expect(page.getByRole('complementary', { name: 'Trip context' }))
-    .toHaveCSS('position', 'sticky');
-
+  await expectHorizontalFit(page, 390);
   await page.evaluate(() => {
     document.documentElement.style.fontSize = '200%';
   });
-  expect(await page.evaluate(() => {
-    const composer = document.querySelector('.travel-composer');
-    if (!composer) return false;
+  await expectHorizontalFit(page, 390);
+  await expectHeadlineDoesNotOrphanFinalWords(page);
+  const composerFits = await page.locator('.travel-composer--hero').evaluate((composer) => {
     const bounds = composer.getBoundingClientRect();
-    return document.documentElement.scrollWidth === window.innerWidth
-      && bounds.left >= 0
-      && bounds.right <= window.innerWidth;
-  })).toBe(true);
-
-  await page.evaluate(() => {
-    window.scrollTo(0, document.documentElement.scrollHeight);
+    return bounds.left >= 0 && bounds.right <= window.innerWidth;
   });
-  await expect.poll(() => page.evaluate(() => window.scrollY))
-    .toBeGreaterThan(0);
-  const headerTop = await page.getByRole('complementary', {
-    name: 'Trip context',
-  }).evaluate((element) => element.getBoundingClientRect().top);
-  expect(Math.abs(headerTop)).toBeLessThanOrEqual(1);
+  expect(composerFits).toBe(true);
+});
+
+test('stacks the trip brief in a ready-runtime mobile conversation without overflow', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium');
+  await page.route('**/v1/assistant/public-sessions', async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'deterministic browser fixture' }),
+    });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('textbox', { name: 'Ask about a flight' })
+    .fill('Islamabad to Rome for two, next weekend');
+  await page.getByRole('button', { name: 'Plan my flight' }).click();
+
+  await expect(page.getByRole('heading', {
+    name: 'Your trip, refined together',
+  })).toBeVisible();
+  await expect(page.getByRole('complementary', { name: 'Live trip brief' }))
+    .toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+
+  const stacked = await page.evaluate(() => {
+    const brief = document.querySelector<HTMLElement>('.trip-brief');
+    const conversation = document.querySelector<HTMLElement>('.travel-conversation-shell');
+    if (!brief || !conversation) return false;
+    return brief.getBoundingClientRect().bottom <= conversation.getBoundingClientRect().top;
+  });
+  expect(stacked).toBe(true);
 });
