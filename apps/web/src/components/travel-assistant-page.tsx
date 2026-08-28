@@ -5,6 +5,7 @@ import type { PublicAssistantRuntime } from '../lib/assistant-config';
 import { EMPTY_TRIP, type TripProjection } from '../lib/trip-projection';
 import { SettingsSheet } from './settings-sheet';
 import { TravelConversation } from './travel-conversation';
+import { TravelFooter } from './travel-footer';
 import { TravelHeader } from './travel-header';
 import { TravelZeroState } from './travel-zero-state';
 import { TripBrief } from './trip-brief';
@@ -68,6 +69,7 @@ export function TravelAssistantPage({
               onStart={startConversation}
             />
           </main>
+          <TravelFooter />
         </div>
       ) : (
         <div className="travel-workspace" inert={settingsOpen || undefined}>

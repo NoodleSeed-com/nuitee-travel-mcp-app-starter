@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { starterConfig } from '../../../../starter.config';
 
 async function headlineLines(page: Page) {
   return page.locator('#travel-home-title').evaluate((heading) => {
@@ -44,6 +45,31 @@ async function expectMinimumTargetSize(
   expect(bounds).not.toBeNull();
   expect(bounds!.width).toBeGreaterThanOrEqual(44);
   expect(bounds!.height).toBeGreaterThanOrEqual(44);
+}
+
+async function expectStarterPromptsFit(page: Page, width: number) {
+  const promptList = page.getByRole('list', { name: 'Suggested trips' });
+  await expect(promptList).toBeVisible();
+
+  for (const prompt of starterConfig.prompts.slice(0, 2)) {
+    const button = promptList.getByRole('button', { name: prompt });
+    await expect(button).toBeVisible();
+    await expectMinimumTargetSize(button);
+    const fit = await button.evaluate((element) => {
+      const bounds = element.getBoundingClientRect();
+      return {
+        contentFits: element.scrollWidth <= element.clientWidth
+          && element.scrollHeight <= element.clientHeight,
+        left: bounds.left,
+        right: bounds.right,
+      };
+    });
+    expect(fit.left).toBeGreaterThanOrEqual(0);
+    expect(fit.right).toBeLessThanOrEqual(width);
+    expect(fit.contentFits).toBe(true);
+  }
+
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
 }
 
 test('renders the cinematic guest shell without opening an assistant session', async ({
@@ -379,6 +405,24 @@ test('fits 320px, 390px, and 200 percent text zoom without orphaning the headlin
     await expect(target).toBeVisible();
     await expectMinimumTargetSize(target);
   }
+});
+
+test('shows both configured starter prompts across required mobile conditions', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium');
+
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto('/');
+  await expectStarterPromptsFit(page, 320);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectStarterPromptsFit(page, 390);
+
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '200%';
+  });
+  await expectStarterPromptsFit(page, 390);
 });
 
 test('uses a full-width mobile navigation sheet at 320px without overflow', async ({

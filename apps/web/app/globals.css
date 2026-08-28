@@ -1216,10 +1216,6 @@ code {
     width: 100%;
   }
 
-  .travel-starter-prompts > :nth-child(n + 2) {
-    display: none;
-  }
-
   .destination-inspiration__grid,
   .travel-capabilities ol,
   .travel-editorial,

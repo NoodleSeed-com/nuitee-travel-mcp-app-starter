@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { createRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { starterConfig } from '../../../starter.config';
@@ -89,9 +89,11 @@ describe('travel assistant zero state', () => {
       .toHaveAttribute('id', 'places-to-start');
   });
 
-  it('renders a concise airline editorial landing structure', () => {
+  it('keeps editorial landing content in main and the single footer after main', () => {
     const { container } = render(
-      <TravelZeroState inputRef={{ current: null }} onStart={vi.fn()} />,
+      <TravelAssistantPage
+        runtime={{ status: 'setup-required', message: 'setup' }}
+      />,
     );
 
     expect(screen.getByRole('heading', { level: 2, name: 'Places to start' }))
@@ -107,18 +109,25 @@ describe('travel assistant zero state', () => {
       .toBeVisible();
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
 
-    const landing = container.querySelector('.travel-landing');
+    const main = container.querySelector<HTMLElement>('main#travel-canvas');
+    expect(main).not.toBeNull();
+    const landing = main!.querySelector('.travel-landing');
     expect(landing).not.toBeNull();
     const orderedRegions = [
       '.travel-hero',
       '.destination-inspiration',
       '.travel-capabilities',
       '.travel-editorial',
-      '.travel-footer',
     ].map((selector) => landing!.querySelector(selector));
     expect(orderedRegions.every((region, index) => (
       landing!.children.item(index) === region
     ))).toBe(true);
+    expect(landing!.children).toHaveLength(orderedRegions.length);
+
+    const contentinfoLandmarks = screen.getAllByRole('contentinfo');
+    expect(contentinfoLandmarks).toHaveLength(1);
+    expect(within(main!).queryByRole('contentinfo')).not.toBeInTheDocument();
+    expect(main!.nextElementSibling).toBe(contentinfoLandmarks[0]);
   });
 
   it('keeps the capability strip explanatory instead of interactive', () => {
@@ -179,15 +188,21 @@ describe('travel assistant zero state', () => {
   });
 
   it('renders developer and support links with legal fallbacks', () => {
-    render(<TravelZeroState inputRef={{ current: null }} onStart={vi.fn()} />);
+    render(
+      <TravelAssistantPage
+        runtime={{ status: 'setup-required', message: 'setup' }}
+      />,
+    );
 
-    expect(screen.getByRole('link', { name: 'For developers' }))
+    const footer = screen.getByRole('contentinfo');
+
+    expect(within(footer).getByRole('link', { name: 'For developers' }))
       .toHaveAttribute('href', starterConfig.website.developerPath);
-    expect(screen.getByRole('link', { name: 'Support' }))
+    expect(within(footer).getByRole('link', { name: 'Support' }))
       .toHaveAttribute('href', starterConfig.website.supportPath);
-    expect(screen.queryByRole('link', { name: 'Privacy' }))
+    expect(within(footer).queryByRole('link', { name: 'Privacy' }))
       .not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Terms' }))
+    expect(within(footer).queryByRole('link', { name: 'Terms' }))
       .not.toBeInTheDocument();
     expect(screen.getByText('Privacy').parentElement)
       .toHaveTextContent('PrivacyNot configured');
