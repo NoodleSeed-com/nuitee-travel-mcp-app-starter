@@ -27,13 +27,14 @@ Noodle public Assistant surface ───── External MCP host
            official Flights API
 ```
 
-`apps/web/` is the primary product surface. It owns the conversation shell, delayed guest admission, typed message renderer, plain-language activity, and read-only trip projection. It calls neither Nuitee nor MCP tools directly. On the first submitted message, the official Assistant hook uses the public embed ID to open an anonymous session. Linked travel Apps render through `NoodleAppView` with the existing client.
+`apps/web/` is the primary product surface. It owns the conversation shell, delayed guest admission, typed message renderer, plain-language activity, read-only trip projection, and one persistent current flight-results slot. The conversation controls a separate journey canvas rather than containing linked Apps. Only the newest exact FlightResults view mounts in that slot through `NoodleAppView` and the official App host; known linked views are omitted from transcript rendering. Responsive DOM composition keeps conversation-before-canvas source order on desktop and canvas-before-conversation source order on mobile without remounting the linked App. The website calls neither Nuitee nor MCP tools directly. On the first submitted message, the official Assistant hook uses the public embed ID to open an anonymous session.
 
 `src/` owns the MCP server, model-facing workflows, exact public capability allowlist, connector, tools, state, and linked Apps. External MCP hosts enter the same server and provide their own model. No browser-specific or host-specific copy of the business tools exists.
 
 The public Assistant surface allowlists exactly:
 
 - `open_travel_starter`;
+- `plan_flight_search`;
 - `search_flights`;
 - `verify_flight_offer`; and
 - App-only `select_flight_offer`.
@@ -64,17 +65,20 @@ All MCP entrypoints call `createTravelServer(...)`. Tool names, schemas, output 
 
 The guest website has no `/api/assistant/session` route and no Assistant client ID or secret. Public origin checks are browser boundaries, not bot authentication; the capability allowlist, confirmation requirements, admission controls, and daily budget are the abuse boundaries.
 
+Deterministic local browser evidence proves this composition only against a loopback fixture. Hosted behavior remains unproven until a separately authorized deployment and exact embed-binding verification exercise the intended revision and origin.
+
 ## Search data flow
 
-1. The model supplies only travel intent fields from `searchInputSchema`.
-2. The compute gateway validates route/date/traveler relationships against server-authoritative time.
-3. The gateway calls the allowlisted search operation once. Tool input cannot select an origin, URL, path, method, header, credential, or provider offer ID.
-4. The connector sends the exact request to `POST /flights/rates` and injects `X-API-Key` from the managed secret.
-5. Search permits up to 6 MiB at connector and application parsing boundaries. The gateway flattens bounded journeys, keeps one valid offer per itinerary, normalizes at most ten, and accepts only exact allowlisted Nuitee airline-image origins.
-6. Every provider offer ID becomes a private caller-scoped record. Public output receives only an application-issued `sel_…` handle.
-7. The tool replaces `flight_selections` using revision control and a 30-minute TTL; a new search begins with no active selection.
-8. At most three itineraries display inline. The same App may show up to ten only when the host grants fullscreen presentation.
-9. The validated `searchContext` drives both the App editor and the website's read-only trip rail. The rail never parses Assistant prose or stores identifiers.
+1. When a clear route has no date, `plan_flight_search` collects departure and optional return dates through one portable structured-input interaction and returns a typed trip plan. It performs no connector operation.
+2. The model calls `search_flights` from that plan. One adult, Economy, USD, and the US pricing market are visible defaults; the user may change them conversationally without being interrogated before the first search.
+3. The compute gateway validates route/date/traveler relationships against server-authoritative time.
+4. The gateway calls the allowlisted search operation once. Tool input cannot select an origin, URL, path, method, header, credential, or provider offer ID.
+5. The connector sends the exact request to `POST /flights/rates` and injects `X-API-Key` from the managed secret.
+6. Search permits up to 6 MiB at connector and application parsing boundaries. The gateway flattens bounded journeys, keeps one valid offer per itinerary, normalizes at most ten, and accepts only exact allowlisted Nuitee airline-image origins.
+7. Every provider offer ID becomes a private caller-scoped record. Public output receives only an application-issued `sel_…` handle.
+8. The tool replaces `flight_selections` using revision control and a 30-minute TTL; a new search begins with no active selection.
+9. At most three itineraries display inline. The same App may show up to ten only when the host grants fullscreen presentation.
+10. Validated planning and search results drive the website's read-only trip rail. The rail never parses Assistant prose or stores identifiers.
 
 If validation or the provider fails, the application returns bounded sanitized state and consults no fixture. A valid empty result clears stale route projection and reports no fares found.
 

@@ -115,13 +115,13 @@ Search fixtures must remain clearly fictional. Live output may show the actual c
 
 ## Tool descriptions and inputs
 
-Four shared capabilities are created in `src/travel-server.ts` from schemas in `src/flight-schemas.ts`: three model-visible tools plus the App-only selection helper. The public Assistant allowlists the same instances registered for external MCP hosts.
+Five shared capabilities are created in `src/travel-server.ts` from schemas in `src/flight-schemas.ts`: four model-visible tools plus the App-only selection helper. The public Assistant allowlists the same instances registered for external MCP hosts.
 
 - Keep names intent-shaped and stable.
 - Describe one-way/round-trip, price verification, and stop-before-booking boundaries plainly.
 - Do not add transport authority such as URL, base URL, path, method, headers, or provider offer ID to an input schema.
 - If a new input is required by the official Nuitee contract, add a failing test, validation, request mapping, docs, and bounded output before exposing it.
-- Keep country explicit unless product research supports a trusted server-owned point-of-sale default. Do not infer it from untrusted browser hints.
+- The starter deliberately uses server-owned USD and US pricing defaults so a guest can reach results without provider jargon. Change those defaults only through reviewed application configuration; do not infer market from untrusted browser hints.
 
 ## Normalized fields
 
@@ -141,6 +141,8 @@ Do not return the complete upstream journey, offers array, provider logos, arbit
 ## Widget composition
 
 TravelHome and FlightResults live in `src/views/`; `search-editor.tsx` is their shared familiar form. Both use public `@noodleseed/one/react` primitives through `src/helpers.ts`.
+
+The primary website owns one persistent current FlightResults slot in a journey canvas controlled by, but separate from, the conversation. Preserve newest-exact-view selection, keep known linked Apps out of transcript messages, and continue mounting the selected view through the official Noodle App host. Re-run the deterministic responsive browser contract after changing this composition. Local success does not prove the hosted embed; that remains unproven until a separately authorized deployment and exact embed-binding verification.
 
 - Preserve explicit unselected/selected card states and the single result-level primary action: **Verify selected fare**.
 - Keep Search/Edit → Results → Verified fare review navigation shallow, Back-enabled, and persisted with the public app-flow helper.

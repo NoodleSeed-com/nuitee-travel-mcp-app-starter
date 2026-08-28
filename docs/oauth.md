@@ -2,6 +2,8 @@
 
 The default Next.js template is intentionally guest-first. Its current Search → Select → Verify tools do not require a website identity, so `apps/web/` uses a public embed ID and ships no login UI, application session route, or identity database.
 
+Authentication does not change presentation ownership: the website keeps one persistent current flight-results slot in a journey canvas controlled by, but separate from, the conversation; the selected linked App still mounts through the official Noodle App host and not inside transcript messages. Local tests do not establish an authenticated or public hosted embed. Hosted behavior remains unproven until a separately authorized deployment and exact embed-binding verification for the chosen identity mode.
+
 Add authentication only when a real capability needs persistence, personalization, authorization, tenant routing, or another backend-verified user fact. Keep these three identity layers separate.
 
 ## 1. Website login
@@ -28,7 +30,7 @@ access: authenticatedWebsite({
 }),
 ```
 
-This is the installed `@noodleseed/one` `AuthenticatedWebsiteInput` shape. `capabilities` is optional in the SDK, but this template keeps the explicit `capabilities.publicSurface` projection so the authenticated surface does not silently widen when another server capability is added. The array contains the same four registered instances: `open_travel_starter`, `search_flights`, `verify_flight_offer`, and `select_flight_offer`. The selection helper's tool declaration remains `visibility: ['app']`, so it stays available to the linked App bridge without becoming model-visible.
+This is the installed `@noodleseed/one` `AuthenticatedWebsiteInput` shape. `capabilities` is optional in the SDK, but this template keeps the explicit `capabilities.publicSurface` projection so the authenticated surface does not silently widen when another server capability is added. The array contains the same five registered instances: `open_travel_starter`, `plan_flight_search`, `search_flights`, `verify_flight_offer`, and `select_flight_offer`. The selection helper's tool declaration remains `visibility: ['app']`, so it stays available to the linked App bridge without becoming model-visible.
 
 Keep `origins` on the same exact configured allowlist and run validation/check before any separately authorized deployment. The repository default remains guest-public until a developer deliberately makes this source change for an identity-bound product.
 

@@ -55,6 +55,8 @@ The UI continues to expose only two tool-linked entry widgets:
 
 They share a unified Search/Edit → Results → Verified fare-review journey. Familiar labelled search inputs are included, with natural place names sent through an explicit host follow-up for safe resolution. The journey adds no website navigation, hamburger menu, tabs, loyalty controls, checkout, booking, payment, or unfinished travel-domain actions.
 
+In the primary website, the conversation controls a separate journey canvas rather than containing linked Apps. The website owns one persistent current FlightResults slot and mounts only the newest exact view through the official Noodle App host; known linked views are omitted from transcript messages. Local responsive browser proof covers this composition, but hosted behavior remains unproven until a separately authorized deployment and embed-binding verification.
+
 A hamburger menu is familiar when a product has hidden navigation. These focused widgets have no internal navigation to hide, so adding one would create false affordance. If a future embedded website shell owns broader navigation, that shell may use its normal standard menu independently of the widgets.
 
 ## Visual system
@@ -117,7 +119,7 @@ Coming-soon rows have no hover treatment, pointer cursor, tab stop, button seman
 
 ### Conversation behavior
 
-When supported, **Search flights** uses `useSendFollowUpMessage()` from explicit form submission. Its prompt carries the user's entered route, dates, travelers, cabin, currency, and point-of-sale country; the host resolves only unambiguous place names and asks for missing child/infant ages or ambiguous locations. It does not call Nuitee directly and does not add another business tool.
+When supported, **Search flights** uses `useSendFollowUpMessage()` from explicit form submission. The host resolves only unambiguous place names. When dates are missing, `plan_flight_search` collects them through one structured interaction; the Assistant uses visible passenger, cabin, currency, and pricing-market defaults instead of asking for every provider field. The home App does not call Nuitee directly.
 
 ## FlightResults contract
 

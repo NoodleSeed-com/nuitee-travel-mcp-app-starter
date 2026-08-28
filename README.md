@@ -2,13 +2,13 @@
 
 A guest-first Next.js developer template for building a chat-first flight experience with a Noodle embedded assistant and the official Nuitee Connect Flights API. The fictional customer-facing brand is **Wayfare**.
 
-The primary guest website guides a traveler through **Search → Select → Verify** and stops at a verified fare. It does not book, hold inventory, collect passenger details, take payment, or issue tickets. The repository also exposes the same bounded MCP tools and linked Apps to external MCP hosts; there is no website-only copy of the travel product.
+The primary guest website guides a traveler through **Search → Select → Verify** and stops at a verified fare. A clear route with no date produces one structured date decision; Wayfare uses visible defaults instead of asking for every provider field. It does not book, hold inventory, collect passenger details, take payment, or issue tickets. The repository also exposes the same bounded MCP tools and linked Apps to external MCP hosts; there is no website-only copy of the travel product.
 
 This is an independent starter, not an official Nuitee connector, airline partnership, booking product, or endorsement.
 
 ## Primary guest website
 
-The Next.js application in `apps/web/` is the main developer path. Its cinematic conversation-first hero starts with the traveler’s own words, then moves into delayed anonymous Assistant admission, an application-owned typed renderer, plain-language progress, structured trip projection, and the existing Noodle MCP App views.
+The Next.js application in `apps/web/` is the main developer path. Its cinematic conversation-first hero starts with the traveler’s own words, then moves into delayed anonymous Assistant admission, an application-owned typed renderer, plain-language progress, structured trip projection, and the existing Noodle MCP App views. Once the journey starts, the conversation controls a separate journey canvas rather than containing it. The website owns one persistent current flight-results slot: only the newest exact FlightResults view mounts there through the official Noodle App host, while known linked Apps never mount inside the transcript.
 
 ```sh
 corepack enable
@@ -121,7 +121,7 @@ Do not satisfy the gate with a placeholder, wildcard, path, or unrelated domain.
 
 The older `examples/embedded-assistant-host/` application remains only as a temporary authenticated migration reference while parity and removal gates are reviewed. It is not the primary website and its synthetic local sign-in is not a production identity implementation. See [docs/EMBEDDED_ASSISTANT.md](docs/EMBEDDED_ASSISTANT.md) for the guest path and [docs/oauth.md](docs/oauth.md) for a real authenticated extension.
 
-No hosted conversation is claimed from local code or tests alone. A real public embed ID, exact HTTPS website origin, monitored privacy link, CSP validation, budget controls, live Search → Select → Verify browser proof, and the selection-TTL smoke remain promotion evidence in [PUBLIC_RELEASE_CHECKLIST.md](PUBLIC_RELEASE_CHECKLIST.md). Deployments, access changes, hosted configuration, and budget mutations require separate exact authorization.
+No hosted conversation is claimed from local code or tests alone. Hosted behavior remains unproven until a separately authorized deployment and exact embed-binding verification. A real public embed ID, exact HTTPS website origin, monitored privacy link, CSP validation, budget controls, live Search → Select → Verify browser proof, and the selection-TTL smoke remain promotion evidence in [PUBLIC_RELEASE_CHECKLIST.md](PUBLIC_RELEASE_CHECKLIST.md). Deployments, access changes, hosted configuration, and budget mutations require separate exact authorization.
 
 ## Customization
 

@@ -15,11 +15,12 @@ Next.js guest browser
   → Nuitee Flights API
 ```
 
-The browser uses the custom renderer in `apps/web/` with `useNoodleAssistant` and `NoodleAppView`. It does not implement a second chat transport, fetch `ui://` resources, copy the linked Apps, or call Nuitee directly.
+The browser uses the custom renderer in `apps/web/` with `useNoodleAssistant` and `NoodleAppView`. It does not implement a second chat transport, fetch `ui://` resources, copy the linked Apps, or call Nuitee directly. The conversation controls a separate journey canvas rather than containing it. The website owns one persistent current flight-results slot, mounts only the newest exact FlightResults view there through the official Noodle App host, and omits known linked Apps from the transcript.
 
-`src/embedded-server.ts` calls the same `createTravelServer('embedded')` product factory as the other entrypoints. Its public surface allowlists the same four tool instances registered on the server:
+`src/embedded-server.ts` calls the same `createTravelServer('embedded')` product factory as the other entrypoints. Its public surface allowlists the same five tool instances registered on the server:
 
 - model-visible `open_travel_starter`;
+- model-visible `plan_flight_search`, which collects missing dates without connector I/O;
 - model-visible `search_flights`;
 - model-visible `verify_flight_offer`; and
 - App-only `select_flight_offer`.
@@ -28,7 +29,7 @@ The public surface is anonymous, not identity-free: Noodle binds each session to
 
 ## Product boundary
 
-The Assistant may open the starter, search one-way or round-trip flights, select an application-issued fare handle, and verify current availability and price. A verified or changed fare is terminal.
+The Assistant may open the starter, collect one missing date decision, search one-way or round-trip flights, select an application-issued fare handle, and verify current availability and price. The agent guide defaults to one adult, Economy, USD, and the US pricing market rather than asking for provider-oriented fields. A verified or changed fare is terminal.
 
 It does not prebook, hold inventory, collect passenger data, take payment, issue a ticket, manage a booking, cancel, refund, redeem loyalty, or search hotels and cars. Neither a selection nor a verified fare implies that inventory is held.
 
@@ -103,7 +104,7 @@ The preflight reports required or missing environment names without printing val
 
 ## Public admission and budget
 
-A public surface must have one reviewed daily turn budget and an operational kill switch. Before inviting traffic, the owner must inspect the active embed projection, exact origins, four allowed capabilities, current spend, and configured cap. Budget exhaustion is a calm unavailable state; the website does not automatically retry it.
+A public surface must have one reviewed daily turn budget and an operational kill switch. Before inviting traffic, the owner must inspect the active embed projection, exact origins, five allowed capabilities, current spend, and configured cap. Budget exhaustion is a calm unavailable state; the website does not automatically retry it.
 
 Budget changes and embed revocation are hosted mutations. Do not run them under local implementation authority. Record the exact organization, app, environment, old value, new value, approver, and post-change probe in the promotion evidence.
 
@@ -122,7 +123,7 @@ Use synthetic or explicitly approved provider input and prove all of the followi
 9. Desktop, 390px mobile, keyboard, 200% text zoom, dark mode, and reduced motion remain usable.
 10. The privacy and support destinations resolve, are monitored, and describe the actual data flow.
 
-Local Playwright coverage deliberately stays on the zero state and sends no `/v1/assistant/` requests. It is not a substitute for this hosted smoke.
+Local Playwright coverage includes a deterministic loopback Assistant fixture that sends two typed FlightResults views into one turn and proves the newest view is the single App in the website-owned slot across desktop and mobile composition. It also proves local keyboard, target-size, reduced-motion, overflow, and long-transcript behavior. The fixture is not a deployed Assistant or embed binding, so hosted behavior remains unproven until a separately authorized deployment and exact embed-binding verification complete this hosted smoke.
 
 ## State and TTL proof
 

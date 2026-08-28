@@ -420,12 +420,220 @@ test('starts one destination prompt through one assistant turn', async ({ page }
 
   await expect(page.getByRole('heading', {
     level: 1,
-    name: 'Your trip, refined together',
+    name: 'Plan your flight',
   })).toBeVisible();
   await expect.poll(() => submittedPrompts).toEqual([
     'Help me plan a long-weekend flight to Rome for two.',
   ]);
   expect(sessionRequests).toBe(1);
+});
+
+test('keeps one current flight App in the responsive journey workspace', async ({
+  page,
+}, testInfo) => {
+  let turnRequests = 0;
+  const result = {
+    status: 'success',
+    message: 'Current flight options',
+    fallback: 'Current flight options',
+    searchContext: {
+      origin: 'ISB',
+      destination: 'NYC',
+      departureDate: '2026-09-18',
+      adults: 1,
+      children: 0,
+      infants: 0,
+      childrenAges: [],
+      infantAges: [],
+      cabinClass: 'ECONOMY',
+      currency: 'USD',
+      country: 'US',
+    },
+    itineraries: [],
+  };
+  const view = (id: string) => ({
+    id,
+    tool: 'search_flights',
+    resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget',
+    title: 'Flight results',
+    result,
+    html: '<!doctype html><html><body><main>Flight results</main></body></html>',
+  });
+  const frame = (event: string, data: unknown) => (
+    `event: ${event}\ndata: ${JSON.stringify(data)}`
+  );
+
+  await page.route('**/v1/assistant/public-sessions', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        token: 'browser-fixture-token',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        endpoints: {
+          turns: 'http://127.0.0.1:3108/browser-fixture/turns',
+          toolConfirmations: 'http://127.0.0.1:3108/browser-fixture/confirmations',
+        },
+      }),
+    });
+  });
+  await page.route('**/browser-fixture/turns', async (route) => {
+    turnRequests += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: [
+        frame('tool_completed', { id: 'view-1', tool: 'search_flights', result }),
+        frame('view_available', view('view-1')),
+        frame('tool_completed', { id: 'view-2', tool: 'search_flights', result }),
+        frame('view_available', view('view-2')),
+        frame('done', {}),
+        '',
+      ].join('\n\n'),
+    });
+  });
+
+  const width = testInfo.project.name === 'mobile-chromium' ? 390 : 1440;
+  await page.setViewportSize({ width, height: testInfo.project.name === 'mobile-chromium' ? 844 : 900 });
+  await page.goto('/');
+  await page.getByRole('textbox', { name: 'Ask about a flight' })
+    .fill('Islamabad to New York on September 18');
+  await page.getByRole('button', { name: 'Find flights' }).click();
+  await expect.poll(() => turnRequests).toBe(1);
+
+  const travelWorkspace = page.getByRole('region', { name: 'Travel workspace' });
+  const flightWorkspace = page.getByRole('region', { name: 'Flight workspace' });
+  const conversation = page.getByRole('region', { name: 'Travel conversation' });
+  const currentApp = flightWorkspace.locator('noodle-app-view');
+  await expect(travelWorkspace).toBeVisible();
+  await expect(currentApp).toHaveCount(1);
+  await expect(conversation.locator('noodle-app-view')).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Current trip' }))
+    .toContainText('ISB → NYC');
+  await expect.poll(() => currentApp.evaluate((element) => (
+    (element as HTMLElement & { view?: { id?: string } }).view?.id
+  ))).toBe('view-2');
+  await currentApp.evaluate((element) => {
+    element.setAttribute('data-browser-instance', 'current-flight-app');
+  });
+
+  const order = await travelWorkspace.evaluate((workspace) => {
+    const canvas = workspace.querySelector<HTMLElement>('.travel-journey-canvas');
+    const controller = workspace.querySelector<HTMLElement>('.travel-conversation-shell');
+    if (!canvas || !controller) return null;
+    const canvasBounds = canvas.getBoundingClientRect();
+    const controllerBounds = controller.getBoundingClientRect();
+    return {
+      canvasBeforeController: Boolean(
+        canvas.compareDocumentPosition(controller) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+      canvasBottom: canvasBounds.bottom,
+      controllerBeforeCanvas: Boolean(
+        controller.compareDocumentPosition(canvas) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ),
+      controllerTop: controllerBounds.top,
+      controllerRight: controllerBounds.right,
+      canvasLeft: canvasBounds.left,
+    };
+  });
+  expect(order).not.toBeNull();
+  if (width === 390) {
+    expect(order!.canvasBeforeController).toBe(true);
+    expect(order!.canvasBottom).toBeLessThanOrEqual(order!.controllerTop);
+  } else {
+    expect(order!.controllerBeforeCanvas).toBe(true);
+    expect(order!.controllerRight).toBeLessThanOrEqual(order!.canvasLeft);
+  }
+
+  for (const requiredWidth of [320, 390, 768, 1440]) {
+    await expectHorizontalFit(page, requiredWidth);
+  }
+  await expect(currentApp).toHaveAttribute(
+    'data-browser-instance',
+    'current-flight-app',
+  );
+
+  const finalWidth = testInfo.project.name === 'mobile-chromium' ? 390 : 1440;
+  await page.setViewportSize({
+    width: finalWidth,
+    height: testInfo.project.name === 'mobile-chromium' ? 844 : 900,
+  });
+  const continueInput = conversation.getByRole('textbox', {
+    name: 'Ask about a flight',
+  });
+  const continueButton = conversation.getByRole('button', {
+    name: 'Continue trip',
+  });
+  await continueInput.fill('Avoid overnight connections');
+  await continueInput.press('Tab');
+  await expect(continueButton).toBeFocused();
+  const focusAppearance = await continueButton.evaluate((button) => {
+    const style = getComputedStyle(button);
+    return {
+      focusVisible: button.matches(':focus-visible'),
+      outlineStyle: style.outlineStyle,
+      outlineWidth: Number.parseFloat(style.outlineWidth),
+    };
+  });
+  expect(focusAppearance.focusVisible).toBe(true);
+  expect(focusAppearance.outlineStyle).not.toBe('none');
+  expect(focusAppearance.outlineWidth).toBeGreaterThanOrEqual(3);
+  await expectMinimumTargetSize(continueInput);
+  await expectMinimumTargetSize(continueButton);
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const activeMotion = await travelWorkspace.locator('*').evaluateAll((elements) => (
+    elements.flatMap((element) => {
+      if (element.getClientRects().length === 0) return [];
+      const style = getComputedStyle(element);
+      const timing = {
+        animation: Number.parseFloat(style.animationDuration) || 0,
+        transition: Number.parseFloat(style.transitionDuration) || 0,
+      };
+      return timing.animation > 0 || timing.transition > 0.00001
+        ? [{
+          ...timing,
+          className: element.className,
+          tagName: element.tagName,
+        }]
+        : [];
+    })
+  ));
+  expect(activeMotion).toEqual([]);
+
+  if (testInfo.project.name === 'mobile-chromium') {
+    await continueButton.click();
+    await expect.poll(() => turnRequests).toBe(2);
+    for (let index = 0; index < 12; index += 1) {
+      await continueInput.fill(`Keep option ${index + 1} in view`);
+      await continueButton.click();
+      await expect.poll(() => turnRequests).toBe(index + 3);
+    }
+
+    const transcript = conversation.getByRole('log', {
+      name: 'Conversation transcript',
+    }).locator('..');
+    await expect.poll(() => transcript.evaluate((viewport) => (
+      viewport.scrollHeight > viewport.clientHeight
+    ))).toBe(true);
+    const transcriptScroll = await transcript.evaluate((viewport) => ({
+      clientHeight: viewport.clientHeight,
+      scrollHeight: viewport.scrollHeight,
+      scrollTop: viewport.scrollTop,
+    }));
+    expect(transcriptScroll.scrollHeight).toBeGreaterThan(transcriptScroll.clientHeight);
+    expect(transcriptScroll.scrollTop + transcriptScroll.clientHeight)
+      .toBeGreaterThanOrEqual(transcriptScroll.scrollHeight - 32);
+
+    const composer = conversation.getByRole('form', { name: 'Continue trip' });
+    await composer.scrollIntoViewIfNeeded();
+    await expect(composer).toBeVisible();
+    const composerBounds = await composer.boundingBox();
+    expect(composerBounds).not.toBeNull();
+    expect(composerBounds!.y).toBeGreaterThanOrEqual(0);
+    expect(composerBounds!.y + composerBounds!.height).toBeLessThanOrEqual(844);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  }
 });
 
 test('keeps the developer route static, legal-safe, and set in Inter', async ({ page }) => {
@@ -629,7 +837,7 @@ test('stacks every below-fold landing section at 390px', async ({
     .toBe(390);
 });
 
-test('stacks the trip brief in a ready-runtime mobile conversation without overflow', async ({
+test('centers the idle mobile conversation without a contradictory trip brief', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-chromium');
@@ -647,17 +855,28 @@ test('stacks the trip brief in a ready-runtime mobile conversation without overf
   await page.getByRole('button', { name: 'Find flights' }).click();
 
   await expect(page.getByRole('heading', {
-    name: 'Your trip, refined together',
+    name: 'Plan your flight',
   })).toBeVisible();
   await expect(page.getByRole('complementary', { name: 'Live trip brief' }))
-    .toBeVisible();
+    .toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 
-  const stacked = await page.evaluate(() => {
-    const brief = document.querySelector<HTMLElement>('.trip-brief');
+  const centered = await page.evaluate(() => {
+    const workspace = document.querySelector<HTMLElement>('.travel-journey-workspace');
+    const canvas = document.querySelector<HTMLElement>('.travel-journey-canvas');
     const conversation = document.querySelector<HTMLElement>('.travel-conversation-shell');
-    if (!brief || !conversation) return false;
-    return brief.getBoundingClientRect().bottom <= conversation.getBoundingClientRect().top;
+    if (!workspace || !canvas || !conversation) return false;
+    const workspaceBounds = workspace.getBoundingClientRect();
+    const canvasBounds = canvas.getBoundingClientRect();
+    const conversationBounds = conversation.getBoundingClientRect();
+    return workspaceBounds.left >= 0
+      && workspaceBounds.right <= 390
+      && conversationBounds.left >= 16
+      && conversationBounds.right <= 374
+      && Boolean(
+        canvas.compareDocumentPosition(conversation) & Node.DOCUMENT_POSITION_FOLLOWING,
+      )
+      && canvasBounds.bottom <= conversationBounds.top;
   });
-  expect(stacked).toBe(true);
+  expect(centered).toBe(true);
 });
