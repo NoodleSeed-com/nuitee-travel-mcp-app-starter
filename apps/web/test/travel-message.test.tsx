@@ -349,6 +349,56 @@ describe('typed travel message parts', () => {
     });
   });
 
+  it('collects an allowlisted trip clarification with native controls', async () => {
+    renderMessage(client, {
+      id: 'assistant-trip-input',
+      role: 'assistant',
+      parts: [{
+        type: 'data-input-request',
+        data: {
+          id: 'input-trip',
+          message: 'Complete your trip details.',
+          requestedSchema: {
+            type: 'object',
+            properties: {
+              departureDate: {
+                type: 'string',
+                format: 'date',
+                title: 'Departure date',
+              },
+              cabinClass: {
+                type: 'string',
+                title: 'Cabin',
+                enum: ['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST'],
+              },
+            },
+            required: ['departureDate'],
+          },
+          expiresAt: '2026-08-27T18:00:00.000Z',
+          status: 'pending',
+        },
+      }],
+    });
+
+    expect(screen.getByLabelText('Departure date')).toHaveAttribute('type', 'date');
+    expect(screen.getByRole('combobox', { name: 'Cabin' })).toBeVisible();
+
+    fireEvent.change(screen.getByLabelText('Departure date'), {
+      target: { value: '2026-09-11' },
+    });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Cabin' }), {
+      target: { value: 'BUSINESS' },
+    });
+    fireEvent.submit(screen.getByRole('form', { name: 'Complete trip details' }));
+
+    await waitFor(() => {
+      expect(client.respond).toHaveBeenCalledWith('input-trip', {
+        action: 'accept',
+        content: { departureDate: '2026-09-11', cabinClass: 'BUSINESS' },
+      });
+    });
+  });
+
   it('keeps input cancellation locked after a rejected response', async () => {
     client.respond.mockRejectedValue(new Error('raw service failure'));
     renderMessage(client, {

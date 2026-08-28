@@ -403,6 +403,63 @@ code {
   color: var(--travel-ink);
 }
 
+.travel-input-request {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--travel-boundary);
+  border-radius: 16px;
+  background: var(--travel-surface);
+}
+
+.travel-input-request form,
+.travel-input-request fieldset {
+  display: grid;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  gap: 0.75rem;
+}
+
+.travel-input-request__field {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--travel-muted);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.travel-input-request__field input,
+.travel-input-request__field select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--travel-boundary);
+  border-radius: 10px;
+  background: var(--travel-canvas);
+  color: var(--travel-ink);
+  font: inherit;
+}
+
+.travel-input-request__field input:focus,
+.travel-input-request__field select:focus {
+  outline: 2px solid var(--travel-focus);
+  outline-offset: 2px;
+}
+
+.travel-input-request__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.travel-input-request__error {
+  margin: 0;
+  color: #9c2f25;
+  font-size: 0.82rem;
+}
+
 .travel-transcript {
   min-width: 0;
   min-height: 0;

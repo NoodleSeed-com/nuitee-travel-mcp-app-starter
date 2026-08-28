@@ -7,6 +7,10 @@ import type {
   AssistantUIMessage,
 } from '@noodleseed/assistant/client';
 import { useRef, useState } from 'react';
+import {
+  parseTravelInputSchema,
+  type TravelInputField,
+} from '../lib/input-request';
 import { TravelMarkdown } from './travel-markdown';
 import { TravelViewRegistry } from './travel-view-registry';
 
@@ -21,7 +25,9 @@ const MAX_VISIBLE_ARGUMENTS = 6;
 const MAX_ARGUMENT_LENGTH = 120;
 const MAX_CONFIRMATION_TITLE_LENGTH = 80;
 const MAX_CONFIRMATION_DESCRIPTION_LENGTH = 240;
+const MAX_INPUT_VALUE_LENGTH = 50;
 const UNSAFE_DISPLAY_CHARACTERS = /[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/gu;
+const UNSAFE_INPUT_CHARACTERS = /[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/u;
 
 function reviewArgumentLabel(key: string): string | undefined {
   switch (key) {
@@ -117,6 +123,44 @@ function useSingleInteractionResponse(client: AssistantClient, id: string) {
   };
 }
 
+function isBoundedInputValue(value: string): boolean {
+  return (
+    value.length > 0
+    && Array.from(value).length <= MAX_INPUT_VALUE_LENGTH
+    && !UNSAFE_INPUT_CHARACTERS.test(value)
+  );
+}
+
+function acceptedInputValues(
+  fields: readonly TravelInputField[],
+  values: Readonly<Record<string, string>>,
+): Record<string, string | number> | null {
+  const content: Record<string, string | number> = {};
+
+  for (const field of fields) {
+    const value = values[field.name]?.trim() ?? '';
+    if (!value) {
+      if (field.required) return null;
+      continue;
+    }
+    if (!isBoundedInputValue(value)) return null;
+
+    if (field.kind === 'integer') {
+      const number = Number(value);
+      if (!Number.isInteger(number) || number < field.minimum || number > field.maximum) {
+        return null;
+      }
+      content[field.name] = number;
+      continue;
+    }
+    if (field.kind === 'select' && !field.options.includes(value)) return null;
+    if (field.kind === 'date' && !/^\d{4}-\d{2}-\d{2}$/u.test(value)) return null;
+    content[field.name] = value;
+  }
+
+  return content;
+}
+
 function ConfirmationPart({
   client,
   confirmation,
@@ -196,6 +240,90 @@ function InputRequestPart({
     client,
     inputRequest.id,
   );
+  const fields = parseTravelInputSchema(inputRequest.requestedSchema);
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [isInvalid, setIsInvalid] = useState(false);
+
+  if (fields && inputRequest.status === 'pending') {
+    return (
+      <section
+        aria-busy={locked || undefined}
+        aria-label="Input request"
+        className="travel-input-request"
+      >
+        <form
+          aria-label="Complete trip details"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const content = acceptedInputValues(fields, values);
+            if (!content) {
+              setIsInvalid(true);
+              return;
+            }
+            submit({ action: 'accept', content });
+          }}
+        >
+          <fieldset disabled={locked}>
+            {fields.map((field) => (
+              <label className="travel-input-request__field" key={field.name}>
+                <span>{field.label}</span>
+                {field.kind === 'select' ? (
+                  <select
+                    onChange={(event) => {
+                      const value = event.currentTarget.value;
+                      setValues((current) => ({
+                        ...current,
+                        [field.name]: value,
+                      }));
+                    }}
+                    required={field.required}
+                    value={values[field.name] ?? ''}
+                  >
+                    <option value="">Select {field.label}</option>
+                    {field.options.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    max={field.kind === 'integer' ? field.maximum : undefined}
+                    maxLength={field.kind === 'integer' ? undefined : MAX_INPUT_VALUE_LENGTH}
+                    min={field.kind === 'integer' ? field.minimum : undefined}
+                    onChange={(event) => {
+                      const value = event.currentTarget.value;
+                      setValues((current) => ({
+                        ...current,
+                        [field.name]: value,
+                      }));
+                    }}
+                    required={field.required}
+                    type={field.kind === 'integer' ? 'number' : field.kind}
+                    value={values[field.name] ?? ''}
+                  />
+                )}
+              </label>
+            ))}
+            {isInvalid ? (
+              <p className="travel-input-request__error" role="status">
+                Complete the required trip details.
+              </p>
+            ) : null}
+            <div className="travel-input-request__actions">
+              <button type="submit">Continue</button>
+              <button
+                onClick={() => {
+                  submit({ action: 'cancel' });
+                }}
+                type="button"
+              >
+                Cancel request
+              </button>
+            </div>
+          </fieldset>
+        </form>
+      </section>
+    );
+  }
 
   return (
     <section
