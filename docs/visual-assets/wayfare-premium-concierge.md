@@ -90,10 +90,10 @@ markings along a left-midground roofline and was rejected before conversion.
 ## London destination
 
 - Final path: `apps/web/public/images/destinations/london-editorial-v2.jpg`
-- Built-in mode: generate
+- Built-in mode: generate, followed by one built-in precise-object edit
 - Checked-in dimensions: `1672 x 941`
-- Format and bytes: JPEG, `575494`
-- SHA-256: `2c50fa80a11397b610764f5dcce8c65257a480dfaf192a3a90260ba6f58ded58`
+- Format and bytes: JPEG, `566890`
+- SHA-256: `be2ae83ea5ec1fabcd4c70caaf78668225a79a3353681b95ce8009ae184b2dc5`
 - Focal crop: `58% 50%`; Tower Bridge remains centered with enough skyline and river context.
 - Conversion: `sips` JPEG quality 92, format conversion only; no resizing.
 
@@ -110,15 +110,30 @@ Constraints: 3840px long edge and at least 2160px short edge; no text, logos, wa
 Avoid: impossible architecture, duplicated landmarks, malformed people, plastic texture, fantasy lighting, oversaturation, generated signage
 ```
 
+Accepted precise-object edit prompt:
+
+```text
+Use case: precise-object-edit
+Edit target: the immediately preceding London Tower Bridge JPEG.
+Primary request: remove the entire dark foreground vessel at the extreme lower-right, including every white glyph-like hull marking, railing, mast, and reflection belonging to that vessel; reconstruct only natural Thames water and blue-hour reflections in the removed area.
+Invariants: preserve the accepted Tower Bridge and skyline composition, every bridge and architectural geometry, left promenade and lamps, other distant vessel, camera position, crop, blue-hour lighting, realistic weather, water texture, reflections, color, and native photographic detail.
+Constraints: no text, glyphs, logos, readable signage, advertising, watermarks, prominent identifiable faces, or added objects anywhere in the image.
+Avoid: altered or impossible bridge architecture, duplicated structures, malformed boats or people, plastic water, fantasy lighting, oversaturation, synthetic sharpening, or text-like artifacts.
+```
+
 Accepted QA observations: original-detail review found coherent Tower Bridge
 geometry, plausible contemporary skyline layers, natural blue-hour weather and
 reflections, and no readable signage, advertising, duplicated landmarks,
-malformed figures, or plastic surfaces. Non-legible surface marks on the
-extreme-right vessel are not generated copy.
+malformed figures, or plastic surfaces. The former extreme-right foreground
+vessel and its white glyph-like hull markings are absent, with natural water and
+reflections restored in their place. The documented `58% 50%` 4:3 crop was
+inspected independently and contains no text-like marks.
 
 Rejected variant reasons: the first London candidate contained generated
 text-like lettering on a left-river vessel or pier and was rejected before
-conversion.
+conversion. The initially checked-in second candidate was rejected in Fix Round
+1 because its extreme-right foreground vessel contained large white glyph-like
+hull lettering that remained visible in the documented 4:3 crop.
 
 ## Istanbul destination
 
@@ -161,7 +176,7 @@ Task 7's branch-level history audit:
 ```text
 240eb6956d733f2044c3e13b913cfccd706990b0 apps/web/public/images/wayfare-hybrid-hero-v2.jpg
 e6d793cc15a411fb0539dd5cec6dc0baf4002ab4 apps/web/public/images/destinations/rome-editorial-v2.jpg
-4d9a7f1ee43f20e435fe6d863dc5fe9efcdf8b73 apps/web/public/images/destinations/london-editorial-v2.jpg
+3e9370023af2f45d3846d642cbdb5c697c3b61db apps/web/public/images/destinations/london-editorial-v2.jpg
 4b79d0c20052bce11dd3e53d393341298acb620a apps/web/public/images/destinations/istanbul-editorial-v2.jpg
 ```
 
