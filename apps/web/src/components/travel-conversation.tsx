@@ -186,12 +186,10 @@ export function TravelConversation({
       className="travel-conversation-shell"
     >
       <header className="travel-conversation__header">
-        <div>
-          <p className="assistant-identity">
-            {starterConfig.brand.assistantName}
-          </p>
-          <h1>{copy.title}</h1>
-        </div>
+        <p className="assistant-identity">
+          {starterConfig.brand.assistantName}
+        </p>
+        <h1>{copy.title}</h1>
       </header>
       <div className="travel-conversation__context">
         <TripBrief projection={projection} />

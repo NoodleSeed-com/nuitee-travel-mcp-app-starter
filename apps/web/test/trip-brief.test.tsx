@@ -1,4 +1,10 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { TripBrief } from '../src/components/trip-brief';
 
@@ -15,7 +21,7 @@ describe('trip brief', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('renders the accepted route, dates, and customer-friendly assumptions', () => {
+  it('discloses secondary accepted trip facts on demand', () => {
     render(<TripBrief projection={{
       phase: 'planned',
       origin: 'ISB',
@@ -32,10 +38,17 @@ describe('trip brief', () => {
     expect(brief).toHaveTextContent('ISB → NYC');
     expect(brief).toHaveTextContent('1 adult');
     expect(brief).toHaveTextContent('Economy');
-    expect(brief).toHaveTextContent('USD');
-    expect(brief).toHaveTextContent('US market');
+    expect(brief).not.toHaveTextContent('USD');
+    expect(brief).not.toHaveTextContent('US market');
     expect(brief).toHaveTextContent('Ready to search');
     expect(brief).not.toHaveTextContent(/point-of-sale/i);
+
+    fireEvent.click(within(brief).getByRole('button', {
+      name: 'Show trip details',
+    }));
+
+    expect(brief).toHaveTextContent('USD');
+    expect(brief).toHaveTextContent('US market');
   });
 
   it('renders only validated projected trip facts', () => {

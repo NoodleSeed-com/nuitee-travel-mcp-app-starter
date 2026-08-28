@@ -312,6 +312,90 @@ describe('guest travel conversation lifecycle', () => {
     expect(screen.getByText('Ready to search')).toBeVisible();
   });
 
+  it('keeps typed trip context compact until the traveler expands it', async () => {
+    assistantMock.useNoodleAssistant.mockImplementation(() => ({
+      client,
+      messages: [{
+        id: 'assistant-plan-context',
+        role: 'assistant',
+        parts: [{
+          type: 'data-tool-result',
+          data: {
+            id: 'call-plan-context',
+            tool: 'plan_flight_search',
+            result: {
+              status: 'planned',
+              message: 'Trip details are ready. Search current fares now.',
+              origin: 'ISB',
+              destination: 'FCO',
+              departureDate: '2026-08-31',
+              returnDate: '2026-09-07',
+              adults: 2,
+              cabinClass: 'ECONOMY',
+              currency: 'USD',
+              country: 'US',
+            },
+          },
+        }],
+      }],
+      status: 'ready',
+      error: undefined,
+    }));
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Islamabad to Rome for two');
+
+    const context = await screen.findByRole('region', { name: 'Current trip' });
+    expect(within(context).getByText('ISB')).toBeVisible();
+    expect(within(context).getByText('FCO')).toBeVisible();
+    expect(within(context).getByText('2 adults')).toBeVisible();
+    expect(within(context).queryByText('US market')).not.toBeInTheDocument();
+
+    const toggle = within(context).getByRole('button', { name: 'Show trip details' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(within(context).getByText('US market')).toBeVisible();
+  });
+
+  it('omits the trip disclosure control when no secondary facts exist', async () => {
+    assistantMock.useNoodleAssistant.mockImplementation(() => ({
+      client,
+      messages: [{
+        id: 'assistant-plan-primary-facts',
+        role: 'assistant',
+        parts: [{
+          type: 'data-tool-result',
+          data: {
+            id: 'call-plan-primary-facts',
+            tool: 'search_flights',
+            result: {
+              status: 'success',
+              searchContext: {
+                origin: 'ISB',
+                destination: 'FCO',
+                departureDate: '2026-08-31',
+                adults: 2,
+                children: 0,
+                infants: 0,
+                cabinClass: 'ECONOMY',
+              },
+            },
+          },
+        }],
+      }],
+      status: 'ready',
+      error: undefined,
+    }));
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Islamabad to Rome for two');
+
+    const context = await screen.findByRole('region', { name: 'Current trip' });
+    expect(within(context).getByText('ISB')).toBeVisible();
+    expect(within(context).getByText('FCO')).toBeVisible();
+    expect(within(context).getByText('2 adults')).toBeVisible();
+    expect(within(context).queryByRole('button')).not.toBeInTheDocument();
+  });
+
   it('renders every linked App inline in chronological conversation order', async () => {
     const firstView = {
       id: 'view-search-first',

@@ -1,3 +1,13 @@
+'use client';
+
+import {
+  Armchair,
+  CalendarDays,
+  ChevronDown,
+  MapPin,
+  UsersRound,
+} from 'lucide-react';
+import { useState } from 'react';
 import type { TripProjection } from '../lib/trip-projection';
 
 const PHASE_LABELS: Readonly<Record<TripProjection['phase'], string>> = {
@@ -15,47 +25,62 @@ const PHASE_LABELS: Readonly<Record<TripProjection['phase'], string>> = {
 export function TripBrief({
   projection,
 }: Readonly<{ projection: TripProjection }>) {
+  const [expanded, setExpanded] = useState(false);
   if (projection.phase === 'idle') return null;
+  const hasSecondaryDetails = Boolean(
+    projection.returnDate || projection.currency || projection.country,
+  );
 
   return (
     <section aria-label="Current trip" className="trip-brief">
-      <p className="trip-brief__eyebrow">Current trip</p>
-      {projection.origin || projection.destination ? (
-        <p className="trip-brief__route">
-          <strong>{projection.origin ?? '—'}</strong>
-          <span aria-hidden="true"> → </span>
-          <strong>{projection.destination ?? '—'}</strong>
-        </p>
-      ) : null}
-      {projection.departureDate
-      || projection.returnDate
-      || projection.travelers
-      || projection.cabinClass
-      || projection.currency
-      || projection.country ? (
-        <dl>
-          {projection.departureDate ? (
-            <div>
-              <dt>Depart</dt>
-              <dd>{projection.departureDate}</dd>
-            </div>
-          ) : null}
+      <div className="trip-brief__facts">
+        {projection.origin || projection.destination ? (
+          <p className="trip-brief__fact trip-brief__route">
+            <MapPin aria-hidden="true" />
+            <strong>{projection.origin ?? '—'}</strong>
+            <span aria-hidden="true"> → </span>
+            <strong>{projection.destination ?? '—'}</strong>
+          </p>
+        ) : null}
+        {projection.departureDate ? (
+          <p className="trip-brief__fact">
+            <CalendarDays aria-hidden="true" />
+            <span>{projection.departureDate}</span>
+          </p>
+        ) : null}
+        {projection.travelers ? (
+          <p className="trip-brief__fact">
+            <UsersRound aria-hidden="true" />
+            <span>{projection.travelers}</span>
+          </p>
+        ) : null}
+        {projection.cabinClass ? (
+          <p className="trip-brief__fact">
+            <Armchair aria-hidden="true" />
+            <span>{projection.cabinClass}</span>
+          </p>
+        ) : null}
+      </div>
+      <div className="trip-brief__actions">
+        <p className="trip-brief__status">{PHASE_LABELS[projection.phase]}</p>
+        {hasSecondaryDetails ? (
+          <button
+            aria-expanded={expanded}
+            aria-label={expanded ? 'Hide trip details' : 'Show trip details'}
+            className="trip-brief__toggle"
+            onClick={() => setExpanded((value) => !value)}
+            type="button"
+          >
+            <ChevronDown aria-hidden="true" />
+          </button>
+        ) : null}
+      </div>
+      {hasSecondaryDetails && expanded ? (
+        <dl className="trip-brief__details">
           {projection.returnDate ? (
             <div>
               <dt>Return</dt>
               <dd>{projection.returnDate}</dd>
-            </div>
-          ) : null}
-          {projection.travelers ? (
-            <div>
-              <dt>Travelers</dt>
-              <dd>{projection.travelers}</dd>
-            </div>
-          ) : null}
-          {projection.cabinClass ? (
-            <div>
-              <dt>Cabin</dt>
-              <dd>{projection.cabinClass}</dd>
             </div>
           ) : null}
           {projection.currency ? (
@@ -72,7 +97,6 @@ export function TripBrief({
           ) : null}
         </dl>
       ) : null}
-      <p className="trip-brief__status">{PHASE_LABELS[projection.phase]}</p>
     </section>
   );
 }

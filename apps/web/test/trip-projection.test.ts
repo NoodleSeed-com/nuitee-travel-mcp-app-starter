@@ -99,6 +99,38 @@ describe('structured trip projection', () => {
     }])).toEqual(EMPTY_TRIP);
   });
 
+  it('does not supplement typed context with dates or markets from prose', () => {
+    expect(projectTrip([
+      messageWithToolResult('search_flights', {
+        status: 'success',
+        searchContext: {
+          origin: 'ISB',
+          destination: 'FCO',
+          departureDate: '2026-08-31',
+          adults: 2,
+          children: 0,
+          infants: 0,
+          cabinClass: 'ECONOMY',
+        },
+      }),
+      {
+        id: 'assistant-prose-only-details',
+        role: 'assistant',
+        parts: [{
+          type: 'text',
+          text: 'Return on 2026-09-07, priced in USD for the US market.',
+        }],
+      },
+    ])).toEqual({
+      phase: 'comparing',
+      origin: 'ISB',
+      destination: 'FCO',
+      departureDate: '2026-08-31',
+      travelers: '2 adults',
+      cabinClass: 'Economy',
+    });
+  });
+
   it('sets selected after a successful selection without projecting its id', () => {
     expect(projectTrip([
       messageWithToolResult('search_flights', {
