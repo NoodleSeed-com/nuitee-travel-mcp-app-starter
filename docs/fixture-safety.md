@@ -43,8 +43,9 @@ recorded in `docs/visual-assets/wayfare-premium-concierge.md`. The historical
 rejected London blob is reviewed only for reachable-history coverage; it is not
 the accepted current image.
 
-- `docs/images/flight-results.png` and `docs/images/travel-home.png` are
-  first-party Chromium captures governed by `docs/images/README.md`.
+- `docs/images/flight-results.png` and `docs/images/travel-home.png` are the
+  current deterministic product previews: first-party Chromium captures
+  governed by `docs/images/README.md` and exact-blob review.
 
 The raster review boundary remains exact-blob based.
 

@@ -11,7 +11,7 @@ Noodle public Assistant surface ───── External MCP host
   └──────────────────┬──────────────────────┘
                      ▼
               shared travel MCP
-         open / search / select / verify
+      open / plan / search / verify / App-only select
                      │
          ┌───────────┴───────────┐
          ▼                       ▼
@@ -40,7 +40,7 @@ A tool/URI mismatch fails closed inline and never reaches `NoodleAppView`. The c
 
 `src/` owns the MCP server, model-facing workflows, exact public capability allowlist, connector, tools, state, and linked Apps. External MCP hosts enter the same server and provide their own model. No browser-specific or host-specific copy of the business tools exists.
 
-The public Assistant surface allowlists exactly:
+The public Assistant surface allowlists four model-visible tools plus one App-only helper, exactly:
 
 - `open_travel_starter`;
 - `plan_flight_search`;

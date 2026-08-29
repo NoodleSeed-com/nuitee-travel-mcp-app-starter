@@ -47,6 +47,86 @@ async function noodleValidate() {
 }
 
 describe('public repository contracts', () => {
+  it('keeps the public five-capability projection exact in active release guidance', async () => {
+    const [server, checklist, architecture, implementationPlan, spec] = await Promise.all([
+      repositoryFile('src/travel-server.ts'),
+      repositoryFile('PUBLIC_RELEASE_CHECKLIST.md'),
+      repositoryFile('docs/architecture.md'),
+      repositoryFile('IMPLEMENTATION_PLAN.md'),
+      repositoryFile('SPEC.md'),
+    ]);
+    const capabilityNames = [
+      'open_travel_starter',
+      'plan_flight_search',
+      'search_flights',
+      'verify_flight_offer',
+      'select_flight_offer',
+    ] as const;
+
+    expect(server).toContain('publicSurface: [open, plan, search, verify, select]');
+    for (const guide of [checklist, architecture, implementationPlan, spec]) {
+      expect(guide).toContain('four model-visible tools plus one App-only helper');
+      for (const capability of capabilityNames) expect(guide).toContain(capability);
+      expect(guide).not.toMatch(/exact three-tool|only open, search, and verify|four-capability public projection/i);
+    }
+  });
+
+  it('documents only the current editorial fields, CSS tokens, and verification label', async () => {
+    const [readme, customization] = await Promise.all([
+      repositoryFile('README.md'),
+      repositoryFile('docs/customization.md'),
+    ]);
+    const activeGuidance = `${readme}\n${customization}`;
+
+    expect(customization).toContain('`heading`, `support`, `action`, and `prompt`');
+    expect(customization).toContain('direct CSS custom properties');
+    expect(activeGuidance).toContain('Verify current fare');
+    expect(activeGuidance).not.toContain('Verify selected fare');
+    expect(customization).not.toContain("`landingEditorialFeature`, change `eyebrow`");
+    expect(customization).not.toMatch(/Tailwind(?:'s)? Neutral/i);
+  });
+
+  it('keeps current preview provenance tied to stable product labels and exact reviewed bytes', async () => {
+    const [previewGuide, fixtureGuide, readme, reviewedBlobs] = await Promise.all([
+      repositoryFile('docs/images/README.md'),
+      repositoryFile('docs/fixture-safety.md'),
+      repositoryFile('README.md'),
+      repositoryFile('security/reviewed-binary-blobs.txt'),
+    ]);
+    const previews = [
+      ['docs/images/travel-home.png', 'Where will you go next?', 'Wayfare route mark'],
+      ['docs/images/flight-results.png', 'Current flight options', 'Verify current fare'],
+    ] as const;
+
+    for (const [path, firstLabel, secondLabel] of previews) {
+      const bytes = await readFile(new URL(`../${path}`, import.meta.url));
+      const blob = createHash('sha1').update(Buffer.concat([
+        Buffer.from(`blob ${bytes.length}\0`),
+        bytes,
+      ])).digest('hex');
+      expect(previewGuide).toContain(path.split('/').at(-1)!);
+      expect(previewGuide).toContain(firstLabel);
+      expect(previewGuide).toContain(secondLabel);
+      expect(reviewedBlobs).toContain(`${blob} ${path}`);
+    }
+    expect(fixtureGuide).toContain('current deterministic product previews');
+    expect(readme).toContain('current local Wayfare product');
+    expect(previewGuide).not.toMatch(/Choose your flight|Lowest shown|Verify selected fare/);
+  });
+
+  it('never describes the accepted Wayfare images as literal 4K in active release copy', async () => {
+    const [changelog, readme, customization, architecture] = await Promise.all([
+      repositoryFile('CHANGELOG.md'),
+      repositoryFile('README.md'),
+      repositoryFile('docs/customization.md'),
+      repositoryFile('docs/architecture.md'),
+    ]);
+
+    expect(changelog).toContain('native `1672 × 941` high-resolution');
+    expect([changelog, readme, customization, architecture].join('\n'))
+      .not.toMatch(/generated 4K|4K coastline artwork|4K-grade/i);
+  });
+
   it('records exact provenance for the Wayfare premium image masters', async () => {
     const ledger = await repositoryFile('docs/visual-assets/wayfare-premium-concierge.md');
     const expectedMasters = [

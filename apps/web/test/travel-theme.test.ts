@@ -28,6 +28,25 @@ function contrastRatio(first: string, second: string): number {
   return ((values[0] ?? 0) + 0.05) / ((values[1] ?? 0) + 0.05);
 }
 
+function withoutFinePointerBlocks(css: string): string {
+  const query = '@media (hover: hover) and (pointer: fine)';
+  let remaining = css;
+  let start = remaining.indexOf(query);
+  while (start !== -1) {
+    const open = remaining.indexOf('{', start);
+    let depth = 1;
+    let cursor = open + 1;
+    while (depth > 0 && cursor < remaining.length) {
+      if (remaining[cursor] === '{') depth += 1;
+      if (remaining[cursor] === '}') depth -= 1;
+      cursor += 1;
+    }
+    remaining = `${remaining.slice(0, start)}${remaining.slice(cursor)}`;
+    start = remaining.indexOf(query);
+  }
+  return remaining;
+}
+
 describe('Wayfare premium travel theme', () => {
   it('keeps the approved checked-in colors and accessible contrast pairs', () => {
     expect(starterConfig.brand).toMatchObject({
@@ -76,5 +95,16 @@ describe('Wayfare premium travel theme', () => {
     expect(primaryInteraction).toContain('color: var(--travel-on-accent);');
     expect(contrastRatio(accent ?? '#ffffff', onAccent ?? '#ffffff'))
       .toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('limits hover-only presentation to fine pointers without changing focus rules', async () => {
+    const globals = await readFile(
+      resolve(process.cwd(), 'app/globals.css'),
+      'utf8',
+    );
+    const nonFinePointerCss = withoutFinePointerBlocks(globals);
+
+    expect(nonFinePointerCss).not.toMatch(/:hover\s*[{,]/u);
+    expect(globals).toContain(':focus-visible');
   });
 });

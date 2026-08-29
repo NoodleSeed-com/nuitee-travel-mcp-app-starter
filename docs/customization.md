@@ -28,8 +28,10 @@ and public redistribution still require owner/legal review before release.
 Edit `apps/web/src/lib/landing-content.ts` to customize the editorial destination
 cards and feature. For each entry in `landingDestinations`, change `name`,
 `descriptor`, `prompt`, `imageSrc`, and `imagePosition`. For
-`landingEditorialFeature`, change `eyebrow`, `heading`, `support`, `action`,
-`prompt`, `imageSrc`, and `imagePosition`.
+`landingEditorialFeature`, change only `heading`, `support`, `action`, and `prompt`.
+Its visual panel uses the shared `WayfareMark` from
+`apps/web/src/components/wayfare-mark.tsx`; there is no separate editorial image
+or eyebrow field.
 
 The starter's three local destination image paths are:
 
@@ -69,7 +71,7 @@ pnpm customize -- \
 pnpm customize:check
 ```
 
-The command updates the canonical `src/starter-config.ts` file, writes it atomically, and is idempotent. It accepts only bounded presentation values and never reads credentials or environment files. The MCP server and Apps import the canonical module; the primary Next.js website reaches that same value through root `starter.config.ts`. The website is intentionally light-only and maps these values onto Tailwind's Neutral palette by default. Review light-theme contrast after changing colors; `surfaceDark` remains available to external hosts that consume the portable MCP brand kit.
+The command updates the canonical `src/starter-config.ts` file, writes it atomically, and is idempotent. It accepts only bounded presentation values and never reads credentials or environment files. The MCP server and Apps import the canonical module; the primary Next.js website reaches that same value through root `starter.config.ts`. The website is intentionally light-only and consumes the brand through direct CSS custom properties in `apps/web/app/globals.css`; it does not use a Tailwind mapping. Review light-theme contrast after changing colors; `surfaceDark` remains available to external hosts that consume the portable MCP brand kit.
 
 To prepare the primary guest Assistant surface for one hosted website, add only that exact deployment-owned origin:
 
@@ -146,7 +148,7 @@ TravelHome and FlightResults live in `src/views/`; `search-editor.tsx` is their 
 
 The primary website is one centered chronological conversation. Preserve each official inline MCP App at its original message part and mount it only through the official Noodle App host. The finite admission policy allows only `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget` and `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget`; a mismatch must fail closed. Treat every distinct view ID as a separate invocation and never add generic deduplication, newest-only selection, a second workspace, or page-authored fare reconstruction. Keep the compact typed trip disclosure inside the conversation and source it only from validated fields. Local success does not prove the hosted embed; that remains unproven until a separately authorized deployment and exact embed-binding verification.
 
-- Preserve explicit unselected/selected card states and the single result-level primary action: **Verify selected fare**.
+- Preserve explicit unselected/selected card states and the single result-level primary action: **Verify current fare**.
 - Keep Search/Edit → Results → Verified fare review navigation shallow, Back-enabled, and persisted with the public app-flow helper.
 - Place-name edits must go through an explicit host follow-up until a verified airport-resolution tool exists; never ship a guessed or static production airport mapping.
 - Keep three cards inline and ten only when the host supplies fullscreen mode.

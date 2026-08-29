@@ -95,7 +95,7 @@ pnpm exec noodle secrets set NUITEE_API_KEY --runtime local --from-env NUITEE_AP
 
 Never paste a Nuitee key into a conversation, source file, browser variable, screenshot, fixture, test, log, URL, or Git history. A local value is not automatically a hosted deployment secret.
 
-For a live smoke, ask for a future one-way or round-trip flight, select one returned fare in the linked App, and choose **Verify selected fare**. A `partial` search result is valid when malformed provider entries were safely dropped. The terminal outcome is a verified or changed fare, never a booking.
+For a live smoke, ask for a future one-way or round-trip flight, select one returned fare in the linked App, and choose **Verify current fare**. A `partial` search result is valid when malformed provider entries were safely dropped. The terminal outcome is a verified or changed fare, never a booking.
 
 ## External MCP hosts
 
@@ -178,11 +178,11 @@ pnpm agent:check:live
 pnpm agent:check:assistant
 ```
 
-The fixture-only Chromium captures below show the local hybrid cinematic website and real linked Apps with fictional data; they are not live inventory or host screenshots. Their reproducible provenance is in [docs/images/README.md](docs/images/README.md).
+The fixture-only Chromium captures below show the current local Wayfare product: the light hybrid landing and the real linked flight-results App with fictional data. They are not live inventory or host screenshots. Their exact labels, dimensions, hashes, network boundary, and reproducible provenance are in [docs/images/README.md](docs/images/README.md).
 
 | Cinematic credential-free home | Fictional flight comparison |
 | --- | --- |
-| ![Wayfare cinematic conversation-first home with no Assistant session before submit](docs/images/travel-home.png) | ![Wayfare flight-results widget using fictional fares and no airline logo](docs/images/flight-results.png) |
+| ![Current Wayfare light hybrid home with route mark and no Assistant session before submit](docs/images/travel-home.png) | ![Current Wayfare flight-results App with fictional fares and Verify current fare](docs/images/flight-results.png) |
 
 ## Public-release status
 

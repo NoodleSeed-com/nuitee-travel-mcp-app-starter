@@ -79,7 +79,7 @@ Tests were authored before their implementation modules and first failed on miss
 - Search success, empty, partial, malformed, oversized, max ten, round-trip directional normalization, strict segment/duration/price bounds, baggage ≤4, and messages ≤6.
 - 400, 401, 403, verify 404, 429, 500, 502, 503, timeout, credential-unavailable, and oversized classification.
 - Verification success, unchanged/changed fare, unavailable response, locally expired offer, active-search mismatch, unknown/stale selection, and no provider call on failed provenance.
-- Exact three-tool catalog, connector/state policy assertions, portable home context, and absence of airport/transaction/future-domain/arbitrary-HTTP tools.
+- Exact public projection of four model-visible tools plus one App-only helper—`open_travel_starter`, `plan_flight_search`, `search_flights`, `verify_flight_offer`, and App-only `select_flight_offer`—plus connector/state policy assertions, portable home context, and absence of airport/transaction/future-domain/arbitrary-HTTP tools.
 - TravelHome and FlightResults loading, error, malformed, empty, partial, changed-price, expired, retry, and success states.
 - Three inline/ten fullscreen, no booking actions, noninteractive coming-soon items, focus/touch/280px/overflow/reduced-motion CSS safeguards.
 
@@ -108,7 +108,7 @@ Dependencies: public schemas and tool surface from Phase 3.
 4. Keep coming-soon domains static and noninteractive.
 5. Use a shared labelled SearchEditor in TravelHome and FlightResults. Natural place-name submissions use an explicit host follow-up, while the browser remains provider- and credential-free.
 6. Use public app-flow state for Search/Edit → Results → Verified fare review, including Back navigation.
-7. Require explicit card selection, then expose one **Verify selected fare** action; successful verification advances to the review state.
+7. Require explicit card selection, then expose one **Verify current fare** action; successful verification advances to the review state.
 8. Preserve provider airport-local schedule text without converting it into the viewer's timezone; render search/offer freshness, bounded fare/term/amenity detail, and verification messages.
 9. Label the final state as a fare review and explicitly not a ticket or reservation. Expose no default handoff.
 10. Validate nested structured content defensively before rendering, and test pure render components with mocked host helpers; validate bundled widgets with Noodle.
@@ -155,7 +155,7 @@ The repository-owned CI workflow runs only the credential-free protocol gates an
 
 Stop and report any failing command with exit status, structured error, package version, and Agent Kit version. Use debugging guidance only for concrete failures.
 
-Executed result: the ordered credential-free baseline passes, including the hermetic Vitest suite, authoring validation, MCP protocol smoke, the exact three-tool catalog, and generic readiness. Live and embedded entrypoints pass static validation/readiness. The ChatGPT target remains intentionally blocked until an owner supplies one real widget domain; the embedded target cannot invent the embedding product's customer identity provider. Prior bounded live search and same-session verification evidence exists; real browser/host evidence and broader provider error-shape evidence remain Phase 7.
+Executed result: the ordered credential-free baseline passes, including the hermetic Vitest suite, authoring validation, MCP protocol smoke, the exact public projection of four model-visible tools plus one App-only helper (`open_travel_starter`, `plan_flight_search`, `search_flights`, `verify_flight_offer`, and App-only `select_flight_offer`), and generic readiness. Live and embedded entrypoints pass static validation/readiness. The ChatGPT target remains intentionally blocked until an owner supplies one real widget domain; the embedded target cannot invent the embedding product's customer identity provider. Prior bounded live search and same-session verification evidence exists; real browser/host evidence and broader provider error-shape evidence remain Phase 7.
 
 ## Phase 7 — owner-authorized live and host proof (partially executed)
 

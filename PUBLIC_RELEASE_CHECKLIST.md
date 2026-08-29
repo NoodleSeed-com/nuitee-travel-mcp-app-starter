@@ -8,7 +8,7 @@ This is the decision gate for making the repository public, marking it as a temp
 - [x] Default, live, and embedded entrypoints reuse one travel-server factory.
 - [x] The default server and `pnpm ci:offline` require no Nuitee or model credential.
 - [x] Nuitee network authority is server-only, fixed-origin, fixed-path, bounded, and hermetically tested.
-- [x] The model-visible catalog contains only open, search, and verify tools.
+- [x] The public projection contains four model-visible tools plus one App-only helper: `open_travel_starter`, `plan_flight_search`, `search_flights`, and `verify_flight_offer` are model-visible; `select_flight_offer` is restricted to the linked App bridge.
 - [x] Fixtures are fictional, offline-only, and never a live fallback.
 - [x] Presentation customization is bounded, deterministic, exact-origin validated, and credential-blind.
 - [x] CI Actions are full-SHA pinned, checkout credentials are not persisted, and Dependabot covers npm plus Actions.
@@ -40,7 +40,7 @@ Everything in this section may be completed while the repository remains private
 
 These two local preflight results are configuration-shape evidence only. Neither uses a real embed ID, HTTPS origin, privacy URL, hosted deployment, provider request, or public budget, so this evidence does not prove hosted readiness.
 
-- [ ] Configure one real public embed ID from the exact assistant-enabled deployment target; record the organization, app, environment, active revision, and four-capability public projection without printing credentials.
+- [ ] Configure one real public embed ID from the exact assistant-enabled deployment target; record the organization, app, environment, active revision, and five-capability public projection—four model-visible tools plus one App-only helper (`open_travel_starter`, `plan_flight_search`, `search_flights`, `verify_flight_offer`, and App-only `select_flight_offer`)—without printing credentials.
 - [ ] Configure the exact deployment-owned HTTPS website origin in both the public Assistant surface and website deployment, remove loopback unless it is deliberately required, and prove wrong-origin requests fail closed.
 - [ ] Configure and monitor a real HTTPS privacy URL and support destination. The privacy notice must describe anonymous Assistant/model processing, Nuitee-backed searches, retention, third parties, and the no-booking boundary; do not use placeholders.
 - [ ] Run the public embed preflight against the production-equivalent website configuration and prove CSP allows the exact Noodle service origin in `script-src`, `connect-src`, and `frame-src` while preserving the remaining restrictive directives.

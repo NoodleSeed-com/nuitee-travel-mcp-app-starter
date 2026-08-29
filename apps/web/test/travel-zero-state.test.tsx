@@ -195,7 +195,7 @@ describe('travel assistant zero state', () => {
     expect(words.length).toBeLessThanOrEqual(120);
   });
 
-  it('requests the full tablet row width for the spanning destination image', () => {
+  it('advertises half-width tablet destination images for every equal card', () => {
     const { container } = render(
       <TravelZeroState inputRef={{ current: null }} onStart={vi.fn()} />,
     );
@@ -204,18 +204,12 @@ describe('travel assistant zero state', () => {
     );
 
     expect(images).toHaveLength(3);
-    expect(images[0]).toHaveAttribute(
-      'sizes',
-      '(max-width: 767px) 82vw, (max-width: 1023px) 50vw, 33vw',
-    );
-    expect(images[1]).toHaveAttribute(
-      'sizes',
-      '(max-width: 767px) 82vw, (max-width: 1023px) 50vw, 33vw',
-    );
-    expect(images[2]).toHaveAttribute(
-      'sizes',
-      '(max-width: 767px) 82vw, (max-width: 1023px) 100vw, 33vw',
-    );
+    for (const image of images) {
+      expect(image).toHaveAttribute(
+        'sizes',
+        '(max-width: 767px) 82vw, (max-width: 1023px) 50vw, 33vw',
+      );
+    }
   });
 
   it.each(landingDestinations)(

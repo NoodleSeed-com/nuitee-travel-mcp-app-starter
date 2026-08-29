@@ -710,11 +710,20 @@ export default function FlightResults() {
     void updateModelContext(selectedFareModelContext(selectedItinerary, selectedVerification)).catch(() => undefined);
   }, [layout.supports?.modelContext, ready, selectedItinerary, selectedVerification, updateModelContext]);
 
+  useEffect(() => {
+    selectionRequest.current = undefined;
+  }, [result]);
+
   const rememberSelection = (selectionId: string) => {
     if (selectionRequest.current?.selectionId === selectionId) return selectionRequest.current.request;
     const request = selectFare.callToolAsync({ selectionId });
-    selectionRequest.current = { selectionId, request };
-    return request;
+    const trackedRequest = request.finally(() => {
+      if (selectionRequest.current?.request === trackedRequest) {
+        selectionRequest.current = undefined;
+      }
+    });
+    selectionRequest.current = { selectionId, request: trackedRequest };
+    return trackedRequest;
   };
 
   return (

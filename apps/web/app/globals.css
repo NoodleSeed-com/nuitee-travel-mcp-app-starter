@@ -993,11 +993,6 @@ code {
     transform 160ms var(--travel-ease-out);
 }
 
-.travel-search-refinements button:not(:disabled):hover {
-  border-color: var(--travel-blue);
-  color: var(--travel-blue);
-}
-
 .assistant-error {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1142,11 +1137,6 @@ code {
   text-align: left;
 }
 
-.settings-sheet__clear:hover,
-.settings-sheet__links a:hover {
-  background: var(--travel-raised);
-}
-
 .developer-page {
   min-height: 100svh;
   padding: clamp(1rem, 3vw, 2.5rem);
@@ -1183,11 +1173,6 @@ code {
   font-size: 0.82rem;
   font-weight: 650;
   text-decoration: none;
-}
-
-.developer-page__home:hover,
-.developer-guide__support a:hover {
-  background: var(--travel-raised);
 }
 
 .developer-guide {
@@ -1608,11 +1593,31 @@ code {
 }
 
 @media (hover: hover) and (pointer: fine) {
+  .travel-search-refinements button:not(:disabled):hover {
+    border-color: var(--travel-blue);
+    color: var(--travel-blue);
+  }
+
+  .settings-sheet__clear:hover,
+  .settings-sheet__links a:hover,
+  .developer-page__home:hover,
+  .developer-guide__support a:hover,
+  .travel-navigation-dialog__links a:hover,
+  .travel-navigation-dialog__links button:hover,
+  .travel-navigation-dialog__close:hover {
+    background: var(--travel-raised);
+  }
+
   .travel-header__actions a:hover,
   .travel-header__actions button:hover,
   .travel-header--hero .travel-header__menu:hover {
     border-color: var(--travel-boundary);
     background: var(--travel-canvas);
+  }
+
+  .trip-brief__toggle:hover {
+    background: color-mix(in srgb, var(--travel-blue) 8%, transparent);
+    color: var(--travel-ink);
   }
 }
 
@@ -1690,12 +1695,6 @@ code {
   font-weight: 550;
   text-align: left;
   text-decoration: none;
-}
-
-.travel-navigation-dialog__links a:hover,
-.travel-navigation-dialog__links button:hover,
-.travel-navigation-dialog__close:hover {
-  background: var(--travel-raised);
 }
 
 .travel-navigation-dialog__unconfigured {
@@ -1818,11 +1817,6 @@ code {
     background-color 180ms var(--travel-ease-out),
     color 180ms var(--travel-ease-out),
     transform 180ms var(--travel-ease-out);
-}
-
-.trip-brief__toggle:hover {
-  background: color-mix(in srgb, var(--travel-blue) 8%, transparent);
-  color: var(--travel-ink);
 }
 
 .trip-brief__toggle:active {

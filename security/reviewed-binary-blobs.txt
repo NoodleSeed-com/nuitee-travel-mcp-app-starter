@@ -18,3 +18,6 @@ e6d793cc15a411fb0539dd5cec6dc0baf4002ab4 apps/web/public/images/destinations/rom
 4d9a7f1ee43f20e435fe6d863dc5fe9efcdf8b73 apps/web/public/images/destinations/london-editorial-v2.jpg
 3e9370023af2f45d3846d642cbdb5c697c3b61db apps/web/public/images/destinations/london-editorial-v2.jpg
 4b79d0c20052bce11dd3e53d393341298acb620a apps/web/public/images/destinations/istanbul-editorial-v2.jpg
+# Current deterministic product previews, recaptured from the premium Wayfare revision.
+89ee2a00affed845604da63b37bb193aa1a03315 docs/images/travel-home.png
+aa6fb4d40dd0aa3941d740d09f1e9b6f2e22823d docs/images/flight-results.png
