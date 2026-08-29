@@ -11,3 +11,7 @@ fb531d227d530c4fcae00a6e36653046f8eb57ba docs/images/travel-home.png
 7de2b25d0a011298f47896419ecbc7e2db3a1876 apps/web/public/images/destinations/london-river-v1.jpg
 5d464c247bafe10fe3319a59458c4c9510ccc53b apps/web/public/images/destinations/istanbul-bosphorus-v1.jpg
 db2dcde2bd675d5c30e69269b7147203ec40d7ba apps/web/public/images/destinations/warm-horizon-v1.jpg
+240eb6956d733f2044c3e13b913cfccd706990b0 apps/web/public/images/wayfare-hybrid-hero-v2.jpg
+e6d793cc15a411fb0539dd5cec6dc0baf4002ab4 apps/web/public/images/destinations/rome-editorial-v2.jpg
+3e9370023af2f45d3846d642cbdb5c697c3b61db apps/web/public/images/destinations/london-editorial-v2.jpg
+4b79d0c20052bce11dd3e53d393341298acb620a apps/web/public/images/destinations/istanbul-editorial-v2.jpg

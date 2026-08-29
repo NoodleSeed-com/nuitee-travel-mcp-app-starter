@@ -15,14 +15,14 @@ Next.js guest browser
   → Nuitee Flights API
 ```
 
-The browser uses the custom renderer in `apps/web/` with `useNoodleAssistant` and `NoodleAppView`. It does not implement a second chat transport, fetch `ui://` resources, copy linked Apps, or call Nuitee directly. Wayfare is one centered chronological conversation. Linked Apps render inline at their original message part, and distinct view IDs remain distinct invocations in history rather than being generically deduplicated.
+The browser uses the custom renderer in `apps/web/` with `useNoodleAssistant` and `NoodleAppView`. It does not implement a second chat transport, fetch `ui://` resources, copy linked Apps, reconstruct App output as website fare cards, or call Nuitee directly. Wayfare is one centered chronological conversation with no secondary result workspace. Official inline MCP Apps render at their original message part, and distinct view IDs remain distinct invocations in history rather than being generically deduplicated.
 
 Only two exact tool/resource identities may reach `NoodleAppView`:
 
 - `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget`;
 - `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget`.
 
-Every mismatch fails closed as an unavailable inline view. The compact Current trip summary uses validated typed tool results only; traveler and Assistant prose cannot populate it.
+Every mismatch fails closed as an unavailable inline view. The compact typed trip disclosure uses validated tool results only, remains absent before facts exist, and never lets traveler or Assistant prose populate it.
 
 `src/embedded-server.ts` calls the same `createTravelServer('embedded')` product factory as the other entrypoints. Its public surface allowlists the same five tool instances registered on the server:
 

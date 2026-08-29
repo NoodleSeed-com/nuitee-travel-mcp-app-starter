@@ -27,14 +27,16 @@ Noodle public Assistant surface ───── External MCP host
            official Flights API
 ```
 
-`apps/web/` is the primary product surface. It owns one centered chronological conversation, delayed guest admission, typed message rendering, plain-language activity, and a compact read-only trip projection. `TravelMessage` preserves message-part order and delegates admitted Apps to the official `NoodleAppView` host inline. Every distinct view ID is a distinct chronological invocation and remains mounted in history; the website has no newest-only selector, generic App deduplication, separate journey canvas, or viewport-dependent DOM reordering. The website calls neither Nuitee nor MCP tools directly. On the first submitted message, the official Assistant hook uses the public embed ID to open an anonymous session.
+`apps/web/` is the primary product surface. Its light, Inter-only hybrid cinematic landing has one centered conversation entry; after submission it owns one centered chronological conversation, delayed guest admission, typed message rendering, and plain-language activity. `TravelMessage` preserves message-part order and delegates official inline MCP Apps to `NoodleAppView`. Every distinct view ID is a distinct chronological invocation and remains mounted in history; the website has no newest-only selector, generic App deduplication, second workspace, page-authored fare reconstruction, or viewport-dependent DOM reordering. The website calls neither Nuitee nor MCP tools directly. On the first submitted message, the official Assistant hook uses the public embed ID to open an anonymous session.
 
 The website admits only these exact linked-App identities:
 
 - `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget`;
 - `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget`.
 
-A tool/URI mismatch fails closed inline and never reaches `NoodleAppView`.
+A tool/URI mismatch fails closed inline and never reaches `NoodleAppView`. The compact typed trip disclosure stays inside the conversation, is absent before typed facts exist, and exposes only validated route, date, party, cabin, and optional secondary facts; it never parses Assistant prose.
+
+`apps/web/src/components/wayfare-mark.tsx` owns the deterministic route-line SVG mark. The website uses installed Lucide icons only for familiar supported actions and does not use icons to imply attachments, payment, booking, voice, or account capabilities. The rounded hero window and three destination cards use four local `1672 × 941` high-resolution JPEG masters. They are not claimed as literal 4K sources; Next.js produces responsive AVIF/WebP delivery from them. Exact bytes, hashes, crop choices, and visual-review evidence are in [the Wayfare provenance ledger](visual-assets/wayfare-premium-concierge.md).
 
 `src/` owns the MCP server, model-facing workflows, exact public capability allowlist, connector, tools, state, and linked Apps. External MCP hosts enter the same server and provide their own model. No browser-specific or host-specific copy of the business tools exists.
 

@@ -78,7 +78,7 @@ describe('public repository contracts', () => {
     expect(readme).toContain('does not book');
   });
 
-  it('ships a cinematic conversation-first hero without the obsolete shader layer', async () => {
+  it('ships the Wayfare hybrid cinematic landing without the obsolete shader layer', async () => {
     const [
       readme,
       customization,
@@ -91,17 +91,17 @@ describe('public repository contracts', () => {
       repositoryFile('docs/customization.md'),
       repositoryFile('apps/web/src/components/travel-hero.tsx'),
       repositoryFile('apps/web/src/components/travel-footer.tsx'),
-      stat(new URL('../apps/web/public/images/wayfare-coastline-hero-v1.jpg', import.meta.url)),
+      stat(new URL('../apps/web/public/images/wayfare-hybrid-hero-v2.jpg', import.meta.url)),
       repositoryJson('apps/web/package.json'),
     ]);
 
     expect(heroAsset.size).toBeGreaterThan(0);
-    expect(heroSource).toContain('wayfare-coastline-hero-v1.jpg');
+    expect(heroSource).toContain('wayfare-hybrid-hero-v2.jpg');
     expect(footerSource).toContain('Built on Noodle Seed · Powered by Nuitee');
     expect(webPackage.dependencies['@paper-design/shaders-react']).toBeUndefined();
-    expect(readme).toContain('cinematic conversation-first');
+    expect(readme).toContain('hybrid cinematic');
     expect(readme).toContain('Search → Select → Verify');
-    expect(customization).toContain('## Cinematic hero image');
+    expect(customization).toContain('## Wayfare image system');
     await expect(access(new URL(
       '../apps/web/src/components/workspace-atmosphere.tsx',
       import.meta.url,
@@ -110,6 +110,25 @@ describe('public repository contracts', () => {
       '../apps/web/src/components/workspace-atmosphere-canvas.tsx',
       import.meta.url,
     ))).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  it('keeps active template guidance aligned with the Wayfare premium conversation', async () => {
+    const [readme, architecture, customization, embeddedGuide, assetGuide] = await Promise.all([
+      repositoryFile('README.md'),
+      repositoryFile('docs/architecture.md'),
+      repositoryFile('docs/customization.md'),
+      repositoryFile('docs/EMBEDDED_ASSISTANT.md'),
+      repositoryFile('docs/visual-assets/airline-editorial-homepage.md'),
+    ]);
+    const activeDocs = [readme, architecture, customization, embeddedGuide].join('\n');
+
+    expect(readme).toContain('Wayfare');
+    expect(readme).toContain('conversation');
+    expect(architecture).toContain('inline MCP Apps');
+    expect(customization).toContain('wayfare-mark.tsx');
+    expect(embeddedGuide).not.toMatch(/right[- ]side|Flight workspace|side canvas/iu);
+    expect(activeDocs).not.toMatch(/Cedar & Cloud|route-orbit|full-bleed hero/iu);
+    expect(assetGuide).toContain('wayfare-premium-concierge.md');
   });
 
   it('documents OAuth without claiming that login consumption is an OIDC issuer', async () => {

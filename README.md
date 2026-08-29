@@ -8,7 +8,11 @@ This is an independent starter, not an official Nuitee connector, airline partne
 
 ## Primary guest website
 
-The Next.js application in `apps/web/` is the main developer path. Its cinematic conversation-first hero starts with the traveler’s own words, then moves into one centered chronological conversation with delayed anonymous Assistant admission, plain-language progress, typed trip projection, and official linked MCP Apps. Apps render inline at the message part that needs interaction; every distinct view ID remains in history rather than being moved to a separate canvas or generically deduplicated. Only `search_flights` with `ui://nuitee_travel_mcp_app_starter/search_flights_widget` and `open_travel_starter` with `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget` may reach `NoodleAppView`. The compact Current trip summary is derived only from validated structured tool results, never from conversation prose.
+The Next.js application in `apps/web/` is the main developer path. Wayfare uses a light, Inter-only hybrid cinematic landing: one centered headline and composer above a rounded local destination image, compact destination inspiration, and a factual Search · Compare · Verify row. Submitting a prompt moves into one centered chronological conversation with delayed anonymous Assistant admission and plain-language progress. The compact typed trip disclosure is absent until validated facts exist, stays collapsed by default, and is derived only from structured tool results—never conversation prose.
+
+Official inline MCP Apps render at the exact chronological message part that needs interaction. Every distinct view ID remains in history; the website neither reconstructs App output as fare cards nor creates a second results workspace. Only `search_flights` with `ui://nuitee_travel_mcp_app_starter/search_flights_widget` and `open_travel_starter` with `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget` may reach `NoodleAppView`; every mismatch fails closed.
+
+The route-line SVG in `apps/web/src/components/wayfare-mark.tsx` is the repository-owned Wayfare mark. Use the installed Lucide icons only for familiar, supported actions; do not introduce icons suggesting attachments, payment, booking, voice, or account management. The four checked-in local image masters are truthful native `1672 × 941` high-resolution web images, not literal 4K sources. Next.js serves responsive AVIF/WebP derivatives; their exact paths, bytes, hashes, visual review, and responsive crop decisions are in the [Wayfare provenance ledger](docs/visual-assets/wayfare-premium-concierge.md).
 
 ```sh
 corepack enable
@@ -174,7 +178,7 @@ pnpm agent:check:live
 pnpm agent:check:assistant
 ```
 
-The fixture-only Chromium captures below show the cinematic conversation-first website and real linked Apps with fictional data; they are not live inventory or host screenshots. Their reproducible provenance is in [docs/images/README.md](docs/images/README.md).
+The fixture-only Chromium captures below show the local hybrid cinematic website and real linked Apps with fictional data; they are not live inventory or host screenshots. Their reproducible provenance is in [docs/images/README.md](docs/images/README.md).
 
 | Cinematic credential-free home | Fictional flight comparison |
 | --- | --- |
