@@ -35,7 +35,7 @@ const detectors = [
     pattern: 'sk-[A-Za-z0-9_-]{20,}',
     ignoredPathLinePatterns: [{
       path: /^apps\/web\/test\/browser\/travel-shell\.spec\.ts$/,
-      line: /task-[A-Za-z0-9_${}-]{20,}/,
+      line: /^(?:\s*path:\s+testInfo\.outputPath\('task-[A-Za-z0-9_-]{20,}\.png'\),\s*|\s*'task-[A-Za-z0-9_-]{20,}\.(?:png|json)',\s*|\s*await testInfo\.attach\('task-[A-Za-z0-9_-]{20,}',\s*\{\s*|\s*`task-[A-Za-z0-9_-]{20,}\$\{position\}\.png`,\s*)$/,
     }],
   },
   { name: 'slack_token', pattern: 'xox[baprs]-[A-Za-z0-9-]{20,}' },

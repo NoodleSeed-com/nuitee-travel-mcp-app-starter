@@ -31,15 +31,22 @@ NOTICE treatment, provenance/compatibility, and public redistribution.
 
 The tracked raster boundary is explicit:
 
-- `apps/web/public/images/wayfare-coastline-hero-v1.jpg` is the reviewed,
-  generated 4K decorative landing hero whose prompt and conversion details are
-  recorded in `docs/visual-assets/airline-editorial-homepage.md`;
-- the four JPEGs under `apps/web/public/images/destinations/` are generated
-  editorial demo derivatives whose OpenAI `image_gen` prompts, dimensions,
-  conversion details, and visual review are recorded in
-  `docs/visual-assets/airline-editorial-homepage.md`; and
+- `apps/web/public/images/wayfare-hybrid-hero-v2.jpg`;
+- `apps/web/public/images/destinations/rome-editorial-v2.jpg`;
+- `apps/web/public/images/destinations/london-editorial-v2.jpg`; and
+- `apps/web/public/images/destinations/istanbul-editorial-v2.jpg`.
+
+These four local generated masters are native `1672 × 941` high-resolution web
+images, not literal 4K sources. Their OpenAI `image_gen` prompts, dimensions,
+bytes, hashes, responsive delivery, conversion choices, and visual review are
+recorded in `docs/visual-assets/wayfare-premium-concierge.md`. The historical
+rejected London blob is reviewed only for reachable-history coverage; it is not
+the accepted current image.
+
 - `docs/images/flight-results.png` and `docs/images/travel-home.png` are
   first-party Chromium captures governed by `docs/images/README.md`.
+
+The raster review boundary remains exact-blob based.
 
 Raw destination-generation sources stay outside git. Every tracked raster is
 covered by an exact reviewed blob ID in `security/reviewed-binary-blobs.txt`.

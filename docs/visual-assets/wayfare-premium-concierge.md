@@ -183,3 +183,13 @@ e6d793cc15a411fb0539dd5cec6dc0baf4002ab4 apps/web/public/images/destinations/rom
 These generated demo images are visual inspiration only. They do not evidence a
 specific destination condition, fare, discount, availability, airline
 relationship, or travel guarantee.
+
+### Task 7 fix round 1
+
+The rejected historical London v2 blob
+`4d9a7f1ee43f20e435fe6d863dc5fe9efcdf8b73` is visually security-reviewed only
+for reachable-history audit coverage. It is not current product acceptance; the
+accepted final London blob remains
+`3e9370023af2f45d3846d642cbdb5c697c3b61db` above. Task 7 also narrows the
+history-audit fixture exception to complete known browser-evidence lines, so a
+suffix or another key-shaped token on the same line remains detectable.

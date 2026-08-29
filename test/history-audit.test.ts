@@ -22,6 +22,7 @@ const syntheticErrorAssignment = managedAssignment(
 );
 const exactSyntheticFixtureLine = `      message: '${syntheticErrorAssignment}',`;
 const syntheticTaskScreenshotName = ['task', 'sk', 'browser-evidence-20260829'].join('-');
+const syntheticOpenAiToken = ['sk', 'second-token-with-more-than-twenty-characters'].join('-');
 
 function repositoryWith(files: Record<string, string | Uint8Array>) {
   const directory = mkdtempSync(join(tmpdir(), 'nuitee-history-audit-'));
@@ -80,6 +81,63 @@ describe('Git-history release audit', () => {
       findings: [{
         detector: 'openai_key',
         paths: ['unrelated.ts'],
+      }],
+    });
+  });
+
+  it('rejects a suffix extension of the browser screenshot fixture line', () => {
+    const directory = repositoryWith({
+      'apps/web/test/browser/travel-shell.spec.ts': [
+        `path: testInfo.outputPath('${syntheticTaskScreenshotName}.png'), // suffix`,
+      ].join('\n'),
+    });
+
+    const result = audit(directory);
+
+    expect(result.status).toBe(1);
+    expect(result.envelope.error).toMatchObject({
+      code: 'secret_pattern_detected',
+      findings: [{
+        detector: 'openai_key',
+        paths: ['apps/web/test/browser/travel-shell.spec.ts'],
+      }],
+    });
+  });
+
+  it('rejects a second key-shaped token on the browser screenshot fixture line', () => {
+    const directory = repositoryWith({
+      'apps/web/test/browser/travel-shell.spec.ts': [
+        `path: testInfo.outputPath('${syntheticTaskScreenshotName}.png'), '${syntheticOpenAiToken}'`,
+      ].join('\n'),
+    });
+
+    const result = audit(directory);
+
+    expect(result.status).toBe(1);
+    expect(result.envelope.error).toMatchObject({
+      code: 'secret_pattern_detected',
+      findings: [{
+        detector: 'openai_key',
+        paths: ['apps/web/test/browser/travel-shell.spec.ts'],
+      }],
+    });
+  });
+
+  it('rejects a task artifact token in unrecognized browser-source context', () => {
+    const directory = repositoryWith({
+      'apps/web/test/browser/travel-shell.spec.ts': [
+        `const artifact = '${syntheticTaskScreenshotName}.png';`,
+      ].join('\n'),
+    });
+
+    const result = audit(directory);
+
+    expect(result.status).toBe(1);
+    expect(result.envelope.error).toMatchObject({
+      code: 'secret_pattern_detected',
+      findings: [{
+        detector: 'openai_key',
+        paths: ['apps/web/test/browser/travel-shell.spec.ts'],
       }],
     });
   });
