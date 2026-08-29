@@ -1,4 +1,4 @@
-import { access, writeFile } from 'node:fs/promises';
+import { access, readFile, writeFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
 import { starterConfig } from '../../../../starter.config';
 
@@ -1505,24 +1505,31 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
         });
         layer.append(badge);
       };
-      addBadge(
-        'noodle-app-view host',
-        '#7c3aed',
-        evidence.host.x + 5,
-        evidence.host.y + 5,
-      );
-      addBadge(
-        'outer proxy iframe',
-        '#d97706',
-        evidence.outerFrame.x + 5,
-        evidence.outerFrame.y + 5,
-      );
-      addBadge(
-        'inner App iframe',
-        '#0891b2',
-        evidence.innerFrame.x + 5,
-        evidence.innerFrame.y + 23,
-      );
+      if (evidence.position === 'middle') {
+        const legendTop = evidence.host.y - 20;
+        addBadge('host', '#7c3aed', evidence.host.x + 5, legendTop);
+        addBadge('proxy', '#d97706', evidence.host.x + 50, legendTop);
+        addBadge('App', '#0891b2', evidence.host.x + 102, legendTop);
+      } else {
+        addBadge(
+          'noodle-app-view host',
+          '#7c3aed',
+          evidence.host.x + 5,
+          evidence.host.y + 5,
+        );
+        addBadge(
+          'outer proxy iframe',
+          '#d97706',
+          evidence.outerFrame.x + 5,
+          evidence.outerFrame.y + 5,
+        );
+        addBadge(
+          'inner App iframe',
+          '#0891b2',
+          evidence.innerFrame.x + 5,
+          evidence.innerFrame.y + 23,
+        );
+      }
       addBadge(
         'transcript viewport',
         '#475569',
@@ -1533,12 +1540,33 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
         'conversation composer',
         '#0b1f33',
         evidence.composer.x + 5,
-        evidence.composer.y + 5,
+        evidence.position === 'middle'
+          ? evidence.composer.y - 20
+          : evidence.composer.y + 5,
       );
       document.body.append(layer);
     }, bounds);
+    const middleClip = position === 'middle'
+      ? {
+          x: 0,
+          y: Math.max(0, transcriptBounds!.y - 16),
+          width: 390,
+          height: Math.min(
+            1600,
+            composerFrameBounds!.y + composerFrameBounds!.height + 11,
+          ) - Math.max(0, transcriptBounds!.y - 16),
+        }
+      : null;
+    if (middleClip) {
+      expect(middleClip.y).toBeLessThan(transcriptBounds!.y);
+      expect(middleClip.y + middleClip.height).toBeGreaterThanOrEqual(
+        composerFrameBounds!.y + composerFrameBounds!.height,
+      );
+      expect(middleClip.height).toBeLessThanOrEqual(1120);
+    }
     await page.screenshot({
       animations: 'disabled',
+      ...(middleClip ? { clip: middleClip } : {}),
       path: testInfo.outputPath(
         `task-6-zoomed-host-boundary-${position}.png`,
       ),
@@ -1561,6 +1589,13 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
     await expect(access(testInfo.outputPath(
       `task-6-zoomed-host-boundary-${position}.png`,
     ))).resolves.toBeUndefined();
+    if (position === 'middle') {
+      const screenshot = await readFile(testInfo.outputPath(
+        'task-6-zoomed-host-boundary-middle.png',
+      ));
+      expect(screenshot.readUInt32BE(16)).toBe(390);
+      expect(screenshot.readUInt32BE(20)).toBeLessThanOrEqual(1120);
+    }
   }
   const measurementsPath = testInfo.outputPath('task-6-measurements.json');
   await writeFile(measurementsPath, `${JSON.stringify({
