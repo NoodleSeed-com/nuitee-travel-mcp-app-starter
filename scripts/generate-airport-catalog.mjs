@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
@@ -65,7 +66,14 @@ if (!/^[a-f0-9]{64}$/u.test(sha256)) {
   throw new Error('SHA-256 must be 64 lowercase hexadecimal characters');
 }
 
-const rows = parseCsv(await readFile(inputPath, 'utf8'));
+const source = await readFile(inputPath);
+const actualSha256 = createHash('sha256').update(source).digest('hex');
+if (actualSha256 !== sha256) {
+  throw new Error(
+    `Source SHA-256 mismatch: expected ${sha256}, received ${actualSha256}`,
+  );
+}
+const rows = parseCsv(source.toString('utf8'));
 const header = rows.shift();
 if (!header) throw new Error('Airport CSV is empty');
 const column = Object.fromEntries(header.map((name, index) => [name, index]));
