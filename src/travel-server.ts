@@ -384,6 +384,7 @@ export function createTravelServer(mode: 'credential-free' | 'live' | 'embedded'
           baseUrl: variable('ASSISTANT_MODEL_BASE_URL'),
           model: variable('ASSISTANT_MODEL'),
           apiKey: secret('ASSISTANT_MODEL_API_KEY'),
+          transport: 'responses',
         }),
         // The starter ships with exact Next.js loopback origins for the
         // primary guest website's standard and fallback preview ports. Add the

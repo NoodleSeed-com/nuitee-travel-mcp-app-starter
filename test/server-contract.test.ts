@@ -312,6 +312,7 @@ describe('server contract', () => {
     expect(wire).toContain('ASSISTANT_MODEL_BASE_URL');
     expect(wire).toContain('ASSISTANT_MODEL');
     expect(wire).toContain('ASSISTANT_MODEL_API_KEY');
+    expect(wire).toContain('"transport":"responses"');
     expect(manifest.server.assistant.surfaces[0]?.origins).toEqual([
       'http://localhost:3000',
       'http://localhost:3001',
