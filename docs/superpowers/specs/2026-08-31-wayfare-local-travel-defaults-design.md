@@ -2,7 +2,7 @@
 
 ## Status
 
-Architecture approved by the user on 2026-08-31. Written-spec review is pending.
+Approved by the user on 2026-08-31.
 
 This design extends `2026-08-29-wayfare-premium-concierge-polish-design.md`. It does not change the guest-first session model, the single centered conversation, chronological inline MCP Apps, exact view admission, or the Search → Select → Verify product boundary.
 
