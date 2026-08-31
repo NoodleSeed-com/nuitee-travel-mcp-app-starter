@@ -86,7 +86,11 @@ export function TravelAssistantPage({
             onPlanTrip={reset}
           />
           <main className="conversation-workspace" id="travel-canvas" tabIndex={-1}>
-            <TravelConversation initialPrompt={initialPrompt} runtime={runtime} />
+            <TravelConversation
+              defaults={defaults}
+              initialPrompt={initialPrompt}
+              runtime={runtime}
+            />
           </main>
         </div>
       )}

@@ -94,17 +94,15 @@ Every turn recomputes this bounded, untrusted page context:
 
 ```ts
 {
-  travelDefaults: {
-    origin: "ISB",
-    originLabel: "Islamabad",
-    country: "PK",
-    currency: "PKR",
-    source: "browser-geolocation"
-  }
+  travelOrigin: "ISB",
+  travelOriginLabel: "Islamabad",
+  travelCountry: "PK",
+  travelCurrency: "PKR",
+  travelDefaultSource: "browser-geolocation"
 }
 ```
 
-When location is unavailable, `origin`, `originLabel`, and `country` are omitted and `source` is `fallback`. The selected currency remains present.
+When location is unavailable, `travelOrigin`, `travelOriginLabel`, and `travelCountry` are omitted and `travelDefaultSource` is `fallback`. The selected currency remains present. The fields are flat because the public Assistant SDK accepts primitive page-context values only.
 
 The page context never contains latitude, longitude, accuracy, permission state, IP address, timestamps, or a persistent identifier. It is a convenience hint, not verified identity, market authorization, pricing authority, or tool authorization.
 

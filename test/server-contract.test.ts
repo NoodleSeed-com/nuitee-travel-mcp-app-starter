@@ -4,7 +4,10 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import embeddedApp from '../src/embedded-server.js';
-import { flightPlanDatesSchema } from '../src/flight-schemas.js';
+import {
+  flightPlanDatesSchema,
+  flightPlanInputSchema,
+} from '../src/flight-schemas.js';
 import liveApp from '../src/live-server.js';
 import offlineApp from '../src/server.js';
 import { starterConfig } from '../src/starter-config.js';
@@ -161,9 +164,20 @@ describe('server contract', () => {
     expect(plan.inputSchema.properties).toEqual(expect.objectContaining({
       origin: expect.objectContaining({ type: 'string' }),
       destination: expect.objectContaining({ type: 'string' }),
+      currency: expect.objectContaining({ type: 'string', default: 'USD' }),
+      country: expect.objectContaining({ type: 'string', default: 'US' }),
     }));
-    expect(plan.inputSchema.properties).not.toHaveProperty('currency');
-    expect(plan.inputSchema.properties).not.toHaveProperty('country');
+    expect(flightPlanInputSchema.parse({
+      origin: 'ISB',
+      destination: 'FCO',
+      currency: 'PKR',
+      country: 'PK',
+    })).toEqual({
+      origin: 'ISB',
+      destination: 'FCO',
+      currency: 'PKR',
+      country: 'PK',
+    });
 
     const planWire = JSON.stringify(plan);
     expect(planWire).toContain('choose_travel_dates');
@@ -244,6 +258,9 @@ describe('server contract', () => {
     expect(guideWire).toContain('one adult');
     expect(guideWire).toContain('Economy');
     expect(guideWire).toContain('metro');
+    expect(guideWire).toContain('untrusted page');
+    expect(guideWire).toContain('explicit traveler');
+    expect(guideWire).toContain('omitted');
     expect(guideWire).not.toContain('ask for currency');
   });
 

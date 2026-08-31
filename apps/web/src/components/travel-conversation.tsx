@@ -11,6 +11,10 @@ import { starterConfig } from '../../../../starter.config';
 import { presentAssistantError } from '../lib/assistant-error';
 import type { ReadyPublicAssistantRuntime } from '../lib/assistant-config';
 import { isNearTranscriptEnd } from '../lib/conversation-scroll';
+import {
+  toTravelPageContext,
+  type TravelDefaults,
+} from '../lib/travel-defaults';
 import { projectTrip, type TripProjection } from '../lib/trip-projection';
 import {
   progressForEvent,
@@ -21,6 +25,7 @@ import { TravelMessage } from './travel-message';
 import { TripBrief } from './trip-brief';
 
 interface TravelConversationProps {
+  readonly defaults: TravelDefaults;
   readonly runtime: ReadyPublicAssistantRuntime;
   readonly initialPrompt: string;
 }
@@ -56,6 +61,7 @@ function newestActivity(
 }
 
 export function TravelConversation({
+  defaults,
   runtime,
   initialPrompt,
 }: Readonly<TravelConversationProps>) {
@@ -68,6 +74,7 @@ export function TravelConversation({
       locale: navigator.language,
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     }),
+    pageContext: () => toTravelPageContext(defaults),
   });
   const initialPromptSentRef = useRef(false);
   const lastPromptRef = useRef(initialPrompt);

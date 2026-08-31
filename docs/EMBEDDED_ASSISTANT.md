@@ -36,7 +36,7 @@ The public surface is anonymous, not identity-free: Noodle binds each session to
 
 ## Product boundary
 
-The Assistant may open the starter, collect one missing date decision, search one-way or round-trip flights, select an application-issued fare handle, and verify current availability and price. The agent guide defaults to one adult, Economy, USD, and the US pricing market rather than asking for provider-oriented fields. A verified or changed fare is terminal.
+The Assistant may open the starter, collect one missing date decision, search one-way or round-trip flights, select an application-issued fare handle, and verify current availability and price. The agent guide defaults to one adult and Economy rather than asking for provider-oriented fields. An untrusted website page default may suggest an omitted origin, currency, and pricing market; explicit traveler text wins, and other hosts retain USD and the US market. A verified or changed fare is terminal.
 
 It does not prebook, hold inventory, collect passenger data, take payment, issue a ticket, manage a booking, cancel, refund, redeem loyalty, or search hotels and cars. Neither a selection nor a verified fare implies that inventory is held.
 
@@ -98,7 +98,7 @@ The Next.js security headers allow the exact Noodle service origin in:
 - `connect-src` for session and turn traffic; and
 - `frame-src` for linked App sandboxes.
 
-Keep `default-src 'self'`, `frame-ancestors 'none'`, `object-src 'none'`, the restrictive permissions policy, and the exact service origin. A blocked `script-src` prevents the runtime from starting, so the page cannot report that failure from inside the Assistant.
+Keep `default-src 'self'`, `frame-ancestors 'none'`, `object-src 'none'`, the restrictive permissions policy, and the exact service origin. The policy keeps camera and microphone disabled and grants geolocation only to the same-origin top-level page. A blocked `script-src` prevents the runtime from starting, so the page cannot report that failure from inside the Assistant.
 
 Run the local non-mutating preflight and production-equivalent website build before promotion:
 
@@ -147,7 +147,7 @@ Do not shorten the TTL, redeploy between steps, patch an application reset worka
 
 ## Privacy and support
 
-The checked-in `starterConfig.website.privacyUrl` and `termsUrl` are `null`, so the website renders no invented legal links. Configure one real HTTPS privacy URL and a monitored support destination before a hosted public-readiness claim. The privacy notice must cover anonymous Assistant/model processing, page and client context, Nuitee-backed flight searches, retention, third parties, budgets, and the fact that the site does not create bookings.
+The checked-in `starterConfig.website.privacyUrl` and `termsUrl` are `null`, so the website renders no invented legal links. The repository's local browser-location contract is documented in [`docs/privacy.md`](privacy.md): coordinates stay in browser memory, only derived travel defaults enter untrusted page context, and denial preserves flight search. Configure one real HTTPS privacy URL and a monitored support destination before a hosted public-readiness claim. The public privacy notice must cover anonymous Assistant/model processing, page and client context, Nuitee-backed flight searches, retention, third parties, budgets, and the fact that the site does not create bookings.
 
 The `/developers` route renders support only from configured application paths and renders privacy only when a real URL exists. Do not use a reserved example domain or claim monitoring that has not been established.
 

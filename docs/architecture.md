@@ -67,7 +67,7 @@ All MCP entrypoints call `createTravelServer(...)`. Tool names, schemas, output 
 1. The Next.js route resolves `NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID` and the exact service origin.
 2. Mounting the page renders only the zero state; it spends no public admission and creates no Assistant session.
 3. The first valid guest message mounts `TravelConversation`, generates a browser-memory `principalKey`, and starts the official public client.
-4. The hook sends locale and IANA time zone only as untrusted presentation context.
+4. The hook sends locale and IANA time zone as untrusted presentation context. It may also send a derived airport/city/country/currency page default; precise coordinates never enter the Assistant context.
 5. The service binds the session to the public surface's exact origin, allowlist, model, budget, and anonymous principal.
 6. Typed text, interactions, structured results, and App views flow through the same Assistant client.
 7. New trip/reset unmounts that client, aborts active work through the hook, and clears the in-memory transcript, principal key, and trip projection together.
@@ -79,7 +79,7 @@ Deterministic local browser evidence proves this composition only against a loop
 ## Search data flow
 
 1. When a clear route has no date, `plan_flight_search` collects departure and optional return dates through one portable structured-input interaction and returns a typed trip plan. It performs no connector operation.
-2. The model calls `search_flights` from that plan. One adult, Economy, USD, and the US pricing market are visible defaults; the user may change them conversationally without being interrogated before the first search.
+2. The model calls `search_flights` from that plan. One adult and Economy are visible defaults. The guest website may suggest an untrusted derived origin, currency, and pricing market when those facts are omitted; explicit traveler text always wins. Other hosts and unresolved website sessions retain USD and the US pricing market.
 3. The compute gateway validates route/date/traveler relationships against server-authoritative time.
 4. The gateway calls the allowlisted search operation once. Tool input cannot select an origin, URL, path, method, header, credential, or provider offer ID.
 5. The connector sends the exact request to `POST /flights/rates` and injects `X-API-Key` from the managed secret.
@@ -115,8 +115,11 @@ The terminal product state is a verified fare review. No provider ID is retained
 | Provider `offerId` | Private caller-scoped Noodle state | Never |
 | Application `selectionId` | Public tool/App output bound to private caller state | Yes |
 | Optional Assistant client secret | Authenticated website backend only | Never |
+| Browser coordinates | Top-level browser callback memory only | Never; only the derived travel default may reach untrusted page context |
 
 The browser receives no model key, Nuitee key, Assistant client secret, raw provider response, server continuation, provider transaction identifier, or direct MCP credential. Content Security Policy must allow the exact Noodle service origin in `script-src`, `connect-src`, and `frame-src`; all other public runtime origins remain application-owned.
+
+The optional location and currency flow is documented in [`docs/privacy.md`](privacy.md). Geolocation is same-origin only, uses a bundled public-domain airport catalog, has no third-party lookup or application persistence, and never supplies authorization or overrides a traveler-stated route.
 
 ## Optional authenticated extension
 

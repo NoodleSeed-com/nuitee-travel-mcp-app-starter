@@ -74,6 +74,26 @@ describe('public repository contracts', () => {
     expect(resolver).not.toMatch(/fetch\s*\(/u);
   });
 
+  it('documents the optional browser-location privacy boundary', async () => {
+    const [privacy, architecture, embed, customization] = await Promise.all([
+      repositoryFile('docs/privacy.md'),
+      repositoryFile('docs/architecture.md'),
+      repositoryFile('docs/EMBEDDED_ASSISTANT.md'),
+      repositoryFile('docs/customization.md'),
+    ]);
+
+    expect(privacy).toMatch(/optional browser location permission/i);
+    expect(privacy).toMatch(/coordinates[^.]*memory/i);
+    expect(privacy).toMatch(/derived[^.]*airport[^.]*currency/i);
+    expect(privacy).toMatch(/no[^.]*third-party[^.]*location lookup/i);
+    expect(privacy).toMatch(/not persisted|no application persistence/i);
+    expect(privacy).toMatch(/den(?:y|ied|ial)[^.]*flight search/i);
+    for (const guide of [architecture, embed, customization]) {
+      expect(guide).toContain('docs/privacy.md');
+      expect(guide).toContain('untrusted');
+    }
+  });
+
   it('keeps the public five-capability projection exact in active release guidance', async () => {
     const [server, checklist, architecture, implementationPlan, spec] = await Promise.all([
       repositoryFile('src/travel-server.ts'),

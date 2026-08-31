@@ -52,13 +52,11 @@ expect(toTravelPageContext({
   currency: 'PKR',
   source: 'browser-geolocation',
 })).toEqual({
-  travelDefaults: {
-    origin: 'ISB',
-    originLabel: 'Islamabad',
-    country: 'PK',
-    currency: 'PKR',
-    source: 'browser-geolocation',
-  },
+  travelOrigin: 'ISB',
+  travelOriginLabel: 'Islamabad',
+  travelCountry: 'PK',
+  travelCurrency: 'PKR',
+  travelDefaultSource: 'browser-geolocation',
 });
 expect(JSON.stringify(toTravelPageContext(defaults))).not.toMatch(/latitude|longitude|accuracy/);
 ```
@@ -256,13 +254,11 @@ Change the current negative `pageContext` assertion to require:
 
 ```ts
 expect(options.pageContext()).toEqual({
-  travelDefaults: {
-    origin: 'ISB',
-    originLabel: 'Islamabad',
-    country: 'PK',
-    currency: 'PKR',
-    source: 'browser-geolocation',
-  },
+  travelOrigin: 'ISB',
+  travelOriginLabel: 'Islamabad',
+  travelCountry: 'PK',
+  travelCurrency: 'PKR',
+  travelDefaultSource: 'browser-geolocation',
 });
 expect(JSON.stringify(options.pageContext())).not.toMatch(
   /latitude|longitude|accuracy|permission/i,

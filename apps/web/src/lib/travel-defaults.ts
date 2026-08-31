@@ -163,14 +163,12 @@ export function resolveInitialCurrency({
 
 export function toTravelPageContext(defaults: TravelDefaults) {
   return {
-    travelDefaults: {
-      ...(defaults.origin ? {
-        origin: defaults.origin.iata,
-        originLabel: defaults.origin.city,
-        country: defaults.origin.country,
-      } : {}),
-      currency: defaults.currency,
-      source: defaults.source,
-    },
+    ...(defaults.origin ? {
+      travelOrigin: defaults.origin.iata,
+      travelOriginLabel: defaults.origin.city,
+      travelCountry: defaults.origin.country,
+    } : {}),
+    travelCurrency: defaults.currency,
+    travelDefaultSource: defaults.source,
   } as const;
 }

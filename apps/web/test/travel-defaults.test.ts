@@ -84,13 +84,11 @@ describe('travel defaults', () => {
     const context = toTravelPageContext(defaults);
 
     expect(context).toEqual({
-      travelDefaults: {
-        origin: 'ISB',
-        originLabel: 'Islamabad',
-        country: 'PK',
-        currency: 'PKR',
-        source: 'browser-geolocation',
-      },
+      travelOrigin: 'ISB',
+      travelOriginLabel: 'Islamabad',
+      travelCountry: 'PK',
+      travelCurrency: 'PKR',
+      travelDefaultSource: 'browser-geolocation',
     });
     expect(JSON.stringify(context)).not.toMatch(
       /latitude|longitude|accuracy|permission/i,
@@ -100,7 +98,8 @@ describe('travel defaults', () => {
   it('omits location fields from fallback assistant page context', () => {
     expect(toTravelPageContext({ currency: 'GBP', source: 'fallback' }))
       .toEqual({
-        travelDefaults: { currency: 'GBP', source: 'fallback' },
+        travelCurrency: 'GBP',
+        travelDefaultSource: 'fallback',
       });
   });
 });

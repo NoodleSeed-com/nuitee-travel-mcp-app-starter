@@ -188,12 +188,42 @@ describe('guest travel conversation lifecycle', () => {
 
     const options = assistantMock.useNoodleAssistant.mock.calls.at(-1)?.[0];
     expect(options).not.toHaveProperty('context');
-    expect(options).not.toHaveProperty('pageContext');
+    expect(options.pageContext()).toEqual({
+      travelCurrency: 'USD',
+      travelDefaultSource: 'fallback',
+    });
+    expect(JSON.stringify(options.pageContext())).not.toMatch(
+      /latitude|longitude|accuracy|permission/i,
+    );
     expect(options.clientContext()).toEqual({
       locale: navigator.language,
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
     expect(options.clientContext()).not.toHaveProperty('principalKey');
+  });
+
+  it('recomputes user-selected currency in untrusted page context', async () => {
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Currency' }), {
+      target: { value: 'EUR' },
+    });
+    submitPrompt('Islamabad to Rome next weekend');
+
+    await waitFor(() => expect(client.sendMessage).toHaveBeenCalledOnce());
+    let options = assistantMock.useNoodleAssistant.mock.calls.at(-1)?.[0];
+    expect(options.pageContext()).toEqual({
+      travelCurrency: 'EUR',
+      travelDefaultSource: 'fallback',
+    });
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Currency' }), {
+      target: { value: 'GBP' },
+    });
+    options = assistantMock.useNoodleAssistant.mock.calls.at(-1)?.[0];
+    expect(options.pageContext()).toEqual({
+      travelCurrency: 'GBP',
+      travelDefaultSource: 'fallback',
+    });
   });
 
   it('keeps stable semantic grid slots when trip context and errors are absent', async () => {

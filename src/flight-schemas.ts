@@ -141,6 +141,8 @@ export const searchInputSchema = z.object({
 export const flightPlanInputSchema = z.object({
   origin: z.string().regex(/^[A-Z]{3}$/).describe('Resolved uppercase origin IATA code derived from an unambiguous user-supplied city or airport name'),
   destination: z.string().regex(/^[A-Z]{3}$/).describe('Resolved uppercase destination or metro IATA code derived from an unambiguous user-supplied place'),
+  currency: z.string().regex(/^[A-Z]{3}$/).default('USD').describe('Uppercase ISO 4217 display currency; an explicit traveler choice wins, otherwise a browser page default may be used'),
+  country: z.string().regex(/^[A-Z]{2}$/).default('US').describe('Uppercase ISO 3166-1 alpha-2 pricing market; an explicit traveler choice wins, otherwise a browser page default may be used'),
 });
 
 const isoCalendarDate = z.iso.date();

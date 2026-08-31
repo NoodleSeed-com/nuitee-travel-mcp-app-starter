@@ -125,7 +125,7 @@ Five shared capabilities are created in `src/travel-server.ts` from schemas in `
 - Describe one-way/round-trip, price verification, and stop-before-booking boundaries plainly.
 - Do not add transport authority such as URL, base URL, path, method, headers, or provider offer ID to an input schema.
 - If a new input is required by the official Nuitee contract, add a failing test, validation, request mapping, docs, and bounded output before exposing it.
-- The starter deliberately uses server-owned USD and US pricing defaults so a guest can reach results without provider jargon. Change those defaults only through reviewed application configuration; do not infer market from untrusted browser hints.
+- The starter uses USD and US as server-owned fallbacks so every host can reach results without provider jargon. The primary guest website may supply an untrusted derived airport-country and selected-currency default when the traveler omitted those facts; explicit traveler text always wins. Preserve the in-memory/no-third-party/no-authorization boundary in [`docs/privacy.md`](privacy.md) when changing this behavior.
 
 ## Normalized fields
 
