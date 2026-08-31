@@ -2,7 +2,7 @@
 
 A guest-first Next.js developer template for building a chat-first flight experience with a Noodle embedded assistant and the official Nuitee Connect Flights API. The fictional customer-facing brand is **Wayfare**.
 
-The primary guest website guides a traveler through **Search → Select → Verify** and stops at a verified fare. A clear route with no date produces one structured date decision; Wayfare uses visible defaults instead of asking for every provider field. It does not book, hold inventory, collect passenger details, take payment, or issue tickets. The repository also exposes the same bounded MCP tools and linked Apps to external MCP hosts; there is no website-only copy of the travel product.
+The primary guest website guides a traveler through **Search → Select → Verify** and stops at a verified fare. Wayfare resolves useful relative timing such as `next week`, applies visible one-way/adult/Economy and location-aware currency defaults, and searches without asking the traveler to confirm every provider field. A clear route with no usable date clue still produces one structured date decision. It does not book, hold inventory, collect passenger details, take payment, or issue tickets. The repository also exposes the same bounded MCP tools and linked Apps to external MCP hosts; there is no website-only copy of the travel product.
 
 This is an independent starter, not an official Nuitee connector, airline partnership, booking product, or endorsement.
 

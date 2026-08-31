@@ -158,6 +158,28 @@ describe('TravelHome', () => {
 });
 
 describe('FlightResults', () => {
+  it('renders a compact recovery state instead of repeating the result heading', () => {
+    const errorResult = {
+      status: 'error' as const,
+      fallback: 'The request is invalid.',
+      message: 'The request is invalid.',
+      itineraries: [],
+      error: {
+        code: 'invalid_request' as const,
+        message: 'Check the airports and travel date.',
+        retryable: false,
+      },
+    };
+
+    const html = renderToStaticMarkup(
+      <FlightResultsView result={errorResult} displayMode="inline" onVerify={vi.fn()} />,
+    );
+
+    expect(html).toContain('Search needs attention');
+    expect(html).toContain('Adjust an airport or travel date');
+    expect(html).not.toContain('<h1>Flight results</h1>');
+  });
+
   it('uses neutral navy runtime fallbacks when host branding is absent', () => {
     vi.mocked(helpers.useWidgetReady).mockReturnValue(true);
     vi.mocked(helpers.useLayout).mockReturnValue({ theme: 'light', displayMode: 'inline', supports: {} } as never);
@@ -241,8 +263,24 @@ describe('FlightResults', () => {
         onVerify={vi.fn()}
       />,
     );
-    expect((inline.match(/>Select fare<\/button>/g) ?? [])).toHaveLength(3);
+    expect((inline.match(/>Select fare<\/button>/g) ?? [])).toHaveLength(2);
+    expect(inline).toContain('aria-label="Flight options carousel"');
+    expect(inline).toContain('cc-carousel-stage');
+    expect(inline).toContain('cc-carousel-window');
+    expect(inline).toContain('cc-carousel-track');
+    expect(inline).toContain('cc-carousel-slide');
+    expect(inline).toContain('cc-carousel-peek-slide');
+    expect(inline).toContain('aria-hidden="true"');
+    expect(inline).not.toContain('cc-result-carousel');
+    expect(inline).toContain('aria-label="Previous flight option"');
+    expect(inline).toContain('aria-label="Next flight option"');
+    const previousButton = inline.match(/<button[^>]*aria-label="Previous flight option"[^>]*>/)?.[0] ?? '';
+    const nextButton = inline.match(/<button[^>]*aria-label="Next flight option"[^>]*>/)?.[0] ?? '';
+    expect(previousButton).toContain('disabled');
+    expect(nextButton).not.toContain('disabled');
+    expect(inline).toContain('Option 1 of 3');
     expect((fullscreen.match(/>Select fare<\/button>/g) ?? [])).toHaveLength(10);
+    expect(fullscreen).not.toContain('aria-label="Flight options carousel"');
     expect(inline).not.toContain('Verify current fare');
     const selected = renderToStaticMarkup(
       <FlightResultsView
@@ -254,7 +292,9 @@ describe('FlightResults', () => {
       />,
     );
     expect((selected.match(/>Verify current fare<\/button>/g) ?? [])).toHaveLength(1);
-    expect((selected.match(/data-variant="primary"/g) ?? [])).toHaveLength(3);
+    expect(selected).toContain('cc-carousel-peek-slide');
+    const selectedNextButton = selected.match(/<button[^>]*aria-label="Next flight option"[^>]*>/)?.[0] ?? '';
+    expect(selectedNextButton).not.toContain('disabled');
     for (const forbidden of ['Book', 'Checkout', 'Reserve', 'Pay', 'Redeem']) expect(inline).not.toContain(forbidden);
   });
 
@@ -267,15 +307,68 @@ describe('FlightResults', () => {
     expect(renderToStaticMarkup(<FlightResultsView displayMode="inline" onVerify={vi.fn()} {...props} />)).toContain(text);
   });
 
-  it('renders three familiar shimmer cards without a route-scanning animation', () => {
+  it('renders a geometry-matched carousel skeleton with a next-card peek and no route-scanning animation', () => {
     const html = renderToStaticMarkup(<FlightResultsView state="loading" displayMode="inline" onVerify={vi.fn()} />);
     expect(html).toContain('aria-busy="true"');
     expect(html).toContain('Searching current flights');
     expect(html).toContain('Comparing routes, schedules, and fares');
-    expect((html.match(/cc-skeleton-fare/g) ?? [])).toHaveLength(3);
+    expect((html.match(/cc-skeleton-fare/g) ?? [])).toHaveLength(2);
+    expect(html).toContain('cc-carousel-stage');
+    expect(html).toContain('cc-carousel-window');
+    expect(html).toContain('cc-carousel-track');
+    expect(html).toContain('cc-carousel-peek-slide');
+    expect(html).toContain('cc-fare-card cc-skeleton-fare');
+    expect(html).toContain('cc-skeleton-leg');
+    expect((html.match(/cc-skeleton-chip"/g) ?? [])).toHaveLength(6);
+    expect(html).toContain('cc-skeleton-details');
     expect(html).toContain('cc-shimmer');
     expect(html).not.toContain('cc-route-scan');
     expect(html).not.toContain('Checking providers');
+  });
+
+  it('uses bounded highlight chips and an accessible fixed-height fare-details face', () => {
+    const html = renderToStaticMarkup(
+      <FlightResultsView
+        result={{ status: 'success', itineraries: [itinerary], fallback: 'One flight', message: 'One flight', retrievedAt: itinerary.retrievedAt }}
+        displayMode="inline"
+        onVerify={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain('cc-fare-highlight-badge');
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).toContain('aria-hidden="true"');
+    expect(html).toContain('cc-fare-face-stack');
+    expect(html).toContain('cc-fare-face-front');
+    expect(html).toContain('cc-fare-face-back');
+    expect(html).toContain('cc-fare-front-summary');
+    expect(html).toContain('cc-leg-route-origin');
+    expect(html).toContain('cc-leg-route-destination');
+    expect(html).toContain('cc-fare-detail-content-compact');
+    expect(html).toContain('Back to flight');
+    expect(html).not.toContain('cc-fare-watermark');
+    expect(html).not.toContain('<details');
+    expect(html).not.toContain('cc-details-panel');
+  });
+
+  it('uses curated carrier accents and falls back to the Wayfare accent for unknown carriers', () => {
+    const renderCarrier = (code: string, name: string) => renderToStaticMarkup(
+      <FlightResultsView
+        result={{
+          status: 'success',
+          itineraries: [{ ...itinerary, carrier: { name, code } }],
+          fallback: 'One flight',
+          retrievedAt: itinerary.retrievedAt,
+        }}
+        displayMode="inline"
+        onVerify={vi.fn()}
+      />,
+    );
+
+    expect(renderCarrier('ND', 'Nuitee Air')).toContain('--cc-carrier-accent:#171717');
+    expect(renderCarrier('TP', 'TAP')).toContain('--cc-carrier-accent:#087a55');
+    expect(renderCarrier('TS', 'Air Transat')).toContain('--cc-carrier-accent:#17649a');
+    expect(renderCarrier('ZZ', 'Future Airline')).not.toContain('--cc-carrier-accent:');
   });
 
   it('shows Nuitee-provided airline imagery with carrier text and a safe fallback', () => {
@@ -567,6 +660,21 @@ describe('FlightResults', () => {
     expect(css).toContain('@keyframes cc-shimmer');
     expect(css).not.toContain('@keyframes cc-route-scan');
     expect(css).toContain('.cc-search-skeleton');
+    expect(css).toMatch(/\.cc-carousel-stage\s*\{[^}]*position:\s*relative/s);
+    expect(css).toMatch(/\.cc-carousel-arrow\s*\{[^}]*top:\s*50%/s);
+    expect(css).toMatch(/\.cc-carousel-window\s*\{[^}]*overflow:\s*clip/s);
+    expect(css).toMatch(/\.cc-carousel-track\s*\{[^}]*display:\s*flex/s);
+    expect(css).not.toMatch(/\.cc-carousel[^}]*overflow-x:\s*auto/s);
+    expect(css).toMatch(/\.cc-fare-highlight-badge\s*\{[^}]*white-space:\s*nowrap/s);
+    expect(css).toMatch(/\.cc-fare-face-stack\s*\{[^}]*display:\s*grid/s);
+    expect(css).toMatch(/\.cc-fare-face\s*\{[^}]*grid-area:\s*1\s*\/\s*1/s);
+    expect(css).toMatch(/\.cc-fare-face\s*\{[^}]*transition:/s);
+    expect(css).toMatch(/\.cc-fare-card-details\s*\{[^}]*background:/s);
+    expect(css).toContain('var(--cc-carrier-accent, var(--cc-accent))');
+    expect(css).toMatch(/\.cc-fare-back-header\s*\{[^}]*grid-template-columns:/s);
+    expect(css).toMatch(/\.cc-fare-back-button\s*\{[^}]*border:\s*0/s);
+    expect(css).toMatch(/\.cc-fare-back-button\s*\{[^}]*background:\s*transparent/s);
+    expect(css).toMatch(/\.cc-carousel-track-is-last\s*\{[^}]*transform:/s);
   });
 
   it('uses the portable Noodle Form and gates bridge-backed controls on widget readiness', () => {

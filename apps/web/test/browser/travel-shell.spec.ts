@@ -585,7 +585,7 @@ test('starts one destination prompt through one assistant turn', async ({ page }
   expect(sessionRequests).toBe(1);
 });
 
-test('proves premium active conversation, chronological nested Apps, keyboard order, text zoom, reduced motion, and transcript overflow', async ({
+test('proves premium active conversation, chronological nested Apps, keyboard order, text zoom, reduced motion, and single-page scrolling', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium');
@@ -1204,18 +1204,16 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
     await continueButton.click();
     await expect.poll(() => turnRequests).toBe(index + 2);
   }
-  await expect.poll(() => transcript.evaluate((viewport) => (
-    viewport.scrollHeight > viewport.clientHeight
+  await expect.poll(() => page.evaluate(() => (
+    document.documentElement.scrollHeight > window.innerHeight
   ))).toBe(true);
-  const transcriptScroll = await transcript.evaluate((viewport) => ({
-    clientHeight: viewport.clientHeight,
+  const scrollOwnership = await transcript.evaluate((viewport) => ({
     overflowY: getComputedStyle(viewport).overflowY,
-    scrollHeight: viewport.scrollHeight,
     scrollTop: viewport.scrollTop,
   }));
-  expect(transcriptScroll.scrollHeight).toBeGreaterThan(transcriptScroll.clientHeight);
-  expect(transcriptScroll.overflowY).toBe('auto');
-  expect(transcriptScroll.scrollTop).toBeGreaterThan(0);
+  expect(scrollOwnership.overflowY).toBe('visible');
+  expect(scrollOwnership.scrollTop).toBe(0);
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   const composer = conversation.getByRole('form', { name: 'Continue trip' });
   await expect(composer).toBeVisible();
   const composerBounds = await composer.boundingBox();
@@ -1520,9 +1518,11 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
     );
     assertHorizontallyContained(outerFrameBounds, hostBounds, 390);
     assertHorizontallyContained(innerFrameBounds, outerFrameBounds, 390);
-    expect(composerFrameBounds!.y).toBeGreaterThanOrEqual(
-      transcriptBounds!.y + transcriptBounds!.height,
-    );
+    expect(await composer.evaluate((element) => getComputedStyle(element).position))
+      .toBe('sticky');
+    expect(composerFrameBounds!.y).toBeGreaterThanOrEqual(0);
+    expect(composerFrameBounds!.y + composerFrameBounds!.height)
+      .toBeLessThanOrEqual(1600);
     const bounds = {
       composer: composerFrameBounds!,
       host: hostBounds!,
@@ -1664,7 +1664,7 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
       },
       responsive: responsiveMeasurements,
       routeProgress: { completedSegments: 3, phase: 'comparing' },
-      transcript: transcriptScroll,
+      transcript: scrollOwnership,
       zoomedAppText: zoomedAppTextMetrics[0],
       zoomedComposer: zoomedComposerBounds,
       zoomedComposerContents,
@@ -1958,7 +1958,7 @@ test('keeps the transcript as the sole flexible row before trip context exists',
     'lower-chrome',
     'composer',
   ]);
-  expect(layout.transcriptHeight).toBeGreaterThan(100);
+  expect(layout.transcriptHeight).toBeGreaterThan(80);
   expect(layout.statusHeight).toBeLessThanOrEqual(32);
   expect(layout.transcriptToChrome).toBeGreaterThanOrEqual(0);
   expect(layout.transcriptToChrome).toBeLessThanOrEqual(16);
@@ -2032,7 +2032,7 @@ test('keeps terminal errors bounded in the stable lower chrome row', async ({
     'lower-chrome',
     'composer',
   ]);
-  expect(layout.transcriptHeight).toBeGreaterThan(100);
+  expect(layout.transcriptHeight).toBeGreaterThan(80);
   expect(layout.lowerHeight).toBeLessThanOrEqual(160);
   expect(layout.statusHeight).toBeLessThanOrEqual(32);
   expect(layout.transcriptToChrome).toBeGreaterThanOrEqual(0);

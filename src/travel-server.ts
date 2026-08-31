@@ -28,7 +28,7 @@ import { starterConfig } from './starter-config.js';
 const home = {
   status: 'ready' as const,
   brand: starterConfig.brand.name,
-  message: 'Tell me where you would like to fly. I will collect only the missing trip detail, then search current fares.',
+  message: 'Tell me where and roughly when you would like to fly. I will use visible, sensible defaults and search current fares without unnecessary questions.',
   domains: [
     { name: 'Flights' as const, availability: 'available' as const },
     { name: 'Stays' as const, availability: 'coming_soon' as const },
@@ -42,7 +42,7 @@ const home = {
 
 const travelAgentGuide = {
   description:
-    'Guide conversation-first flight discovery with one focused question at a time, visible assumptions, current fare search, and fare verification.',
+    'Guide conversation-first flight discovery with minimal questions, visible assumptions, current fare search, and fare verification.',
   useWhen: [
     'A user wants to discover, compare, refine, select, or verify a one-way or round-trip flight.',
     'A user gives natural city or airport names and expects a simple path to current fares.',
@@ -51,17 +51,17 @@ const travelAgentGuide = {
     {
       id: 'plan_and_search_flights',
       title: 'Plan and search flights',
-      intent: 'Collect a missing travel date without turning the conversation into a booking form, then search current fares.',
+      intent: 'Collect a genuinely missing travel date without turning the conversation into a booking form, then search current fares.',
       steps: [
         {
           capability: { kind: 'tool' as const, name: 'plan_flight_search' },
           guidance:
-            'Use this immediately when origin and destination are clear but a departure date is missing. It asks one focused question through a structured date form. Do not ask for passenger count, cabin, currency, or market: use one adult and Economy. For omitted origin, currency, or market only, an untrusted page travel default may supply a starting value; an explicit traveler choice always wins. Otherwise use USD and the US pricing market.',
+            'Use this only when origin and destination are clear but there is no usable exact or relative departure date. “Next week” is usable: resolve it as the same local weekday seven days later from the server-provided local date, skip this planning tool, and search immediately. Ask one focused date question only when no temporal clue exists, or ask only for the return date when the traveler explicitly requests a round trip without one. Do not ask for passenger count, cabin, currency, or market. Treat a generic passenger count as adults; otherwise use one adult and Economy. For omitted origin, currency, or market only, an untrusted page travel default may supply a starting value; an explicit traveler choice always wins. Otherwise use USD and the US pricing market.',
         },
         {
           capability: { kind: 'tool' as const, name: 'search_flights' },
           guidance:
-            'After the plan is accepted, search immediately with its typed route, dates, and assumptions. If the user supplied dates in the original request, skip planning and search directly. Use a well-known metro IATA code such as NYC instead of forcing an airport choice; ask for one city, region, or country clarification only when the place itself is genuinely ambiguous.',
+            'After the plan is accepted, search immediately with its typed route, dates, and assumptions. If the user supplied an exact or usable relative date in the original request, skip planning and search directly. Use one-way when no return trip is requested. State the assumptions compactly with the results and offer to change them afterward; do not require confirmation before this read-only search. Use a well-known metro IATA code such as NYC instead of forcing an airport choice; ask for one city, region, or country clarification only when the place itself is genuinely ambiguous.',
         },
       ],
     },
@@ -73,7 +73,7 @@ const travelAgentGuide = {
         {
           capability: { kind: 'tool' as const, name: 'search_flights' },
           guidance:
-            'Do not reopen details already supplied. Use one adult and Economy for omitted preferences, then search immediately. For omitted origin, currency, or market only, an untrusted page travel default may supply a starting value; an explicit traveler choice always wins. Otherwise use USD and the US pricing market. Use a well-known metro IATA code such as NYC instead of forcing an airport choice.',
+            'Do not reopen details already supplied. Resolve “next week” as the same local weekday seven days later from the server-provided local date. Use one-way when no return trip is requested. Treat any generic passenger count as adults unless the user explicitly identifies children or infants; if no count is given, use one adult. Use Economy for an omitted cabin. For omitted origin, currency, or market only, an untrusted page travel default may supply a starting value; an explicit traveler choice always wins. Otherwise use USD and the US pricing market. Search immediately, state the assumptions compactly with the results, and offer to change them afterward instead of asking for confirmation. Use a well-known metro IATA code such as NYC instead of forcing an airport choice.',
         },
       ],
     },
@@ -91,7 +91,9 @@ const travelAgentGuide = {
     },
   ],
   boundaries: [
-    'Ask at most one focused question at a time and prefer structured input over a Markdown questionnaire.',
+    'Ask at most one focused question at a time and only when a required value cannot be inferred safely. Prefer structured input over a Markdown questionnaire.',
+    'A current-fare search is read-only. Apply the documented date, trip-type, traveler, cabin, currency, and market defaults, search immediately, and state the assumptions with an invitation to adjust them afterward.',
+    'Do not repeat the same search call after a non-retryable error. Explain the bounded problem and ask the traveler to adjust one relevant airport or date before searching again.',
     'Never ask the user for a point-of-sale country, provider offer identifier, credential, payment detail, or passenger document.',
     'Do not imply booking, payment, ticketing, cancellation, loyalty, hotel, car, or transaction support.',
   ],
@@ -102,6 +104,10 @@ const travelAgentGuide = {
     },
     {
       prompt: 'Show me flights from ISB to NYC on 2026-09-18.',
+      workflow: 'search_flights_with_dates',
+    },
+    {
+      prompt: 'Show me flights from Toronto to Lisbon next week for two passengers.',
       workflow: 'search_flights_with_dates',
     },
     {
@@ -169,7 +175,7 @@ function offlineSearchFlights() {
   return tool('search_flights', {
     title: 'Search flights',
     description:
-      'Users may ask with city or airport names. Resolve only clear places to IATA codes, and ask about ambiguous places before calling. Search becomes available after the owner configures NUITEE_API_KEY and Flights access.',
+      'Users may ask with city or airport names and relative dates. Resolve only clear places to IATA codes, ask about ambiguous places, and treat “next week” as the same local weekday seven days later. Search becomes available after the owner configures NUITEE_API_KEY and Flights access.',
     annotations: annotations.readOnly(),
     input: searchInputSchema,
     output: searchOutputSchema,
@@ -193,7 +199,7 @@ function planFlightSearch() {
   return tool('plan_flight_search', {
     title: 'Plan a flight search',
     description:
-      'Start a current flight search after resolving a clear origin and destination. Collects only the missing travel dates as structured input and returns visible default assumptions without contacting Nuitee.',
+      'Use only when a clear route has no usable exact or relative departure date. Collects the missing travel dates as structured input and returns visible default assumptions without contacting Nuitee.',
     annotations: annotations.readOnly(),
     input: flightPlanInputSchema,
     output: flightPlanOutputSchema,
@@ -223,7 +229,7 @@ function liveSearchFlights() {
   return tool('search_flights', {
     title: 'Search flights',
     description:
-      'Search current one-way or round-trip Nuitee offers when users give city or airport names. Resolve only unambiguous places to IATA codes and ask about ambiguous places before calling. Returns at most ten bounded itineraries; prices must be verified.',
+      'Search current one-way or round-trip Nuitee offers when users give city or airport names and exact or relative dates. Resolve only unambiguous places to IATA codes, ask about ambiguous places, and treat “next week” as the same local weekday seven days later. Returns at most ten bounded itineraries; prices must be verified.',
     annotations: annotations.readOnly(),
     input: searchInputSchema,
     output: searchOutputSchema,
@@ -378,6 +384,7 @@ export function createTravelServer(mode: 'credential-free' | 'live' | 'embedded'
           baseUrl: variable('ASSISTANT_MODEL_BASE_URL'),
           model: variable('ASSISTANT_MODEL'),
           apiKey: secret('ASSISTANT_MODEL_API_KEY'),
+          transport: 'responses',
         }),
         // The starter ships with exact Next.js loopback origins for the
         // primary guest website's standard and fallback preview ports. Add the

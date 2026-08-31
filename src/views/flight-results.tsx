@@ -1,6 +1,6 @@
 import '@fontsource-variable/inter';
 import '@noodleseed/one/react/styles.css';
-import { useEffect, useRef, type CSSProperties } from 'react';
+import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
 import {
   Action,
   ActionBar,
@@ -279,6 +279,21 @@ function carrierInitials(carrier: Itinerary['carrier']) {
   return carrier.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
 }
 
+// Keep these accents local and deliberately curated. They tint the details face
+// without loading third-party visual assets. Any carrier not listed here uses
+// the host/Wayfare accent through the CSS fallback instead of a guessed color.
+const carrierAccents: Readonly<Record<string, string>> = {
+  ND: '#171717',
+  PD: '#2b2d31',
+  TP: '#087a55',
+  TS: '#17649a',
+  WS: '#0b756b',
+};
+
+function carrierAccent(code: string) {
+  return carrierAccents[code.toUpperCase()];
+}
+
 function CarrierIdentity({ carrier, compact = false }: { readonly carrier: Itinerary['carrier']; readonly compact?: boolean }) {
   return (
     <span className={`cc-carrier-identity ${compact ? 'cc-carrier-identity-compact' : ''}`}>
@@ -303,42 +318,88 @@ function CarrierIdentity({ carrier, compact = false }: { readonly carrier: Itine
   );
 }
 
-function FlightSearchSkeleton() {
+function FareCardSkeleton({ preview = false }: { readonly preview?: boolean }) {
   return (
-    <section className="cc-search-skeleton" role="status" aria-live="polite" aria-busy="true">
-      <header className="cc-scan-header">
-        <div>
-          <strong>Searching current flights</strong>
-          <span>Comparing routes, schedules, and fares…</span>
+    <div className={`cc-carousel-slide ${preview ? 'cc-carousel-peek-slide' : ''}`}>
+      <article className="cc-fare-card cc-skeleton-fare">
+        <div className="cc-skeleton-row">
+          <span className="cc-skeleton-carrier-group">
+            <span className="cc-skeleton-block cc-shimmer cc-skeleton-logo" />
+            <span className="cc-skeleton-block cc-shimmer cc-skeleton-carrier" />
+          </span>
+          <span className="cc-skeleton-block cc-shimmer cc-skeleton-badge" />
         </div>
-      </header>
-
-      <div className="cc-skeleton-list" aria-hidden="true">
-        {[0, 1, 2].map((index) => (
-          <article className="cc-skeleton-fare" key={index}>
+        <div className="cc-skeleton-route">
+          <span className="cc-skeleton-block cc-shimmer cc-skeleton-code" />
+          <span className="cc-skeleton-line" />
+          <span className="cc-skeleton-block cc-shimmer cc-skeleton-code" />
+        </div>
+        <span className="cc-skeleton-block cc-shimmer cc-skeleton-airports" />
+        <div className="cc-leg-list">
+          <section className="cc-leg cc-skeleton-leg">
             <div className="cc-skeleton-row">
-              <span className="cc-skeleton-carrier-group">
-                <span className="cc-skeleton-block cc-shimmer cc-skeleton-logo" />
-                <span className="cc-skeleton-block cc-shimmer cc-skeleton-carrier" />
-              </span>
-              <span className="cc-skeleton-block cc-shimmer cc-skeleton-badge" />
-            </div>
-            <div className="cc-skeleton-route">
-              <span className="cc-skeleton-block cc-shimmer cc-skeleton-code" />
-              <span className="cc-skeleton-line" />
-              <span className="cc-skeleton-block cc-shimmer cc-skeleton-code" />
+              <span className="cc-skeleton-block cc-shimmer cc-skeleton-leg-heading" />
+              <span className="cc-skeleton-block cc-shimmer cc-skeleton-stop" />
             </div>
             <div className="cc-skeleton-times">
               <span className="cc-skeleton-block cc-shimmer" />
               <span className="cc-skeleton-block cc-shimmer" />
               <span className="cc-skeleton-block cc-shimmer" />
             </div>
-            <div className="cc-skeleton-row cc-skeleton-footer">
-              <span className="cc-skeleton-block cc-shimmer cc-skeleton-price" />
-              <span className="cc-skeleton-block cc-shimmer cc-skeleton-action" />
+          </section>
+        </div>
+        <div className="cc-skeleton-chips">
+          {[0, 1, 2].map((index) => (
+            <span className="cc-skeleton-block cc-shimmer cc-skeleton-chip" key={index} />
+          ))}
+        </div>
+        <span className="cc-skeleton-block cc-shimmer cc-skeleton-details" />
+        <div className="cc-skeleton-summary">
+          {[0, 1, 2].map((index) => (
+            <span className="cc-skeleton-block cc-shimmer" key={index} />
+          ))}
+        </div>
+        <div className="cc-skeleton-row cc-skeleton-footer">
+          <span className="cc-skeleton-block cc-shimmer cc-skeleton-price" />
+          <span className="cc-skeleton-block cc-shimmer cc-skeleton-action" />
+        </div>
+      </article>
+    </div>
+  );
+}
+
+function FlightSearchSkeleton() {
+  return (
+    <section className="cc-search-skeleton" role="status" aria-live="polite" aria-busy="true">
+      <header className="cc-results-toolbar cc-scan-header">
+        <div>
+          <strong>Searching current flights</strong>
+          <span>Comparing routes, schedules, and fares…</span>
+        </div>
+      </header>
+
+      <section className="cc-carousel cc-skeleton-carousel" aria-hidden="true">
+        <div className="cc-carousel-controls">
+          <span className="cc-skeleton-block cc-shimmer cc-skeleton-position" />
+        </div>
+        <div className="cc-carousel-stage">
+          <span className="cc-skeleton-block cc-shimmer cc-skeleton-arrow cc-skeleton-arrow-previous" />
+          <div className="cc-carousel-window">
+            <div className="cc-carousel-track">
+              <FareCardSkeleton />
+              <FareCardSkeleton preview />
             </div>
-          </article>
-        ))}
+          </div>
+          <span className="cc-skeleton-block cc-shimmer cc-skeleton-arrow cc-skeleton-arrow-next" />
+        </div>
+      </section>
+      <div className="cc-skeleton-notes" aria-hidden="true">
+        <span className="cc-skeleton-block cc-shimmer cc-skeleton-hint" />
+        <span className="cc-skeleton-freshness">
+          <span className="cc-skeleton-block cc-shimmer" />
+          <span className="cc-skeleton-block cc-shimmer" />
+          <span className="cc-skeleton-block cc-shimmer" />
+        </span>
       </div>
     </section>
   );
@@ -347,7 +408,7 @@ function FlightSearchSkeleton() {
 function resultStatus(state: ResultsState, theme: 'light' | 'dark', brandStyle?: CSSProperties) {
   if (state === 'loading') {
     return (
-      <Frame className={`cc-app ${theme === 'dark' ? 'cc-theme-dark' : ''}`} style={brandStyle} displayMode="auto" title="Flight results">
+      <Frame className={`cc-app ${theme === 'dark' ? 'cc-theme-dark' : ''}`} style={brandStyle} displayMode="auto" title="Current flight options" subtitle="Searching current fares">
         <FlightSearchSkeleton />
       </Frame>
     );
@@ -370,7 +431,11 @@ function RouteTimeline({ itinerary }: { readonly itinerary: Itinerary }) {
             <div className="cc-leg-heading">
               <div>
                 <h4><PlaneIcon />{direction}</h4>
-                <p>{airportLabel(leg.route, 'origin')} → {airportLabel(leg.route, 'destination')}</p>
+                <p className="cc-leg-route">
+                  <span className="cc-leg-route-origin">{airportLabel(leg.route, 'origin')}</span>
+                  <span aria-hidden="true" className="cc-leg-route-arrow">→</span>
+                  <span className="cc-leg-route-destination">{airportLabel(leg.route, 'destination')}</span>
+                </p>
               </div>
               <strong className={`cc-stop-badge ${leg.stops === 0 ? 'cc-stop-badge-direct' : ''}`}>{stopLabel(leg.stops)}</strong>
             </div>
@@ -396,16 +461,35 @@ function RouteTimeline({ itinerary }: { readonly itinerary: Itinerary }) {
   );
 }
 
-function FareDetails({ itinerary }: { readonly itinerary: Itinerary }) {
+function FareFrontSummary({ itinerary }: { readonly itinerary: Itinerary }) {
+  const items = [
+    itinerary.terms.refundable === undefined
+      ? undefined
+      : itinerary.terms.refundable
+        ? `Refundable${itinerary.terms.hasRefundFee ? '; fee may apply' : ''}`
+        : 'Non-refundable',
+    itinerary.terms.changeable === undefined
+      ? undefined
+      : itinerary.terms.changeable
+        ? `Changes allowed${itinerary.terms.hasChangeFee ? '; fee may apply' : ''}`
+        : 'Changes not allowed',
+    itinerary.expiresAt ? `Offer expires ${instantTime(itinerary.expiresAt)}` : 'Fare conditions are confirmed during verification',
+  ].filter((item): item is string => Boolean(item));
+
+  return <ul className="cc-fare-front-summary">{items.map((item) => <li key={item}>{item}</li>)}</ul>;
+}
+
+function FareDetailContent({ itinerary, compact = false }: { readonly itinerary: Itinerary; readonly compact?: boolean }) {
   return (
-    <details className="cc-details">
-      <summary><TagIcon />Flight and fare details</summary>
+    <div className={`cc-fare-detail-content ${compact ? 'cc-fare-detail-content-compact' : ''}`}>
       <div className="cc-details-grid">
         {itinerary.fare.family ? <div><span>Fare family</span><strong>{itinerary.fare.family}</strong></div> : null}
         {itinerary.fare.mixedCabin !== undefined ? <div><span>Cabin</span><strong>{itinerary.fare.mixedCabin ? 'Mixed cabin' : 'Same cabin throughout'}</strong></div> : null}
         {itinerary.fare.seatsRemaining !== undefined ? <div><span>Provider availability</span><strong>{itinerary.fare.seatsRemaining} seat{itinerary.fare.seatsRemaining === 1 ? '' : 's'} shown</strong></div> : null}
         {itinerary.terms.changeable !== undefined ? <div><span>Changes</span><strong>{itinerary.terms.changeable ? (itinerary.terms.hasChangeFee ? 'Allowed; fee may apply' : 'Allowed') : 'Not allowed'}</strong></div> : null}
         {itinerary.terms.refundable !== undefined ? <div><span>Refunds</span><strong>{itinerary.terms.refundable ? (itinerary.terms.hasRefundFee ? 'Allowed; fee may apply' : 'Allowed') : 'Non-refundable'}</strong></div> : null}
+        <div><span>Carry-on</span><strong>{itinerary.baggage.carryOn ? 'Included' : 'Not confirmed'}</strong></div>
+        <div><span>Checked bag</span><strong>{itinerary.baggage.checked ? 'Included' : 'Not confirmed'}</strong></div>
       </div>
       {itinerary.amenities.length > 0 ? (
         <ul className="cc-amenities" aria-label="Documented amenities">
@@ -418,7 +502,7 @@ function FareDetails({ itinerary }: { readonly itinerary: Itinerary }) {
         </ul>
       ) : null}
       {itinerary.segments.length > 0 ? (
-        <ol className="cc-segments">
+        <ol className="cc-segments" aria-label="Flight segments">
           {itinerary.segments.map((segment, index) => (
             <li key={`${segment.direction}-${index}-${segment.origin}-${segment.destination}`}>
               <strong>{segment.origin} → {segment.destination}</strong>
@@ -428,7 +512,8 @@ function FareDetails({ itinerary }: { readonly itinerary: Itinerary }) {
           ))}
         </ol>
       ) : null}
-    </details>
+      {itinerary.messages.length > 0 ? <ul className="cc-messages">{itinerary.messages.map((message, index) => <li key={`${index}-${message}`}>{message}</li>)}</ul> : null}
+    </div>
   );
 }
 
@@ -437,40 +522,220 @@ function FareCard({ itinerary, selected, onSelect }: {
   readonly selected: boolean;
   readonly onSelect?: (selectionId: string) => void;
 }) {
+  const [detailsVisible, setDetailsVisible] = useState(false);
+  const backFaceId = useId();
+  const detailsButtonRef = useRef<HTMLButtonElement>(null);
+  const backButtonRef = useRef<HTMLButtonElement>(null);
+  const accent = carrierAccent(itinerary.carrier.code);
+
+  function showDetails() {
+    setDetailsVisible(true);
+    window.setTimeout(() => backButtonRef.current?.focus({ preventScroll: true }), 50);
+  }
+
+  function showFlight() {
+    setDetailsVisible(false);
+    window.setTimeout(() => detailsButtonRef.current?.focus({ preventScroll: true }), 50);
+  }
+
   return (
-    <article className={`cc-fare-card ${selected ? 'cc-fare-selected' : ''}`} aria-label={`${itinerary.route.origin} to ${itinerary.route.destination} with ${itinerary.carrier.name}`}>
-      <header className="cc-fare-header">
-        <div className="cc-fare-heading">
-          <CarrierIdentity carrier={itinerary.carrier} />
-          <h3><span>{itinerary.route.origin}</span><PlaneIcon /><span>{itinerary.route.destination}</span></h3>
-          <p className="cc-airport-names">{airportLabel(itinerary.route, 'origin')} to {airportLabel(itinerary.route, 'destination')}</p>
+    <article
+      className={`cc-fare-card ${detailsVisible ? 'cc-fare-card-details' : ''} ${selected ? 'cc-fare-selected' : ''}`}
+      aria-label={`${itinerary.route.origin} to ${itinerary.route.destination} with ${itinerary.carrier.name}`}
+      style={accent ? { '--cc-carrier-accent': accent } as CSSProperties : undefined}
+    >
+      <div className="cc-fare-face-stack">
+        <div
+          aria-hidden={detailsVisible}
+          className={`cc-fare-face cc-fare-face-front ${detailsVisible ? 'cc-fare-face-is-hidden' : ''}`}
+          inert={detailsVisible ? true : undefined}
+        >
+          <header className="cc-fare-header">
+            <div className="cc-fare-heading">
+              <CarrierIdentity carrier={itinerary.carrier} />
+              <h3><span>{itinerary.route.origin}</span><PlaneIcon /><span>{itinerary.route.destination}</span></h3>
+              <p className="cc-airport-names">{airportLabel(itinerary.route, 'origin')} to {airportLabel(itinerary.route, 'destination')}</p>
+            </div>
+            {itinerary.isCheapest ? <StatusBadge className="cc-fare-highlight-badge" tone="info">Lowest fare</StatusBadge> : null}
+          </header>
+          <RouteTimeline itinerary={itinerary} />
+          <div className="cc-fare-meta">
+            <span><CarryOnIcon />{itinerary.baggage.carryOn ? 'Carry-on included' : 'Carry-on not confirmed'}</span>
+            <span><CheckedBagIcon />{itinerary.baggage.checked ? 'Checked bag included' : 'Checked bag not confirmed'}</span>
+            {itinerary.fare.family ? <span><TagIcon />{itinerary.fare.family}</span> : null}
+          </div>
+          <div className="cc-details">
+            <button
+              aria-controls={backFaceId}
+              aria-expanded={detailsVisible}
+              className="cc-details-toggle"
+              onClick={showDetails}
+              ref={detailsButtonRef}
+              type="button"
+            >
+              <TagIcon />Flight and fare details<span aria-hidden="true" className="cc-details-chevron" />
+            </button>
+          </div>
+          <FareFrontSummary itinerary={itinerary} />
+          <footer className="cc-fare-footer">
+            <div>
+              <span>Trip total</span>
+              <strong>{money(itinerary.price.total, itinerary.price.currency)}</strong>
+              <small>Search price · must be verified</small>
+            </div>
+            <Action
+              variant={selected ? 'secondary' : 'primary'}
+              aria-pressed={selected}
+              aria-label={`${selected ? 'Selected fare' : 'Select fare'} from ${itinerary.route.origin} to ${itinerary.route.destination} with ${itinerary.carrier.name}`}
+              onClick={() => onSelect?.(itinerary.selectionId)}
+            >
+              {selected ? 'Selected' : 'Select fare'}
+            </Action>
+          </footer>
         </div>
-        {itinerary.isCheapest ? <StatusBadge tone="info">Lowest fare</StatusBadge> : null}
-      </header>
-      <RouteTimeline itinerary={itinerary} />
-      <div className="cc-fare-meta">
-        <span><CarryOnIcon />{itinerary.baggage.carryOn ? 'Carry-on included' : 'Carry-on not confirmed'}</span>
-        <span><CheckedBagIcon />{itinerary.baggage.checked ? 'Checked bag included' : 'Checked bag not confirmed'}</span>
-        {itinerary.fare.family ? <span><TagIcon />{itinerary.fare.family}</span> : null}
+        <div
+          aria-hidden={!detailsVisible}
+          className={`cc-fare-face cc-fare-face-back ${detailsVisible ? '' : 'cc-fare-face-is-hidden'}`}
+          id={backFaceId}
+          inert={detailsVisible ? undefined : true}
+        >
+          <header className="cc-fare-back-header">
+            <div>
+              <span>Fare overview</span>
+              <h3>Flight and fare details</h3>
+              <CarrierIdentity carrier={itinerary.carrier} compact />
+            </div>
+            <button className="cc-fare-back-button" onClick={showFlight} ref={backButtonRef} type="button">
+              <ArrowLeftIcon />Back to flight
+            </button>
+          </header>
+          <p className="cc-fare-back-route">{itinerary.route.origin} → {itinerary.route.destination} · {money(itinerary.price.total, itinerary.price.currency)}</p>
+          <FareDetailContent itinerary={itinerary} compact />
+        </div>
       </div>
-      <FareDetails itinerary={itinerary} />
-      {itinerary.messages.length > 0 ? <ul className="cc-messages">{itinerary.messages.map((message, index) => <li key={`${index}-${message}`}>{message}</li>)}</ul> : null}
-      <footer className="cc-fare-footer">
-        <div>
-          <span>Trip total</span>
-          <strong>{money(itinerary.price.total, itinerary.price.currency)}</strong>
-          <small>Search price · must be verified</small>
+    </article>
+  );
+}
+
+function FareCarousel({ itineraries, selectedSelectionId, onSelect }: {
+  readonly itineraries: readonly Itinerary[];
+  readonly selectedSelectionId?: string;
+  readonly onSelect?: (selectionId: string) => void;
+}) {
+  const selectedIndex = selectedSelectionId
+    ? itineraries.findIndex((itinerary) => itinerary.selectionId === selectedSelectionId)
+    : -1;
+  const [activeIndex, setActiveIndex] = useState(() => Math.max(0, selectedIndex));
+  const lastIndex = Math.max(0, itineraries.length - 1);
+
+  useEffect(() => {
+    setActiveIndex((current) => selectedIndex >= 0
+      ? selectedIndex
+      : Math.min(current, lastIndex));
+  }, [lastIndex, selectedIndex]);
+
+  function moveTo(index: number) {
+    setActiveIndex(Math.max(0, Math.min(lastIndex, index)));
+  }
+
+  const active = itineraries[activeIndex] ?? itineraries[0]!;
+  const hasPrevious = activeIndex > 0;
+  const hasNext = activeIndex < lastIndex;
+  const hasNextPeek = hasNext;
+  const hasPreviousPeek = !hasNext && hasPrevious;
+  const nextIndex = hasNext ? activeIndex + 1 : activeIndex;
+  const next = itineraries[nextIndex] ?? active;
+  const previousIndex = hasPrevious ? activeIndex - 1 : activeIndex;
+  const previous = itineraries[previousIndex] ?? active;
+
+  return (
+    <section
+      className="cc-carousel"
+      aria-label="Flight options carousel"
+      onKeyDown={(event) => {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        event.preventDefault();
+        moveTo(activeIndex + (event.key === 'ArrowRight' ? 1 : -1));
+      }}
+    >
+      <div className="cc-carousel-controls">
+        <span aria-live="polite" role="status">Option {activeIndex + 1} of {itineraries.length}</span>
+      </div>
+      <div
+        className="cc-carousel-stage"
+      >
+        <Action
+          aria-label="Previous flight option"
+          className="cc-carousel-arrow cc-carousel-arrow-previous"
+          disabled={!hasPrevious}
+          onClick={() => moveTo(activeIndex - 1)}
+          variant="quiet"
+        >
+          <ArrowLeftIcon />
+        </Action>
+        <div className="cc-carousel-window">
+          <div className={`cc-carousel-track ${hasPreviousPeek ? 'cc-carousel-track-is-last' : ''}`}>
+            {hasPreviousPeek ? (
+              <div className="cc-carousel-peek-shell cc-carousel-previous-peek-shell" key={`peek-${previous.selectionId}`}>
+                <div aria-hidden="true" className="cc-carousel-slide cc-carousel-peek-slide" inert>
+                  <FareCard
+                    itinerary={previous}
+                    onSelect={onSelect}
+                    selected={false}
+                  />
+                </div>
+                <button
+                  aria-label={`Show flight option ${previousIndex + 1}`}
+                  className="cc-carousel-peek-hit-target"
+                  onClick={() => moveTo(previousIndex)}
+                  type="button"
+                />
+              </div>
+            ) : null}
+            <div
+              aria-label={`Flight option ${activeIndex + 1} of ${itineraries.length}`}
+              aria-roledescription="slide"
+              className="cc-carousel-slide"
+              key={active.selectionId}
+              role="region"
+              tabIndex={0}
+            >
+              <FareCard
+                itinerary={active}
+                onSelect={onSelect}
+                selected={selectedSelectionId === active.selectionId}
+              />
+            </div>
+            {hasNextPeek ? (
+              <div className="cc-carousel-peek-shell" key={`peek-${next.selectionId}`}>
+                <div aria-hidden="true" className="cc-carousel-slide cc-carousel-peek-slide" inert>
+                  <FareCard
+                    itinerary={next}
+                    onSelect={onSelect}
+                    selected={false}
+                  />
+                </div>
+                <button
+                  aria-label={`Show flight option ${nextIndex + 1}`}
+                  className="cc-carousel-peek-hit-target"
+                  onClick={() => moveTo(nextIndex)}
+                  type="button"
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
         <Action
-          variant={selected ? 'secondary' : 'primary'}
-          aria-pressed={selected}
-          aria-label={`${selected ? 'Selected fare' : 'Select fare'} from ${itinerary.route.origin} to ${itinerary.route.destination} with ${itinerary.carrier.name}`}
-          onClick={() => onSelect?.(itinerary.selectionId)}
+          aria-label="Next flight option"
+          className="cc-carousel-arrow cc-carousel-arrow-next"
+          disabled={!hasNext}
+          onClick={() => moveTo(activeIndex + 1)}
+          variant="quiet"
         >
-          {selected ? 'Selected' : 'Select fare'}
+          <ArrowLeftIcon />
         </Action>
-      </footer>
-    </article>
+      </div>
+    </section>
   );
 }
 
@@ -517,7 +782,9 @@ function FareReview({ itinerary, verification, onBack }: {
             {itinerary.price.fees !== undefined ? <><dt>Fees</dt><dd>{money(itinerary.price.fees, itinerary.price.currency)}</dd></> : null}
           </dl>
         ) : null}
-        <FareDetails itinerary={itinerary} />
+        <section className="cc-details cc-review-details">
+          <FareDetailContent itinerary={itinerary} />
+        </section>
         {verification.messages.length > 0 ? <ul className="cc-messages">{verification.messages.map((message, index) => <li key={`${index}-${message}`}>{message}</li>)}</ul> : null}
         <footer className="cc-review-footer">
           {verification.verifiedAt ? <span>Verified {instantTime(verification.verifiedAt)}</span> : null}
@@ -596,9 +863,13 @@ export function FlightResultsView({
 
   if (result.status === 'error') {
     return (
-      <Frame className={`cc-app ${theme === 'dark' ? 'cc-theme-dark' : ''}`} style={brandStyle} displayMode="auto" title="Flight results" data-llm={result.fallback}>
+      <Frame className={`cc-app ${theme === 'dark' ? 'cc-theme-dark' : ''}`} style={brandStyle} displayMode="auto" title="Search needs attention" data-llm={result.fallback}>
         <Feedback status="error">{result.error?.message ?? result.message}</Feedback>
-        {result.error?.retryable ? <p className="cc-freshness">Try this search again from the conversation.</p> : null}
+        <p className="cc-freshness">
+          {result.error?.retryable
+            ? 'Try this search again from the conversation.'
+            : 'Adjust an airport or travel date before searching again.'}
+        </p>
       </Frame>
     );
   }
@@ -636,9 +907,17 @@ export function FlightResultsView({
           {onEdit ? <Action variant="quiet" onClick={onEdit}>Edit search</Action> : null}
         </div>
         {result.status === 'partial' ? <div className="cc-partial" role="status">Some provider results were incomplete. Showing only the options that could be interpreted safely.</div> : null}
-        <div className="cc-result-list">
-          {shown.map((itinerary) => <FareCard key={itinerary.selectionId} itinerary={itinerary} selected={selectedSelectionId === itinerary.selectionId} onSelect={onSelect} />)}
-        </div>
+        {displayMode === 'fullscreen' ? (
+          <div className="cc-result-list">
+            {shown.map((itinerary) => <FareCard key={itinerary.selectionId} itinerary={itinerary} selected={selectedSelectionId === itinerary.selectionId} onSelect={onSelect} />)}
+          </div>
+        ) : (
+          <FareCarousel
+            itineraries={shown}
+            onSelect={onSelect}
+            selectedSelectionId={selectedSelectionId}
+          />
+        )}
         {displayMode !== 'fullscreen' && result.itineraries.length > 3 ? (
           onExpand ? <Action variant="quiet" onClick={onExpand}>Show all {Math.min(10, result.itineraries.length)} results</Action>
             : <p className="cc-more-note">Open the App in expanded view to browse all {Math.min(10, result.itineraries.length)} options.</p>

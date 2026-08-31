@@ -78,8 +78,8 @@ Deterministic local browser evidence proves this composition only against a loop
 
 ## Search data flow
 
-1. When a clear route has no date, `plan_flight_search` collects departure and optional return dates through one portable structured-input interaction and returns a typed trip plan. It performs no connector operation.
-2. The model calls `search_flights` from that plan. One adult and Economy are visible defaults. The guest website may suggest an untrusted derived origin, currency, and pricing market when those facts are omitted; explicit traveler text always wins. Other hosts and unresolved website sessions retain USD and the US pricing market.
+1. When a clear route has no usable exact or relative date clue, `plan_flight_search` collects departure and optional return dates through one portable structured-input interaction and returns a typed trip plan. `Next week` instead resolves to the same local weekday seven days after the server-provided local date, without another question. Planning performs no connector operation.
+2. The model calls `search_flights` immediately from the typed facts. One-way, one adult, and Economy are visible defaults when the traveler does not supply a return trip, party, or cabin; a generic passenger count is treated as adults unless children or infants are explicit. The guest website may suggest an untrusted derived origin, currency, and pricing market when those facts are omitted; explicit traveler text always wins. Other hosts and unresolved website sessions retain USD and the US pricing market. The response states the applied assumptions and offers adjustment after the read-only search rather than requiring confirmation first.
 3. The compute gateway validates route/date/traveler relationships against server-authoritative time.
 4. The gateway calls the allowlisted search operation once. Tool input cannot select an origin, URL, path, method, header, credential, or provider offer ID.
 5. The connector sends the exact request to `POST /flights/rates` and injects `X-API-Key` from the managed secret.

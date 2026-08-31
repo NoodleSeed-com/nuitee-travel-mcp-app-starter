@@ -126,16 +126,16 @@ export const itinerarySchema = z.object({
 export const searchInputSchema = z.object({
   origin: z.string().regex(/^[A-Za-z]{3}$/).describe('Resolved origin IATA code derived from an unambiguous user-supplied city or airport name'),
   destination: z.string().regex(/^[A-Za-z]{3}$/).describe('Resolved destination IATA code derived from an unambiguous user-supplied city or airport name'),
-  departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe('Outbound date in YYYY-MM-DD format'),
+  departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe('Outbound date in YYYY-MM-DD format; resolve relative language from the server-provided local date before calling'),
   returnDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe('Optional return date in YYYY-MM-DD format'),
-  adults: z.number().int().min(1).max(9).default(1),
-  children: z.number().int().min(0).max(8).default(0),
-  infants: z.number().int().min(0).max(9).default(0),
+  adults: z.number().int().min(1).max(9).default(1).describe('Adult traveler count; treat a generic passenger count as adults unless the user explicitly identifies children or infants'),
+  children: z.number().int().min(0).max(8).default(0).describe('Children explicitly identified by the user; otherwise zero'),
+  infants: z.number().int().min(0).max(9).default(0).describe('Infants explicitly identified by the user; otherwise zero'),
   childrenAges: z.array(z.number().int().min(2).max(11)).max(8).default([]),
   infantAges: z.array(z.number().int().min(0).max(1)).max(9).default([]),
   cabinClass: z.enum(['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST']).default('ECONOMY'),
-  currency: z.string().regex(/^[A-Za-z]{3}$/).default('USD').describe('ISO 4217 display currency; use USD unless the user requests another currency'),
-  country: z.string().regex(/^[A-Za-z]{2}$/).default('US').describe('ISO 3166-1 alpha-2 pricing market; use US unless the user requests another market'),
+  currency: z.string().regex(/^[A-Za-z]{3}$/).default('USD').describe('ISO 4217 display currency; explicit user choice wins, otherwise use an available page travel default, then USD'),
+  country: z.string().regex(/^[A-Za-z]{2}$/).default('US').describe('ISO 3166-1 alpha-2 pricing market; explicit user choice wins, otherwise use an available page travel default, then US'),
 });
 
 export const flightPlanInputSchema = z.object({

@@ -39,7 +39,7 @@
     "agent:commands": "noodle commands --json"
   },
   "devDependencies": {
-    "@noodleseed/one": "0.145.1",
+    "@noodleseed/one": "0.147.1",
     "@vitest/browser-playwright": "4.1.10",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",

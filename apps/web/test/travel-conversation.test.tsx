@@ -511,6 +511,66 @@ describe('guest travel conversation lifecycle', () => {
       .toHaveTextContent('ISB → NYC');
   });
 
+  it('collapses duplicate failed search Apps and preserves an in-conversation recovery path', async () => {
+    const failedView = {
+      id: 'view-search-failed-first',
+      tool: 'search_flights',
+      resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget',
+      title: 'Flight results',
+      result: {
+        status: 'error',
+        error: { code: 'invalid_request', retryable: false },
+      },
+    };
+    assistantMock.useNoodleAssistant.mockImplementation(() => ({
+      client,
+      messages: [{
+        id: 'assistant-failed-search',
+        role: 'assistant',
+        parts: [
+          { type: 'data-view', data: failedView },
+          { type: 'data-view', data: { ...failedView, id: 'view-search-failed-second' } },
+          {
+            type: 'data-tool-result',
+            data: {
+              id: 'call-search-failed',
+              tool: 'search_flights',
+              result: {
+                status: 'error',
+                message: 'The request needs different trip details.',
+                fallback: 'Adjust the trip and search again.',
+                itineraries: [],
+                error: { code: 'invalid_request', retryable: false },
+              },
+            },
+          },
+        ],
+      }],
+      status: 'error',
+      error: {
+        name: 'AssistantClientError',
+        message: 'terminal turn failure',
+        detail: { code: 'turn_failed', status: 400, retryable: false },
+      },
+    }));
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Toronto to Lisbon on September 15');
+
+    const conversation = await screen.findByRole('region', {
+      name: 'Travel conversation',
+    });
+    expect(conversation.querySelectorAll('noodle-app-view')).toHaveLength(1);
+    expect(within(conversation).queryByText(
+      'The travel assistant could not continue',
+    )).not.toBeInTheDocument();
+    expect(within(conversation).getByRole('group', {
+      name: 'Recover flight search',
+    })).toBeVisible();
+    expect(within(conversation).getByRole('textbox', {
+      name: 'Ask about a flight',
+    })).toBeEnabled();
+  });
+
   it('keeps one inline App and composer in chronological keyboard order', async () => {
     const mobileView = {
       id: 'view-mobile-order',
@@ -550,7 +610,7 @@ describe('guest travel conversation lifecycle', () => {
     expect(focusable.indexOf(linkedApp)).toBeLessThan(focusable.indexOf(composer));
   });
 
-  it('bounds a long conversation with the transcript as its only scroll owner', async () => {
+  it('keeps a long conversation in document flow with the page as scroll owner', async () => {
     assistantMock.useNoodleAssistant.mockImplementation(() => ({
       client,
       messages: Array.from({ length: 48 }, (_, index) => ({
@@ -575,6 +635,8 @@ describe('guest travel conversation lifecycle', () => {
     if (!transcript) return;
     expect(within(log).getAllByRole('article')).toHaveLength(48);
     expect(conversation).not.toHaveAttribute('style');
+    expect(conversation).toHaveAttribute('data-scroll-owner', 'page');
+    expect(transcript).toHaveAttribute('data-scroll-owner', 'page');
     const composer = within(conversation).getByRole('form', {
       name: 'Continue trip',
     });
@@ -917,35 +979,33 @@ describe('guest travel conversation lifecycle', () => {
   it('preserves upward reading, follows near-end growth, and disconnects its observer', async () => {
     const view = render(<TravelAssistantPage runtime={readyRuntime} />);
     submitPrompt('JFK to Lisbon next month');
-    const transcript = await screen.findByRole('log', {
-      name: 'Conversation transcript',
-    });
-    const viewport = transcript.parentElement;
-    expect(viewport).not.toBeNull();
-    if (!viewport) return;
-    Object.defineProperties(viewport, {
-      clientHeight: { configurable: true, value: 100 },
-      scrollHeight: { configurable: true, value: 1_000 },
-    });
+    const end = await screen.findByTestId('conversation-end');
+    const scrollIntoView = vi.fn();
+    end.scrollIntoView = scrollIntoView;
+    let scrollY = 600;
+    vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(100);
+    vi.spyOn(window, 'scrollY', 'get').mockImplementation(() => scrollY);
+    vi.spyOn(document.documentElement, 'scrollHeight', 'get')
+      .mockReturnValue(1_000);
 
-    viewport.scrollTop = 600;
-    fireEvent.scroll(viewport);
+    fireEvent.scroll(window);
     expect(resizeCallback).toBeTypeOf('function');
     resizeCallback?.([], {} as ResizeObserver);
-    expect(viewport.scrollTop).toBe(600);
+    expect(scrollIntoView).not.toHaveBeenCalled();
 
-    viewport.scrollTop = 870;
-    fireEvent.scroll(viewport);
+    scrollY = 870;
+    fireEvent.scroll(window);
     resizeCallback?.([], {} as ResizeObserver);
-    expect(viewport.scrollTop).toBe(1_000);
+    expect(scrollIntoView).toHaveBeenCalledOnce();
 
-    viewport.scrollTop = 600;
-    fireEvent.scroll(viewport);
+    scrollIntoView.mockClear();
+    scrollY = 600;
+    fireEvent.scroll(window);
     fireEvent.change(screen.getByRole('textbox', {
       name: 'Ask about a flight',
     }), { target: { value: 'Avoid overnight connections' } });
     fireEvent.submit(screen.getByRole('form', { name: 'Continue trip' }));
-    expect(viewport.scrollTop).toBe(1_000);
+    expect(scrollIntoView).toHaveBeenCalledOnce();
 
     view.unmount();
     expect(resizeDisconnect).toHaveBeenCalledOnce();
