@@ -1,4 +1,5 @@
 import { starterConfig } from '../../../../starter.config';
+import { WayfareMark } from '../../src/components/wayfare-mark';
 
 const setupSteps = [
   {
@@ -33,7 +34,7 @@ export default function DevelopersPage() {
         <header className="developer-page__header">
           <a className="travel-wordmark" href="/">
             <span className="travel-wordmark__mark" aria-hidden="true">
-              {starterConfig.brand.mark}
+              <WayfareMark />
             </span>
             <span>{starterConfig.brand.name}</span>
           </a>

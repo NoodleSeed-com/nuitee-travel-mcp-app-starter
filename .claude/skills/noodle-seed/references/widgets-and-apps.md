@@ -12,7 +12,7 @@
 
 ## Tools and views
 
-Use `tool(name, { description, input, output, fulfil, view })` for a model-visible tool that renders a widget, and the same `tool(name, { ..., visibility: ["app"] })` for an app-only helper hidden from the model. When a view is valid only for narrow explicit intent, add `modelVisibility: { latestMessageIncludesAny: ["open the form", ...] }`; Noodle normalizes and matches those literal phrases against the latest user message before model discovery and fails closed on malformed data. This is relevance filtering, never authorization. A `view` is `{ component: "name", entry: "./views/name.tsx" }` — a React component the compiler bundles at validate/deploy time.
+Use `tool(name, { description, input, output, fulfil, view })` for a model-visible tool that renders a widget, and the same `tool(name, { ..., visibility: ["app"] })` for an app-only helper hidden from the model. When a view is valid only for narrow explicit intent, add `modelVisibility: { latestMessageIncludesAny: ["open the form", ...] }`; Noodle normalizes and matches those literal phrases against the latest user message before model discovery and fails closed on malformed data. Add `oncePerSession: true` when a successful model-selected view must not repeat in that conversation, and `requiredWhenVisible: true` only when a matching turn must render that sole required tool before normal model discovery resumes. These options control presentation and relevance, never idempotency or authorization. A `view` is `{ component: "name", entry: "./views/name.tsx" }` — a React component the compiler bundles at validate/deploy time.
 
 ## Noodle Design default
 

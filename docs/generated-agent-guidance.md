@@ -18,7 +18,7 @@ Do not hand-edit generated examples, import their source into the application, l
 
 ## Known upstream release blockers
 
-The bundled runnable example manifests currently use mutable `latest` dependency selectors, have no exact `packageManager`, and sit outside reproducible lock coverage. This is true of the pinned 0.139.0 Agent Kit and remained true in the inspected 0.140.0 package on 2026-08-26. A developer installing one of those examples could therefore execute dependency code that was not reviewed with this repository revision.
+The bundled runnable example manifests currently use mutable `latest` dependency selectors, have no exact `packageManager`, and sit outside reproducible lock coverage. This remains true after regenerating both managed trees with the pinned 0.145.1 CLI and Agent Kit 0.87.1 on 2026-08-28. A developer installing one of those examples could therefore execute dependency code that was not reviewed with this repository revision.
 
 The bundled Acme Bistro mock also describes its checkout URL as signed and expiring even though the runnable fulfilment only builds a reserved `.example` query string. Its design contract correctly requires a real backend to recompute pricing and inventory and enforce signature and expiry, but the runnable claim must be corrected before redistribution.
 

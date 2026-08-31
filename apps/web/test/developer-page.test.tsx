@@ -6,6 +6,14 @@ import DevelopersPage from '../app/developers/page';
 afterEach(cleanup);
 
 describe('developer guide page', () => {
+  it('uses the shared Wayfare route mark in the developer header', () => {
+    render(<DevelopersPage />);
+
+    const home = screen.getByRole('link', { name: 'Wayfare' });
+    expect(home.querySelector('[data-wayfare-mark="true"]')).not.toBeNull();
+    expect(home).not.toHaveTextContent(/^WWayfare$/);
+  });
+
   it('leads with the ordered guest-first setup and bounded travel outcome', () => {
     render(<DevelopersPage />);
 

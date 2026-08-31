@@ -9,7 +9,7 @@ describe('customer-auth example', () => {
       model: { kind: 'openai-compatible', apiKey: 'ASSISTANT_MODEL_API_KEY' },
       layout: { mode: 'floating' },
       presentation: {
-        panel: { surface: 'glass', elevation: 'soft', border: 'subtle' },
+        panel: { elevation: 'soft', border: 'subtle' },
         launcher: { icon: 'brand-mark', status: 'session', effect: 'pulse' },
         header: { mark: 'status', badge: { text: 'Workspace online', tone: 'success' } },
       },

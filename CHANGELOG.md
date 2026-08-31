@@ -4,6 +4,11 @@ Notable changes to this starter will be recorded here. The repository has not pu
 
 ## Unreleased
 
+- Update the exact Noodle compatibility set to `@noodleseed/one` 0.145.1 and
+  `@noodleseed/assistant` 1.27.0 for the current public Assistant service.
+- Refresh the fictional guest website as Wayfare with a centered conversation
+  hero, native `1672 × 941` high-resolution travel imagery, and rounded
+  editorial surfaces. The accepted masters are not literal 4K sources.
 - Controlled exact-pin update to `@noodleseed/one` 0.139.0 and Assistant
   1.24.0, with the lockfile and generated Agent Kit 0.83.0 refreshed together.
 - Adopt Apache License 2.0 and assign repository-wide ownership to the three

@@ -15,11 +15,19 @@ Next.js guest browser
   → Nuitee Flights API
 ```
 
-The browser uses the custom renderer in `apps/web/` with `useNoodleAssistant` and `NoodleAppView`. It does not implement a second chat transport, fetch `ui://` resources, copy the linked Apps, or call Nuitee directly.
+The browser uses the custom renderer in `apps/web/` with `useNoodleAssistant` and `NoodleAppView`. It does not implement a second chat transport, fetch `ui://` resources, copy linked Apps, reconstruct App output as website fare cards, or call Nuitee directly. Wayfare is one centered chronological conversation with no secondary result workspace. Official inline MCP Apps render at their original message part, and distinct view IDs remain distinct invocations in history rather than being generically deduplicated.
 
-`src/embedded-server.ts` calls the same `createTravelServer('embedded')` product factory as the other entrypoints. Its public surface allowlists the same four tool instances registered on the server:
+Only two exact tool/resource identities may reach `NoodleAppView`:
+
+- `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget`;
+- `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget`.
+
+Every mismatch fails closed as an unavailable inline view. The compact typed trip disclosure uses validated tool results only, remains absent before facts exist, and never lets traveler or Assistant prose populate it.
+
+`src/embedded-server.ts` calls the same `createTravelServer('embedded')` product factory as the other entrypoints. Its public surface allowlists the same five tool instances registered on the server:
 
 - model-visible `open_travel_starter`;
+- model-visible `plan_flight_search`, which collects missing dates without connector I/O;
 - model-visible `search_flights`;
 - model-visible `verify_flight_offer`; and
 - App-only `select_flight_offer`.
@@ -28,7 +36,7 @@ The public surface is anonymous, not identity-free: Noodle binds each session to
 
 ## Product boundary
 
-The Assistant may open the starter, search one-way or round-trip flights, select an application-issued fare handle, and verify current availability and price. A verified or changed fare is terminal.
+The Assistant may open the starter, collect one missing date decision, search one-way or round-trip flights, select an application-issued fare handle, and verify current availability and price. The agent guide defaults to one adult and Economy rather than asking for provider-oriented fields. An untrusted website page default may suggest an omitted origin, currency, and pricing market; explicit traveler text wins, and other hosts retain USD and the US market. A verified or changed fare is terminal.
 
 It does not prebook, hold inventory, collect passenger data, take payment, issue a ticket, manage a booking, cancel, refund, redeem loyalty, or search hotels and cars. Neither a selection nor a verified fare implies that inventory is held.
 
@@ -90,7 +98,7 @@ The Next.js security headers allow the exact Noodle service origin in:
 - `connect-src` for session and turn traffic; and
 - `frame-src` for linked App sandboxes.
 
-Keep `default-src 'self'`, `frame-ancestors 'none'`, `object-src 'none'`, the restrictive permissions policy, and the exact service origin. A blocked `script-src` prevents the runtime from starting, so the page cannot report that failure from inside the Assistant.
+Keep `default-src 'self'`, `frame-ancestors 'none'`, `object-src 'none'`, the restrictive permissions policy, and the exact service origin. The policy keeps camera and microphone disabled and grants geolocation only to the same-origin top-level page. A blocked `script-src` prevents the runtime from starting, so the page cannot report that failure from inside the Assistant.
 
 Run the local non-mutating preflight and production-equivalent website build before promotion:
 
@@ -103,7 +111,7 @@ The preflight reports required or missing environment names without printing val
 
 ## Public admission and budget
 
-A public surface must have one reviewed daily turn budget and an operational kill switch. Before inviting traffic, the owner must inspect the active embed projection, exact origins, four allowed capabilities, current spend, and configured cap. Budget exhaustion is a calm unavailable state; the website does not automatically retry it.
+A public surface must have one reviewed daily turn budget and an operational kill switch. Before inviting traffic, the owner must inspect the active embed projection, exact origins, five allowed capabilities, current spend, and configured cap. Budget exhaustion is a calm unavailable state; the website does not automatically retry it.
 
 Budget changes and embed revocation are hosted mutations. Do not run them under local implementation authority. Record the exact organization, app, environment, old value, new value, approver, and post-change probe in the promotion evidence.
 
@@ -122,7 +130,7 @@ Use synthetic or explicitly approved provider input and prove all of the followi
 9. Desktop, 390px mobile, keyboard, 200% text zoom, dark mode, and reduced motion remain usable.
 10. The privacy and support destinations resolve, are monitored, and describe the actual data flow.
 
-Local Playwright coverage deliberately stays on the zero state and sends no `/v1/assistant/` requests. It is not a substitute for this hosted smoke.
+Local Playwright coverage includes a deterministic loopback Assistant fixture that interleaves prose, both approved exact App identities, one mismatched identity, and a structured tool result in one chronological turn. It proves both distinct Apps remain inline in order, the mismatch never reaches `NoodleAppView`, typed projection supplies the Current trip summary, and the centered conversation remains usable across required widths, keyboard focus, target size, reduced motion, text zoom, and genuine transcript overflow. The fixture is not a deployed Assistant or embed binding, so hosted behavior remains unproven until a separately authorized deployment and exact embed-binding verification complete this hosted smoke.
 
 ## State and TTL proof
 
@@ -139,7 +147,7 @@ Do not shorten the TTL, redeploy between steps, patch an application reset worka
 
 ## Privacy and support
 
-The checked-in `starterConfig.website.privacyUrl` and `termsUrl` are `null`, so the website renders no invented legal links. Configure one real HTTPS privacy URL and a monitored support destination before a hosted public-readiness claim. The privacy notice must cover anonymous Assistant/model processing, page and client context, Nuitee-backed flight searches, retention, third parties, budgets, and the fact that the site does not create bookings.
+The checked-in `starterConfig.website.privacyUrl` and `termsUrl` are `null`, so the website renders no invented legal links. The repository's local browser-location contract is documented in [`docs/privacy.md`](privacy.md): coordinates stay in browser memory, only derived travel defaults enter untrusted page context, and denial preserves flight search. Configure one real HTTPS privacy URL and a monitored support destination before a hosted public-readiness claim. The public privacy notice must cover anonymous Assistant/model processing, page and client context, Nuitee-backed flight searches, retention, third parties, budgets, and the fact that the site does not create bookings.
 
 The `/developers` route renders support only from configured application paths and renders privacy only when a real URL exists. Do not use a reserved example domain or claim monitoring that has not been established.
 

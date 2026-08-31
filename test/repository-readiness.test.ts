@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { access, readFile, stat } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
@@ -9,6 +10,26 @@ async function repositoryFile(path: string) {
 
 async function repositoryJson(path: string) {
   return JSON.parse(await repositoryFile(path)) as Record<string, any>;
+}
+
+function jpegDimensions(bytes: Buffer) {
+  let offset = 2;
+  while (offset < bytes.length) {
+    if (bytes[offset] !== 0xff) {
+      offset += 1;
+      continue;
+    }
+    const marker = bytes[offset + 1];
+    const length = bytes.readUInt16BE(offset + 2);
+    if (marker && marker >= 0xc0 && marker <= 0xc3) {
+      return {
+        height: bytes.readUInt16BE(offset + 5),
+        width: bytes.readUInt16BE(offset + 7),
+      };
+    }
+    offset += length + 2;
+  }
+  throw new Error('JPEG dimensions were not found');
 }
 
 async function noodleValidate() {
@@ -26,6 +47,152 @@ async function noodleValidate() {
 }
 
 describe('public repository contracts', () => {
+  it('ships a pinned public-domain airport catalog without runtime lookup', async () => {
+    const [guide, catalog, generator, resolver] = await Promise.all([
+      repositoryFile('docs/airport-data.md'),
+      repositoryFile('apps/web/src/data/airports.generated.ts'),
+      repositoryFile('scripts/generate-airport-catalog.mjs'),
+      repositoryFile('apps/web/src/lib/travel-defaults.ts'),
+    ]);
+
+    for (const artifact of [guide, catalog]) {
+      expect(artifact).toContain('https://ourairports.com/data/');
+      expect(artifact).toContain(
+        'https://github.com/davidmegginson/ourairports-data/blob/main/LICENSE',
+      );
+      expect(artifact).toContain('2026-08-31');
+      expect(artifact).toContain(
+        'e56b20ecaa187ef954f3cce670a5559147ad071ff962915fdd72fb885f826da4',
+      );
+    }
+    expect(guide).toContain('`large_airport`');
+    expect(guide).toContain('`scheduled_service=yes`');
+    expect(guide).toContain('ISB');
+    expect(guide).toContain('Islamabad');
+    expect(generator).toContain('CITY_OVERRIDES');
+    expect(resolver).not.toContain('ourairports.com');
+    expect(resolver).not.toMatch(/fetch\s*\(/u);
+  });
+
+  it('documents the optional browser-location privacy boundary', async () => {
+    const [privacy, architecture, embed, customization] = await Promise.all([
+      repositoryFile('docs/privacy.md'),
+      repositoryFile('docs/architecture.md'),
+      repositoryFile('docs/EMBEDDED_ASSISTANT.md'),
+      repositoryFile('docs/customization.md'),
+    ]);
+
+    expect(privacy).toMatch(/optional browser location permission/i);
+    expect(privacy).toMatch(/coordinates[^.]*memory/i);
+    expect(privacy).toMatch(/derived[^.]*airport[^.]*currency/i);
+    expect(privacy).toMatch(/no[^.]*third-party[^.]*location lookup/i);
+    expect(privacy).toMatch(/not persisted|no application persistence/i);
+    expect(privacy).toMatch(/den(?:y|ied|ial)[^.]*flight search/i);
+    for (const guide of [architecture, embed, customization]) {
+      expect(guide).toContain('docs/privacy.md');
+      expect(guide).toContain('untrusted');
+    }
+  });
+
+  it('keeps the public five-capability projection exact in active release guidance', async () => {
+    const [server, checklist, architecture, implementationPlan, spec] = await Promise.all([
+      repositoryFile('src/travel-server.ts'),
+      repositoryFile('PUBLIC_RELEASE_CHECKLIST.md'),
+      repositoryFile('docs/architecture.md'),
+      repositoryFile('IMPLEMENTATION_PLAN.md'),
+      repositoryFile('SPEC.md'),
+    ]);
+    const capabilityNames = [
+      'open_travel_starter',
+      'plan_flight_search',
+      'search_flights',
+      'verify_flight_offer',
+      'select_flight_offer',
+    ] as const;
+
+    expect(server).toContain('publicSurface: [open, plan, search, verify, select]');
+    for (const guide of [checklist, architecture, implementationPlan, spec]) {
+      expect(guide).toContain('four model-visible tools plus one App-only helper');
+      for (const capability of capabilityNames) expect(guide).toContain(capability);
+      expect(guide).not.toMatch(/exact three-tool|only open, search, and verify|four-capability public projection/i);
+    }
+  });
+
+  it('documents only the current editorial fields, CSS tokens, and verification label', async () => {
+    const [readme, customization] = await Promise.all([
+      repositoryFile('README.md'),
+      repositoryFile('docs/customization.md'),
+    ]);
+    const activeGuidance = `${readme}\n${customization}`;
+
+    expect(customization).toContain('`heading`, `support`, `action`, and `prompt`');
+    expect(customization).toContain('direct CSS custom properties');
+    expect(activeGuidance).toContain('Verify current fare');
+    expect(activeGuidance).not.toContain('Verify selected fare');
+    expect(customization).not.toContain("`landingEditorialFeature`, change `eyebrow`");
+    expect(customization).not.toMatch(/Tailwind(?:'s)? Neutral/i);
+  });
+
+  it('keeps current preview provenance tied to stable product labels and exact reviewed bytes', async () => {
+    const [previewGuide, fixtureGuide, readme, reviewedBlobs] = await Promise.all([
+      repositoryFile('docs/images/README.md'),
+      repositoryFile('docs/fixture-safety.md'),
+      repositoryFile('README.md'),
+      repositoryFile('security/reviewed-binary-blobs.txt'),
+    ]);
+    const previews = [
+      ['docs/images/travel-home.png', 'Where will you go next?', 'Wayfare route mark'],
+      ['docs/images/flight-results.png', 'Current flight options', 'Verify current fare'],
+    ] as const;
+
+    for (const [path, firstLabel, secondLabel] of previews) {
+      const bytes = await readFile(new URL(`../${path}`, import.meta.url));
+      const blob = createHash('sha1').update(Buffer.concat([
+        Buffer.from(`blob ${bytes.length}\0`),
+        bytes,
+      ])).digest('hex');
+      expect(previewGuide).toContain(path.split('/').at(-1)!);
+      expect(previewGuide).toContain(firstLabel);
+      expect(previewGuide).toContain(secondLabel);
+      expect(reviewedBlobs).toContain(`${blob} ${path}`);
+    }
+    expect(fixtureGuide).toContain('current deterministic product previews');
+    expect(readme).toContain('current local Wayfare product');
+    expect(previewGuide).not.toMatch(/Choose your flight|Lowest shown|Verify selected fare/);
+  });
+
+  it('never describes the accepted Wayfare images as literal 4K in active release copy', async () => {
+    const [changelog, readme, customization, architecture] = await Promise.all([
+      repositoryFile('CHANGELOG.md'),
+      repositoryFile('README.md'),
+      repositoryFile('docs/customization.md'),
+      repositoryFile('docs/architecture.md'),
+    ]);
+
+    expect(changelog).toContain('native `1672 × 941` high-resolution');
+    expect([changelog, readme, customization, architecture].join('\n'))
+      .not.toMatch(/generated 4K|4K coastline artwork|4K-grade/i);
+  });
+
+  it('records exact provenance for the Wayfare premium image masters', async () => {
+    const ledger = await repositoryFile('docs/visual-assets/wayfare-premium-concierge.md');
+    const expectedMasters = [
+      'apps/web/public/images/wayfare-hybrid-hero-v2.jpg',
+      'apps/web/public/images/destinations/rome-editorial-v2.jpg',
+      'apps/web/public/images/destinations/london-editorial-v2.jpg',
+      'apps/web/public/images/destinations/istanbul-editorial-v2.jpg',
+    ] as const;
+
+    for (const path of expectedMasters) {
+      const bytes = await readFile(new URL(`../${path}`, import.meta.url));
+      const dimensions = jpegDimensions(bytes);
+      const hash = createHash('sha256').update(bytes).digest('hex');
+      expect(ledger).toContain(path);
+      expect(ledger).toContain(`${dimensions.width} x ${dimensions.height}`);
+      expect(ledger).toContain(hash);
+    }
+  });
+
   it('makes the Next.js guest website the primary README path', async () => {
     const readme = await repositoryFile('README.md');
 
@@ -36,6 +203,59 @@ describe('public repository contracts', () => {
     );
     expect(readme).toContain('Search → Select → Verify');
     expect(readme).toContain('does not book');
+  });
+
+  it('ships the Wayfare hybrid cinematic landing without the obsolete shader layer', async () => {
+    const [
+      readme,
+      customization,
+      heroSource,
+      footerSource,
+      heroAsset,
+      webPackage,
+    ] = await Promise.all([
+      repositoryFile('README.md'),
+      repositoryFile('docs/customization.md'),
+      repositoryFile('apps/web/src/components/travel-hero.tsx'),
+      repositoryFile('apps/web/src/components/travel-footer.tsx'),
+      stat(new URL('../apps/web/public/images/wayfare-hybrid-hero-v2.jpg', import.meta.url)),
+      repositoryJson('apps/web/package.json'),
+    ]);
+
+    expect(heroAsset.size).toBeGreaterThan(0);
+    expect(heroSource).toContain('wayfare-hybrid-hero-v2.jpg');
+    expect(footerSource).toContain('Built on Noodle Seed · Powered by Nuitee');
+    expect(webPackage.dependencies['@paper-design/shaders-react']).toBeUndefined();
+    expect(readme).toContain('hybrid cinematic');
+    expect(readme).toContain('Search → Select → Verify');
+    expect(customization).toContain('## Wayfare image system');
+    await expect(access(new URL(
+      '../apps/web/src/components/workspace-atmosphere.tsx',
+      import.meta.url,
+    ))).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(access(new URL(
+      '../apps/web/src/components/workspace-atmosphere-canvas.tsx',
+      import.meta.url,
+    ))).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  it('keeps active template guidance aligned with the Wayfare premium conversation', async () => {
+    const [readme, architecture, customization, embeddedGuide, assetGuide] = await Promise.all([
+      repositoryFile('README.md'),
+      repositoryFile('docs/architecture.md'),
+      repositoryFile('docs/customization.md'),
+      repositoryFile('docs/EMBEDDED_ASSISTANT.md'),
+      repositoryFile('docs/visual-assets/airline-editorial-homepage.md'),
+    ]);
+    const activeDocs = [readme, architecture, customization, embeddedGuide].join('\n');
+
+    expect(readme).toContain('Wayfare');
+    expect(readme).toContain('conversation');
+    expect(architecture).toContain('inline MCP Apps');
+    expect(customization).toContain('wayfare-mark.tsx');
+    expect(embeddedGuide).not.toMatch(/right[- ]side|Flight workspace|side canvas/iu);
+    expect(activeDocs).not.toMatch(/Cedar & Cloud|route-orbit|full-bleed hero/iu);
+    expect(assetGuide).toContain('wayfare-premium-concierge.md');
   });
 
   it('documents OAuth without claiming that login consumption is an OIDC issuer', async () => {
@@ -205,8 +425,8 @@ describe('public repository contracts', () => {
     expect(workflow).not.toMatch(/uses:\s+[^\s]+@v\d/);
     expect(dependabot).toContain('package-ecosystem: github-actions');
     expect(workspace).toContain('minimumReleaseAge: 1440');
-    expect(workspace).toContain("'@noodleseed/one@0.139.0'");
-    expect(workspace).toContain("'@noodleseed/assistant@1.24.0'");
+    expect(workspace).toContain("'@noodleseed/one@0.145.1'");
+    expect(workspace).toContain("'@noodleseed/assistant@1.27.0'");
   });
 
   it('ships sanitized community intake and identifies generated guidance', async () => {
@@ -303,6 +523,66 @@ describe('public repository contracts', () => {
     expect(checklist).toContain('[ ] Configure one real public embed ID');
     expect(checklist).toContain('[ ] Configure and monitor a real HTTPS privacy URL');
     expect(checklist).toContain('[ ] Prove the 30-minute selection TTL');
+  });
+
+  it('keeps the primary website on the exact-pair inline conversation architecture', async () => {
+    const [
+      conversation,
+      message,
+      registry,
+      policy,
+      architecture,
+    ] = await Promise.all([
+      repositoryFile('apps/web/src/components/travel-conversation.tsx'),
+      repositoryFile('apps/web/src/components/travel-message.tsx'),
+      repositoryFile('apps/web/src/components/travel-view-registry.tsx'),
+      repositoryFile('apps/web/src/lib/travel-view-policy.ts'),
+      repositoryFile('docs/architecture.md'),
+    ]);
+
+    expect(conversation).toContain('aria-label="Travel conversation"');
+    expect(message).toContain('<TravelViewRegistry client={client} view={part.data} />');
+    expect(registry).toContain('isInlineTravelView(view)');
+    expect(registry).toContain('<NoodleAppView client={client} theme="light" view={view} />');
+    expect(policy).toContain("search_flights: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget'");
+    expect(policy).toContain("open_travel_starter: 'ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget'");
+    expect(architecture).toContain('Every distinct view ID is a distinct chronological invocation');
+    await expect(access(new URL(
+      '../apps/web/src/components/travel-journey-canvas.tsx',
+      import.meta.url,
+    ))).rejects.toMatchObject({ code: 'ENOENT' });
+    await expect(access(new URL(
+      '../apps/web/src/lib/journey-view.ts',
+      import.meta.url,
+    ))).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  it('keeps active developer guides on the inline exact-pair presentation contract', async () => {
+    const activeGuides = await Promise.all([
+      repositoryFile('docs/oauth.md'),
+      repositoryFile('docs/nuitee-flights-contract.md'),
+      repositoryFile('docs/PREMIUM_UI_PLAN.md'),
+    ]);
+
+    for (const guide of activeGuides) {
+      expect(guide).toContain('one centered chronological conversation');
+      expect(guide).toContain('Linked Apps stay inline at their original message-part positions.');
+      expect(guide).toContain('Distinct view IDs are not generically deduplicated.');
+      expect(guide).toContain(
+        '`search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget`',
+      );
+      expect(guide).toContain(
+        '`open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget`',
+      );
+      expect(guide).toContain('Mismatched tool/resource pairs fail closed.');
+      expect(guide).toMatch(/Current trip[^.]*inside the conversation\./);
+      expect(guide).toContain('Local proof is not hosted proof.');
+      expect(guide).not.toMatch(/journey[- ]canvas/i);
+      expect(guide).not.toMatch(/newest(?: exact)? (?:FlightResults )?view/i);
+      expect(guide).not.toMatch(/persistent current flight-results slot/i);
+      expect(guide).not.toMatch(/known linked (?:Apps|views)[^.]*transcript/i);
+      expect(guide).not.toContain('outside the conversation');
+    }
   });
 
   it('records generic and app-mapped public preflights without claiming hosted readiness', async () => {

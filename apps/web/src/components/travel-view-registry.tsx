@@ -5,24 +5,24 @@ import type {
   AssistantClient,
   AssistantViewData,
 } from '@noodleseed/assistant/client';
+import { isInlineTravelView } from '../lib/travel-view-policy';
 
 interface TravelViewRegistryProps {
   readonly client: AssistantClient;
-  readonly theme: 'light' | 'dark';
   readonly view: AssistantViewData;
 }
 
 export function TravelViewRegistry({
   client,
-  theme,
   view,
 }: Readonly<TravelViewRegistryProps>) {
-  if (
-    view.tool !== 'open_travel_starter'
-    && view.tool !== 'search_flights'
-  ) {
+  if (!isInlineTravelView(view)) {
     return <p role="status">This travel view is unavailable.</p>;
   }
 
-  return <NoodleAppView client={client} theme={theme} view={view} />;
+  return (
+    <div className="travel-app-surface" data-testid="travel-app-surface">
+      <NoodleAppView client={client} theme="light" view={view} />
+    </div>
+  );
 }

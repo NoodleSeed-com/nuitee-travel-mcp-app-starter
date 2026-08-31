@@ -1,14 +1,18 @@
 # Nuitee Travel MCP App Starter
 
-A guest-first Next.js developer template for building a chat-first flight experience with a Noodle embedded assistant and the official Nuitee Connect Flights API. The fictional customer-facing brand is **Cedar & Cloud Travel**.
+A guest-first Next.js developer template for building a chat-first flight experience with a Noodle embedded assistant and the official Nuitee Connect Flights API. The fictional customer-facing brand is **Wayfare**.
 
-The primary guest website guides a traveler through **Search → Select → Verify** and stops at a verified fare. It does not book, hold inventory, collect passenger details, take payment, or issue tickets. The repository also exposes the same bounded MCP tools and linked Apps to external MCP hosts; there is no website-only copy of the travel product.
+The primary guest website guides a traveler through **Search → Select → Verify** and stops at a verified fare. A clear route with no date produces one structured date decision; Wayfare uses visible defaults instead of asking for every provider field. It does not book, hold inventory, collect passenger details, take payment, or issue tickets. The repository also exposes the same bounded MCP tools and linked Apps to external MCP hosts; there is no website-only copy of the travel product.
 
 This is an independent starter, not an official Nuitee connector, airline partnership, booking product, or endorsement.
 
 ## Primary guest website
 
-The Next.js application in `apps/web/` is the main developer path. It provides the Brightdesk-derived conversation shell, delayed anonymous Assistant admission, an application-owned typed renderer, plain-language progress, structured trip projection, and the existing Noodle MCP App views.
+The Next.js application in `apps/web/` is the main developer path. Wayfare uses a light, Inter-only hybrid cinematic landing: one centered headline and composer above a rounded local destination image, compact destination inspiration, and a factual Search · Compare · Verify row. Submitting a prompt moves into one centered chronological conversation with delayed anonymous Assistant admission and plain-language progress. The compact typed trip disclosure is absent until validated facts exist, stays collapsed by default, and is derived only from structured tool results—never conversation prose.
+
+Official inline MCP Apps render at the exact chronological message part that needs interaction. Every distinct view ID remains in history; the website neither reconstructs App output as fare cards nor creates a second results workspace. Only `search_flights` with `ui://nuitee_travel_mcp_app_starter/search_flights_widget` and `open_travel_starter` with `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget` may reach `NoodleAppView`; every mismatch fails closed.
+
+The route-line SVG in `apps/web/src/components/wayfare-mark.tsx` is the repository-owned Wayfare mark. Use the installed Lucide icons only for familiar, supported actions; do not introduce icons suggesting attachments, payment, booking, voice, or account management. The four checked-in local image masters are truthful native `1672 × 941` high-resolution web images, not literal 4K sources. Next.js serves responsive AVIF/WebP derivatives; their exact paths, bytes, hashes, visual review, and responsive crop decisions are in the [Wayfare provenance ledger](docs/visual-assets/wayfare-premium-concierge.md).
 
 ```sh
 corepack enable
@@ -91,7 +95,7 @@ pnpm exec noodle secrets set NUITEE_API_KEY --runtime local --from-env NUITEE_AP
 
 Never paste a Nuitee key into a conversation, source file, browser variable, screenshot, fixture, test, log, URL, or Git history. A local value is not automatically a hosted deployment secret.
 
-For a live smoke, ask for a future one-way or round-trip flight, select one returned fare in the linked App, and choose **Verify selected fare**. A `partial` search result is valid when malformed provider entries were safely dropped. The terminal outcome is a verified or changed fare, never a booking.
+For a live smoke, ask for a future one-way or round-trip flight, select one returned fare in the linked App, and choose **Verify current fare**. A `partial` search result is valid when malformed provider entries were safely dropped. The terminal outcome is a verified or changed fare, never a booking.
 
 ## External MCP hosts
 
@@ -121,7 +125,7 @@ Do not satisfy the gate with a placeholder, wildcard, path, or unrelated domain.
 
 The older `examples/embedded-assistant-host/` application remains only as a temporary authenticated migration reference while parity and removal gates are reviewed. It is not the primary website and its synthetic local sign-in is not a production identity implementation. See [docs/EMBEDDED_ASSISTANT.md](docs/EMBEDDED_ASSISTANT.md) for the guest path and [docs/oauth.md](docs/oauth.md) for a real authenticated extension.
 
-No hosted conversation is claimed from local code or tests alone. A real public embed ID, exact HTTPS website origin, monitored privacy link, CSP validation, budget controls, live Search → Select → Verify browser proof, and the selection-TTL smoke remain promotion evidence in [PUBLIC_RELEASE_CHECKLIST.md](PUBLIC_RELEASE_CHECKLIST.md). Deployments, access changes, hosted configuration, and budget mutations require separate exact authorization.
+No hosted conversation is claimed from local code or tests alone. Hosted behavior remains unproven until a separately authorized deployment and exact embed-binding verification. A real public embed ID, exact HTTPS website origin, monitored privacy link, CSP validation, budget controls, live Search → Select → Verify browser proof, and the selection-TTL smoke remain promotion evidence in [PUBLIC_RELEASE_CHECKLIST.md](PUBLIC_RELEASE_CHECKLIST.md). Deployments, access changes, hosted configuration, and budget mutations require separate exact authorization.
 
 ## Customization
 
@@ -174,11 +178,11 @@ pnpm agent:check:live
 pnpm agent:check:assistant
 ```
 
-The fixture-only Chromium captures below show the real linked Apps with fictional data; they are not live inventory or host screenshots. Their reproducible provenance is in [docs/images/README.md](docs/images/README.md).
+The fixture-only Chromium captures below show the current local Wayfare product: the light hybrid landing and the real linked flight-results App with fictional data. They are not live inventory or host screenshots. Their exact labels, dimensions, hashes, network boundary, and reproducible provenance are in [docs/images/README.md](docs/images/README.md).
 
-| Credential-free home | Fictional flight comparison |
+| Cinematic credential-free home | Fictional flight comparison |
 | --- | --- |
-| ![Cedar & Cloud Travel flight-search widget using fictional fields and coming-soon domains](docs/images/travel-home.png) | ![Cedar & Cloud Travel flight-results widget using fictional fares and no airline logo](docs/images/flight-results.png) |
+| ![Current Wayfare light hybrid home with route mark and no Assistant session before submit](docs/images/travel-home.png) | ![Current Wayfare flight-results App with fictional fares and Verify current fare](docs/images/flight-results.png) |
 
 ## Public-release status
 

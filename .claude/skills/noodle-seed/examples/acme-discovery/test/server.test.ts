@@ -30,6 +30,45 @@ describe('acme-discovery example', () => {
     );
   });
 
+  it('keeps the lead capture behind explicit confirmation and a managed customer sink', async () => {
+    const manifest = (await app.toManifest()) as {
+      tools: { name: string; annotations?: Record<string, unknown> }[];
+    };
+    const captureLead = manifest.tools.find((tool) => tool.name === 'capture_lead');
+    // The confirmation card is the visitor's consent moment (ADR 0214): a lead may never leave the
+    // conversation without it, and the sink endpoint/credential stay operator-managed data.
+    expect(captureLead?.annotations?.confirm).toBe(true);
+    const catalog = JSON.stringify(
+      (app as unknown as { toConnectorCatalog: () => unknown }).toConnectorCatalog(),
+    );
+    expect(catalog).toContain('${env.LEAD_SINK_URL}');
+    expect(catalog).toContain('LEAD_SINK_TOKEN');
+    // Fixed attribution set in the request mapping, never model-supplied; no named vendor host.
+    expect(catalog).toContain('website-assistant');
+    expect(catalog).not.toContain('api.resend.com');
+    expect(catalog).not.toContain('api.hubapi.com');
+  });
+
+  it('serves a mixed marketing surface and an authenticated account surface from one server', async () => {
+    const manifest = await app.toManifest();
+    const surfaces = manifest.server.assistant?.surfaces ?? [];
+    expect(surfaces.map((surface) => surface.mode)).toEqual(['mixed', 'authenticated']);
+    // The sign-in trigger is listed on the mixed surface so the assistant can offer it; the
+    // authenticated surface carries its own narrowed list and voice.
+    const capabilityNames = (surface: (typeof surfaces)[number]) =>
+      surface.capabilities?.map((capability) => capability.name) ?? [];
+    expect(capabilityNames(surfaces[0]!)).toContain('my_trips');
+    expect(capabilityNames(surfaces[0]!)).toContain('capture_lead');
+    expect(capabilityNames(surfaces[1]!)).toEqual([
+      'destinations',
+      'discover_getaways',
+      'create_handoff',
+      'my_trips',
+    ]);
+    // Authoring the sign-up label is the opt-in for the card's create-account button.
+    expect(manifest.server.assistant?.labels?.signUpAction).toBe('Create free account');
+  });
+
   it('declares the grounded knowledge component and its live site scope', async () => {
     const manifest = (await app.toManifest()) as { server: { knowledge?: unknown[] } };
     // One declaration: controlled files plus the live public site, compiled later into the

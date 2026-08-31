@@ -30,7 +30,14 @@ const detectors = [
   },
   { name: 'github_token', pattern: '(gh[pousr]_[A-Za-z0-9_]{36,}|github_pat_[A-Za-z0-9_]{20,})' },
   { name: 'aws_access_key', pattern: 'AKIA[0-9A-Z]{16}' },
-  { name: 'openai_key', pattern: 'sk-[A-Za-z0-9_-]{20,}' },
+  {
+    name: 'openai_key',
+    pattern: 'sk-[A-Za-z0-9_-]{20,}',
+    ignoredPathLinePatterns: [{
+      path: /^apps\/web\/test\/browser\/travel-shell\.spec\.ts$/,
+      line: /^(?:\s*path:\s+testInfo\.outputPath\('task-[A-Za-z0-9_-]{20,}\.png'\),\s*|\s*'task-[A-Za-z0-9_-]{20,}\.(?:png|json)',\s*|\s*await testInfo\.attach\('task-[A-Za-z0-9_-]{20,}',\s*\{\s*|\s*`task-[A-Za-z0-9_-]{20,}\$\{position\}\.png`,\s*)$/,
+    }],
+  },
   { name: 'slack_token', pattern: 'xox[baprs]-[A-Za-z0-9-]{20,}' },
   { name: 'google_api_key', pattern: 'AIza[0-9A-Za-z_-]{35}' },
   { name: 'stripe_secret', pattern: 'sk_(live|test)_[0-9A-Za-z]{16,}' },
@@ -67,11 +74,17 @@ function gitOutput(args) {
   }).trim();
 }
 
-function pathsFromMatches(output, ignoredLinePatterns = []) {
+function pathsFromMatches(output, ignoredLinePatterns = [], ignoredPathLinePatterns = []) {
   const paths = [];
   for (const line of output.split('\n').filter(Boolean)) {
     const match = /^[^:]+:(.+?):\d+:(.*)$/.exec(line);
-    if (!match || ignoredLinePatterns.some((pattern) => pattern.test(match[2]))) continue;
+    if (
+      !match
+      || ignoredLinePatterns.some((pattern) => pattern.test(match[2]))
+      || ignoredPathLinePatterns.some(({ path, line }) => (
+        path.test(match[1]) && line.test(match[2])
+      ))
+    ) continue;
     paths.push(match[1]);
   }
   return [...new Set(paths)].sort();
@@ -124,7 +137,11 @@ for (const detector of detectors) {
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   if (result.status === 0) {
-    const paths = pathsFromMatches(result.stdout, detector.ignoredLinePatterns);
+    const paths = pathsFromMatches(
+      result.stdout,
+      detector.ignoredLinePatterns,
+      detector.ignoredPathLinePatterns,
+    );
     if (paths.length > 0) findings.push({ detector: detector.name, paths });
   } else if (result.status !== 1) {
     process.stdout.write(`${JSON.stringify({

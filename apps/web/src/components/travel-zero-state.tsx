@@ -1,50 +1,39 @@
 'use client';
 
-import { starterConfig } from '../../../../starter.config';
-import { RouteAssistantMark } from './route-assistant-mark';
-import { TravelComposer } from './travel-composer';
+import type { Ref } from 'react';
+import {
+  NEUTRAL_TRAVEL_DEFAULTS,
+  type TravelDefaults,
+} from '../lib/travel-defaults';
+import { DestinationInspiration } from './destination-inspiration';
+import { TravelCapabilityStrip } from './travel-capability-strip';
+import { TravelEditorialFeature } from './travel-editorial-feature';
+import { TravelHero } from './travel-hero';
 
 interface TravelZeroStateProps {
+  readonly defaults?: TravelDefaults;
+  readonly inputRef: Ref<HTMLTextAreaElement>;
   readonly launchError?: string | null;
   readonly onStart: (prompt: string) => void;
 }
 
 export function TravelZeroState({
+  defaults = NEUTRAL_TRAVEL_DEFAULTS,
+  inputRef,
   launchError = null,
   onStart,
 }: Readonly<TravelZeroStateProps>) {
   return (
-    <section
-      className="travel-canvas"
-      aria-labelledby="travel-home-title"
-      id="travel-canvas"
-      tabIndex={-1}
-    >
-      <div className="travel-zero-state">
-        <RouteAssistantMark />
-        <p className="assistant-identity">
-          {starterConfig.brand.assistantName}
-        </p>
-        <h1 id="travel-home-title">Where would you like to go?</h1>
-        <p className="travel-zero-state__description">
-          Search, compare, select, and verify flights through conversation.
-        </p>
-        <TravelComposer onSubmit={onStart} />
-        <ul className="starter-prompts" aria-label="Suggested trips">
-          {starterConfig.prompts.map((prompt) => (
-            <li key={prompt}>
-              <button type="button" onClick={() => onStart(prompt)}>
-                {prompt}
-              </button>
-            </li>
-          ))}
-        </ul>
-        {launchError ? (
-          <p className="travel-zero-state__error" role="alert">
-            {launchError}
-          </p>
-        ) : null}
-      </div>
-    </section>
+    <div className="travel-landing">
+      <TravelHero
+        defaults={defaults}
+        inputRef={inputRef}
+        launchError={launchError}
+        onStart={onStart}
+      />
+      <DestinationInspiration onStart={onStart} />
+      <TravelCapabilityStrip />
+      <TravelEditorialFeature onStart={onStart} />
+    </div>
   );
 }

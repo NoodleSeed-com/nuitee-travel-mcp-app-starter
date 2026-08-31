@@ -4,9 +4,9 @@ Status: implemented with committed local Chromium evidence; named-host visual ev
 
 ## Decision
 
-Adopt one coherent **Quiet Canopy** visual system for Cedar & Cloud Travel, using the disciplined route and timing hierarchy of a **Runway Grid** inside flight results.
+Adopt one coherent **Quiet Canopy** visual system for Wayfare, using the disciplined route and timing hierarchy of a **Runway Grid** inside flight results.
 
-The result should feel like a calm premium concierge, not a miniature airline website. Familiar controls and interaction patterns remain standard; distinctiveness comes from hierarchy, spacing, precise language, and the Cedar & Cloud palette.
+The result should feel like a calm premium concierge, not a miniature airline website. Familiar controls and interaction patterns remain standard; distinctiveness comes from hierarchy, spacing, precise language, and the Wayfare palette.
 
 The exploratory HTML concepts were temporary design-review artifacts and are not
 part of the cloneable starter. This document records the selected direction;
@@ -55,6 +55,15 @@ The UI continues to expose only two tool-linked entry widgets:
 
 They share a unified Search/Edit → Results → Verified fare-review journey. Familiar labelled search inputs are included, with natural place names sent through an explicit host follow-up for safe resolution. The journey adds no website navigation, hamburger menu, tabs, loyalty controls, checkout, booking, payment, or unfinished travel-domain actions.
 
+The primary website remains one centered chronological conversation.
+
+- Linked Apps stay inline at their original message-part positions.
+- Only `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget` and `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget` are admitted.
+- Distinct view IDs are not generically deduplicated.
+- Mismatched tool/resource pairs fail closed.
+- The typed Current trip summary stays inside the conversation.
+- Local proof is not hosted proof. Local responsive browser proof covers this composition, but hosted behavior remains unproven until a separately authorized deployment and embed-binding verification.
+
 A hamburger menu is familiar when a product has hidden navigation. These focused widgets have no internal navigation to hide, so adding one would create false affordance. If a future embedded website shell owns broader navigation, that shell may use its normal standard menu independently of the widgets.
 
 ## Visual system
@@ -97,7 +106,7 @@ Every final combination must be measured in the rendered host. Color never carri
 - Use familiar route arrows, chevrons, status marks, and host-expand affordances.
 - Pair every meaningful icon with visible text or an accessible name.
 - Bundle no airline/provider logos and use no third-party icon asset without license review. A documented live `marketingLogo` may render only from the exact Nuitee Flights asset allowlist, with carrier text/initials as fallback.
-- Keep result cards information-led. Do not add an internal Cedar & Cloud logo or decorative hero; the host already presents app identity before the widget.
+- Keep result cards information-led. Do not add an internal Wayfare logo or decorative hero; the host already presents app identity before the widget.
 - Limit motion to 100–140ms opacity or color transitions.
 - Use no parallax, sliding cards, animated countdown, route scanner, spinner spectacle, or implied aircraft tracking. Use result-shaped shimmer placeholders only.
 - Make reduced-motion behavior effectively instant.
@@ -117,7 +126,7 @@ Coming-soon rows have no hover treatment, pointer cursor, tab stop, button seman
 
 ### Conversation behavior
 
-When supported, **Search flights** uses `useSendFollowUpMessage()` from explicit form submission. Its prompt carries the user's entered route, dates, travelers, cabin, currency, and point-of-sale country; the host resolves only unambiguous place names and asks for missing child/infant ages or ambiguous locations. It does not call Nuitee directly and does not add another business tool.
+When supported, **Search flights** uses `useSendFollowUpMessage()` from explicit form submission. The host resolves only unambiguous place names. When dates are missing, `plan_flight_search` collects them through one structured interaction; the Assistant uses visible passenger, cabin, currency, and pricing-market defaults instead of asking for every provider field. The home App does not call Nuitee directly.
 
 ## FlightResults contract
 

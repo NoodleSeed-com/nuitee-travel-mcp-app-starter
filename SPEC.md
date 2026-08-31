@@ -31,7 +31,7 @@ The default `src/server.ts` remains credential-free because the supported connec
 
 ## Model-visible tools
 
-Exactly three model-visible tools are allowed.
+The public projection contains four model-visible tools plus one App-only helper: `open_travel_starter`, `plan_flight_search`, `search_flights`, and `verify_flight_offer` are model-visible; `select_flight_offer` is available only to the linked App bridge.
 
 ### `open_travel_starter`
 
@@ -40,6 +40,12 @@ Exactly three model-visible tools are allowed.
 - Opens TravelHome.
 - Flights is available; four future domains are noninteractive.
 - Text fallback explains the supported flight workflow and future-domain boundary.
+
+### `plan_flight_search`
+
+- Collects and normalizes missing search facts before provider access.
+- Uses the same bounded flight-search schema and server-owned defaults as `search_flights`.
+- Performs no Nuitee connector call and never invents airport resolution, availability, or fares.
 
 ### `search_flights`
 
@@ -80,7 +86,7 @@ Only two tool-linked React entry widgets are permitted. They share one flight-jo
 - Boarding-pass-inspired hierarchy without copying third-party assets or styles.
 - Named Search/Edit, Results, and Verified fare-review states with host-persisted Back navigation. A prompt may enter at Home/Search or Results; selection and verification advance within the same result widget.
 - Route and airport names/codes, carrier facts, optional Nuitee-provided airline imagery with text fallback, separate outbound/return airport-local dates/times, stops, duration, fare family, bounded price breakdown, baggage, terms, documented amenities, verification messages, and freshness disclosure.
-- Result cards are explicit selection controls. One **Verify selected fare** action appears only after selection.
+- Result cards are explicit selection controls. One **Verify current fare** action appears only after selection.
 - Selection is mirrored through the app-only `select_flight_offer` helper, which is hidden from the model. This makes a later “verify this” or “verify again” resolve the same caller-owned fare instead of inferring an option from result order.
 - The final state is labelled **Verified fare review** and **Not a ticket or reservation**; it never invents a boarding pass, PNR, barcode, gate, seat, or ticket number.
 - Verification success, changed price, expired selection, retryable failure, partial results, empty results, malformed results, and loading are explicit.

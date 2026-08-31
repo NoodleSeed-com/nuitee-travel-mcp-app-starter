@@ -2,6 +2,7 @@ import type { AssistantUIMessage } from '@noodleseed/assistant/client';
 
 export type TripPhase =
   | 'idle'
+  | 'planned'
   | 'searching'
   | 'comparing'
   | 'no-results'
@@ -17,6 +18,9 @@ export interface TripProjection {
   readonly departureDate?: string;
   readonly returnDate?: string;
   readonly travelers?: string;
+  readonly cabinClass?: string;
+  readonly currency?: string;
+  readonly country?: string;
 }
 
 export const EMPTY_TRIP: TripProjection = { phase: 'idle' };
@@ -54,7 +58,15 @@ function integerField(
 }
 
 const IATA_PATTERN = /^[A-Z]{3}$/;
+const CURRENCY_PATTERN = /^[A-Z]{3}$/;
+const COUNTRY_PATTERN = /^[A-Z]{2}$/;
 const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+const CABIN_LABELS = {
+  ECONOMY: 'Economy',
+  PREMIUM_ECONOMY: 'Premium Economy',
+  BUSINESS: 'Business',
+  FIRST: 'First',
+} as const;
 
 function isoDate(value: UnknownRecord, key: string): string | undefined {
   const candidate = value[key];
@@ -96,6 +108,49 @@ function travelerCopy(adults: number, children: number, infants: number) {
   return groups.join(', ');
 }
 
+function cabinLabel(value: unknown) {
+  return typeof value === 'string' && value in CABIN_LABELS
+    ? CABIN_LABELS[value as keyof typeof CABIN_LABELS]
+    : undefined;
+}
+
+function planProjection(result: UnknownRecord): TripProjection | undefined {
+  if (result.status !== 'planned') return undefined;
+  const origin = stringField(result, 'origin', IATA_PATTERN);
+  const destination = stringField(result, 'destination', IATA_PATTERN);
+  const departureDate = isoDate(result, 'departureDate');
+  const returnDate = result.returnDate === undefined
+    ? undefined
+    : isoDate(result, 'returnDate');
+  const adults = integerField(result, 'adults', 1, 9);
+  const cabinClass = cabinLabel(result.cabinClass);
+  const currency = stringField(result, 'currency', CURRENCY_PATTERN);
+  const country = stringField(result, 'country', COUNTRY_PATTERN);
+  if (
+    !origin
+    || !destination
+    || !departureDate
+    || (result.returnDate !== undefined && !returnDate)
+    || adults === undefined
+    || !cabinClass
+    || !currency
+    || !country
+  ) {
+    return undefined;
+  }
+  return {
+    phase: 'planned',
+    origin,
+    destination,
+    departureDate,
+    ...(returnDate ? { returnDate } : {}),
+    travelers: travelerCopy(adults, 0, 0),
+    cabinClass,
+    currency,
+    country,
+  };
+}
+
 function searchProjection(result: UnknownRecord): TripProjection | undefined {
   if (
     result.status !== 'success'
@@ -116,6 +171,15 @@ function searchProjection(result: UnknownRecord): TripProjection | undefined {
   const adults = integerField(context, 'adults', 1, 9);
   const children = integerField(context, 'children', 0, 8);
   const infants = integerField(context, 'infants', 0, 9);
+  const cabinClass = context.cabinClass === undefined
+    ? undefined
+    : cabinLabel(context.cabinClass);
+  const currency = context.currency === undefined
+    ? undefined
+    : stringField(context, 'currency', CURRENCY_PATTERN);
+  const country = context.country === undefined
+    ? undefined
+    : stringField(context, 'country', COUNTRY_PATTERN);
 
   if (
     !origin
@@ -125,6 +189,9 @@ function searchProjection(result: UnknownRecord): TripProjection | undefined {
     || adults === undefined
     || children === undefined
     || infants === undefined
+    || (context.cabinClass !== undefined && !cabinClass)
+    || (context.currency !== undefined && !currency)
+    || (context.country !== undefined && !country)
   ) {
     return undefined;
   }
@@ -136,6 +203,9 @@ function searchProjection(result: UnknownRecord): TripProjection | undefined {
     departureDate,
     ...(returnDate ? { returnDate } : {}),
     travelers: travelerCopy(adults, children, infants),
+    ...(cabinClass ? { cabinClass } : {}),
+    ...(currency ? { currency } : {}),
+    ...(country ? { country } : {}),
   };
 }
 
@@ -147,6 +217,8 @@ function projectResult(
   if (!isRecord(result)) return current;
 
   switch (tool) {
+    case 'plan_flight_search':
+      return planProjection(result) ?? current;
     case 'search_flights': {
       if (result.status === 'error') return { ...current, phase: 'error' };
       return searchProjection(result) ?? current;

@@ -59,19 +59,19 @@ afterEach(() => {
 });
 
 describe('typed travel message parts', () => {
-  it('passes both distinct linked view identities to the official App host without printing tool JSON', () => {
+  it('renders distinct approved Apps in chronological message-part order', () => {
     const firstView: AssistantViewData = {
       id: 'view-1',
       tool: 'search_flights',
-      resourceUri: 'ui://nuitee_travel/flight-results',
+      resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget',
       title: 'Flight results',
       result: { status: 'success' },
     };
     const secondView: AssistantViewData = {
       id: 'view-2',
-      tool: 'search_flights',
-      resourceUri: 'ui://nuitee_travel/flight-results',
-      title: 'Updated flight results',
+      tool: 'open_travel_starter',
+      resourceUri: 'ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget',
+      title: 'Travel starter',
       result: { status: 'success' },
     };
     const message: AssistantUIMessage = {
@@ -79,40 +79,50 @@ describe('typed travel message parts', () => {
       role: 'assistant',
       parts: [
         { type: 'text', text: 'I found current options.' },
-        {
-          type: 'data-tool-result',
-          data: {
-            id: 'call-1',
-            tool: 'search_flights',
-            result: {
-              status: 'success',
-              searchContext: { origin: 'JFK' },
-            },
-          },
-        },
-        {
-          type: 'data-view',
-          data: firstView,
-        },
-        {
-          type: 'data-view',
-          data: secondView,
-        },
+        { type: 'data-view', data: firstView },
+        { type: 'text', text: 'Choose the trip you want to refine.' },
+        { type: 'data-view', data: secondView },
       ],
     };
 
-    const { container } = renderMessage(client, message);
+    renderMessage(client, message);
 
-    expect(screen.getByText('I found current options.')).toBeVisible();
-    const linkedViews = Array.from(
-      container.querySelectorAll('noodle-app-view'),
-      (element) => element.view,
-    );
-    expect(linkedViews).toHaveLength(2);
-    expect(linkedViews.map((view) => view?.id)).toEqual(['view-1', 'view-2']);
-    expect(linkedViews[0]).toBe(firstView);
-    expect(linkedViews[1]).toBe(secondView);
-    expect(screen.queryByText(/searchContext/)).not.toBeInTheDocument();
+    const article = screen.getByRole('article', { name: 'Assistant message' });
+    const firstText = screen.getByText('I found current options.');
+    const secondText = screen.getByText('Choose the trip you want to refine.');
+    const apps = article.querySelectorAll('noodle-app-view');
+    const surfaces = screen.getAllByTestId('travel-app-surface');
+
+    expect([...article.children]).toEqual([
+      firstText,
+      surfaces[0],
+      secondText,
+      surfaces[1],
+    ]);
+    expect(apps).toHaveLength(2);
+    expect(apps[0]?.view).toBe(firstView);
+    expect(apps[1]?.view).toBe(secondView);
+  });
+
+  it('contains an approved App in one unlabeled visual host without rebuilding it', () => {
+    const view: AssistantViewData = {
+      id: 'view-contained',
+      tool: 'search_flights',
+      resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget',
+      title: 'Flight results',
+      result: { status: 'success' },
+    };
+    renderMessage(client, {
+      id: 'assistant-contained-view',
+      role: 'assistant',
+      parts: [{ type: 'data-view', data: view }],
+    });
+
+    const surface = screen.getByTestId('travel-app-surface');
+    const app = surface.querySelector('noodle-app-view');
+    expect(app).not.toBeNull();
+    expect(surface).not.toHaveTextContent('Flight results');
+    expect(surface.querySelector('iframe[srcdoc]')).toBeNull();
   });
 
   it('allows internal and HTTPS links with external link isolation', () => {
@@ -162,26 +172,40 @@ describe('typed travel message parts', () => {
     renderMessage(client, {
       id: 'assistant-confirm',
       role: 'assistant',
-      parts: [{
-        type: 'data-confirmation',
-        data: {
-          id: 'confirm-1',
-          tool: 'select_flight_offer',
-          title: 'Save this fare?',
-          description: 'Keep this selection for verification.',
-          arguments: {
-            origin: 'JFK',
-            adults: 2,
-            apiKey: 'must-not-render',
-            cardNumber: '4111111111111111',
-            passportNumber: 'P1234567',
-            providerOffer: { id: 'raw-provider-id' },
+      parts: [
+        {
+          type: 'data-confirmation',
+          data: {
+            id: 'confirm-1',
+            tool: 'select_flight_offer',
+            title: 'Save this fare?',
+            description: 'Keep this selection for verification.',
+            arguments: {
+              origin: 'JFK',
+              adults: 2,
+              apiKey: 'must-not-render',
+              cardNumber: '4111111111111111',
+              passportNumber: 'P1234567',
+              providerOffer: { id: 'raw-provider-id' },
+            },
+            status: 'pending',
           },
-          status: 'pending',
         },
-      }],
+        {
+          type: 'data-tool-result',
+          data: {
+            id: 'call-private-result',
+            tool: 'select_flight_offer',
+            result: { privateProviderResult: 'raw-tool-result-must-not-render' },
+          },
+        },
+      ],
     });
 
+    const confirmation = screen.getByRole('region', {
+      name: 'Confirmation request',
+    });
+    expect(confirmation).toHaveClass('travel-interaction-card');
     expect(screen.getByRole('heading', { name: 'Save this fare?' }))
       .toBeVisible();
     expect(screen.getByText('Origin')).toBeVisible();
@@ -189,9 +213,12 @@ describe('typed travel message parts', () => {
     expect(screen.getByText('Adults')).toBeVisible();
     expect(screen.getByText('2')).toBeVisible();
     expect(screen.queryByText(
-      /must-not-render|4111111111111111|P1234567|raw-provider-id/,
+      /must-not-render|4111111111111111|P1234567|raw-provider-id|raw-tool-result/,
     ))
       .not.toBeInTheDocument();
+
+    expect(screen.getByRole('button', { name: 'Confirm' })).toBeVisible();
+    expect(screen.getByRole('button', { name: "Don't proceed" })).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
 
@@ -345,6 +372,61 @@ describe('typed travel message parts', () => {
     await waitFor(() => {
       expect(client.respond).toHaveBeenCalledWith('input-1', {
         action: 'cancel',
+      });
+    });
+  });
+
+  it('collects an allowlisted trip clarification with native controls', async () => {
+    renderMessage(client, {
+      id: 'assistant-trip-input',
+      role: 'assistant',
+      parts: [{
+        type: 'data-input-request',
+        data: {
+          id: 'input-trip',
+          message: 'Complete your trip details.',
+          requestedSchema: {
+            type: 'object',
+            properties: {
+              departureDate: {
+                type: 'string',
+                format: 'date',
+                title: 'Departure date',
+              },
+              cabinClass: {
+                type: 'string',
+                title: 'Cabin',
+                enum: ['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST'],
+              },
+            },
+            required: ['departureDate'],
+          },
+          expiresAt: '2026-08-27T18:00:00.000Z',
+          status: 'pending',
+        },
+      }],
+    });
+
+    const inputRequest = screen.getByRole('region', { name: 'Input request' });
+    expect(inputRequest).toHaveClass('travel-interaction-card');
+    expect(screen.getByText('Complete your trip details.')).toBeVisible();
+    expect(screen.getByLabelText('Departure date')).toHaveAttribute('type', 'date');
+    expect(screen.getByRole('combobox', { name: 'Cabin' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Cancel request' })).toBeVisible();
+
+    fireEvent.change(screen.getByLabelText('Departure date'), {
+      target: { value: '2026-09-11' },
+    });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Cabin' }), {
+      target: { value: 'BUSINESS' },
+    });
+    fireEvent.submit(screen.getByRole('form', { name: 'Complete trip details' }));
+
+    await waitFor(() => {
+      expect(client.respond).toHaveBeenCalledWith('input-trip', {
+        action: 'accept',
+        content: { departureDate: '2026-09-11', cabinClass: 'BUSINESS' },
       });
     });
   });

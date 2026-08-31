@@ -11,7 +11,7 @@ Noodle public Assistant surface ───── External MCP host
   └──────────────────┬──────────────────────┘
                      ▼
               shared travel MCP
-         open / search / select / verify
+      open / plan / search / verify / App-only select
                      │
          ┌───────────┴───────────┐
          ▼                       ▼
@@ -27,13 +27,23 @@ Noodle public Assistant surface ───── External MCP host
            official Flights API
 ```
 
-`apps/web/` is the primary product surface. It owns the conversation shell, delayed guest admission, typed message renderer, plain-language activity, and read-only trip projection. It calls neither Nuitee nor MCP tools directly. On the first submitted message, the official Assistant hook uses the public embed ID to open an anonymous session. Linked travel Apps render through `NoodleAppView` with the existing client.
+`apps/web/` is the primary product surface. Its light, Inter-only hybrid cinematic landing has one centered conversation entry; after submission it owns one centered chronological conversation, delayed guest admission, typed message rendering, and plain-language activity. `TravelMessage` preserves message-part order and delegates official inline MCP Apps to `NoodleAppView`. Every distinct view ID is a distinct chronological invocation and remains mounted in history; the website has no newest-only selector, generic App deduplication, second workspace, page-authored fare reconstruction, or viewport-dependent DOM reordering. The website calls neither Nuitee nor MCP tools directly. On the first submitted message, the official Assistant hook uses the public embed ID to open an anonymous session.
+
+The website admits only these exact linked-App identities:
+
+- `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget`;
+- `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget`.
+
+A tool/URI mismatch fails closed inline and never reaches `NoodleAppView`. The compact typed trip disclosure stays inside the conversation, is absent before typed facts exist, and exposes only validated route, date, party, cabin, and optional secondary facts; it never parses Assistant prose.
+
+`apps/web/src/components/wayfare-mark.tsx` owns the deterministic route-line SVG mark. The website uses installed Lucide icons only for familiar supported actions and does not use icons to imply attachments, payment, booking, voice, or account capabilities. The rounded hero window and three destination cards use four local `1672 × 941` high-resolution JPEG masters. They are not claimed as literal 4K sources; Next.js produces responsive AVIF/WebP delivery from them. Exact bytes, hashes, crop choices, and visual-review evidence are in [the Wayfare provenance ledger](visual-assets/wayfare-premium-concierge.md).
 
 `src/` owns the MCP server, model-facing workflows, exact public capability allowlist, connector, tools, state, and linked Apps. External MCP hosts enter the same server and provide their own model. No browser-specific or host-specific copy of the business tools exists.
 
-The public Assistant surface allowlists exactly:
+The public Assistant surface allowlists four model-visible tools plus one App-only helper, exactly:
 
 - `open_travel_starter`;
+- `plan_flight_search`;
 - `search_flights`;
 - `verify_flight_offer`; and
 - App-only `select_flight_offer`.
@@ -57,24 +67,27 @@ All MCP entrypoints call `createTravelServer(...)`. Tool names, schemas, output 
 1. The Next.js route resolves `NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID` and the exact service origin.
 2. Mounting the page renders only the zero state; it spends no public admission and creates no Assistant session.
 3. The first valid guest message mounts `TravelConversation`, generates a browser-memory `principalKey`, and starts the official public client.
-4. The hook sends locale and IANA time zone only as untrusted presentation context.
+4. The hook sends locale and IANA time zone as untrusted presentation context. It may also send a derived airport/city/country/currency page default; precise coordinates never enter the Assistant context.
 5. The service binds the session to the public surface's exact origin, allowlist, model, budget, and anonymous principal.
 6. Typed text, interactions, structured results, and App views flow through the same Assistant client.
 7. New trip/reset unmounts that client, aborts active work through the hook, and clears the in-memory transcript, principal key, and trip projection together.
 
 The guest website has no `/api/assistant/session` route and no Assistant client ID or secret. Public origin checks are browser boundaries, not bot authentication; the capability allowlist, confirmation requirements, admission controls, and daily budget are the abuse boundaries.
 
+Deterministic local browser evidence proves this composition only against a loopback fixture. Hosted behavior remains unproven until a separately authorized deployment and exact embed-binding verification exercise the intended revision and origin.
+
 ## Search data flow
 
-1. The model supplies only travel intent fields from `searchInputSchema`.
-2. The compute gateway validates route/date/traveler relationships against server-authoritative time.
-3. The gateway calls the allowlisted search operation once. Tool input cannot select an origin, URL, path, method, header, credential, or provider offer ID.
-4. The connector sends the exact request to `POST /flights/rates` and injects `X-API-Key` from the managed secret.
-5. Search permits up to 6 MiB at connector and application parsing boundaries. The gateway flattens bounded journeys, keeps one valid offer per itinerary, normalizes at most ten, and accepts only exact allowlisted Nuitee airline-image origins.
-6. Every provider offer ID becomes a private caller-scoped record. Public output receives only an application-issued `sel_…` handle.
-7. The tool replaces `flight_selections` using revision control and a 30-minute TTL; a new search begins with no active selection.
-8. At most three itineraries display inline. The same App may show up to ten only when the host grants fullscreen presentation.
-9. The validated `searchContext` drives both the App editor and the website's read-only trip rail. The rail never parses Assistant prose or stores identifiers.
+1. When a clear route has no date, `plan_flight_search` collects departure and optional return dates through one portable structured-input interaction and returns a typed trip plan. It performs no connector operation.
+2. The model calls `search_flights` from that plan. One adult and Economy are visible defaults. The guest website may suggest an untrusted derived origin, currency, and pricing market when those facts are omitted; explicit traveler text always wins. Other hosts and unresolved website sessions retain USD and the US pricing market.
+3. The compute gateway validates route/date/traveler relationships against server-authoritative time.
+4. The gateway calls the allowlisted search operation once. Tool input cannot select an origin, URL, path, method, header, credential, or provider offer ID.
+5. The connector sends the exact request to `POST /flights/rates` and injects `X-API-Key` from the managed secret.
+6. Search permits up to 6 MiB at connector and application parsing boundaries. The gateway flattens bounded journeys, keeps one valid offer per itinerary, normalizes at most ten, and accepts only exact allowlisted Nuitee airline-image origins.
+7. Every provider offer ID becomes a private caller-scoped record. Public output receives only an application-issued `sel_…` handle.
+8. The tool replaces `flight_selections` using revision control and a 30-minute TTL; a new search begins with no active selection.
+9. At most three itineraries display inline. The same App may show up to ten only when the host grants fullscreen presentation.
+10. Validated planning and search results drive the compact Current trip summary inside the conversation. The summary never parses Assistant prose or stores identifiers.
 
 If validation or the provider fails, the application returns bounded sanitized state and consults no fixture. A valid empty result clears stale route projection and reports no fares found.
 
@@ -102,8 +115,11 @@ The terminal product state is a verified fare review. No provider ID is retained
 | Provider `offerId` | Private caller-scoped Noodle state | Never |
 | Application `selectionId` | Public tool/App output bound to private caller state | Yes |
 | Optional Assistant client secret | Authenticated website backend only | Never |
+| Browser coordinates | Top-level browser callback memory only | Never; only the derived travel default may reach untrusted page context |
 
 The browser receives no model key, Nuitee key, Assistant client secret, raw provider response, server continuation, provider transaction identifier, or direct MCP credential. Content Security Policy must allow the exact Noodle service origin in `script-src`, `connect-src`, and `frame-src`; all other public runtime origins remain application-owned.
+
+The optional location and currency flow is documented in [`docs/privacy.md`](privacy.md). Geolocation is same-origin only, uses a bundled public-domain airport catalog, has no third-party lookup or application persistence, and never supplies authorization or overrides a traveler-stated route.
 
 ## Optional authenticated extension
 

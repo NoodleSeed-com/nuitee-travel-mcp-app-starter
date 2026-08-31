@@ -1,6 +1,59 @@
 # Customization guide
 
-Customize the existing flights-first product before adding scope. Keep Cedar & Cloud Travel fictional unless you have authority to replace it with your own brand.
+Customize the existing flights-first product before adding scope. Keep Wayfare fictional unless you have authority to replace it with your own brand.
+
+## Wayfare image system
+
+The light, Inter-only hybrid cinematic landing uses four local high-resolution JPEG masters: `wayfare-hybrid-hero-v2.jpg` plus the Rome, London, and Istanbul `-editorial-v2.jpg` destinations. Each is a truthful native `1672 × 941` master—not a literal 4K source. Next.js makes responsive AVIF/WebP derivatives from the local files; preserve the explicit `sizes`, focal positions, priority behavior, and responsive crop checks when replacing one.
+
+Read [the Wayfare provenance ledger](visual-assets/wayfare-premium-concierge.md) before changing an image. It records the accepted paths, native dimensions, byte counts, SHA-256 hashes, crop decisions, visual review, and rejected variants. Keep replacements local and owned, licensed, or generated; do not introduce a remote image origin, airline trademarks, liveries, copyrighted campaign art, or an image-based fare, availability, partnership, or destination guarantee. Every changed binary needs its own exact reviewed blob/path pair in `security/reviewed-binary-blobs.txt`; a filename or directory exception is not enough.
+
+## Bundled typography
+
+The website and repository-owned MCP Apps bundle Inter Variable through exact
+dependency `@fontsource-variable/inter@5.3.0`; browsers do not fetch the font
+from Google or another runtime font host. The package declares the SIL Open
+Font License 1.1 (`OFL-1.1`) and includes its license text. Code and command
+samples retain a semantic monospace stack.
+
+If you replace Inter, update both package boundaries, the website import, both
+MCP App entry imports, the shared `--font-sans` widget token, browser-computed
+font tests, and the dependency-license evidence together. The bundled license
+record is evidence of the current dependency metadata, not a completed legal
+approval: copyright, NOTICE treatment, dependency provenance/compatibility,
+and public redistribution still require owner/legal review before release.
+
+## Editorial landing content
+
+Edit `apps/web/src/lib/landing-content.ts` to customize the editorial destination
+cards and feature. For each entry in `landingDestinations`, change `name`,
+`descriptor`, `prompt`, `imageSrc`, and `imagePosition`. For
+`landingEditorialFeature`, change only `heading`, `support`, `action`, and `prompt`.
+Its visual panel uses the shared `WayfareMark` from
+`apps/web/src/components/wayfare-mark.tsx`; there is no separate editorial image
+or eyebrow field.
+
+The starter's three local destination image paths are:
+
+- `/images/destinations/rome-editorial-v2.jpg`
+- `/images/destinations/london-editorial-v2.jpg`
+- `/images/destinations/istanbul-editorial-v2.jpg`
+
+Keep replacements local and use only owned, licensed, or generated images. Review
+the exact replacement bytes and add a new exact blob-ID line to
+`security/reviewed-binary-blobs.txt` for every changed image; a path or directory
+exception is not sufficient. Use realistic editorial imagery only as
+non-evidentiary inspiration. Do not fabricate a fare, discount, availability,
+airline partnership, destination guarantee, or any other commercial claim in an
+image or its prompt copy.
+
+The four committed masters were generated with OpenAI `image_gen`; their exact
+prompts, dimensions, conversion settings, crop notes, and visual-review results
+are recorded in [the Wayfare provenance ledger](visual-assets/wayfare-premium-concierge.md).
+Raw generation sources stay outside git. Exact-blob review proves which bytes
+were inspected for obvious logos, signage, faces, private data, and visual
+defects; it does not complete copyright, trademark, model/provider terms, or
+public-distribution review.
 
 ## Branding
 
@@ -18,7 +71,7 @@ pnpm customize -- \
 pnpm customize:check
 ```
 
-The command updates the canonical `src/starter-config.ts` file, writes it atomically, and is idempotent. It accepts only bounded presentation values and never reads credentials or environment files. The MCP server and Apps import the canonical module; the primary Next.js website reaches that same value through root `starter.config.ts`. Review contrast in light and dark themes after changing colors.
+The command updates the canonical `src/starter-config.ts` file, writes it atomically, and is idempotent. It accepts only bounded presentation values and never reads credentials or environment files. The MCP server and Apps import the canonical module; the primary Next.js website reaches that same value through root `starter.config.ts`. The website is intentionally light-only and consumes the brand through direct CSS custom properties in `apps/web/app/globals.css`; it does not use a Tailwind mapping. Review light-theme contrast after changing colors; `surfaceDark` remains available to external hosts that consume the portable MCP brand kit.
 
 To prepare the primary guest Assistant surface for one hosted website, add only that exact deployment-owned origin:
 
@@ -43,8 +96,9 @@ The browser receives only the public embed ID and public service origin. Brandin
 The command deliberately does not rename the package, server ID, tool names, Nuitee connector, state handles, provider limits, fixture carriers, or historical product documents. Those identifiers and security boundaries are not consumer branding.
 
 - Use your own name, short copy, and restrained accent token; keep structural surfaces and text host-neutral.
+- `apps/web/src/components/wayfare-mark.tsx` owns the deterministic route-line SVG mark. Keep its continuous rounded route path, terminal dot, `currentColor` treatment, and accessible wordmark pairing; do not replace it with a generated raster, an airline lookalike, or a decorative ambient route motif.
 - Let the host-supplied app identity carry the logo. Do not repeat a brand mark inside a compact response widget.
-- Keep the explicit platform system-font stack, light/dark support, compact type scale, and system sizing.
+- Keep bundled Inter for repository-owned non-code UI, the compact type scale, and semantic monospace only for code. The primary website stays light-only; portable MCP widgets retain semantic light/dark colors for external hosts that own their presentation. Use installed Lucide icons at the documented 20px/18px sizes only for familiar supported actions, with named 44px icon-only controls.
 - Follow the current [OpenAI Apps SDK UI guidelines](https://developers.openai.com/plugins/concepts/ui-guidelines) when changing typography, color, spacing, actions, or navigation.
 - Do not bundle airline/provider logos. FlightResults may render the documented `marketingLogo` from a live result only after the runtime accepts its exact Nuitee Flights asset origin/path; keep carrier text and initials as the failure fallback. A remote image request still reveals normal network metadata to the Nuitee asset host, so disable the image path if that tradeoff does not fit the deployment's privacy policy.
 - Never imply a partnership or call this an “official Nuitee connector” without authorization.
@@ -65,13 +119,13 @@ Search fixtures must remain clearly fictional. Live output may show the actual c
 
 ## Tool descriptions and inputs
 
-Four shared capabilities are created in `src/travel-server.ts` from schemas in `src/flight-schemas.ts`: three model-visible tools plus the App-only selection helper. The public Assistant allowlists the same instances registered for external MCP hosts.
+Five shared capabilities are created in `src/travel-server.ts` from schemas in `src/flight-schemas.ts`: four model-visible tools plus the App-only selection helper. The public Assistant allowlists the same instances registered for external MCP hosts.
 
 - Keep names intent-shaped and stable.
 - Describe one-way/round-trip, price verification, and stop-before-booking boundaries plainly.
 - Do not add transport authority such as URL, base URL, path, method, headers, or provider offer ID to an input schema.
 - If a new input is required by the official Nuitee contract, add a failing test, validation, request mapping, docs, and bounded output before exposing it.
-- Keep country explicit unless product research supports a trusted server-owned point-of-sale default. Do not infer it from untrusted browser hints.
+- The starter uses USD and US as server-owned fallbacks so every host can reach results without provider jargon. The primary guest website may supply an untrusted derived airport-country and selected-currency default when the traveler omitted those facts; explicit traveler text always wins. Preserve the in-memory/no-third-party/no-authorization boundary in [`docs/privacy.md`](privacy.md) when changing this behavior.
 
 ## Normalized fields
 
@@ -92,7 +146,9 @@ Do not return the complete upstream journey, offers array, provider logos, arbit
 
 TravelHome and FlightResults live in `src/views/`; `search-editor.tsx` is their shared familiar form. Both use public `@noodleseed/one/react` primitives through `src/helpers.ts`.
 
-- Preserve explicit unselected/selected card states and the single result-level primary action: **Verify selected fare**.
+The primary website is one centered chronological conversation. Preserve each official inline MCP App at its original message part and mount it only through the official Noodle App host. The finite admission policy allows only `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget` and `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget`; a mismatch must fail closed. Treat every distinct view ID as a separate invocation and never add generic deduplication, newest-only selection, a second workspace, or page-authored fare reconstruction. Keep the compact typed trip disclosure inside the conversation and source it only from validated fields. Local success does not prove the hosted embed; that remains unproven until a separately authorized deployment and exact embed-binding verification.
+
+- Preserve explicit unselected/selected card states and the single result-level primary action: **Verify current fare**.
 - Keep Search/Edit → Results → Verified fare review navigation shallow, Back-enabled, and persisted with the public app-flow helper.
 - Place-name edits must go through an explicit host follow-up until a verified airport-resolution tool exists; never ship a guessed or static production airport mapping.
 - Keep three cards inline and ten only when the host supplies fullscreen mode.

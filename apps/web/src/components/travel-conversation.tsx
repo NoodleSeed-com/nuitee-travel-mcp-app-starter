@@ -1,37 +1,55 @@
 'use client';
 
 import { useNoodleAssistant } from '@noodleseed/assistant/react/client';
-import { useEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { starterConfig } from '../../../../starter.config';
 import { presentAssistantError } from '../lib/assistant-error';
 import type { ReadyPublicAssistantRuntime } from '../lib/assistant-config';
 import { isNearTranscriptEnd } from '../lib/conversation-scroll';
 import {
-  EMPTY_TRIP,
-  projectTrip,
-  type TripProjection,
-} from '../lib/trip-projection';
+  toTravelPageContext,
+  type TravelDefaults,
+} from '../lib/travel-defaults';
+import { projectTrip, type TripProjection } from '../lib/trip-projection';
 import {
   progressForEvent,
   type ToolActivity,
 } from '../lib/travel-progress';
 import { TravelComposer } from './travel-composer';
 import { TravelMessage } from './travel-message';
+import { TripBrief } from './trip-brief';
 
 interface TravelConversationProps {
+  readonly defaults: TravelDefaults;
   readonly runtime: ReadyPublicAssistantRuntime;
   readonly initialPrompt: string;
-  readonly onReset: () => void;
-  readonly onProjectionChange: (projection: TripProjection) => void;
 }
 
-function sameProjection(left: TripProjection, right: TripProjection) {
-  return left.phase === right.phase
-    && left.origin === right.origin
-    && left.destination === right.destination
-    && left.departureDate === right.departureDate
-    && left.returnDate === right.returnDate
-    && left.travelers === right.travelers;
+function conversationCopy(projection: TripProjection) {
+  const title = projection.origin && projection.destination
+    ? `${projection.origin} to ${projection.destination}`
+    : 'Plan your flight';
+  switch (projection.phase) {
+    case 'planned':
+    case 'searching':
+      return { title, placeholder: 'Adjust the trip or add a preference…' };
+    case 'comparing':
+    case 'no-results':
+      return { title, placeholder: 'Compare fares or refine this search…' };
+    case 'selected':
+    case 'verifying':
+    case 'verified':
+      return { title, placeholder: 'Ask about or verify this fare…' };
+    case 'error':
+      return { title, placeholder: 'Tell Wayfare what to change…' };
+    case 'idle':
+      return { title, placeholder: 'Tell Wayfare what you need…' };
+  }
 }
 
 function newestActivity(
@@ -42,40 +60,10 @@ function newestActivity(
   return newest;
 }
 
-function useResolvedTheme() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
-    const updateTheme = () => {
-      const choice = document.documentElement.dataset.theme;
-      setTheme(
-        choice === 'dark' || (choice !== 'light' && mediaQuery?.matches)
-          ? 'dark'
-          : 'light',
-      );
-    };
-    const observer = new MutationObserver(updateTheme);
-    observer.observe(document.documentElement, {
-      attributeFilter: ['data-theme'],
-      attributes: true,
-    });
-    mediaQuery?.addEventListener('change', updateTheme);
-    updateTheme();
-    return () => {
-      observer.disconnect();
-      mediaQuery?.removeEventListener('change', updateTheme);
-    };
-  }, []);
-
-  return theme;
-}
-
 export function TravelConversation({
+  defaults,
   runtime,
   initialPrompt,
-  onReset,
-  onProjectionChange,
 }: Readonly<TravelConversationProps>) {
   const [principalKey] = useState(() => crypto.randomUUID());
   const { client, messages, status, error } = useNoodleAssistant({
@@ -86,10 +74,10 @@ export function TravelConversation({
       locale: navigator.language,
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     }),
+    pageContext: () => toTravelPageContext(defaults),
   });
   const initialPromptSentRef = useRef(false);
   const lastPromptRef = useRef(initialPrompt);
-  const publishedProjectionRef = useRef<TripProjection>(EMPTY_TRIP);
   const activeActivitiesRef = useRef(new Map<string, ToolActivity>());
   const transcriptContentRef = useRef<HTMLOListElement>(null);
   const transcriptViewportRef = useRef<HTMLDivElement>(null);
@@ -101,8 +89,6 @@ export function TravelConversation({
   const terminal = status === 'error' || Boolean(error);
   const terminalRef = useRef(terminal);
   terminalRef.current = terminal;
-  const theme = useResolvedTheme();
-
   useEffect(() => {
     let active = true;
     queueMicrotask(() => {
@@ -170,20 +156,11 @@ export function TravelConversation({
     setActivity(null);
   }, [terminal]);
 
-  useEffect(() => {
-    const projection = projectTrip(
-      messages,
-      terminal ? undefined : activity?.phase,
-    );
-    if (sameProjection(projection, publishedProjectionRef.current)) return;
-    publishedProjectionRef.current = projection;
-    onProjectionChange(projection);
-  }, [activity?.phase, messages, onProjectionChange, terminal]);
-
-  function resetConversation() {
-    onProjectionChange(EMPTY_TRIP);
-    onReset();
-  }
+  const projection = useMemo(() => projectTrip(
+    messages,
+    terminal ? undefined : activity?.phase,
+  ), [activity?.phase, messages, terminal]);
+  const copy = conversationCopy(projection);
 
   function sendFollowUp(prompt: string) {
     const viewport = transcriptViewportRef.current;
@@ -211,47 +188,65 @@ export function TravelConversation({
 
   return (
     <section
-      className="travel-canvas"
       aria-busy={busy}
       aria-label="Travel conversation"
-      id="travel-canvas"
-      tabIndex={-1}
+      className="travel-conversation-shell"
     >
-      <div className="travel-conversation">
-        <header>
-          <div>
-            <p className="assistant-identity">
-              {starterConfig.brand.assistantName}
-            </p>
-            <h1>Trip conversation</h1>
-          </div>
-          <button type="button" onClick={resetConversation}>
-            Reset conversation
-          </button>
-        </header>
-        <div
-          className="travel-transcript"
-          onScroll={(event) => {
-            followLatestRef.current = isNearTranscriptEnd(event.currentTarget);
-          }}
-          ref={transcriptViewportRef}
+      <header className="travel-conversation__header">
+        <p className="assistant-identity">
+          {starterConfig.brand.assistantName}
+        </p>
+        <h1>{copy.title}</h1>
+      </header>
+      <div className="travel-conversation__context">
+        <TripBrief projection={projection} />
+      </div>
+      <div
+        className="travel-transcript"
+        onScroll={(event) => {
+          followLatestRef.current = isNearTranscriptEnd(event.currentTarget);
+        }}
+        ref={transcriptViewportRef}
+      >
+        <ol
+          aria-label="Conversation transcript"
+          ref={transcriptContentRef}
+          role="log"
         >
-          <ol
-            aria-label="Conversation transcript"
-            ref={transcriptContentRef}
-            role="log"
+          {messages.map((message) => (
+            <li key={message.id}>
+              <TravelMessage client={client} message={message} />
+            </li>
+          ))}
+        </ol>
+      </div>
+      <div className="travel-conversation__lower-chrome">
+        {projection.phase === 'no-results' ? (
+          <div
+            aria-label="Refine this search"
+            className="travel-search-refinements"
+            role="group"
           >
-            {messages.map((message) => (
-              <li key={message.id}>
-                <TravelMessage
-                  client={client}
-                  message={message}
-                  theme={theme}
-                />
-              </li>
-            ))}
-          </ol>
-        </div>
+            <button
+              disabled={busy}
+              onClick={() => sendFollowUp(
+                'Search nearby airports for this trip.',
+              )}
+              type="button"
+            >
+              Try nearby airports
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => sendFollowUp(
+                'Help me change the travel dates.',
+              )}
+              type="button"
+            >
+              Change dates
+            </button>
+          </div>
+        ) : null}
         <p aria-live="polite" role="status">
           {statusLabel}
         </p>
@@ -269,14 +264,16 @@ export function TravelConversation({
             ) : null}
           </section>
         ) : null}
-        <TravelComposer
-          busy={busy}
-          formLabel="Continue trip"
-          onStop={stopGenerating}
-          onSubmit={sendFollowUp}
-          submitLabel="Continue trip"
-        />
       </div>
+      <TravelComposer
+        busy={busy}
+        formLabel="Continue trip"
+        onStop={stopGenerating}
+        onSubmit={sendFollowUp}
+        placeholder={copy.placeholder}
+        submitLabel="Continue trip"
+        variant="conversation"
+      />
     </section>
   );
 }

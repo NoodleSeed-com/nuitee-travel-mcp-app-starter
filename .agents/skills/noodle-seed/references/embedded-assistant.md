@@ -53,11 +53,11 @@ assistant: embeddedAssistant({
   access: authenticatedWebsite({
     origins: ["http://localhost:3000", "https://app.example.com"],
   }),
-  layout: { mode: "floating", position: "bottom-right" },
+  layout: { mode: "floating", position: "bottom-center" },
 }),
 ```
 
-`noodleManaged()` is the zero-configuration Cloud path: the public artifact contains only `{ kind: "noodle-managed" }`. It never exposes a provider or model identifier, and it fails closed unless Noodle has enrolled that exact deployment target. For a customer- or self-hosted model, replace it with `openAICompatible({ baseUrl: variable("ASSISTANT_MODEL_BASE_URL"), model: variable("ASSISTANT_MODEL"), apiKey: secret("ASSISTANT_MODEL_API_KEY") })`; that remains the portable BYO path.
+`noodleManaged()` is the zero-configuration Cloud path: the public artifact contains only `{ kind: "noodle-managed" }`. It never exposes a provider or model identifier, and it fails closed unless Noodle has enrolled that exact deployment target. For a customer- or self-hosted model, replace it with `openAICompatible({ baseUrl: variable("ASSISTANT_MODEL_BASE_URL"), model: variable("ASSISTANT_MODEL"), apiKey: secret("ASSISTANT_MODEL_API_KEY"), transport: "responses" })` when the endpoint implements Responses. Omit `transport` or use `"chat-completions"` for Chat Completions. Noodle calls only the selected transport and never probes or falls back to the other endpoint.
 
 Origins are exact: scheme, host, and optional port, with no path, trailing slash, or wildcard. Production origins must be HTTPS; plain HTTP is accepted only for loopback development origins (`http://localhost:<port>`, `http://127.0.0.1:<port>`). `noodle dev` serves the MCP project, not the embedding SaaS. For a public surface it also prints a process-local Embed ID and script; mount that script on the separately running loopback website to test anonymous mint, chat, widgets, and confirmation. The local ID is ephemeral, while a hosted deploy provisions the stable ID behind durable admission counters.
 
@@ -107,11 +107,19 @@ access: publicWebsite({
   capabilities: [answerProductQuestion, requestDemo, myOrders],
   signIn: true,   // `myOrders` reads ${user}; visitors sign in to reach it
 }),
+labels: {
+  signInHeading: "Continue with your Acme account",
+  signInBody: "Order history needs an account.",   // optional; empty hides the line
+  signInAction: "Sign in",
+  signUpAction: "Create free account",             // authoring this label is the sign-up opt-in
+},
 ```
+
+The sign-in card renders on the same themed chrome as every proposal card and follows the server `branding`. Authoring `signUpAction` adds a second button; leaving it out renders none. Both buttons raise the same `assistant-sign-in-requested` event with the same single-use ticket — the detail adds `intent: "sign-in" | "sign-up"` so the page routes `sign-up` to its registration page instead of its login. The ticket spend after account creation is identical to the one after sign-in; the service does not care which path produced the session. Headless renderers receive the same moment as a `data-sign-in` transcript part from `subscribeChat` (it has no status and is not respondable through `client.respond` — resolution is the elevated session).
 
 Elevation runs through the **host application own login**, never a Noodle-operated one. The widget raises `assistant-sign-in-requested` with a single-use `signInTicket` in its detail; the page signs the visitor in as it already does, then its backend spends the ticket with `createAssistantSession({ ..., signInTicket })` from `@noodleseed/assistant/server` — the same session exchange, its own client credentials. A refused spend throws a typed `AssistantSessionExchangeError`: branch on `elevationRefusal` (`elevation_ticket_expired` re-prompt; `elevation_tenant_mismatch` alert, never retry). Possession of the ticket alone elevates nothing, and the service checks the client tenant owns that conversation. The ticket is not the server-held interaction continuation — that value never reaches browser code; this one exists to travel through the page.
 
-The conversation is kept server-side: same session, new token, the anonymous one dead. By default the pending request also completes itself: the service re-attempts the intercepted tool under the new principal and streams it as the elevated session first turn (one-shot; mooted if the visitor types first; confirm-gated tools stop at their confirmation card; pass `resume: false` beside the ticket to disable). Set honest expectations in UI copy — the assistant **remembers** the conversation and finishes the pending request, but no transcript is replayed to the browser, so after a full-page navigation earlier messages do not repaint. Say "the assistant remembers", never "your conversation will reappear". Do not build a second identity provider or client-side resume scaffolding for this.
+The conversation is kept server-side: same session, new token, the anonymous one dead. By default the pending request also completes itself: the service re-attempts the intercepted tool under the new principal and streams it as the elevated session first turn (one-shot; mooted if the visitor types first; confirm-gated tools stop at their confirmation card; pass `resume: false` beside the ticket to disable). On a backend-exchanged reattach the widget also repaints the bounded visible transcript (`endpoints.transcript`) before the resume runs — only rows the panel actually showed replay, never tool internals or a spent ticket. On an older service without the endpoint the panel starts visually fresh while the model still remembers, so keep copy honest either way: "the assistant remembers". Do not build a second identity provider or client-side resume scaffolding for this.
 
 When the login lives on a different origin (marketing site + app), the flow is: the visitor signs in via full-page redirect as the site already does; the backend spends the ticket presenting the **origin the conversation will continue on** (any origin in the deployment allowlist — elevation re-pins the session there, and CORS follows); the token reaches the widget through the customer own **same-origin** session endpoint on that origin. The redirect handoff is mandatory, not stylistic: the widget calls the session endpoint with `credentials: "same-origin"`, so pointing a marketing page at a cross-origin endpoint is a guaranteed cookie-less 401. Persist the ticket across the login redirect (single-use, expires in minutes); a refused origin does not burn it.
 
@@ -134,13 +142,15 @@ Keep portable identity and semantic light/dark colors in the one server-level `b
 
 ```ts
 assistant: embeddedAssistant({
-  model, allowedOrigins,
-  layout: { panelWidth: 520, panelMinHeight: 540, panelMaxHeight: 740, edgeOffset: 24 },
-  behavior: { showTimestamps: true },
-  labels: { composerPlaceholder: "Message Acme Support…", sessionReady: "Acme support is online" },
+  model,
+  access: authenticatedWebsite({ origins: ["https://app.example.com"] }),
+  theme: "invert",
+  layout: { position: "bottom-right", panelWidth: 520, panelMinHeight: 540, panelMaxHeight: 740, edgeOffset: 24 },
+  behavior: { showTimestamps: true, showPoweredBy: false, showConfirmationDetails: false },
+  labels: { launcherPlaceholder: "Ask Acme anything", composerPlaceholder: "Message Acme Support…", sessionReady: "Acme support is online" },
   presentation: {
     panel: { surface: "solid", elevation: "dramatic", border: "strong", radius: 20 },
-    launcher: { icon: "chat", size: "lg", status: "session", effect: "pulse" },
+    launcher: { style: "bubble", icon: "chat", size: "lg", status: "session", effect: "pulse" },
     header: {
       mark: "status",
       badge: { text: "Online", tone: "success", indicator: true },
@@ -151,11 +161,11 @@ assistant: embeddedAssistant({
 }),
 ```
 
-The Atlas-style product treatment above is the maximum deployment-configurable presentation. The bounded surface covers panel treatment, launcher icon/size/session pulse, header mark/status badge, composer controls, and message treatment; it does not accept custom header actions, structured empty-state layouts, footers, spectacle variants/effects, or tenant code.
+The Atlas-style product treatment above is the maximum deployment-configurable presentation. The bounded surface covers panel treatment, pill/bubble launcher style plus icon/size/session pulse, header mark/status badge, composer controls, and message treatment; it does not accept custom header actions, structured empty-state layouts, footers, tenant-defined launcher variants/effects, or tenant code.
 
-Omitted fields retain the quiet premium baseline. For exact application-owned color roles, pass the typed React `appearance={{ light: { panel: { surface, text, border }, composer: {...}, confirmation: {...}, primaryButton: {...} }, dark: {...} }}` prop or assign the same object to `element.appearance`. CSS custom properties inherit through the assistant host, so those values may reuse existing application tokens such as `surface: "var(--app-surface)"` without copying literals. The appearance surface covers canvas, panel, header, messages, composer, suggestions, confirmation, buttons, launcher, code, and the MCP App frame; the package README publishes the complete role-to-`--ns-assistant-*` map. Exact parseable literal colors are preserved and low contrast emits `assistant-appearance-warning`; contrast for unresolved CSS references remains host-owned. Precedence is host appearance object, host slots/public variables, deployed semantic presentation, then defaults. Prefer `server.ts` configuration first so every embedding app receives the same assistant after redeploy.
+Omitted UI fields retain the complete managed baseline: a bottom-center frosted prompt pill, 970px outer desktop shell with 20px side padding, 85vh/1025px height bounds, 24px panel with built-in `#F8F8F8` light and `#0C0A09` dark surfaces, bottom prompt chips and pill composer, plain assistant messages, 85%-wide user bubbles, Noodle Seed attribution, and mobile fullscreen. The pill morphs into an input before opening; `launcher.style: "bubble"` opens directly, while `panel.surface: "glass"` remains an explicit translucent alternative. `theme: "auto"` follows the host page and `"invert"` selects its opposite. The generic suggestions are defaults; an authored list, including `[]`, replaces them. The ChatGPT promotion is intentionally absent. For exact application-owned color roles, pass the typed React `appearance={{ light: { panel: { surface, text, border }, composer: {...}, confirmation: {...}, primaryButton: {...} }, dark: {...} }}` prop or assign the same object to `element.appearance`. CSS custom properties inherit through the assistant host, so those values may reuse existing application tokens such as `surface: "var(--app-surface)"` without copying literals. The appearance surface covers canvas, panel, header, messages, composer, suggestions, confirmation, buttons, launcher, code, and the MCP App frame; the package README publishes the complete role-to-`--ns-assistant-*` map. Exact parseable literal colors are preserved and low contrast emits `assistant-appearance-warning`; contrast for unresolved CSS references remains host-owned. Precedence is host appearance object, host slots/public variables, saved environment operator override, deployed semantic presentation, then defaults. Prefer reusable `server.ts` defaults; use the Console Assistant tab or `noodle assistant appearance show|apply|reset` for environment-owned changes that should reach existing embeds without a redeploy.
 
-Give every business action a portable `tool(..., { title: "Complete task", description: "This will mark the task complete for everyone.", input: z.object({ task: z.string().meta({ title: "Task" }) }) })` title. The standard confirmation uses the tool title/description plus schema field `title`, `description`, and `format`; it shows Confirm and Don't proceed and keeps technical action details secondary. Do not put JSON or implementation names in business-facing copy.
+Give every business action a portable `tool(..., { title: "Complete task", description: "This will mark the task complete for everyone.", input: z.object({ task: z.string().meta({ title: "Task" }) }) })` title. The standard confirmation uses the tool title/description plus schema field `title`, `description`, and `format`; it shows Confirm and Don't proceed and keeps technical action details secondary. `behavior.showConfirmationDetails` defaults to `true`; set it to `false` to remove only the built-in card's Additional details disclosure and connector mechanics. The business review and decisions remain, `confirm: true` still suspends until acceptance, and headless/BYO `data-confirmation` stays unchanged. Do not put JSON or implementation names in business-facing copy.
 
 ## Configure and deploy
 
@@ -196,7 +206,7 @@ Validate the active deployment, backend credential, exact origin, and delegated 
 noodle assistant doctor --origin "$PUBLIC_APP_ORIGIN" --org <org> --app <app> --env <env>
 ```
 
-The doctor reads `NOODLE_ASSISTANT_CLIENT_ID` / `NOODLE_ASSISTANT_CLIENT_SECRET` or the saved mode-0600 client file and never prints the secret. Pass `--user-id <real-test-user>` only when the downstream exchange requires an existing application user. On a deployment with a mixed surface it also runs a synthetic sign-in round trip (`elevation` check): issue, claim, and elevate against a throwaway anonymous session on the same code path a real sign-in takes, proving the store is configured and that elevation rebinds the issuer basis to the backend client — so a green doctor now certifies the sign-in leg too, not just the authenticated exchange. The assistant doctor does not supply application-specific routes; after the backend mints a routed session, invoke one representative safe read to verify its route-bound exchange and connector together.
+The doctor reads `NOODLE_ASSISTANT_CLIENT_ID` / `NOODLE_ASSISTANT_CLIENT_SECRET` or the saved mode-0600 client file and never prints the secret. It makes one bounded synthetic request through the active deployment's exact model transport without business tools or customer conversation data; failures expose only a redacted category, status, and retryability. Pass `--user-id <real-test-user>` only when the downstream exchange requires an existing application user. On a deployment with a mixed surface it also runs a synthetic sign-in round trip (`elevation` check): issue, claim, and elevate against a throwaway anonymous session on the same code path a real sign-in takes, proving the store is configured and that elevation rebinds the issuer basis to the backend client — so a green doctor now certifies the sign-in leg too, not just the authenticated exchange. The assistant doctor does not supply application-specific routes; after the backend mints a routed session, invoke one representative safe read to verify its route-bound exchange and connector together.
 
 ## Integrate the customer backend
 
@@ -311,12 +321,15 @@ const session = await createAssistantSession({
 
 ```ts
 assistant: embeddedAssistant({
-  model, allowedOrigins,
-  sessionClaims: {
-    displayName: { exposeToModel: true },
-    accountTier: { exposeToModel: true },
-    region: {}, // tools only, never in the prompt
-  },
+  model,
+  access: authenticatedWebsite({
+    origins: ["https://app.example.com"],
+    sessionClaims: {
+      displayName: { exposeToModel: true },
+      accountTier: { exposeToModel: true },
+      region: {}, // tools only, never in the prompt
+    },
+  }),
 }),
 ```
 
@@ -372,7 +385,9 @@ import { NoodleAssistant } from "@noodleseed/assistant/react";
 
 Or import the package root once and mount `<noodle-assistant session-endpoint="/api/assistant/session" theme="auto"></noodle-assistant>`. Mount only inside the authenticated application surface.
 
-`theme="auto"` follows the browser operating-system preference. If the SaaS application owns a theme toggle, obtain its resolved application theme (`"light"` or `"dark"`), pass `theme={resolvedTheme}` to `NoodleAssistant`, and update the custom element's `theme` attribute when that value changes.
+That custom element is the complete managed assistant in Vue, Angular, or plain DOM; it has no React runtime requirement. Configure the framework to accept `noodle-assistant` as a custom element. If the session exchange needs an authenticated fetch wrapper, create the element imperatively, assign `element.fetch` and then `element.sessionEndpoint`, and append it only after both properties are set.
+
+`theme="auto"` follows an explicit host-page light/dark class or data attribute, then the browser operating-system preference; `theme="invert"` selects the opposite. If the SaaS application owns a theme toggle, obtain its resolved application theme (`"light"` or `"dark"`), pass `theme={resolvedTheme}` to `NoodleAssistant`, and update the custom element's `theme` attribute when that value changes.
 
 The component renders a custom element and must mount client-side. In a Next.js App Router tree, put the mount in a `"use client"` component; from a server component or the Pages Router, load it with `next/dynamic` and `ssr: false`.
 
@@ -627,7 +642,7 @@ Devtools privacy gate: default model and connector exercises to synthetic or moc
 
 - Signed-out session exchange returns `401`.
 - The browser network/DOM/storage contains no client secret or model key.
-- The local and production origins match `allowedOrigins` character-for-character.
+- The local and production origins match the authored `access.origins` character-for-character.
 - At the manifest/runtime boundary and in TypeScript action helpers, only `confirm: true` enables confirmation; omitted or `false` preserves direct execution. Action hints alone never enforce approval; `annotations.action({ confirm: false })` is equivalent to omission.
 - An expired turn re-exchanges once; interaction decisions never auto-retry. An explicit same-decision repeat returns the stored outcome without executing again.
 - Accept, decline, and cancel are single-use. Only accept executes; the server ignores replacement tool arguments.
@@ -645,9 +660,9 @@ Devtools privacy gate: default model and connector exercises to synthetic or moc
 | `assistant-error` with code `invalid_response` | The turn endpoint returned HTML or non-SSE content (auth redirect, proxy page) | Check the backend session route path and any middleware/rewrites on the embedding app |
 | Build error `Package path ./react is not exported` | Outdated package version with import-only export conditions | Update `@noodleseed/assistant`; do not add webpack aliases or type shims |
 | Deploy fails with `server_auth_required` | `--access customers` without `server.auth` | Add direct/federated OIDC or a built-in Firebase/Microsoft adapter |
-| Validate rejects an origin | Non-loopback HTTP origin in `allowedOrigins` | Use the exact HTTPS production origin; HTTP is only for `localhost`/`127.0.0.1` |
+| Validate rejects an origin | Non-loopback HTTP origin in `access.origins` | Use the exact HTTPS production origin; HTTP is only for `localhost`/`127.0.0.1` |
 | Session exchange returns 404 | `serviceUrl` points at the deployment MCP endpoint | Use the control-plane service URL printed by `noodle assistant clients create` |
-| Session exchange returns 403 `origin is not allowed` | Request origin differs from `allowedOrigins` character-for-character | Align the exact scheme/host/port on both sides and redeploy |
+| Session exchange returns 403 `origin is not allowed` | Request origin differs from the authored `access.origins` character-for-character | Align the exact scheme/host/port on both sides and redeploy |
 | Session exchange returns `400` with `invalid assistant routing` | The authenticated backend supplied an unknown endpoint name or a malformed/policy-disallowed URL | Resolve the route from server-owned membership, use the exact authored endpoint name, and ensure the canonical HTTPS URL satisfies its active `customerEndpoint` policy; the error never reflects the URL |
 | A routed assistant tool returns `connector_route_unavailable` | The authenticated backend omitted that endpoint during session exchange | Pass the server-verified route as `routing.endpoints.<name>` when minting a new session; keep it out of browser input |
 | Host session 503 | A required backend environment name is absent or mapped into the wrong deployment environment | Run `noodle assistant embed --check --json`, repair the host CI mapping, then probe the session route again |
@@ -656,7 +671,7 @@ Devtools privacy gate: default model and connector exercises to synthetic or moc
 | Tool succeeds but the widget is empty | The linked App delivery layer failed: result shape, resource link, CSP frame, or bridge hydration | Inspect the typed result, `view_available`, resource URI, browser console, and hosted frame separately |
 | Hydration or `HTMLElement is not defined` errors | The component mounted during server rendering | Mount client-only (`"use client"` or `next/dynamic` with `ssr: false`) |
 | A tool runs without the expected confirmation | Its compiled annotations omit `confirm: true` or explicitly set `false` | Pass `{ confirm: true }` to the action helper; action hints alone never gate. `noodle check --target embedded-assistant` lists every confirm-gated tool |
-| `${user.claims.<key>}` is empty | Claim not declared in `sessionClaims` (or key typo) — undeclared claims are dropped at exchange | Declare the key in `embeddedAssistant({ sessionClaims })` and redeploy |
+| `${user.claims.<key>}` is empty | Claim not declared in the authenticated surface `sessionClaims` (or key typo) — undeclared claims are dropped at exchange | Declare the key in `authenticatedWebsite({ origins, sessionClaims })` and redeploy |
 | `${user.name}` is empty | Backend did not pass `user.name` to `createAssistantSession` | Pass the verified name from the authenticated backend session |
 | The model does not know a claim you passed | Claim is tools-only | Mark it `exposeToModel: true` in `sessionClaims` |
 | Relative dates use the wrong day or time zone | No verified user preference and the browser hint is missing/stale | Pass saved `preferences` from the backend; provide a fresh per-turn `clientContext` in a headless renderer |

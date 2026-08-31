@@ -168,19 +168,28 @@ export default server(
         baseUrl: variable('ASSISTANT_MODEL_BASE_URL'),
         model: variable('ASSISTANT_MODEL'),
         apiKey: secret('ASSISTANT_MODEL_API_KEY'),
+        transport: 'responses',
       }),
       // Production origins are exact HTTPS; http://localhost:<port> is allowed for local development.
       access: authenticatedWebsite({
         origins: [assistantOrigin, 'https://dev.noodleseed.com', 'http://localhost:3000'],
       }),
-      layout: { mode: 'floating', position: 'bottom-right', panelWidth: 420 },
+      theme: 'auto',
+      layout: { mode: 'floating', position: 'bottom-center', panelWidth: 970 },
+      behavior: { showPoweredBy: true, showConfirmationDetails: false },
       labels: {
         welcomeHeading: 'How can I help with Noodle Seed?',
+        launcherPlaceholder: 'Ask Noodle Seed anything',
         composerPlaceholder: 'Ask about your apps…',
       },
       presentation: {
-        panel: { surface: 'glass', elevation: 'soft', border: 'subtle' },
-        launcher: { icon: 'brand-mark', status: 'session', effect: 'pulse' },
+        panel: { elevation: 'soft', border: 'subtle' },
+        launcher: {
+          style: 'pill',
+          icon: 'brand-mark',
+          status: 'session',
+          effect: 'pulse',
+        },
         header: {
           mark: 'status',
           badge: { text: 'Workspace online', tone: 'success', indicator: true },

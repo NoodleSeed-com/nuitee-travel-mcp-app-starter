@@ -53,7 +53,7 @@ Round-trip adds the reverse route with `direction: "INBOUND"`. The repository su
 
 Cabin values are `ECONOMY`, `PREMIUM_ECONOMY`, `BUSINESS`, and `FIRST`. The OpenAPI defines child ages 2–11 and infant ages 0–1; prose says each age-array length matches its passenger count, and provider examples state infants cannot exceed adults.
 
-Nuitee does not publish a total-passenger maximum or strict IATA/currency regex in this contract. The repository's nine-passenger cap and code shapes are defensive application policy, not provider guarantees. `country` is optional in OpenAPI but the workflow guide recommends always including it for point-of-sale pricing, so this starter requires it rather than inventing a locale default.
+Nuitee does not publish a total-passenger maximum or strict IATA/currency regex in this contract. The repository's nine-passenger cap and code shapes are defensive application policy, not provider guarantees. `country` is optional in OpenAPI but the workflow guide recommends including it for pricing. This starter supplies reviewed server-owned USD and US defaults; it never derives the pricing market from an untrusted browser hint.
 
 ## Search response normalization
 
@@ -73,6 +73,15 @@ The documented top-level shape is `{ data: [{ journeys: [...] }] }`. The normali
 The public comparison duration is the sum of documented per-leg elapsed durations, each of which includes layovers. It deliberately does not count the days spent at the destination between outbound and return travel. The provider `totalDuration` is still required as a response-shape check but is not presented as flight time.
 
 The public output intentionally omits provider logos, arbitrary carrier image URLs, provider IDs, raw responses, `segmentKey`, fare-basis and booking codes, fee objects and unrestricted/full terms, ancillary pricing, coordinates, and every unused nested object. The optional Nuitee-hosted marketing-carrier image is the only image exception. The starter does not try to mirror the full provider response: it keeps only decision-useful fields with explicit caps.
+
+In the primary website, this bounded result drives the read-only Current trip projection inside one centered chronological conversation.
+
+- Linked Apps stay inline at their original message-part positions.
+- Only `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget` and `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget` are admitted.
+- Distinct view IDs are not generically deduplicated.
+- Mismatched tool/resource pairs fail closed.
+- The typed Current trip summary stays inside the conversation.
+- Local proof is not hosted proof. Hosted behavior remains unproven until a separately authorized deployment and exact embed-binding verification.
 
 ## Verification
 

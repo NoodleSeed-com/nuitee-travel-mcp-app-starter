@@ -363,6 +363,7 @@ export default server(
           'delivery',
           'checkout',
         ],
+        oncePerSession: true,
       },
       input: z.object({
         query: z.string().optional(),

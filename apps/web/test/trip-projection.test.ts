@@ -33,6 +33,45 @@ const validSearchContext = {
 } as const;
 
 describe('structured trip projection', () => {
+  it('projects an accepted typed plan before the fare search runs', () => {
+    expect(projectTrip([messageWithToolResult('plan_flight_search', {
+      status: 'planned',
+      message: 'Trip details are ready. Search current fares now.',
+      origin: 'ISB',
+      destination: 'NYC',
+      departureDate: '2026-09-18',
+      returnDate: '2026-09-27',
+      adults: 1,
+      cabinClass: 'ECONOMY',
+      currency: 'USD',
+      country: 'US',
+      providerOfferId: 'must-not-project',
+    })])).toEqual({
+      phase: 'planned',
+      origin: 'ISB',
+      destination: 'NYC',
+      departureDate: '2026-09-18',
+      returnDate: '2026-09-27',
+      travelers: '1 adult',
+      cabinClass: 'Economy',
+      currency: 'USD',
+      country: 'US',
+    });
+  });
+
+  it('ignores malformed typed plan fields instead of parsing around them', () => {
+    expect(projectTrip([messageWithToolResult('plan_flight_search', {
+      status: 'planned',
+      origin: 'isb',
+      destination: 'NYC',
+      departureDate: '2026-09-18',
+      adults: 1,
+      cabinClass: 'ECONOMY',
+      currency: 'USD',
+      country: 'US',
+    })])).toEqual(EMPTY_TRIP);
+  });
+
   it('projects only validated search result fields', () => {
     expect(projectTrip([messageWithToolResult('search_flights', {
       status: 'success',
@@ -58,6 +97,38 @@ describe('structured trip projection', () => {
       role: 'assistant',
       parts: [{ type: 'text', text: 'JFK to LIS for 9 adults' }],
     }])).toEqual(EMPTY_TRIP);
+  });
+
+  it('does not supplement typed context with dates or markets from prose', () => {
+    expect(projectTrip([
+      messageWithToolResult('search_flights', {
+        status: 'success',
+        searchContext: {
+          origin: 'ISB',
+          destination: 'FCO',
+          departureDate: '2026-08-31',
+          adults: 2,
+          children: 0,
+          infants: 0,
+          cabinClass: 'ECONOMY',
+        },
+      }),
+      {
+        id: 'assistant-prose-only-details',
+        role: 'assistant',
+        parts: [{
+          type: 'text',
+          text: 'Return on 2026-09-07, priced in USD for the US market.',
+        }],
+      },
+    ])).toEqual({
+      phase: 'comparing',
+      origin: 'ISB',
+      destination: 'FCO',
+      departureDate: '2026-08-31',
+      travelers: '2 adults',
+      cabinClass: 'Economy',
+    });
   });
 
   it('sets selected after a successful selection without projecting its id', () => {

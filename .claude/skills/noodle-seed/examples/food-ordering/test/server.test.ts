@@ -86,6 +86,7 @@ describe('food-ordering example', () => {
         'menu',
         'checkout',
       ]),
+      'x-noodleseed-model-once-per-session': true,
     });
     expect(JSON.stringify(tools.get('sync_cart'))).toContain('revision');
     expect(tools.get('sync_cart')?.annotations?.confirm).toBe(false);

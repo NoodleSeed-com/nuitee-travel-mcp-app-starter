@@ -134,8 +134,43 @@ export const searchInputSchema = z.object({
   childrenAges: z.array(z.number().int().min(2).max(11)).max(8).default([]),
   infantAges: z.array(z.number().int().min(0).max(1)).max(9).default([]),
   cabinClass: z.enum(['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST']).default('ECONOMY'),
-  currency: z.string().regex(/^[A-Za-z]{3}$/).describe('ISO 4217 display currency'),
-  country: z.string().regex(/^[A-Za-z]{2}$/).describe('ISO 3166-1 alpha-2 point-of-sale country'),
+  currency: z.string().regex(/^[A-Za-z]{3}$/).default('USD').describe('ISO 4217 display currency; use USD unless the user requests another currency'),
+  country: z.string().regex(/^[A-Za-z]{2}$/).default('US').describe('ISO 3166-1 alpha-2 pricing market; use US unless the user requests another market'),
+});
+
+export const flightPlanInputSchema = z.object({
+  origin: z.string().regex(/^[A-Z]{3}$/).describe('Resolved uppercase origin IATA code derived from an unambiguous user-supplied city or airport name'),
+  destination: z.string().regex(/^[A-Z]{3}$/).describe('Resolved uppercase destination or metro IATA code derived from an unambiguous user-supplied place'),
+  currency: z.string().regex(/^[A-Z]{3}$/).default('USD').describe('Uppercase ISO 4217 display currency; an explicit traveler choice wins, otherwise a browser page default may be used'),
+  country: z.string().regex(/^[A-Z]{2}$/).default('US').describe('Uppercase ISO 3166-1 alpha-2 pricing market; an explicit traveler choice wins, otherwise a browser page default may be used'),
+});
+
+const isoCalendarDate = z.iso.date();
+
+export const flightPlanDateSchema = z.string()
+  .refine(
+    (value) => isoCalendarDate.safeParse(value).success,
+    'Expected a valid calendar date in YYYY-MM-DD format',
+  )
+  .describe('Travel date in YYYY-MM-DD format')
+  .meta({ format: 'date' });
+
+export const flightPlanDatesSchema = z.object({
+  departureDate: flightPlanDateSchema,
+  returnDate: flightPlanDateSchema.optional(),
+});
+
+export const flightPlanOutputSchema = z.object({
+  status: z.literal('planned'),
+  message: z.string().max(240),
+  origin: z.string().regex(/^[A-Z]{3}$/),
+  destination: z.string().regex(/^[A-Z]{3}$/),
+  departureDate: flightPlanDateSchema,
+  returnDate: flightPlanDateSchema.optional(),
+  adults: z.number().int().min(1).max(9),
+  cabinClass: z.enum(['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST']),
+  currency: z.string().regex(/^[A-Z]{3}$/),
+  country: z.string().regex(/^[A-Z]{2}$/),
 });
 
 export const searchOutputSchema = z.object({
@@ -217,3 +252,4 @@ export type VerifyOutput = z.infer<typeof verifyOutputSchema>;
 export type Verification = z.infer<typeof verificationSchema>;
 export type Itinerary = z.infer<typeof itinerarySchema>;
 export type SearchContext = z.infer<typeof searchInputSchema>;
+export type FlightPlan = z.infer<typeof flightPlanOutputSchema>;

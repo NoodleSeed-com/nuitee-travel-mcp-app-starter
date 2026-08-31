@@ -8,7 +8,7 @@ This is the decision gate for making the repository public, marking it as a temp
 - [x] Default, live, and embedded entrypoints reuse one travel-server factory.
 - [x] The default server and `pnpm ci:offline` require no Nuitee or model credential.
 - [x] Nuitee network authority is server-only, fixed-origin, fixed-path, bounded, and hermetically tested.
-- [x] The model-visible catalog contains only open, search, and verify tools.
+- [x] The public projection contains four model-visible tools plus one App-only helper: `open_travel_starter`, `plan_flight_search`, `search_flights`, and `verify_flight_offer` are model-visible; `select_flight_offer` is restricted to the linked App bridge.
 - [x] Fixtures are fictional, offline-only, and never a live fallback.
 - [x] Presentation customization is bounded, deterministic, exact-origin validated, and credential-blind.
 - [x] CI Actions are full-SHA pinned, checkout credentials are not persisted, and Dependabot covers npm plus Actions.
@@ -40,7 +40,7 @@ Everything in this section may be completed while the repository remains private
 
 These two local preflight results are configuration-shape evidence only. Neither uses a real embed ID, HTTPS origin, privacy URL, hosted deployment, provider request, or public budget, so this evidence does not prove hosted readiness.
 
-- [ ] Configure one real public embed ID from the exact assistant-enabled deployment target; record the organization, app, environment, active revision, and four-capability public projection without printing credentials.
+- [ ] Configure one real public embed ID from the exact assistant-enabled deployment target; record the organization, app, environment, active revision, and five-capability public projection—four model-visible tools plus one App-only helper (`open_travel_starter`, `plan_flight_search`, `search_flights`, `verify_flight_offer`, and App-only `select_flight_offer`)—without printing credentials.
 - [ ] Configure the exact deployment-owned HTTPS website origin in both the public Assistant surface and website deployment, remove loopback unless it is deliberately required, and prove wrong-origin requests fail closed.
 - [ ] Configure and monitor a real HTTPS privacy URL and support destination. The privacy notice must describe anonymous Assistant/model processing, Nuitee-backed searches, retention, third parties, and the no-booking boundary; do not use placeholders.
 - [ ] Run the public embed preflight against the production-equivalent website configuration and prove CSP allows the exact Noodle service origin in `script-src`, `connect-src`, and `frame-src` while preserving the remaining restrictive directives.
@@ -51,7 +51,7 @@ These two local preflight results are configuration-shape evidence only. Neither
 - [ ] Keep `examples/embedded-assistant-host/` only as a temporary authenticated migration reference until the Next.js replacement, optional OAuth path, and removal gates have equivalent or stronger evidence; delete it only in a separately reviewed change.
 
 - [x] Bound each provider journey's fallback-offer list before normalization and omit operating-carrier logos so the public output matches the documented marketing-carrier-only image exception.
-- [ ] Replace every mutable dependency selector in bundled runnable Agent Kit examples with reviewed exact pins, add an exact package-manager declaration and reproducible lock coverage, then regenerate both managed trees. The pinned 0.139.0 kit and the inspected 0.140.0 package still emit `latest`; `pnpm audit:generated-guidance` and therefore `pnpm audit:release` must fail closed until the upstream generator is fixed.
+- [ ] Replace every mutable dependency selector in bundled runnable Agent Kit examples with reviewed exact pins, add an exact package-manager declaration and reproducible lock coverage, then regenerate both managed trees. The pinned 0.145.1 CLI with Agent Kit 0.87.1 still emits `latest`; `pnpm audit:generated-guidance` and therefore `pnpm audit:release` must fail closed until the upstream generator is fixed.
 - [ ] Regenerate the Acme Bistro flagship so its runnable mock no longer claims to mint a signed, expiring checkout URL. Keep payment examples explicitly non-production until an authoritative backend actually owns cart pricing, inventory, signature, and expiry.
 - [ ] Resolve the known caller-state blocker referenced by the primary 30-minute TTL gate above. Exact `0.136.0` and `0.137.0` both rejected the expired selection correctly, then returned a tool-level error with no structured output on the same server's fresh search. Keep the 30-minute TTL and revision protection; do not add an application reset workaround.
 - [x] On exact `0.138.0`, proved a 4,207,267-byte decoded round-trip response maps to ten bounded itineraries under the search-only 6 MiB limit; the global/default and verification limits remain unwidened.

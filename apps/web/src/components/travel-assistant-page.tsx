@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { PublicAssistantRuntime } from '../lib/assistant-config';
-import { EMPTY_TRIP, type TripProjection } from '../lib/trip-projection';
+import { useTravelDefaults } from '../hooks/use-travel-defaults';
 import { SettingsSheet } from './settings-sheet';
 import { TravelConversation } from './travel-conversation';
+import { TravelFooter } from './travel-footer';
+import { TravelHeader } from './travel-header';
 import { TravelZeroState } from './travel-zero-state';
-import { TripContextRail } from './trip-context-rail';
 
 type PageMode = 'zero' | 'starting';
 
@@ -20,14 +21,18 @@ export function TravelAssistantPage({
   const [mode, setMode] = useState<PageMode>('zero');
   const [initialPrompt, setInitialPrompt] = useState<string | null>(null);
   const [launchError, setLaunchError] = useState<string | null>(null);
-  const [projection, setProjection] = useState<TripProjection>(EMPTY_TRIP);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const heroInputRef = useRef<HTMLTextAreaElement>(null);
+  const { setCurrency, ...defaults } = useTravelDefaults();
 
   function reset() {
     setMode('zero');
     setInitialPrompt(null);
     setLaunchError(null);
-    setProjection(EMPTY_TRIP);
+  }
+
+  function focusPlanTrip() {
+    heroInputRef.current?.focus();
   }
 
   function startConversation(prompt: string) {
@@ -44,31 +49,51 @@ export function TravelAssistantPage({
 
   return (
     <>
-      <div className="travel-workspace" inert={settingsOpen || undefined}>
-        <a className="skip-link" href="#travel-canvas">
-          Skip to content
-        </a>
-        <main className="workspace-shell">
-          <TripContextRail
-            projection={projection}
+      {mode === 'zero' || !initialPrompt || runtime.status !== 'ready' ? (
+        <div className="travel-workspace">
+          <a className="skip-link" href="#travel-canvas">
+            Skip to content
+          </a>
+          <TravelHeader
+            currency={defaults.currency}
+            mode="hero"
+            onCurrencyChange={setCurrency}
             onNewTrip={reset}
             onOpenSettings={() => setSettingsOpen(true)}
+            onPlanTrip={focusPlanTrip}
           />
-          {mode === 'zero' || !initialPrompt || runtime.status !== 'ready' ? (
+          <main id="travel-canvas" tabIndex={-1}>
             <TravelZeroState
+              defaults={defaults}
+              inputRef={heroInputRef}
               launchError={launchError}
               onStart={startConversation}
             />
-          ) : (
+          </main>
+          <TravelFooter />
+        </div>
+      ) : (
+        <div className="travel-workspace" inert={settingsOpen || undefined}>
+          <a className="skip-link" href="#travel-canvas">
+            Skip to content
+          </a>
+          <TravelHeader
+            currency={defaults.currency}
+            mode="conversation"
+            onCurrencyChange={setCurrency}
+            onNewTrip={reset}
+            onOpenSettings={() => setSettingsOpen(true)}
+            onPlanTrip={reset}
+          />
+          <main className="conversation-workspace" id="travel-canvas" tabIndex={-1}>
             <TravelConversation
+              defaults={defaults}
               initialPrompt={initialPrompt}
-              onProjectionChange={setProjection}
-              onReset={reset}
               runtime={runtime}
             />
-          )}
-        </main>
-      </div>
+          </main>
+        </div>
+      )}
       <SettingsSheet
         open={settingsOpen}
         onClearConversation={reset}

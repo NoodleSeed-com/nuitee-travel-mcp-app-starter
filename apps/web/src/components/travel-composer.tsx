@@ -1,22 +1,32 @@
 'use client';
 
 import { ArrowUp, Square } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, type Ref, useState } from 'react';
 
 interface TravelComposerProps {
   readonly busy?: boolean;
   readonly formLabel?: string;
+  readonly inputId?: string;
+  readonly inputRef?: Ref<HTMLTextAreaElement>;
   readonly onStop?: () => void;
   readonly onSubmit: (prompt: string) => void;
+  readonly placeholder?: string;
   readonly submitLabel?: string;
+  readonly variant?: 'hero' | 'conversation';
+  readonly visibleSubmitLabel?: string;
 }
 
 export function TravelComposer({
   busy = false,
   formLabel = 'Start a trip',
+  inputId,
+  inputRef,
   onStop,
   onSubmit,
+  placeholder = 'Ask about dates, airports, or a route',
   submitLabel = 'Start trip',
+  variant = 'conversation',
+  visibleSubmitLabel,
 }: Readonly<TravelComposerProps>) {
   const [draft, setDraft] = useState('');
 
@@ -30,10 +40,17 @@ export function TravelComposer({
   }
 
   return (
-    <form aria-label={formLabel} className="travel-composer" onSubmit={submit}>
+    <form
+      aria-label={formLabel}
+      className={variant === 'hero'
+        ? 'travel-composer travel-composer--hero'
+        : 'travel-composer travel-composer--conversation'}
+      onSubmit={submit}
+    >
       <textarea
         aria-label="Ask about a flight"
         className="travel-composer__input"
+        id={inputId}
         onChange={(event) => setDraft(event.currentTarget.value)}
         onKeyDown={(event) => {
           if (event.key === 'Enter' && !event.shiftKey) {
@@ -41,29 +58,35 @@ export function TravelComposer({
             event.currentTarget.form?.requestSubmit();
           }
         }}
-        placeholder="Ask about dates, airports, or a route"
+        placeholder={placeholder}
+        ref={inputRef}
         rows={1}
         value={draft}
       />
-      {busy && onStop ? (
-        <button
-          aria-label="Stop generating"
-          className="travel-composer__send travel-composer__stop"
-          onClick={onStop}
-          type="button"
-        >
-          <Square aria-hidden="true" />
-        </button>
-      ) : (
-        <button
-          aria-label={submitLabel}
-          className="travel-composer__send"
-          disabled={!draft.trim()}
-          type="submit"
-        >
-          <ArrowUp aria-hidden="true" />
-        </button>
-      )}
+      <div className="travel-composer__controls">
+        {busy && onStop ? (
+          <button
+            aria-label="Stop generating"
+            className="travel-composer__send travel-composer__stop"
+            onClick={onStop}
+            type="button"
+          >
+            <Square aria-hidden="true" />
+          </button>
+        ) : (
+          <button
+            aria-label={submitLabel}
+            className="travel-composer__send"
+            disabled={!draft.trim()}
+            type="submit"
+          >
+            <ArrowUp aria-hidden="true" />
+            {variant === 'hero' && visibleSubmitLabel ? (
+              <span>{visibleSubmitLabel}</span>
+            ) : null}
+          </button>
+        )}
+      </div>
     </form>
   );
 }
