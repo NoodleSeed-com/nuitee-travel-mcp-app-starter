@@ -161,6 +161,56 @@ test('renders the premium zero-state first fold without opening an assistant ses
   expect(assistantRequests).toEqual([]);
 });
 
+test('uses a granted browser location for the visible origin and currency defaults', async ({
+  context,
+  page,
+}) => {
+  await context.grantPermissions(['geolocation'], {
+    origin: 'http://127.0.0.1:3108',
+  });
+  await context.setGeolocation({ latitude: 33.6167, longitude: 73.0992 });
+
+  await page.goto('/');
+
+  await expect(page.getByRole('combobox', { name: 'Currency' }))
+    .toHaveValue('PKR');
+  await expect(page.getByText('Islamabad (ISB)', { exact: true })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Ask about a flight' }))
+    .toHaveAttribute('placeholder', 'Islamabad to Rome for two, next weekend');
+});
+
+test('keeps neutral travel defaults when browser location is denied', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition(
+          _success: PositionCallback,
+          error?: PositionErrorCallback,
+        ) {
+          error?.({
+            code: 1,
+            message: 'Permission denied',
+            PERMISSION_DENIED: 1,
+            POSITION_UNAVAILABLE: 2,
+            TIMEOUT: 3,
+          } as GeolocationPositionError);
+        },
+      },
+    });
+  });
+
+  await page.goto('/');
+
+  await expect(page.getByRole('combobox', { name: 'Currency' }))
+    .toHaveValue('USD');
+  await expect(page.getByText('Your departure', { exact: true })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Ask about a flight' }))
+    .toHaveAttribute('placeholder', 'Your departure to Rome for two, next weekend');
+});
+
 test('keeps the premium desktop hero heading on one line with rounded visual surfaces', async ({
   page,
 }) => {
@@ -1056,10 +1106,17 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
   }
   expect(assistantCopyBounds!.width).toBeLessThan(firstAppBounds!.width);
   expect(travelerBounds!.x).toBeGreaterThan(assistantCopyBounds!.x);
+  const transcriptContentRight = await transcript.evaluate((element) => {
+    const content = element.querySelector('ol');
+    if (!content) throw new Error('Expected transcript content');
+    const transcriptBounds = element.getBoundingClientRect();
+    const contentStyles = getComputedStyle(content);
+    return transcriptBounds.left + element.clientLeft + element.clientWidth
+      - Number.parseFloat(contentStyles.paddingRight);
+  });
   expect(Math.abs(
-    travelerBounds!.x + travelerBounds!.width
-      - (conversationBounds!.x + conversationBounds!.width),
-  )).toBeLessThanOrEqual(8);
+    travelerBounds!.x + travelerBounds!.width - transcriptContentRight,
+  )).toBeLessThanOrEqual(2);
 
   const continueInput = conversation.getByRole('textbox', {
     name: 'Ask about a flight',

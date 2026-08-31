@@ -1627,6 +1627,10 @@ code {
 
   .travel-composer--hero button[type='submit'] {
     width: 100%;
+    height: auto;
+    min-height: 44px;
+    padding-block: 0.55rem;
+    line-height: 1.2;
   }
 
   .travel-starter-prompts {
