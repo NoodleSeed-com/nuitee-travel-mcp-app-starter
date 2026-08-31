@@ -47,6 +47,33 @@ async function noodleValidate() {
 }
 
 describe('public repository contracts', () => {
+  it('ships a pinned public-domain airport catalog without runtime lookup', async () => {
+    const [guide, catalog, generator, resolver] = await Promise.all([
+      repositoryFile('docs/airport-data.md'),
+      repositoryFile('apps/web/src/data/airports.generated.ts'),
+      repositoryFile('scripts/generate-airport-catalog.mjs'),
+      repositoryFile('apps/web/src/lib/travel-defaults.ts'),
+    ]);
+
+    for (const artifact of [guide, catalog]) {
+      expect(artifact).toContain('https://ourairports.com/data/');
+      expect(artifact).toContain(
+        'https://github.com/davidmegginson/ourairports-data/blob/main/LICENSE',
+      );
+      expect(artifact).toContain('2026-08-31');
+      expect(artifact).toContain(
+        'e56b20ecaa187ef954f3cce670a5559147ad071ff962915fdd72fb885f826da4',
+      );
+    }
+    expect(guide).toContain('`large_airport`');
+    expect(guide).toContain('`scheduled_service=yes`');
+    expect(guide).toContain('ISB');
+    expect(guide).toContain('Islamabad');
+    expect(generator).toContain('CITY_OVERRIDES');
+    expect(resolver).not.toContain('ourairports.com');
+    expect(resolver).not.toMatch(/fetch\s*\(/u);
+  });
+
   it('keeps the public five-capability projection exact in active release guidance', async () => {
     const [server, checklist, architecture, implementationPlan, spec] = await Promise.all([
       repositoryFile('src/travel-server.ts'),
