@@ -43,7 +43,7 @@ The public projection contains four model-visible tools plus one App-only helper
 
 ### `plan_flight_search`
 
-- Collects and normalizes missing search facts before provider access.
+- Collects a departure date only when a clear route has no usable exact or relative temporal clue; `next week` is resolved without elicitation as the same local weekday seven days later.
 - Uses the same bounded flight-search schema and server-owned defaults as `search_flights`.
 - Performs no Nuitee connector call and never invents airport resolution, availability, or fares.
 
@@ -51,7 +51,8 @@ The public projection contains four model-visible tools plus one App-only helper
 
 - Conversational input: users give city or airport names. The host resolves only unambiguous places, restates the selected airports, and asks for region/country clarification when uncertain. The typed tool receives resolved origin/destination IATA codes plus dates, passengers, cabin, currency, and point-of-sale country.
 - One-way or round-trip only; round-trip generates reverse OUTBOUND/INBOUND legs.
-- Defaults: one adult, zero children/infants, economy.
+- Defaults: one-way unless a return trip is requested; a generic passenger count is treated as adults; otherwise one adult, zero children/infants, and economy. An explicit traveler choice wins. The guest website may provide derived origin/currency/market hints; otherwise currency and market fall back to USD/US.
+- Conversation policy: current-fare search is read-only, so the assistant searches immediately with safe defaults, states those assumptions with the results, and offers adjustment afterward. It asks only for a genuinely ambiguous place, no usable date clue, an explicit round trip with no return date, or invalid date/passenger relationships.
 - Application policy: exactly three-letter IATA-shaped codes, different endpoints, ISO dates not before the caller's server-authoritative local date, return after departure, one to nine total passengers, at least one adult, infants no greater than adults, age-array lengths equal their counts, child ages 2–11, infant ages 0–1, documented cabin enum, three-letter currency, and two-letter point of sale.
 - Provider request: `POST /flights/rates`, JSON, exact documented `legs` array.
 - Output: at most ten normalized itineraries, three inline, with opaque `selectionId`; validated search context; airport codes and documented names; comparison route; separate documented outbound/return legs; marketing/operating carrier facts and an optional allowlisted Nuitee-hosted airline image; airport-local schedules; bounded documented duration/stops and overnight/day-change hints; display-price breakdown; fare family; seats remaining; bounded refund/change flags; baggage hints/messages; up to five documented amenities; retrieval time; and documented expiration.

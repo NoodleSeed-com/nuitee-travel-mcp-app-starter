@@ -151,6 +151,8 @@ describe('server contract', () => {
     const search = manifest.tools.find((entry: any) => entry.name === 'search_flights');
     expect(search.description).toContain('city or airport names');
     expect(search.description).toContain('ambiguous');
+    expect(search.description).toContain('relative dates');
+    expect(search.description).toContain('next week');
     expect(search.inputSchema.properties.origin.description).toContain('Resolved');
     expect(search.inputSchema.properties.destination.description).toContain('Resolved');
   });
@@ -181,6 +183,7 @@ describe('server contract', () => {
 
     const planWire = JSON.stringify(plan);
     expect(planWire).toContain('choose_travel_dates');
+    expect(plan.description).toContain('no usable exact or relative departure date');
     expect(planWire).toContain('When would you like to travel?');
     expect(planWire).toContain('departureDate');
     expect(planWire).toContain('returnDate');
@@ -190,6 +193,8 @@ describe('server contract', () => {
     expect(search.inputSchema.properties.currency.default).toBe('USD');
     expect(search.inputSchema.properties.country.default).toBe('US');
     expect(search.inputSchema.properties.adults.default).toBe(1);
+    expect(search.inputSchema.properties.adults.description).toContain('generic passenger');
+    expect(search.inputSchema.properties.adults.description).toContain('adults');
     expect(search.inputSchema.properties.cabinClass.default).toBe('ECONOMY');
   });
 
@@ -253,6 +258,10 @@ describe('server contract', () => {
       prompt: 'Show me flights from ISB to NYC on 2026-09-18.',
       workflow: 'search_flights_with_dates',
     }));
+    expect(guide.examples).toContainEqual(expect.objectContaining({
+      prompt: 'Show me flights from Toronto to Lisbon next week for two passengers.',
+      workflow: 'search_flights_with_dates',
+    }));
     const guideWire = JSON.stringify(guide);
     expect(guideWire).toContain('one focused question');
     expect(guideWire).toContain('one adult');
@@ -261,7 +270,17 @@ describe('server contract', () => {
     expect(guideWire).toContain('untrusted page');
     expect(guideWire).toContain('explicit traveler');
     expect(guideWire).toContain('omitted');
+    expect(guideWire).toContain('same local weekday seven days later');
+    expect(guideWire).toContain('generic passenger count as adults');
+    expect(guideWire).toContain('search immediately');
+    expect(guideWire).toContain('state the assumptions');
+    expect(guideWire).toContain('one-way');
+    expect(guideWire).toContain('USD');
+    expect(guideWire).toContain('US pricing market');
+    expect(guideWire).toContain('Do not repeat the same search call');
+    expect(guideWire).toContain('non-retryable');
     expect(guideWire).not.toContain('ask for currency');
+    expect(guideWire).not.toContain('confirm before searching');
   });
 
   it('keeps the credential-free server free of required managed secrets', async () => {
