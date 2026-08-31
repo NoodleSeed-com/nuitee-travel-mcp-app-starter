@@ -1,6 +1,7 @@
 'use client';
 
 import { useNoodleAssistant } from '@noodleseed/assistant/react/client';
+import type { AssistantUIMessage } from '@noodleseed/assistant/client';
 import {
   useEffect,
   useMemo,
@@ -60,6 +61,53 @@ function newestActivity(
   return newest;
 }
 
+function record(value: unknown): Readonly<Record<string, unknown>> | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? value as Readonly<Record<string, unknown>>
+    : null;
+}
+
+function failedViewKey(part: AssistantUIMessage['parts'][number]) {
+  if (part.type !== 'data-view') return null;
+  const result = record(part.data.result);
+  const error = record(result?.error);
+  if (result?.status !== 'error' || typeof error?.code !== 'string') return null;
+  return `${part.data.tool}:${part.data.resourceUri}:${error.code}`;
+}
+
+function visibleConversationMessages(
+  messages: readonly AssistantUIMessage[],
+): readonly AssistantUIMessage[] {
+  const failedViews = new Set<string>();
+  const visible: AssistantUIMessage[] = [];
+
+  for (const message of messages) {
+    if (message.role === 'user') failedViews.clear();
+    const parts = message.parts.filter((part) => {
+      const key = failedViewKey(part);
+      if (!key) return true;
+      if (failedViews.has(key)) return false;
+      failedViews.add(key);
+      return true;
+    });
+    if (parts.length > 0) visible.push({ ...message, parts });
+  }
+  return visible;
+}
+
+function currentTurnHasToolError(messages: readonly AssistantUIMessage[]) {
+  for (let messageIndex = messages.length - 1; messageIndex >= 0; messageIndex -= 1) {
+    const message = messages[messageIndex];
+    if (!message || message.role === 'user') break;
+    for (const part of message.parts) {
+      if (failedViewKey(part)) return true;
+      if (part.type !== 'data-tool-result') continue;
+      if (record(part.data.result)?.status === 'error') return true;
+    }
+  }
+  return false;
+}
+
 export function TravelConversation({
   defaults,
   runtime,
@@ -80,7 +128,7 @@ export function TravelConversation({
   const lastPromptRef = useRef(initialPrompt);
   const activeActivitiesRef = useRef(new Map<string, ToolActivity>());
   const transcriptContentRef = useRef<HTMLOListElement>(null);
-  const transcriptViewportRef = useRef<HTMLDivElement>(null);
+  const conversationEndRef = useRef<HTMLDivElement>(null);
   const followLatestRef = useRef(true);
   const [activity, setActivity] = useState<ToolActivity | null>(null);
   const [stopRequested, setStopRequested] = useState(false);
@@ -103,13 +151,27 @@ export function TravelConversation({
 
   useEffect(() => {
     const content = transcriptContentRef.current;
-    const viewport = transcriptViewportRef.current;
-    if (!content || !viewport || typeof ResizeObserver === 'undefined') return;
+    if (!content || typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(() => {
-      if (followLatestRef.current) viewport.scrollTop = viewport.scrollHeight;
+      if (followLatestRef.current) {
+        conversationEndRef.current?.scrollIntoView?.({ block: 'end' });
+      }
     });
     observer.observe(content);
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const updateFollowState = () => {
+      followLatestRef.current = isNearTranscriptEnd({
+        clientHeight: window.innerHeight,
+        scrollHeight: document.documentElement.scrollHeight,
+        scrollTop: window.scrollY,
+      });
+    };
+    updateFollowState();
+    window.addEventListener('scroll', updateFollowState, { passive: true });
+    return () => window.removeEventListener('scroll', updateFollowState);
   }, []);
 
   useEffect(() => {
@@ -160,12 +222,19 @@ export function TravelConversation({
     messages,
     terminal ? undefined : activity?.phase,
   ), [activity?.phase, messages, terminal]);
+  const visibleMessages = useMemo(
+    () => visibleConversationMessages(messages),
+    [messages],
+  );
+  const hasToolError = useMemo(
+    () => currentTurnHasToolError(messages),
+    [messages],
+  );
   const copy = conversationCopy(projection);
 
   function sendFollowUp(prompt: string) {
-    const viewport = transcriptViewportRef.current;
     followLatestRef.current = true;
-    if (viewport) viewport.scrollTop = viewport.scrollHeight;
+    conversationEndRef.current?.scrollIntoView?.({ block: 'end' });
     lastPromptRef.current = prompt;
     void client.sendMessage(prompt).catch(() => undefined);
   }
@@ -184,13 +253,16 @@ export function TravelConversation({
     : stopRequested
       ? ''
       : activity?.label ?? (busy ? 'Assistant is responding' : '');
-  const errorPresentation = error ? presentAssistantError(error) : null;
+  const errorPresentation = error && !hasToolError
+    ? presentAssistantError(error)
+    : null;
 
   return (
     <section
       aria-busy={busy}
       aria-label="Travel conversation"
       className="travel-conversation-shell"
+      data-scroll-owner="page"
     >
       <header className="travel-conversation__header">
         <p className="assistant-identity">
@@ -203,22 +275,20 @@ export function TravelConversation({
       </div>
       <div
         className="travel-transcript"
-        onScroll={(event) => {
-          followLatestRef.current = isNearTranscriptEnd(event.currentTarget);
-        }}
-        ref={transcriptViewportRef}
+        data-scroll-owner="page"
       >
         <ol
           aria-label="Conversation transcript"
           ref={transcriptContentRef}
           role="log"
         >
-          {messages.map((message) => (
+          {visibleMessages.map((message) => (
             <li key={message.id}>
               <TravelMessage client={client} message={message} />
             </li>
           ))}
         </ol>
+        <div aria-hidden="true" data-testid="conversation-end" ref={conversationEndRef} />
       </div>
       <div className="travel-conversation__lower-chrome">
         {projection.phase === 'no-results' ? (
@@ -244,6 +314,32 @@ export function TravelConversation({
               type="button"
             >
               Change dates
+            </button>
+          </div>
+        ) : null}
+        {projection.phase === 'error' || hasToolError ? (
+          <div
+            aria-label="Recover flight search"
+            className="travel-search-refinements"
+            role="group"
+          >
+            <button
+              disabled={busy}
+              onClick={() => sendFollowUp(
+                'Help me adjust the airports or travel dates before searching again.',
+              )}
+              type="button"
+            >
+              Adjust trip
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => sendFollowUp(
+                'Search nearby airports for this trip instead.',
+              )}
+              type="button"
+            >
+              Try nearby airports
             </button>
           </div>
         ) : null}
