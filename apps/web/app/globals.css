@@ -322,17 +322,259 @@ code {
 .travel-hero__media {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 7;
+  min-height: clamp(32rem, 48vw, 34.5rem);
   margin-top: clamp(0.25rem, 1vw, 0.75rem);
+  isolation: isolate;
+}
+
+.travel-hero__media-frame {
+  position: absolute;
+  inset: 2rem 6% 4.75rem;
   overflow: hidden;
-  border-radius: 28px;
+  border-radius: 32px;
   background: #dbe7ef;
-  box-shadow: 0 22px 60px rgb(11 31 51 / 11%);
+  box-shadow: 0 26px 70px rgb(11 31 51 / 16%);
 }
 
 .travel-hero__image {
   object-fit: cover;
-  object-position: center 50%;
+  object-position: center 52%;
+}
+
+.travel-hero__media-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgb(4 20 36 / 10%) 15%, rgb(4 20 36 / 72%) 100%),
+    linear-gradient(90deg, rgb(4 20 36 / 16%), transparent 36%, transparent 64%, rgb(4 20 36 / 14%));
+}
+
+.travel-hero__journey {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: min(58%, 39rem);
+  gap: 0.75rem;
+  color: #fff;
+  text-align: center;
+  text-shadow: 0 2px 18px rgb(4 20 36 / 38%);
+  transform: translate(-50%, -30%);
+}
+
+.travel-hero__journey > span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.travel-hero__journey > strong {
+  font-size: clamp(2rem, 4vw, 3.9rem);
+  font-weight: 640;
+  letter-spacing: -0.055em;
+  line-height: 0.98;
+}
+
+.travel-hero__journey > small {
+  font-size: 0.9rem;
+  font-weight: 560;
+  letter-spacing: 0.01em;
+}
+
+.travel-hero__route {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  font-size: clamp(0.9rem, 1.5vw, 1.08rem);
+  font-weight: 650;
+}
+
+.travel-hero__route svg {
+  width: 1.1rem;
+  flex: 0 0 auto;
+}
+
+@keyframes wayfare-story-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.travel-hero__story-card {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  width: clamp(14rem, 21vw, 17.5rem);
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 0.8rem;
+  padding: 1.05rem;
+  border: 1px solid rgb(216 222 231 / 86%);
+  border-radius: 24px;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 20px 54px rgb(11 31 51 / 17%);
+  color: var(--travel-ink);
+  text-align: left;
+  backdrop-filter: blur(16px);
+  animation: wayfare-story-rise 620ms var(--travel-ease-out) both;
+}
+
+.travel-hero__story-card--request {
+  top: 18%;
+  left: 0;
+}
+
+.travel-hero__story-card--wayfare {
+  top: 34%;
+  right: 0;
+  animation-delay: 100ms;
+}
+
+.travel-hero__story-card strong {
+  display: block;
+  margin: 0 0 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.travel-hero__story-card p,
+.travel-hero__story-card ul {
+  margin: 0;
+  color: var(--travel-muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.travel-hero__story-card ul {
+  display: grid;
+  gap: 0.28rem;
+  padding: 0;
+  list-style: none;
+}
+
+.travel-hero__story-card li::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 0.5rem;
+  border-radius: 50%;
+  background: var(--travel-blue);
+  vertical-align: 0.08em;
+}
+
+.travel-hero__story-icon {
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 14px;
+  background: #e8f5f3;
+  color: #166d66;
+}
+
+.travel-hero__story-icon--wayfare {
+  background: #eaf1ff;
+  color: var(--travel-blue);
+}
+
+.travel-hero__story-icon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.travel-hero__steps {
+  position: absolute;
+  z-index: 3;
+  bottom: 1.75rem;
+  left: 50%;
+  display: grid;
+  width: min(76%, 50rem);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  transform: translateX(-50%);
+}
+
+.travel-hero__steps li {
+  display: flex;
+  min-width: 0;
+  min-height: 68px;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid rgb(216 222 231 / 88%);
+  border-radius: 20px;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 14px 36px rgb(11 31 51 / 14%);
+  color: var(--travel-ink);
+  font-size: 0.78rem;
+  font-weight: 670;
+  line-height: 1.3;
+  text-align: left;
+  animation: wayfare-story-rise 620ms 180ms var(--travel-ease-out) both;
+}
+
+.travel-hero__steps svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  flex: 0 0 auto;
+  color: var(--travel-blue);
+}
+
+@media (max-width: 1023px) {
+  .travel-hero__media {
+    display: grid;
+    min-height: 0;
+    gap: 0.75rem;
+  }
+
+  .travel-hero__media-frame {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+  }
+
+  .travel-hero__journey {
+    top: auto;
+    right: clamp(1rem, 4vw, 2rem);
+    bottom: clamp(1rem, 4vw, 2rem);
+    left: clamp(1rem, 4vw, 2rem);
+    width: auto;
+    text-align: left;
+    transform: none;
+  }
+
+  .travel-hero__route {
+    justify-content: flex-start;
+  }
+
+  .travel-hero__story-card {
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+    width: 100%;
+  }
+
+  .travel-hero__steps {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    width: 100%;
+    transform: none;
+  }
 }
 
 .travel-landing {
@@ -1328,9 +1570,36 @@ code {
     font-size: clamp(2rem, 14vw, 4.25rem);
   }
 
-  .travel-hero__media {
+  .travel-hero__media-frame {
     aspect-ratio: 4 / 3;
     border-radius: 24px;
+  }
+
+  .travel-hero__journey {
+    gap: 0.5rem;
+  }
+
+  .travel-hero__journey > strong {
+    font-size: clamp(1.65rem, 8vw, 2.5rem);
+  }
+
+  .travel-hero__route {
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+
+  .travel-hero__steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .travel-hero__steps li {
+    min-height: 82px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.65rem 0.45rem;
+    text-align: center;
   }
 
   .travel-composer {
@@ -1992,6 +2261,7 @@ code {
 
   .travel-hero,
   .travel-hero * {
+    animation: none !important;
     transition-duration: 0s !important;
   }
 

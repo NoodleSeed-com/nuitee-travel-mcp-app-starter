@@ -77,6 +77,33 @@ describe('travel assistant zero state', () => {
       .getAllByRole('button')).toHaveLength(2);
   });
 
+  it('turns the hero image into a non-interactive conversation-to-flight story', () => {
+    const { container } = render(
+      <TravelZeroState inputRef={createRef()} onStart={vi.fn()} />,
+    );
+
+    const story = screen.getByRole('group', {
+      name: 'Example conversation to flight plan',
+    });
+    expect(within(story).getByText('Example planning flow')).toBeVisible();
+    expect(within(story).getByText('One message. A clearer flight plan.'))
+      .toBeVisible();
+    expect(within(story).getByText('Islamabad (ISB)')).toBeVisible();
+    expect(within(story).getByText('Rome (FCO)')).toBeVisible();
+    expect(within(story).getByText(
+      'Find me a weekend flight to Rome for two.',
+    )).toBeVisible();
+    expect(within(story).getByText('Wayfare understands')).toBeVisible();
+    expect(within(story).getByText('Search live flights')).toBeVisible();
+    expect(within(story).getByText('Compare options')).toBeVisible();
+    expect(within(story).getByText('Verify current fare')).toBeVisible();
+    expect(story.querySelectorAll(
+      'a, button, input, select, textarea, [tabindex]',
+    )).toHaveLength(0);
+    expect(container.querySelector('.travel-hero__media-frame img[alt=""]'))
+      .toHaveAttribute('src', expect.stringContaining('wayfare-hybrid-hero-v2'));
+  });
+
   it('submits a configured prompt through the same first-message callback', () => {
     const onStart = vi.fn();
     render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
@@ -120,11 +147,13 @@ describe('travel assistant zero state', () => {
       .toBeVisible();
     expect(screen.getAllByRole('button', { name: /Plan a trip to/u }))
       .toHaveLength(3);
-    expect(screen.getByRole('list', { name: 'How Wayfare plans flights' }))
-      .toBeVisible();
-    expect(screen.getByText('Search live flights')).toBeVisible();
-    expect(screen.getByText('Compare options')).toBeVisible();
-    expect(screen.getByText('Verify the fare')).toBeVisible();
+    const capabilityList = screen.getByRole('list', {
+      name: 'How Wayfare plans flights',
+    });
+    expect(capabilityList).toBeVisible();
+    expect(within(capabilityList).getByText('Search live flights')).toBeVisible();
+    expect(within(capabilityList).getByText('Compare options')).toBeVisible();
+    expect(within(capabilityList).getByText('Verify the fare')).toBeVisible();
     expect(screen.getByRole('heading', {
       level: 2,
       name: 'Plans change. Wayfare keeps up.',
