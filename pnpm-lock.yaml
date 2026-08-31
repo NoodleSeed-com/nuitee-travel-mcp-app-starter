@@ -13,8 +13,8 @@ importers:
         version: 5.3.0
     devDependencies:
       '@noodleseed/one':
-        specifier: 0.145.1
-        version: 0.145.1
+        specifier: 0.147.1
+        version: 0.147.1
       '@types/react':
         specifier: 19.2.18
         version: 19.2.18
@@ -500,8 +500,8 @@ packages:
       react:
         optional: true
 
-  '@noodleseed/one@0.145.1':
-    resolution: {integrity: sha512-h5JfVPT85S7ecTIPt2L2LqJpx3/IxqUpawKJRRw4G5jKBiKkl5S/t0dgK+FOAk27c5DwQ9bwjGY96GblBd1oIA==}
+  '@noodleseed/one@0.147.1':
+    resolution: {integrity: sha512-N9hUis/3g4eo3t5DCbrFHzrwIwpSasIZh6jvzZyEXhoX95Uy9BWhmSDuYiCokuRVtTtwWwevoCW8XaA7ZEgSIg==}
     engines: {node: '>=24'}
     hasBin: true
     bundledDependencies:
@@ -2501,7 +2501,7 @@ snapshots:
       - '@modelcontextprotocol/sdk'
       - react-dom
 
-  '@noodleseed/one@0.145.1': {}
+  '@noodleseed/one@0.147.1': {}
 
   '@opentelemetry/api@1.9.1': {}
 
