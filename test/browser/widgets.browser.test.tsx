@@ -179,7 +179,7 @@ describe('real-browser widget readiness', () => {
   });
 
   it('keeps wider inline and fullscreen result modes bounded', async () => {
-    await page.viewport(720, 1_200);
+    await page.viewport(1_100, 1_200);
     const itineraries = Array.from({ length: 4 }, (_, index) => ({
       ...itinerary,
       selectionId: `sel_${String(index).padStart(32, '0')}`,
@@ -188,10 +188,134 @@ describe('real-browser widget readiness', () => {
     const result = { ...search, itineraries };
     mount(<FlightResultsView result={result} displayMode="inline" onVerify={vi.fn()} />);
     await expect.element(page.getByText('Open the App in expanded view to browse all 4 options.')).toBeVisible();
+    const carousel = page.getByRole('region', { name: 'Flight option 1 of 3' });
+    await expect.element(carousel).toBeVisible();
+    await expect.element(page.getByText('Option 1 of 3')).toBeVisible();
+    await expect.element(page.getByRole('button', { name: 'Previous flight option' })).toBeDisabled();
+    await expect.element(page.getByRole('button', { name: 'Next flight option' })).not.toBeDisabled();
+    expect(document.querySelectorAll('.cc-fare-card')).toHaveLength(2);
+    const carouselWindow = document.querySelector<HTMLElement>('.cc-carousel-window')!;
+    const firstCard = document.querySelector<HTMLElement>('.cc-carousel-slide:not(.cc-carousel-peek-slide) .cc-fare-card')!;
+    const peekCard = document.querySelector<HTMLElement>('.cc-carousel-peek-slide .cc-fare-card')!;
+    const windowBounds = carouselWindow.getBoundingClientRect();
+    const firstBounds = firstCard.getBoundingClientRect();
+    const peekBounds = peekCard.getBoundingClientRect();
+    const visiblePeek = Math.max(0, Math.min(windowBounds.right, peekBounds.right) - Math.max(windowBounds.left, peekBounds.left));
+    expect(getComputedStyle(carouselWindow).overflowX).toBe('clip');
+    expect(firstBounds.left).toBeGreaterThanOrEqual(windowBounds.left);
+    expect(firstBounds.right).toBeLessThanOrEqual(windowBounds.right);
+    expect(visiblePeek / windowBounds.width).toBeGreaterThanOrEqual(0.2);
+    expect(visiblePeek / windowBounds.width).toBeLessThanOrEqual(0.35);
+    expect(Math.abs(firstBounds.height - peekBounds.height)).toBeLessThanOrEqual(1);
+    const nextArrow = await page.getByRole('button', { name: 'Next flight option' }).element();
+    const nextBounds = nextArrow.getBoundingClientRect();
+    expect(Math.abs(
+      firstBounds.top + firstBounds.height / 2 - (nextBounds.top + nextBounds.height / 2),
+    )).toBeLessThanOrEqual(2);
+    await page.getByRole('button', { name: 'Next flight option' }).click();
+    await expect.element(page.getByText('Option 2 of 3')).toBeVisible();
+    await expect.element(page.getByText('CA$309.50', { exact: true })).toBeVisible();
+    expect(document.querySelectorAll('.cc-fare-card')).toHaveLength(2);
+    await page.getByRole('button', { name: 'Next flight option' }).click();
+    await expect.element(page.getByText('Option 3 of 3')).toBeVisible();
+    await expect.element(page.getByRole('button', { name: 'Next flight option' })).toBeDisabled();
+    await expect.element(page.getByRole('button', { name: 'Previous flight option' })).not.toBeDisabled();
+    expect(document.querySelectorAll('.cc-fare-card')).toHaveLength(2);
+    const previousPeek = document.querySelector<HTMLElement>('.cc-carousel-previous-peek-shell .cc-fare-card')!;
+    const finalCard = document.querySelector<HTMLElement>('.cc-carousel-slide:not(.cc-carousel-peek-slide) .cc-fare-card')!;
+    await expect.poll(() => {
+      const peek = previousPeek.getBoundingClientRect();
+      const window = carouselWindow.getBoundingClientRect();
+      return Math.max(0, Math.min(window.right, peek.right) - Math.max(window.left, peek.left)) / window.width;
+    }).toBeLessThanOrEqual(0.35);
+    const previousPeekBounds = previousPeek.getBoundingClientRect();
+    const finalBounds = finalCard.getBoundingClientRect();
+    const finalWindowBounds = carouselWindow.getBoundingClientRect();
+    const visiblePrevious = Math.max(0, Math.min(finalWindowBounds.right, previousPeekBounds.right) - Math.max(finalWindowBounds.left, previousPeekBounds.left));
+    expect(visiblePrevious / finalWindowBounds.width).toBeGreaterThanOrEqual(0.2);
+    expect(visiblePrevious / finalWindowBounds.width).toBeLessThanOrEqual(0.35);
+    expect(Math.abs(finalBounds.right - finalWindowBounds.right)).toBeLessThanOrEqual(1);
+    expect(Math.abs(finalBounds.width - firstBounds.width)).toBeLessThanOrEqual(1);
+    expect(document.querySelector('.cc-result-carousel')).toBeNull();
     expect(hasHorizontalOverflow()).toBe(false);
 
     root?.render(<FlightResultsView result={result} displayMode="fullscreen" onVerify={vi.fn()} />);
     await expect.poll(() => document.querySelectorAll('.cc-fare-card').length).toBe(4);
+    expect(hasHorizontalOverflow()).toBe(false);
+  });
+
+  it('bounds fare chips and swaps to an accessible fare-details face without changing card height', async () => {
+    await page.viewport(720, 1_200);
+    mount(<InteractiveResults />);
+    await expect.element(page.getByText('Lowest fare')).toBeVisible();
+
+    const card = document.querySelector<HTMLElement>('.cc-fare-card')!;
+    const chip = document.querySelector<HTMLElement>('.cc-fare-highlight-badge')!;
+    const cardBounds = card.getBoundingClientRect();
+    const chipBounds = chip.getBoundingClientRect();
+    expect(chipBounds.left).toBeGreaterThanOrEqual(cardBounds.left);
+    expect(chipBounds.right).toBeLessThanOrEqual(cardBounds.right);
+    expect(chip.scrollWidth).toBeLessThanOrEqual(chip.clientWidth);
+
+    const toggle = page.getByRole('button', { name: 'Flight and fare details' });
+    await expect.element(toggle).toHaveAttribute('aria-expanded', 'false');
+    const front = document.querySelector<HTMLElement>('.cc-fare-face-front')!;
+    const back = document.querySelector<HTMLElement>('.cc-fare-face-back')!;
+    const frontContentLeft = document.querySelector<HTMLElement>('.cc-fare-header')!.getBoundingClientRect().left;
+    const summary = document.querySelector<HTMLElement>('.cc-fare-front-summary')!;
+    const footer = document.querySelector<HTMLElement>('.cc-fare-footer')!;
+    const initialHeight = card.getBoundingClientRect().height;
+    expect(footer.getBoundingClientRect().top - summary.getBoundingClientRect().bottom).toBeLessThanOrEqual(120);
+    expect(front.getAttribute('aria-hidden')).toBe('false');
+    expect(back.getAttribute('aria-hidden')).toBe('true');
+    expect(getComputedStyle(back).transitionProperty).toContain('opacity');
+    await toggle.click();
+    const backButton = page.getByRole('button', { name: 'Back to flight' });
+    await expect.element(backButton).toBeVisible();
+    expect(back.hasAttribute('inert')).toBe(false);
+    await expect.element(backButton).toHaveFocus();
+    const backHeaderCopy = document.querySelector<HTMLElement>('.cc-fare-back-header > div')!.getBoundingClientRect();
+    const backHeader = document.querySelector<HTMLElement>('.cc-fare-back-header')!.getBoundingClientRect();
+    const backButtonBounds = (await backButton.element()).getBoundingClientRect();
+    const backButtonStyle = getComputedStyle(await backButton.element());
+    expect(backButtonBounds.left >= backHeaderCopy.right || backButtonBounds.top >= backHeaderCopy.bottom).toBe(true);
+    expect(Math.abs(backHeader.left - frontContentLeft)).toBeLessThanOrEqual(1);
+    expect(backButtonStyle.borderTopWidth).toBe('0px');
+    expect(backButtonStyle.backgroundColor).toBe('rgba(0, 0, 0, 0)');
+    expect(card.classList.contains('cc-fare-card-details')).toBe(true);
+    expect(getComputedStyle(card).backgroundImage).not.toBe('none');
+    expect(getComputedStyle(back).backgroundImage).toBe('none');
+    expect(front.getAttribute('aria-hidden')).toBe('true');
+    expect(back.getAttribute('aria-hidden')).toBe('false');
+    await expect.element(page.getByText('Fare family')).toBeVisible();
+    expect(document.querySelector('.cc-fare-watermark')).toBeNull();
+    const dataTile = document.querySelector<HTMLElement>('.cc-fare-detail-content-compact .cc-details-grid > div')!;
+    expect(getComputedStyle(dataTile).borderTopWidth).toBe('1px');
+    expect(Math.abs(card.getBoundingClientRect().height - initialHeight)).toBeLessThanOrEqual(1);
+    await backButton.click();
+    await expect.element(toggle).toHaveFocus();
+    expect(Math.abs(card.getBoundingClientRect().height - initialHeight)).toBeLessThanOrEqual(1);
+    expect(hasHorizontalOverflow()).toBe(false);
+  });
+
+  it('keeps the loading skeleton and result card on the same carousel geometry', async () => {
+    await page.viewport(720, 1_200);
+    mount(<FlightResultsView state="loading" displayMode="inline" onVerify={vi.fn()} />);
+    await expect.element(page.getByText('Searching current flights')).toBeVisible();
+    const skeletonBounds = document.querySelector<HTMLElement>('.cc-skeleton-fare')!
+      .getBoundingClientRect();
+
+    root?.render(<FlightResultsView result={search} displayMode="inline" onVerify={vi.fn()} />);
+    await expect.element(page.getByRole('article')).toBeVisible();
+    await expect.poll(() => Math.abs(
+      skeletonBounds.left - document.querySelector<HTMLElement>('.cc-fare-card')!.getBoundingClientRect().left,
+    )).toBeLessThanOrEqual(1);
+    const resultBounds = document.querySelector<HTMLElement>('.cc-fare-card')!
+      .getBoundingClientRect();
+
+    expect(Math.abs(skeletonBounds.width - resultBounds.width)).toBeLessThanOrEqual(1);
+    expect(Math.abs(skeletonBounds.left - resultBounds.left)).toBeLessThanOrEqual(1);
+    expect(Math.abs(skeletonBounds.height - resultBounds.height)).toBeLessThanOrEqual(1);
     expect(hasHorizontalOverflow()).toBe(false);
   });
 
