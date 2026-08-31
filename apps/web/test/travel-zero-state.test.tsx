@@ -88,7 +88,7 @@ describe('travel assistant zero state', () => {
     expect(within(story).getByText('Example planning flow')).toBeVisible();
     expect(within(story).getByText('One message. A clearer flight plan.'))
       .toBeVisible();
-    expect(within(story).getByText('Islamabad (ISB)')).toBeVisible();
+    expect(within(story).getByText('Your departure')).toBeVisible();
     expect(within(story).getByText('Rome (FCO)')).toBeVisible();
     expect(within(story).getByText(
       'Find me a weekend flight to Rome for two.',
@@ -102,6 +102,32 @@ describe('travel assistant zero state', () => {
     )).toHaveLength(0);
     expect(container.querySelector('.travel-hero__media-frame img[alt=""]'))
       .toHaveAttribute('src', expect.stringContaining('wayfare-hybrid-hero-v2'));
+    expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
+      .toHaveAttribute(
+        'placeholder',
+        'Your departure to Rome for two, next weekend',
+      );
+  });
+
+  it('uses the derived local airport in pre-search route examples', () => {
+    render(
+      <TravelZeroState
+        defaults={{
+          origin: { iata: 'ISB', city: 'Islamabad', country: 'PK' },
+          currency: 'PKR',
+          source: 'browser-geolocation',
+        }}
+        inputRef={createRef()}
+        onStart={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Islamabad (ISB)')).toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
+      .toHaveAttribute(
+        'placeholder',
+        'Islamabad to Rome for two, next weekend',
+      );
   });
 
   it('submits a configured prompt through the same first-message callback', () => {

@@ -2,18 +2,26 @@
 
 import { useState } from 'react';
 import { starterConfig } from '../../../../starter.config';
+import {
+  SUPPORTED_CURRENCIES,
+  type SupportedCurrency,
+} from '../lib/travel-defaults';
 import { TravelNavigationDialog } from './travel-navigation-dialog';
 import { WayfareMark } from './wayfare-mark';
 
 interface TravelHeaderProps {
+  readonly currency: SupportedCurrency;
   readonly mode: 'hero' | 'conversation';
+  readonly onCurrencyChange: (currency: SupportedCurrency) => void;
   readonly onNewTrip: () => void;
   readonly onOpenSettings: () => void;
   readonly onPlanTrip: () => void;
 }
 
 export function TravelHeader({
+  currency,
   mode,
+  onCurrencyChange,
   onNewTrip,
   onOpenSettings,
   onPlanTrip,
@@ -35,6 +43,20 @@ export function TravelHeader({
         <button type="button" onClick={directAction.onClick}>{directAction.label}</button>
         <a href={starterConfig.website.developerPath}>For developers</a>
       </nav>
+      <select
+        aria-label="Currency"
+        className="travel-header__currency"
+        onChange={(event) => {
+          onCurrencyChange(event.currentTarget.value as SupportedCurrency);
+        }}
+        value={currency}
+      >
+        {SUPPORTED_CURRENCIES.map((supportedCurrency) => (
+          <option key={supportedCurrency} value={supportedCurrency}>
+            {supportedCurrency}
+          </option>
+        ))}
+      </select>
       <button
         aria-expanded={menuOpen}
         aria-haspopup="dialog"

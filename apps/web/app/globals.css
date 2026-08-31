@@ -1772,12 +1772,26 @@ code {
   z-index: 3;
   display: grid;
   min-height: 72px;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: clamp(0.5rem, 2vw, 1.5rem);
   padding: 0.75rem clamp(1rem, 4vw, 3rem);
   border-bottom: 1px solid var(--travel-boundary);
   background: var(--travel-raised);
+}
+
+.travel-header__currency {
+  min-width: 4.4rem;
+  min-height: 44px;
+  padding: 0 1.7rem 0 0.75rem;
+  border: 1px solid var(--travel-boundary);
+  border-radius: 999px;
+  background-color: transparent;
+  color: var(--travel-ink);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 650;
+  cursor: pointer;
 }
 
 .travel-header__actions {
@@ -2142,7 +2156,7 @@ code {
 
   .travel-header {
     min-height: 64px;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     gap: 0.35rem;
     padding: 0.5rem 0.75rem;
   }
@@ -2162,6 +2176,11 @@ code {
   .travel-header__menu {
     width: 44px;
     height: 44px;
+  }
+
+  .travel-header__currency {
+    min-width: 4rem;
+    padding-inline: 0.65rem 1.45rem;
   }
 
   .travel-navigation-dialog {

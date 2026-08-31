@@ -10,20 +10,30 @@ import {
 } from 'lucide-react';
 import type { Ref } from 'react';
 import { starterConfig } from '../../../../starter.config';
+import {
+  NEUTRAL_TRAVEL_DEFAULTS,
+  type TravelDefaults,
+} from '../lib/travel-defaults';
 import { TravelComposer } from './travel-composer';
 import { WayfareMark } from './wayfare-mark';
 
 interface TravelHeroProps {
+  readonly defaults?: TravelDefaults;
   readonly inputRef: Ref<HTMLTextAreaElement>;
   readonly launchError?: string | null;
   readonly onStart: (prompt: string) => void;
 }
 
 export function TravelHero({
+  defaults = NEUTRAL_TRAVEL_DEFAULTS,
   inputRef,
   launchError,
   onStart,
 }: Readonly<TravelHeroProps>) {
+  const routeOrigin = defaults.origin
+    ? `${defaults.origin.city} (${defaults.origin.iata})`
+    : 'Your departure';
+  const promptOrigin = defaults.origin?.city ?? 'Your departure';
   return (
     <section className="travel-hero" aria-labelledby="travel-home-title">
       <div className="travel-hero__content">
@@ -36,7 +46,7 @@ export function TravelHero({
           inputId="travel-prompt"
           inputRef={inputRef}
           onSubmit={onStart}
-          placeholder="Islamabad to Rome for two, next weekend"
+          placeholder={`${promptOrigin} to Rome for two, next weekend`}
           submitLabel="Find flights"
           variant="hero"
           visibleSubmitLabel="Find flights"
@@ -72,7 +82,7 @@ export function TravelHero({
               <span>Example planning flow</span>
               <strong>One message. A clearer flight plan.</strong>
               <div className="travel-hero__route">
-                <span>Islamabad (ISB)</span>
+                <span>{routeOrigin}</span>
                 <ArrowRight aria-hidden="true" strokeWidth={1.75} />
                 <span>Rome (FCO)</span>
               </div>

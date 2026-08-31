@@ -11,7 +11,9 @@ describe('travel header', () => {
   it('renders one repository-owned Wayfare route mark beside the wordmark', () => {
     render(
       <TravelHeader
+        currency="USD"
         mode="hero"
+        onCurrencyChange={vi.fn()}
         onNewTrip={vi.fn()}
         onOpenSettings={vi.fn()}
         onPlanTrip={vi.fn()}
@@ -34,7 +36,9 @@ describe('travel header', () => {
     const onOpenSettings = vi.fn();
     render(
       <TravelHeader
+        currency="USD"
         mode="hero"
+        onCurrencyChange={vi.fn()}
         onNewTrip={vi.fn()}
         onOpenSettings={onOpenSettings}
         onPlanTrip={onPlanTrip}
@@ -58,7 +62,9 @@ describe('travel header', () => {
   it('restores menu-trigger focus after Escape dismisses the dialog', () => {
     render(
       <TravelHeader
+        currency="USD"
         mode="hero"
+        onCurrencyChange={vi.fn()}
         onNewTrip={vi.fn()}
         onOpenSettings={vi.fn()}
         onPlanTrip={vi.fn()}
@@ -82,7 +88,9 @@ describe('travel header', () => {
     const onNewTrip = vi.fn();
     render(
       <TravelHeader
+        currency="USD"
         mode="hero"
+        onCurrencyChange={vi.fn()}
         onNewTrip={onNewTrip}
         onOpenSettings={vi.fn()}
         onPlanTrip={onPlanTrip}
@@ -99,7 +107,9 @@ describe('travel header', () => {
     const onNewTrip = vi.fn();
     render(
       <TravelHeader
+        currency="USD"
         mode="conversation"
+        onCurrencyChange={vi.fn()}
         onNewTrip={onNewTrip}
         onOpenSettings={vi.fn()}
         onPlanTrip={vi.fn()}
@@ -118,7 +128,9 @@ describe('travel header', () => {
   it('keeps configured developer, support, and legal fallback navigation in the menu', () => {
     render(
       <TravelHeader
+        currency="USD"
         mode="hero"
+        onCurrencyChange={vi.fn()}
         onNewTrip={vi.fn()}
         onOpenSettings={vi.fn()}
         onPlanTrip={vi.fn()}
@@ -144,7 +156,9 @@ describe('travel header', () => {
   it('does not expose unsupported travel utilities', () => {
     render(
       <TravelHeader
+        currency="USD"
         mode="hero"
+        onCurrencyChange={vi.fn()}
         onNewTrip={vi.fn()}
         onOpenSettings={vi.fn()}
         onPlanTrip={vi.fn()}
@@ -155,5 +169,31 @@ describe('travel header', () => {
 
     expect(screen.queryByText(/Manage booking|Check in|Flight status/i))
       .not.toBeInTheDocument();
+  });
+
+  it('renders a session-only currency selector before the menu', () => {
+    const onCurrencyChange = vi.fn();
+    const { container } = render(
+      <TravelHeader
+        currency="PKR"
+        mode="hero"
+        onCurrencyChange={onCurrencyChange}
+        onNewTrip={vi.fn()}
+        onOpenSettings={vi.fn()}
+        onPlanTrip={vi.fn()}
+      />,
+    );
+
+    const currency = screen.getByRole('combobox', { name: 'Currency' });
+    const menu = screen.getByRole('button', { name: 'Open menu' });
+    expect(currency).toHaveValue('PKR');
+    expect(currency.compareDocumentPosition(menu) & Node.DOCUMENT_POSITION_FOLLOWING)
+      .toBeTruthy();
+    expect(container.querySelectorAll('select')).toHaveLength(1);
+
+    fireEvent.change(currency, { target: { value: 'EUR' } });
+
+    expect(onCurrencyChange).toHaveBeenCalledOnce();
+    expect(onCurrencyChange).toHaveBeenCalledWith('EUR');
   });
 });

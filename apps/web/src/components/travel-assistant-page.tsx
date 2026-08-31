@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import type { PublicAssistantRuntime } from '../lib/assistant-config';
+import { useTravelDefaults } from '../hooks/use-travel-defaults';
 import { SettingsSheet } from './settings-sheet';
 import { TravelConversation } from './travel-conversation';
 import { TravelFooter } from './travel-footer';
@@ -22,6 +23,7 @@ export function TravelAssistantPage({
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const heroInputRef = useRef<HTMLTextAreaElement>(null);
+  const { setCurrency, ...defaults } = useTravelDefaults();
 
   function reset() {
     setMode('zero');
@@ -53,13 +55,16 @@ export function TravelAssistantPage({
             Skip to content
           </a>
           <TravelHeader
+            currency={defaults.currency}
             mode="hero"
+            onCurrencyChange={setCurrency}
             onNewTrip={reset}
             onOpenSettings={() => setSettingsOpen(true)}
             onPlanTrip={focusPlanTrip}
           />
           <main id="travel-canvas" tabIndex={-1}>
             <TravelZeroState
+              defaults={defaults}
               inputRef={heroInputRef}
               launchError={launchError}
               onStart={startConversation}
@@ -73,7 +78,9 @@ export function TravelAssistantPage({
             Skip to content
           </a>
           <TravelHeader
+            currency={defaults.currency}
             mode="conversation"
+            onCurrencyChange={setCurrency}
             onNewTrip={reset}
             onOpenSettings={() => setSettingsOpen(true)}
             onPlanTrip={reset}
