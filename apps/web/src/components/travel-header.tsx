@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { starterConfig } from '../../../../starter.config';
+import { siteConfig } from '../lib/site-config';
 import {
   SUPPORTED_CURRENCIES,
   type SupportedCurrency,
 } from '../lib/travel-defaults';
 import { TravelNavigationDialog } from './travel-navigation-dialog';
-import { WayfareMark } from './wayfare-mark';
+import { FlightCatchersBrand } from './flight-catchers-brand';
 
 interface TravelHeaderProps {
   readonly currency: SupportedCurrency;
@@ -34,14 +34,11 @@ export function TravelHeader({
   return (
     <header className={`travel-header travel-header--${mode}`}>
       <a className="travel-wordmark" href="/">
-        <span aria-hidden="true" className="travel-wordmark__mark">
-          <WayfareMark />
-        </span>
-        <span>{starterConfig.brand.name}</span>
+        <FlightCatchersBrand className="travel-wordmark__logo" priority />
       </a>
       <nav aria-label="Primary navigation" className="travel-header__actions">
         <button type="button" onClick={directAction.onClick}>{directAction.label}</button>
-        <a href={starterConfig.website.developerPath}>For developers</a>
+        <a href={siteConfig.website.developerPath}>For developers</a>
       </nav>
       <select
         aria-label="Currency"

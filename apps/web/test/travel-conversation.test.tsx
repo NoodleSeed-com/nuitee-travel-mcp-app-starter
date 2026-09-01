@@ -13,8 +13,8 @@ import {
 } from '@testing-library/react';
 import { StrictMode, useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { starterConfig } from '../../../starter.config';
 import { TravelAssistantPage } from '../src/components/travel-assistant-page';
+import { siteConfig } from '../src/lib/site-config';
 
 const assistantMock = vi.hoisted(() => ({
   useNoodleAssistant: vi.fn(),
@@ -48,7 +48,7 @@ function createClient() {
 
 function submitPrompt(prompt: string) {
   fireEvent.change(screen.getByRole('textbox', {
-    name: 'Ask about a flight',
+    name: 'Ask the travel assistant',
   }), { target: { value: prompt } });
   fireEvent.submit(screen.getByRole('form', { name: 'Plan a trip' }));
 }
@@ -114,7 +114,7 @@ describe('guest travel conversation lifecycle', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Plan a trip' }));
 
-    expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
+    expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveFocus();
     expect(assistantMock.useNoodleAssistant).not.toHaveBeenCalled();
   });
@@ -132,7 +132,7 @@ describe('guest travel conversation lifecycle', () => {
       expect(screen.queryByRole('dialog', { name: 'Travel menu' }))
         .not.toBeInTheDocument();
     });
-    expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
+    expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveFocus();
     expect(assistantMock.useNoodleAssistant).not.toHaveBeenCalled();
     expect(client.sendMessage).not.toHaveBeenCalled();
@@ -148,7 +148,7 @@ describe('guest travel conversation lifecycle', () => {
         'JFK to Lisbon next month',
       );
     });
-    expect(screen.getByRole('heading', { name: 'Plan your flight' }))
+    expect(screen.getByRole('heading', { name: 'Plan your trip' }))
       .toBeVisible();
     expect(screen.getByRole('region', { name: 'Travel conversation' }))
       .toHaveClass('travel-conversation-shell');
@@ -157,13 +157,13 @@ describe('guest travel conversation lifecycle', () => {
     expect(screen.queryByText('Built on Noodle Seed · Powered by Nuitee'))
       .not.toBeInTheDocument();
     expect(screen.getByRole('form', { name: 'Continue trip' })).toBeVisible();
-    expect(screen.getByText(starterConfig.brand.assistantName)).toBeVisible();
+    expect(screen.getByText(siteConfig.brand.assistantName)).toBeVisible();
     expect(client.sendMessage).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('button', { name: 'Reset conversation' }))
       .not.toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'New trip' })).toHaveLength(1);
-    expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
-      .toHaveAttribute('placeholder', 'Tell Wayfare what you need…');
+    expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
+      .toHaveAttribute('placeholder', 'Tell Flight Catchers what you need…');
     expect(screen.getAllByRole('region', { name: 'Travel conversation' }))
       .toHaveLength(1);
     expect(screen.queryByRole('region', { name: 'Travel workspace' }))
@@ -327,7 +327,7 @@ describe('guest travel conversation lifecycle', () => {
 
     expect(await screen.findByRole('heading', { name: 'ISB to NYC' }))
       .toBeVisible();
-    expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
+    expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute('placeholder', 'Adjust the trip or add a preference…');
     const conversation = screen.getByRole('region', { name: 'Travel conversation' });
     const brief = screen.getByRole('region', { name: 'Current trip' });
@@ -567,7 +567,7 @@ describe('guest travel conversation lifecycle', () => {
       name: 'Recover flight search',
     })).toBeVisible();
     expect(within(conversation).getByRole('textbox', {
-      name: 'Ask about a flight',
+      name: 'Ask the travel assistant',
     })).toBeEnabled();
   });
 
@@ -603,7 +603,7 @@ describe('guest travel conversation lifecycle', () => {
     if (!linkedApp) return;
     expect(conversation.querySelectorAll('noodle-app-view')).toHaveLength(1);
     linkedApp.tabIndex = 0;
-    const composer = screen.getByRole('textbox', { name: 'Ask about a flight' });
+    const composer = screen.getByRole('textbox', { name: 'Ask the travel assistant' });
     const focusable = Array.from(conversation.querySelectorAll<HTMLElement>(
       'noodle-app-view, textarea, button:not(:disabled)',
     )).filter((element) => element.tabIndex >= 0);
@@ -652,8 +652,8 @@ describe('guest travel conversation lifecycle', () => {
       prompt: 'Help me plan a long-weekend flight to Rome for two.',
     },
     {
-      action: 'Start with a flexible trip',
-      prompt: 'Help me find a trip somewhere warm with flexible dates.',
+      action: 'Build a trip',
+      prompt: 'Help me build a trip somewhere warm with flexible dates and a hotel.',
     },
   ])('starts $action as exactly one conversation', async ({ action, prompt }) => {
     render(<TravelAssistantPage runtime={readyRuntime} />);
@@ -773,7 +773,7 @@ describe('guest travel conversation lifecycle', () => {
     client.sendMessage.mockClear();
 
     const composer = screen.getByRole('textbox', {
-      name: 'Ask about a flight',
+      name: 'Ask the travel assistant',
     });
     fireEvent.change(composer, {
       target: { value: '  Avoid overnight connections  ' },
@@ -823,7 +823,7 @@ describe('guest travel conversation lifecycle', () => {
       );
 
       const composer = screen.getByRole('textbox', {
-        name: 'Ask about a flight',
+        name: 'Ask the travel assistant',
       });
       fireEvent.change(composer, {
         target: { value: 'Keep this follow-up for after the stop' },
@@ -843,7 +843,7 @@ describe('guest travel conversation lifecycle', () => {
       expect(client.abort).toHaveBeenCalledOnce();
       expect(client.resetSession).not.toHaveBeenCalled();
       expect(conversationStatus()).toBeEmptyDOMElement();
-      expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
+      expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
         .toHaveValue('Keep this follow-up for after the stop');
       expect(composer).toHaveValue('Keep this follow-up for after the stop');
 
@@ -1002,7 +1002,7 @@ describe('guest travel conversation lifecycle', () => {
     scrollY = 600;
     fireEvent.scroll(window);
     fireEvent.change(screen.getByRole('textbox', {
-      name: 'Ask about a flight',
+      name: 'Ask the travel assistant',
     }), { target: { value: 'Avoid overnight connections' } });
     fireEvent.submit(screen.getByRole('form', { name: 'Continue trip' }));
     expect(scrollIntoView).toHaveBeenCalledOnce();

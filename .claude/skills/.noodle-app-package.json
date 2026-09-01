@@ -7,14 +7,14 @@
     "skillSlug": "nuitee-travel-mcp-app-starter"
   },
   "packageSchemaVersion": "1",
-  "rendererVersion": "0.87.1",
-  "sourceManifestSha256": "479ec73ac7a5dfc2d94e9112f7ffe82c9456a32dae482261f5bd9b4db3087813",
+  "rendererVersion": "0.88.0",
+  "sourceManifestSha256": "40a1587ebebef3fe1b437dd078331c1f937e2a0945caeb27e92bd51b3ba2c73c",
   "mcpSurfaceSha256": "b277f0619b3d97353af80b57e955e00608e34d1b0f11463d31b5a6ba27697a3a",
-  "bundleSha256": "3020eb9a90f289ab0615ee8f1849a35b1f98046e7dfc23e2f29770a9eef90234",
+  "bundleSha256": "6b80108afb4cb973a0a30220e5eb6e6d1080158371155d0d2514efc13f79fcbf",
   "files": [
     {
       "path": ".claude/skills/nuitee-travel-mcp-app-starter/SKILL.md",
-      "sha256": "a69903ba13a3f3822592f8ee4415a8186e31bed22ca0f9b38d583c6c1f0fb657",
+      "sha256": "34cbc20be36fd3fec6b913f19a434f41f773f95e1e3d5d72162e45c08261160d",
       "byteLength": 4753
     },
     {

@@ -1,22 +1,22 @@
 import type { Metadata } from 'next';
 import type { CSSProperties, ReactNode } from 'react';
 import '@fontsource-variable/inter';
-import { starterConfig } from '../../../starter.config';
+import { siteConfig } from '../src/lib/site-config';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: starterConfig.brand.name,
-  description: starterConfig.brand.tagline,
+  title: siteConfig.brand.name,
+  description: siteConfig.brand.tagline,
 };
 
 const travelTheme = {
-  '--travel-canvas': starterConfig.brand.canvas,
-  '--travel-surface': starterConfig.brand.surface,
-  '--travel-signal': starterConfig.brand.signal,
-  '--travel-accent': starterConfig.brand.accent,
-  '--travel-boundary': starterConfig.brand.boundary,
-  '--travel-muted': starterConfig.brand.muted,
-  '--travel-ink': starterConfig.brand.ink,
+  '--travel-canvas': siteConfig.brand.canvas,
+  '--travel-surface': siteConfig.brand.surface,
+  '--travel-signal': siteConfig.brand.signal,
+  '--travel-accent': siteConfig.brand.accent,
+  '--travel-boundary': siteConfig.brand.boundary,
+  '--travel-muted': siteConfig.brand.muted,
+  '--travel-ink': siteConfig.brand.ink,
 } as CSSProperties;
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

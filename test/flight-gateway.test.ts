@@ -68,6 +68,20 @@ describe('Nuitee gateway search preparation', () => {
     expect(result.status).toBe('success');
   });
 
+  it('normalizes the Toronto metro code to the provider-supported primary airport', () => {
+    const { result, callOperation } = search({ origin: 'YTO' });
+
+    expect(callOperation).toHaveBeenCalledWith(
+      'search',
+      expect.objectContaining({
+        legs: [
+          { origin: 'YYZ', destination: 'QZY', date: '2030-04-20', direction: 'OUTBOUND' },
+        ],
+      }),
+    );
+    expect(result.searchContext).toEqual(expect.objectContaining({ origin: 'YYZ' }));
+  });
+
   it('builds reverse OUTBOUND/INBOUND legs for a round trip', () => {
     const { callOperation } = search({ returnDate: '2030-04-27' });
     expect(callOperation).toHaveBeenCalledWith(

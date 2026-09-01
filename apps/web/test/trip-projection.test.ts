@@ -332,4 +332,65 @@ describe('structured trip projection', () => {
     });
     expect(projectTrip(messages)).toMatchObject({ phase: 'comparing' });
   });
+
+  it('keeps live flight context while focusing the same conversation on synthetic stays', () => {
+    expect(projectTrip([
+      messageWithToolResult('search_flights', {
+        status: 'success',
+        searchContext: validSearchContext,
+      }),
+      messageWithToolResult('search_hotels', {
+        status: 'success',
+        dataSource: 'illustrative',
+        searchContext: {
+          destination: 'Lisbon',
+          checkInDate: '2026-10-12',
+          checkOutDate: '2026-10-18',
+        },
+        internalFixtureKey: 'must-not-project',
+      }),
+    ])).toEqual({
+      phase: 'comparing-stays',
+      origin: 'JFK',
+      destination: 'LIS',
+      departureDate: '2026-10-12',
+      returnDate: '2026-10-18',
+      travelers: '2 adults',
+      focus: 'stays',
+      stayDestination: 'Lisbon',
+      checkInDate: '2026-10-12',
+      checkOutDate: '2026-10-18',
+    });
+  });
+
+  it('projects only synthetic loyalty and review status, never member or price data', () => {
+    const projected = projectTrip([
+      messageWithToolResult('open_loyalty', {
+        status: 'success',
+        dataSource: 'illustrative',
+        member: { reference: 'private-value' },
+      }),
+      messageWithToolResult('review_trip', {
+        status: 'ready',
+        dataSource: 'illustrative',
+        flight: { searchPrice: { total: 999 } },
+      }),
+    ]);
+
+    expect(projected).toEqual({ phase: 'trip-review', focus: 'trip' });
+    expect(JSON.stringify(projected)).not.toContain('private-value');
+    expect(JSON.stringify(projected)).not.toContain('999');
+  });
+
+  it('ignores malformed demo hotel context', () => {
+    expect(projectTrip([messageWithToolResult('search_hotels', {
+      status: 'success',
+      dataSource: 'illustrative',
+      searchContext: {
+        destination: 'Lisbon',
+        checkInDate: '2026-10-18',
+        checkOutDate: '2026-10-12',
+      },
+    })])).toEqual(EMPTY_TRIP);
+  });
 });

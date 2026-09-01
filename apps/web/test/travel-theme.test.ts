@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { starterConfig } from '../../../starter.config';
+import { siteConfig } from '../src/lib/site-config';
 
 type Rgb = readonly [number, number, number];
 
@@ -47,22 +47,25 @@ function withoutFinePointerBlocks(css: string): string {
   return remaining;
 }
 
-describe('Wayfare premium travel theme', () => {
+describe('Flight Catchers premium travel theme', () => {
   it('keeps the approved checked-in colors and accessible contrast pairs', () => {
-    expect(starterConfig.brand).toMatchObject({
-      accent: '#2F70E8',
-      signal: '#0B1F33',
-      canvas: '#F7F8FA',
+    expect(siteConfig.brand).toMatchObject({
+      accent: '#006D84',
+      signal: '#071D29',
+      canvas: '#F5FAFB',
       surface: '#FFFFFF',
-      surfaceDark: '#0B1F33',
-      ink: '#0B1F33',
-      muted: '#526173',
-      boundary: '#D8DEE7',
+      surfaceDark: '#0A222C',
+      ink: '#071D29',
+      muted: '#536A73',
+      boundary: '#CFE0E5',
     });
 
-    expect(contrastRatio('#0B1F33', '#F7F8FA')).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio('#526173', '#F7F8FA')).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio('#2F70E8', '#F7F8FA')).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(siteConfig.brand.ink, siteConfig.brand.canvas))
+      .toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(siteConfig.brand.muted, siteConfig.brand.canvas))
+      .toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(siteConfig.brand.accent, siteConfig.brand.canvas))
+      .toBeGreaterThanOrEqual(3);
   });
 
   it('uses the approved raised token for surface backgrounds', async () => {
@@ -79,9 +82,6 @@ describe('Wayfare premium travel theme', () => {
       resolve(process.cwd(), 'app/globals.css'),
       'utf8',
     );
-    const accent = globals.match(
-      /--travel-blue:\s*(#[a-f\d]{6});/iu,
-    )?.[1];
     const onAccent = globals.match(
       /--travel-on-accent:\s*(#[a-f\d]{6});/iu,
     )?.[1];
@@ -89,11 +89,10 @@ describe('Wayfare premium travel theme', () => {
       /\.travel-interaction-card__actions > button:first-child\s*\{([^}]*)\}/u,
     )?.[1];
 
-    expect(accent).toBeDefined();
-    expect(accent).toBe(starterConfig.brand.accent.toLowerCase());
+    expect(globals).toContain('--travel-blue: var(--travel-accent, #2f70e8);');
     expect(onAccent).toBe('#ffffff');
     expect(primaryInteraction).toContain('color: var(--travel-on-accent);');
-    expect(contrastRatio(accent ?? '#ffffff', onAccent ?? '#ffffff'))
+    expect(contrastRatio(siteConfig.brand.accent, onAccent ?? '#ffffff'))
       .toBeGreaterThanOrEqual(4.5);
   });
 

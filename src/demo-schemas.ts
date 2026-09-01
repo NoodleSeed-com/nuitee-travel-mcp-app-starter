@@ -1,0 +1,255 @@
+import { z } from '@noodleseed/one';
+import { flightCatchersDemoConfig } from './demo-config.js';
+import { selectionIdSchema } from './flight-schemas.js';
+
+export const syntheticDataSourceSchema = z.literal('illustrative');
+export const demoHotelSelectionIdSchema = z.string().regex(/^hsel_[a-f0-9]{32}$/);
+export const demoHotelSearchIdSchema = z.string().regex(/^hsearch_[a-f0-9]{32}$/);
+export const demoRewardFlightSearchIdSchema = z.string().regex(/^rsearch_[a-f0-9]{32}$/);
+export const demoRewardFlightOptionIdSchema = z.string().regex(/^rwd_[a-f0-9]{32}$/);
+export const demoCurrencySchema = z.enum(['CAD', 'USD', 'EUR']);
+
+export const demoHomeOutputSchema = z.object({
+  status: z.literal('ready'),
+  brand: z.literal(flightCatchersDemoConfig.brand.name),
+  message: z.string().min(1).max(300),
+  disclosure: z.string().min(20).max(320),
+  domains: z.array(z.object({
+    name: z.enum(['Flights', 'Stays', 'Loyalty', 'Ground travel', 'Experiences']),
+    availability: z.enum(['available', 'illustrative', 'coming_soon']),
+    label: z.string().min(2).max(80),
+  })).length(5),
+  fallback: z.string().min(20).max(700),
+});
+
+const calendarDateSchema = z.iso.date();
+const boundedPrintableTextSchema = z.string().trim().min(1).max(240);
+const destinationSchema = z.string()
+  .trim()
+  .min(2)
+  .max(80);
+
+function calendarDay(value: string) {
+  const [year, month, day] = value.split('-').map(Number);
+  return Date.UTC(year!, month! - 1, day!);
+}
+
+export const demoHotelSearchInputSchema = z.object({
+  destination: destinationSchema.describe('City name or IATA/metro code for the synthetic stay fixture search'),
+  checkInDate: calendarDateSchema.describe('Check-in date in YYYY-MM-DD format'),
+  checkOutDate: calendarDateSchema.describe('Check-out date in YYYY-MM-DD format'),
+  adults: z.number().int().min(1).max(8).default(2),
+  children: z.number().int().min(0).max(6).default(0),
+  rooms: z.number().int().min(1).max(4).default(1),
+  currency: demoCurrencySchema.default('CAD'),
+}).refine(
+  ({ checkInDate, checkOutDate }) => checkOutDate > checkInDate,
+  { path: ['checkOutDate'], message: 'Check-out must be after check-in.' },
+).refine(
+  ({ checkInDate, checkOutDate }) =>
+    (calendarDay(checkOutDate) - calendarDay(checkInDate)) / 86_400_000 <= 30,
+  { path: ['checkOutDate'], message: 'Synthetic stay searches are limited to 30 nights.' },
+).refine(
+  ({ adults, children, rooms }) => rooms <= adults + children,
+  { path: ['rooms'], message: 'Rooms cannot exceed the total traveler count.' },
+);
+
+export const demoMoneySchema = z.object({
+  amount: z.number().nonnegative().max(1_000_000),
+  currency: demoCurrencySchema,
+});
+
+export const demoHotelSchema = z.object({
+  selectionId: demoHotelSelectionIdSchema,
+  dataSource: syntheticDataSourceSchema,
+  name: z.string().trim().min(2).max(100),
+  city: z.string().trim().min(2).max(80),
+  countryCode: z.string().regex(/^[A-Z]{2}$/),
+  neighborhood: z.string().trim().min(2).max(80),
+  description: boundedPrintableTextSchema,
+  roomName: z.string().trim().min(2).max(80),
+  category: z.number().int().min(1).max(5),
+  amenities: z.array(z.string().trim().min(2).max(80)).max(6),
+  nights: z.number().int().min(1).max(30),
+  rooms: z.number().int().min(1).max(4),
+  nightlyPrice: demoMoneySchema,
+  staySubtotal: demoMoneySchema,
+  taxesAndFeesIncluded: z.literal(false),
+  illustrativePolicy: z.string().trim().min(2).max(160),
+});
+
+export const demoHotelSearchOutputSchema = z.object({
+  status: z.enum(['success', 'empty']),
+  dataSource: syntheticDataSourceSchema,
+  disclosure: z.string().trim().min(20).max(320),
+  message: z.string().trim().min(2).max(320),
+  fallback: z.string().trim().min(20).max(500),
+  searchId: demoHotelSearchIdSchema,
+  searchContext: demoHotelSearchInputSchema,
+  hotels: z.array(demoHotelSchema).max(10),
+}).refine(
+  ({ status, hotels }) => status === 'success' ? hotels.length > 0 : hotels.length === 0,
+  { path: ['hotels'], message: 'Successful searches need results; empty searches cannot contain results.' },
+);
+
+export const demoHotelSelectionRecordSchema = z.object({
+  selectionId: demoHotelSelectionIdSchema,
+  searchId: demoHotelSearchIdSchema,
+  fixtureKey: z.string().regex(/^demo_hotel_[a-z0-9_]{2,64}$/),
+  propertyName: z.string().trim().min(2).max(100),
+  city: z.string().trim().min(2).max(80),
+  checkInDate: calendarDateSchema,
+  checkOutDate: calendarDateSchema,
+  nights: z.number().int().min(1).max(30),
+  rooms: z.number().int().min(1).max(4),
+  staySubtotal: demoMoneySchema,
+});
+
+export const demoHotelSelectionStateSchema = z.object({
+  searchId: demoHotelSearchIdSchema.optional(),
+  updatedAt: z.string().max(64),
+  records: z.array(demoHotelSelectionRecordSchema).max(10),
+  activeSelectionId: demoHotelSelectionIdSchema.optional(),
+});
+
+export const demoSelectHotelOutputSchema = z.object({
+  status: z.enum(['selected', 'unavailable']),
+  message: z.string().min(1).max(240),
+  selectionId: demoHotelSelectionIdSchema.optional(),
+});
+
+export const demoLoyaltyBenefitSchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  description: z.string().trim().min(2).max(180),
+});
+
+export const demoLoyaltyOverviewSchema = z.object({
+  status: z.literal('success'),
+  dataSource: syntheticDataSourceSchema,
+  disclosure: z.string().trim().min(20).max(320),
+  fallback: z.string().trim().min(20).max(500),
+  member: z.object({
+    displayName: z.literal('Preview traveler'),
+    reference: z.literal('FC-PREVIEW-0001'),
+    tier: z.literal('Explorer concept tier'),
+    pointsBalance: z.number().int().nonnegative().max(1_000_000),
+  }),
+  progress: z.object({
+    label: z.string().trim().min(2).max(100),
+    current: z.number().int().nonnegative().max(1_000_000),
+    target: z.number().int().positive().max(1_000_000),
+  }),
+  benefits: z.array(demoLoyaltyBenefitSchema).min(1).max(6),
+  illustrativePointsValue: z.object({
+    points: z.number().int().positive().max(1_000_000),
+    value: demoMoneySchema,
+    explanation: z.string().trim().min(20).max(240),
+  }),
+});
+
+export const demoRewardFlightSearchInputSchema = z.object({
+  origin: destinationSchema
+    .default('Toronto')
+    .describe('Optional city or airport starting point; the illustrative profile uses Toronto when omitted'),
+  destination: destinationSchema
+    .optional()
+    .describe('Optional city or airport destination; omit it to browse illustrative reward-flight ideas'),
+  departureDate: calendarDateSchema
+    .optional()
+    .describe('Optional departure date in YYYY-MM-DD format; omit it for flexible-date illustrative ideas'),
+  adults: z.number().int().min(1).max(8).default(1),
+  cabinClass: z.enum(['ECONOMY', 'PREMIUM_ECONOMY']).default('ECONOMY'),
+  pointsBudget: z.number().int().min(5_000).max(1_000_000).default(42_500),
+  currency: demoCurrencySchema.default('CAD'),
+});
+
+export const demoRewardFlightOptionSchema = z.object({
+  optionId: demoRewardFlightOptionIdSchema,
+  dataSource: syntheticDataSourceSchema,
+  route: z.object({
+    origin: destinationSchema,
+    destination: destinationSchema,
+  }),
+  departureDate: calendarDateSchema.optional(),
+  cabinClass: z.enum(['ECONOMY', 'PREMIUM_ECONOMY']),
+  partnerLabel: z.string().trim().min(2).max(80),
+  stops: z.number().int().min(0).max(2),
+  durationMinutes: z.number().int().min(30).max(1_440),
+  pointsPerAdult: z.number().int().positive().max(1_000_000),
+  totalPoints: z.number().int().positive().max(1_000_000),
+  estimatedTaxes: demoMoneySchema,
+  balanceAfter: z.number().int().nonnegative().max(1_000_000),
+  notes: z.array(z.string().trim().min(2).max(120)).max(4),
+});
+
+export const demoRewardFlightSearchOutputSchema = z.object({
+  status: z.enum(['success', 'empty']),
+  dataSource: syntheticDataSourceSchema,
+  disclosure: z.string().trim().min(20).max(320),
+  message: z.string().trim().min(2).max(320),
+  fallback: z.string().trim().min(20).max(500),
+  searchId: demoRewardFlightSearchIdSchema,
+  searchContext: demoRewardFlightSearchInputSchema,
+  pointsContext: z.object({
+    available: z.number().int().min(5_000).max(1_000_000),
+    source: z.literal('illustrative_profile'),
+  }),
+  options: z.array(demoRewardFlightOptionSchema).max(6),
+}).refine(
+  ({ status, options }) => status === 'success' ? options.length > 0 : options.length === 0,
+  { path: ['options'], message: 'Successful searches need options; empty searches cannot contain options.' },
+).refine(
+  ({ options, pointsContext }) => options.every((option) =>
+    option.totalPoints <= pointsContext.available &&
+    option.balanceAfter === pointsContext.available - option.totalPoints),
+  { path: ['options'], message: 'Reward-flight options must fit the illustrative points budget.' },
+);
+
+export const demoTripReviewFlightSchema = z.object({
+  dataSource: z.literal('live_nuitee_selection'),
+  selectionId: selectionIdSchema,
+  searchPrice: z.object({
+    total: z.number().nonnegative().max(100_000_000),
+    currency: z.string().regex(/^[A-Z]{3}$/),
+  }),
+  expiresAt: z.string().max(64).optional(),
+  disclosure: z.string().trim().min(20).max(240),
+});
+
+export const demoTripReviewStaySchema = z.object({
+  dataSource: syntheticDataSourceSchema,
+  selectionId: demoHotelSelectionIdSchema,
+  propertyName: z.string().trim().min(2).max(100),
+  city: z.string().trim().min(2).max(80),
+  checkInDate: calendarDateSchema,
+  checkOutDate: calendarDateSchema,
+  nights: z.number().int().min(1).max(30),
+  rooms: z.number().int().min(1).max(4),
+  staySubtotal: demoMoneySchema,
+});
+
+export const demoTripReviewSchema = z.object({
+  status: z.enum(['ready', 'incomplete']),
+  dataSource: syntheticDataSourceSchema,
+  disclosure: z.string().trim().min(20).max(400),
+  fallback: z.string().trim().min(20).max(500),
+  flight: demoTripReviewFlightSchema.optional(),
+  stay: demoTripReviewStaySchema.optional(),
+  loyalty: demoLoyaltyOverviewSchema,
+  missing: z.array(z.enum(['flight', 'stay'])).max(2),
+}).refine(
+  ({ status, missing }) => status === 'ready' ? missing.length === 0 : missing.length > 0,
+  { path: ['missing'], message: 'Trip review status must match its missing selections.' },
+);
+
+export type DemoHotelSearchInput = z.infer<typeof demoHotelSearchInputSchema>;
+export type DemoHomeOutput = z.infer<typeof demoHomeOutputSchema>;
+export type DemoHotel = z.infer<typeof demoHotelSchema>;
+export type DemoHotelSearchOutput = z.infer<typeof demoHotelSearchOutputSchema>;
+export type DemoHotelSelectionRecord = z.infer<typeof demoHotelSelectionRecordSchema>;
+export type DemoHotelSelectionState = z.infer<typeof demoHotelSelectionStateSchema>;
+export type DemoLoyaltyOverview = z.infer<typeof demoLoyaltyOverviewSchema>;
+export type DemoRewardFlightSearchInput = z.infer<typeof demoRewardFlightSearchInputSchema>;
+export type DemoRewardFlightOption = z.infer<typeof demoRewardFlightOptionSchema>;
+export type DemoRewardFlightSearchOutput = z.infer<typeof demoRewardFlightSearchOutputSchema>;
+export type DemoTripReview = z.infer<typeof demoTripReviewSchema>;

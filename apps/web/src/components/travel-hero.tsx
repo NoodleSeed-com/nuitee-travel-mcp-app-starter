@@ -9,13 +9,13 @@ import {
   Search,
 } from 'lucide-react';
 import type { Ref } from 'react';
-import { starterConfig } from '../../../../starter.config';
+import { siteConfig } from '../lib/site-config';
 import {
   NEUTRAL_TRAVEL_DEFAULTS,
   type TravelDefaults,
 } from '../lib/travel-defaults';
 import { TravelComposer } from './travel-composer';
-import { WayfareMark } from './wayfare-mark';
+import { FlightCatchersBrand } from './flight-catchers-brand';
 
 interface TravelHeroProps {
   readonly defaults?: TravelDefaults;
@@ -39,7 +39,7 @@ export function TravelHero({
       <div className="travel-hero__content">
         <div className="travel-hero__copy">
           <h1 id="travel-home-title">Where will you go next?</h1>
-          <p>Tell Wayfare the trip you have in mind.</p>
+          <p>Plan flights, illustrative stays, and rewards in one conversation.</p>
         </div>
         <TravelComposer
           formLabel="Plan a trip"
@@ -47,12 +47,12 @@ export function TravelHero({
           inputRef={inputRef}
           onSubmit={onStart}
           placeholder={`${promptOrigin} to Rome for two, next weekend`}
-          submitLabel="Find flights"
+          submitLabel="Submit trip request"
           variant="hero"
-          visibleSubmitLabel="Find flights"
+          visibleSubmitLabel="Plan a trip"
         />
         <ul className="travel-starter-prompts" aria-label="Suggested trips">
-          {starterConfig.prompts.slice(0, 2).map((prompt) => (
+          {siteConfig.prompts.slice(0, 2).map((prompt) => (
             <li key={prompt}>
               <button type="button" onClick={() => onStart(prompt)}>
                 {prompt}
@@ -60,11 +60,15 @@ export function TravelHero({
             </li>
           ))}
         </ul>
+        <p className="travel-demo-disclosure">
+          <strong>{siteConfig.disclosure.badge}</strong>
+          <span>{siteConfig.disclosure.persistent}</span>
+        </p>
         {launchError ? (
           <p className="travel-zero-state__error" role="alert">{launchError}</p>
         ) : null}
         <div
-          aria-label="Example conversation to flight plan"
+          aria-label="Example conversation to travel plan"
           className="travel-hero__media"
           role="group"
         >
@@ -80,7 +84,7 @@ export function TravelHero({
             <div className="travel-hero__media-veil" aria-hidden="true" />
             <div className="travel-hero__journey">
               <span>Example planning flow</span>
-              <strong>One message. A clearer flight plan.</strong>
+              <strong>One conversation. A clearer travel plan.</strong>
               <div className="travel-hero__route">
                 <span>{routeOrigin}</span>
                 <ArrowRight aria-hidden="true" strokeWidth={1.75} />
@@ -102,30 +106,30 @@ export function TravelHero({
 
           <article className="travel-hero__story-card travel-hero__story-card--wayfare">
             <span className="travel-hero__story-icon travel-hero__story-icon--wayfare">
-              <WayfareMark />
+              <FlightCatchersBrand variant="mark" />
             </span>
             <div>
-              <strong>Wayfare understands</strong>
+              <strong>Flight Catchers understands</strong>
               <ul>
                 <li>Route and dates</li>
                 <li>Traveler count</li>
-                <li>Flight preferences</li>
+                <li>Flights, stays, and rewards</li>
               </ul>
             </div>
           </article>
 
-          <ol className="travel-hero__steps" aria-label="Wayfare planning steps">
+          <ol className="travel-hero__steps" aria-label="Flight Catchers planning steps">
             <li>
               <Search aria-hidden="true" strokeWidth={1.75} />
-              <span>Search live flights</span>
+              <span>Search current flights</span>
             </li>
             <li>
               <ListFilter aria-hidden="true" strokeWidth={1.75} />
-              <span>Compare options</span>
+              <span>Compare flights and stays</span>
             </li>
             <li>
               <BadgeCheck aria-hidden="true" strokeWidth={1.75} />
-              <span>Verify current fare</span>
+              <span>Verify the fare and review the trip</span>
             </li>
           </ol>
         </div>

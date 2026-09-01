@@ -3,18 +3,18 @@ import type React from 'react';
 
 const stages = [
   {
-    label: 'Search live flights',
-    support: 'See current schedules and availability.',
+    label: 'Search current flights',
+    support: 'See current schedules and fares from Nuitee.',
     icon: Search,
   },
   {
-    label: 'Compare options',
-    support: 'Review stops, timing, baggage, and price.',
+    label: 'Compare the trip',
+    support: 'Review flights alongside clearly labeled illustrative stays.',
     icon: ListFilter,
   },
   {
-    label: 'Verify the fare',
-    support: 'Recheck availability and price before you leave.',
+    label: 'Review rewards',
+    support: 'Preview illustrative benefits, then verify the live fare.',
     icon: BadgeCheck,
   },
 ] as const;
@@ -22,7 +22,7 @@ const stages = [
 export function TravelCapabilityStrip(): React.JSX.Element {
   return (
     <section className="travel-capabilities travel-landing__section">
-      <ol aria-label="How Wayfare plans flights">
+      <ol aria-label="How Flight Catchers plans a trip">
         {stages.map(({ icon: Icon, label, support }) => (
           <li key={label}>
             <Icon aria-hidden="true" strokeWidth={1.75} />

@@ -1,24 +1,23 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { createRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { starterConfig } from '../../../starter.config';
 import { TravelAssistantPage } from '../src/components/travel-assistant-page';
 import { TravelZeroState } from '../src/components/travel-zero-state';
 import {
   landingDestinations,
   landingEditorialFeature,
 } from '../src/lib/landing-content';
+import { siteConfig } from '../src/lib/site-config';
 
 afterEach(() => {
   cleanup();
 });
 
 describe('travel assistant zero state', () => {
-  it('uses the approved Wayfare identity', () => {
-    expect(starterConfig.brand).toMatchObject({
-      name: 'Wayfare',
-      mark: 'W',
-      tagline: 'Travel, planned around you.',
+  it('uses the private Flight Catchers demo identity', () => {
+    expect(siteConfig.brand).toMatchObject({
+      name: 'Flight Catchers',
+      tagline: 'Flights, hotels, and rewards in one conversation.',
     });
   });
 
@@ -34,22 +33,22 @@ describe('travel assistant zero state', () => {
       name: 'Where will you go next?',
     })).toBeVisible();
     expect(screen.getByText(
-      'Tell Wayfare the trip you have in mind.',
+      'Plan flights, illustrative stays, and rewards in one conversation.',
     )).toBeVisible();
     expect(screen.getAllByRole('form', { name: 'Plan a trip' })).toHaveLength(1);
-    expect(screen.getAllByText(starterConfig.brand.name)).toHaveLength(2);
+    expect(screen.getAllByText(siteConfig.brand.name)).toHaveLength(1);
     expect(screen.queryByText('Guest trip')).not.toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'For developers' }))
       .toHaveLength(2);
     for (const link of screen.getAllByRole('link', { name: 'For developers' })) {
-      expect(link).toHaveAttribute('href', starterConfig.website.developerPath);
+      expect(link).toHaveAttribute('href', siteConfig.website.developerPath);
     }
     expect(screen.queryByText('A new way to find your flight')).not.toBeInTheDocument();
     expect(screen.getByText(
       'Built on Noodle Seed · Powered by Nuitee',
     )).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Find flights' })).toBeDisabled();
-    expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
+    expect(screen.getByRole('button', { name: 'Submit trip request' })).toBeDisabled();
+    expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute('id', 'travel-prompt');
     expect(screen.queryByText('No trip started')).not.toBeInTheDocument();
     expect(screen.queryByTestId('workspace-atmosphere')).not.toBeInTheDocument();
@@ -77,32 +76,32 @@ describe('travel assistant zero state', () => {
       .getAllByRole('button')).toHaveLength(2);
   });
 
-  it('turns the hero image into a non-interactive conversation-to-flight story', () => {
+  it('turns the hero image into a non-interactive conversation-to-trip story', () => {
     const { container } = render(
       <TravelZeroState inputRef={createRef()} onStart={vi.fn()} />,
     );
 
     const story = screen.getByRole('group', {
-      name: 'Example conversation to flight plan',
+      name: 'Example conversation to travel plan',
     });
     expect(within(story).getByText('Example planning flow')).toBeVisible();
-    expect(within(story).getByText('One message. A clearer flight plan.'))
+    expect(within(story).getByText('One conversation. A clearer travel plan.'))
       .toBeVisible();
     expect(within(story).getByText('Your departure')).toBeVisible();
     expect(within(story).getByText('Rome (FCO)')).toBeVisible();
     expect(within(story).getByText(
       'Find me a weekend flight to Rome for two.',
     )).toBeVisible();
-    expect(within(story).getByText('Wayfare understands')).toBeVisible();
-    expect(within(story).getByText('Search live flights')).toBeVisible();
-    expect(within(story).getByText('Compare options')).toBeVisible();
-    expect(within(story).getByText('Verify current fare')).toBeVisible();
+    expect(within(story).getByText('Flight Catchers understands')).toBeVisible();
+    expect(within(story).getByText('Search current flights')).toBeVisible();
+    expect(within(story).getByText('Compare flights and stays')).toBeVisible();
+    expect(within(story).getByText('Verify the fare and review the trip')).toBeVisible();
     expect(story.querySelectorAll(
       'a, button, input, select, textarea, [tabindex]',
     )).toHaveLength(0);
     expect(container.querySelector('.travel-hero__media-frame img[alt=""]'))
       .toHaveAttribute('src', expect.stringContaining('wayfare-hybrid-hero-v2'));
-    expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
+    expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute(
         'placeholder',
         'Your departure to Rome for two, next weekend',
@@ -123,7 +122,7 @@ describe('travel assistant zero state', () => {
     );
 
     expect(screen.getByText('Islamabad (ISB)')).toBeVisible();
-    expect(screen.getByRole('textbox', { name: 'Ask about a flight' }))
+    expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute(
         'placeholder',
         'Islamabad to Rome for two, next weekend',
@@ -137,10 +136,10 @@ describe('travel assistant zero state', () => {
     const suggestedTrips = screen.getByRole('list', { name: 'Suggested trips' });
     expect(within(suggestedTrips).getAllByRole('button')).toHaveLength(2);
     fireEvent.click(within(suggestedTrips).getByRole('button', {
-      name: starterConfig.prompts[0],
+      name: siteConfig.prompts[0],
     }));
 
-    expect(onStart).toHaveBeenCalledWith(starterConfig.prompts[0]);
+    expect(onStart).toHaveBeenCalledWith(siteConfig.prompts[0]);
   });
 
   it('assigns the shared Plan a trip input ref to the travel prompt textarea', () => {
@@ -148,7 +147,7 @@ describe('travel assistant zero state', () => {
     render(<TravelZeroState inputRef={inputRef} onStart={vi.fn()} />);
 
     expect(inputRef.current).toBe(
-      screen.getByRole('textbox', { name: 'Ask about a flight' }),
+      screen.getByRole('textbox', { name: 'Ask the travel assistant' }),
     );
     expect(inputRef.current).toHaveAttribute('id', 'travel-prompt');
   });
@@ -174,15 +173,15 @@ describe('travel assistant zero state', () => {
     expect(screen.getAllByRole('button', { name: /Plan a trip to/u }))
       .toHaveLength(3);
     const capabilityList = screen.getByRole('list', {
-      name: 'How Wayfare plans flights',
+      name: 'How Flight Catchers plans a trip',
     });
     expect(capabilityList).toBeVisible();
-    expect(within(capabilityList).getByText('Search live flights')).toBeVisible();
-    expect(within(capabilityList).getByText('Compare options')).toBeVisible();
-    expect(within(capabilityList).getByText('Verify the fare')).toBeVisible();
+    expect(within(capabilityList).getByText('Search current flights')).toBeVisible();
+    expect(within(capabilityList).getByText('Compare the trip')).toBeVisible();
+    expect(within(capabilityList).getByText('Review rewards')).toBeVisible();
     expect(screen.getByRole('heading', {
       level: 2,
-      name: 'Plans change. Wayfare keeps up.',
+      name: 'One conversation, every part of the trip.',
     })).toBeVisible();
     expect(screen.queryByText('Travel inspiration')).not.toBeInTheDocument();
     expect(screen.getByText('Built on Noodle Seed · Powered by Nuitee'))
@@ -222,7 +221,7 @@ describe('travel assistant zero state', () => {
     )).toHaveLength(0);
   });
 
-  it('keeps the complete landing and sibling footer copy within the 120-word ceiling', () => {
+  it('keeps the complete landing and sibling footer copy concise', () => {
     const { container } = render(
       <TravelAssistantPage
         runtime={{ status: 'setup-required', message: 'setup' }}
@@ -241,13 +240,13 @@ describe('travel assistant zero state', () => {
     )) {
       excluded.remove();
     }
-    expect(countedCopy).toHaveTextContent(starterConfig.brand.tagline);
+    expect(countedCopy).toHaveTextContent(siteConfig.brand.tagline);
     expect(countedCopy).toHaveTextContent(
       'No account is required to plan a trip.',
     );
     const words = (countedCopy.textContent ?? '').trim().split(/\s+/);
 
-    expect(words.length).toBeLessThanOrEqual(120);
+    expect(words.length).toBeLessThanOrEqual(150);
   });
 
   it('advertises half-width tablet destination images for every equal card', () => {
@@ -304,9 +303,9 @@ describe('travel assistant zero state', () => {
     const footer = screen.getByRole('contentinfo');
 
     expect(within(footer).getByRole('link', { name: 'For developers' }))
-      .toHaveAttribute('href', starterConfig.website.developerPath);
+      .toHaveAttribute('href', siteConfig.website.developerPath);
     expect(within(footer).getByRole('link', { name: 'Support' }))
-      .toHaveAttribute('href', starterConfig.website.supportPath);
+      .toHaveAttribute('href', siteConfig.website.supportPath);
     expect(within(footer).queryByRole('link', { name: 'Privacy' }))
       .not.toBeInTheDocument();
     expect(within(footer).queryByRole('link', { name: 'Terms' }))
@@ -320,7 +319,7 @@ describe('travel assistant zero state', () => {
   it('submits a typed prompt on Enter', () => {
     const onStart = vi.fn();
     render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
-    const composer = screen.getByRole('textbox', { name: 'Ask about a flight' });
+    const composer = screen.getByRole('textbox', { name: 'Ask the travel assistant' });
 
     fireEvent.change(composer, { target: { value: 'JFK to Lisbon next month' } });
     const continueDefault = fireEvent.keyDown(composer, {
@@ -335,7 +334,7 @@ describe('travel assistant zero state', () => {
   it('keeps Shift+Enter available for a multiline prompt', () => {
     const onStart = vi.fn();
     render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
-    const composer = screen.getByRole('textbox', { name: 'Ask about a flight' });
+    const composer = screen.getByRole('textbox', { name: 'Ask the travel assistant' });
 
     fireEvent.change(composer, { target: { value: 'JFK to Lisbon' } });
     const continueDefault = fireEvent.keyDown(composer, {

@@ -1,6 +1,9 @@
 import { defineConfig } from '@playwright/test';
 
-const port = 3108;
+const configuredPort = Number.parseInt(process.env.PLAYWRIGHT_PORT ?? '3108', 10);
+const port = Number.isInteger(configuredPort) && configuredPort > 0 && configuredPort <= 65_535
+  ? configuredPort
+  : 3108;
 
 export default defineConfig({
   testDir: './test/browser',

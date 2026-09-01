@@ -1,6 +1,6 @@
 import { access, readFile, writeFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
-import { starterConfig } from '../../../../starter.config';
+import { siteConfig } from '../../src/lib/site-config';
 
 function renderedContrastRatio(
   foreground: string,
@@ -74,7 +74,7 @@ async function expectStarterPromptsFit(page: Page, width: number) {
   const promptList = page.getByRole('list', { name: 'Suggested trips' });
   await expect(promptList).toBeVisible();
 
-  for (const prompt of starterConfig.prompts.slice(0, 2)) {
+  for (const prompt of siteConfig.prompts.slice(0, 2)) {
     const button = promptList.getByRole('button', { name: prompt });
     await expect(button).toBeVisible();
     await expectMinimumTargetSize(button);
@@ -175,7 +175,7 @@ test('uses a granted browser location for the visible origin and currency defaul
   await expect(page.getByRole('combobox', { name: 'Currency' }))
     .toHaveValue('PKR');
   await expect(page.getByText('Islamabad (ISB)', { exact: true })).toBeVisible();
-  await expect(page.getByRole('textbox', { name: 'Ask about a flight' }))
+  await expect(page.getByRole('textbox', { name: 'Ask the travel assistant' }))
     .toHaveAttribute('placeholder', 'Islamabad to Rome for two, next weekend');
 });
 
@@ -207,7 +207,7 @@ test('keeps neutral travel defaults when browser location is denied', async ({
   await expect(page.getByRole('combobox', { name: 'Currency' }))
     .toHaveValue('USD');
   await expect(page.getByText('Your departure', { exact: true })).toBeVisible();
-  await expect(page.getByRole('textbox', { name: 'Ask about a flight' }))
+  await expect(page.getByRole('textbox', { name: 'Ask the travel assistant' }))
     .toHaveAttribute('placeholder', 'Your departure to Rome for two, next weekend');
 });
 
@@ -230,7 +230,7 @@ test('keeps the premium desktop hero heading on one line with rounded visual sur
     expect(Math.abs(center - (viewport!.width / 2))).toBeLessThanOrEqual(2);
   }
 
-  await expect(page.getByText('Wayfare', { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Flight Catchers' })).toBeVisible();
   const headlineLayout = await page.locator('#travel-home-title').evaluate((element) => {
     const style = getComputedStyle(element);
     return {
@@ -260,7 +260,7 @@ test('keeps the premium desktop hero heading on one line with rounded visual sur
   }
   await expect(page.locator('.travel-editorial img')).toHaveCount(0);
   await expect(page.locator(
-    '.travel-editorial [data-wayfare-mark="true"]',
+    '.travel-editorial [data-flight-catchers-mark="true"]',
   )).toBeVisible();
 });
 
@@ -298,7 +298,7 @@ test('keeps the cinematic hero legible, fitted, and keyboard-reachable on deskto
   expect(viewport).not.toBeNull();
   const [composer, submit] = await Promise.all([
     page.locator('.travel-composer--hero').boundingBox(),
-    page.getByRole('button', { name: 'Find flights' }).boundingBox(),
+    page.getByRole('button', { name: 'Submit trip request' }).boundingBox(),
   ]);
   for (const bounds of [composer, submit]) {
     expect(bounds).not.toBeNull();
@@ -315,7 +315,7 @@ test('keeps the cinematic hero legible, fitted, and keyboard-reachable on deskto
     const image = getComputedStyle(document.querySelector('.travel-hero__image')!);
     return { headingColor: heading.color, imageFit: image.objectFit };
   });
-  expect(heroAppearance.headingColor).toBe('rgb(11, 31, 51)');
+  expect(heroAppearance.headingColor).toBe('rgb(7, 29, 41)');
   expect(heroAppearance.imageFit).toBe('cover');
 
   const developerLink = page.getByRole('navigation', {
@@ -389,9 +389,9 @@ test('keeps the next section discoverable with desktop targets at least 44px', a
 
   const targets = [
     page.getByRole('button', { name: 'Open menu' }),
-    page.getByRole('button', { name: 'Find flights' }),
+    page.getByRole('button', { name: 'Submit trip request' }),
     ...await page.locator('.destination-card').all(),
-    page.getByRole('button', { name: 'Start with a flexible trip' }),
+    page.getByRole('button', { name: 'Build a trip' }),
     ...await page.getByRole('contentinfo').getByRole('link').all(),
   ];
   for (const target of targets) await expectMinimumTargetSize(target);
@@ -577,7 +577,7 @@ test('starts one destination prompt through one assistant turn', async ({ page }
 
   await expect(page.getByRole('heading', {
     level: 1,
-    name: 'Plan your flight',
+    name: 'Plan your trip',
   })).toBeVisible();
   await expect.poll(() => submittedPrompts).toEqual([
     'Help me plan a long-weekend flight to Rome for two.',
@@ -679,7 +679,7 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
         id: initializeId,
         method: 'ui/initialize',
         params: {
-          appInfo: { name: 'Wayfare browser fixture', version: '1.0.0' },
+          appInfo: { name: 'Flight Catchers browser fixture', version: '1.0.0' },
           appCapabilities: {},
           protocolVersion: '2025-11-21',
         },
@@ -799,9 +799,9 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
-  await page.getByRole('textbox', { name: 'Ask about a flight' })
+  await page.getByRole('textbox', { name: 'Ask the travel assistant' })
     .fill('Karachi to London tomorrow for nine people in First class, paid in EUR');
-  await page.getByRole('button', { name: 'Find flights' }).click();
+  await page.getByRole('button', { name: 'Submit trip request' }).click();
   await expect.poll(() => turnRequests).toBe(1);
 
   const conversation = page.getByRole('region', { name: 'Travel conversation' });
@@ -1119,7 +1119,7 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
   )).toBeLessThanOrEqual(2);
 
   const continueInput = conversation.getByRole('textbox', {
-    name: 'Ask about a flight',
+    name: 'Ask the travel assistant',
   });
   const continueButton = conversation.getByRole('button', {
     name: 'Continue trip',
@@ -1686,9 +1686,9 @@ test('keeps the developer route static, legal-safe, and set in Inter', async ({ 
   await page.goto('/developers');
   await page.evaluate(() => document.fonts.ready);
 
-  await expect(page.getByRole('heading', { level: 1, name: 'Guest-first setup' }))
+  await expect(page.getByRole('heading', { level: 1, name: 'One integration, three travel views' }))
     .toBeVisible();
-  await expect(page.getByText(/Search → Select → Verify/)).toBeVisible();
+  await expect(page.getByText(/Search → Compare → Verify/)).toBeVisible();
   await expect(page.locator('body')).toHaveCSS('font-family', /Inter Variable/);
   await expect(page.getByRole('link', { name: 'Support' }))
     .toHaveAttribute('href', '/developers#support');
@@ -1705,17 +1705,17 @@ test('fits 320px, 390px, and 200 percent text zoom without orphaning the headlin
   await page.setViewportSize({ width: 320, height: 720 });
   await page.goto('/');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
-  await expect(page.getByRole('button', { name: 'Find flights' }))
+  await expect(page.getByRole('button', { name: 'Submit trip request' }))
     .toHaveCSS('min-height', '44px');
   const [mobileInput, mobileSubmit] = await Promise.all([
-    page.getByRole('textbox', { name: 'Ask about a flight' }).boundingBox(),
-    page.getByRole('button', { name: 'Find flights' }).boundingBox(),
+    page.getByRole('textbox', { name: 'Ask the travel assistant' }).boundingBox(),
+    page.getByRole('button', { name: 'Submit trip request' }).boundingBox(),
   ]);
   expect(mobileInput).not.toBeNull();
   expect(mobileSubmit).not.toBeNull();
   expect(mobileInput!.y + mobileInput!.height)
     .toBeLessThanOrEqual(mobileSubmit!.y);
-  expect(await page.getByRole('textbox', { name: 'Ask about a flight' })
+  expect(await page.getByRole('textbox', { name: 'Ask the travel assistant' })
     .evaluate((input) => input.scrollHeight <= input.clientHeight)).toBe(true);
   await expectHeadlineDoesNotOrphanFinalWords(page);
 
@@ -1736,7 +1736,7 @@ test('fits 320px, 390px, and 200 percent text zoom without orphaning the headlin
     return bounds.left >= 0 && bounds.right <= window.innerWidth;
   });
   expect(composerFits).toBe(true);
-  const submitContentsFit = await page.getByRole('button', { name: 'Find flights' })
+  const submitContentsFit = await page.getByRole('button', { name: 'Submit trip request' })
     .evaluate((button) => {
       const bounds = button.getBoundingClientRect();
       return Array.from(button.children).every((child) => {
@@ -1748,13 +1748,13 @@ test('fits 320px, 390px, and 200 percent text zoom without orphaning the headlin
       });
     });
   expect(submitContentsFit).toBe(true);
-  expect(await page.getByRole('textbox', { name: 'Ask about a flight' })
+  expect(await page.getByRole('textbox', { name: 'Ask the travel assistant' })
     .evaluate((input) => input.scrollHeight <= input.clientHeight)).toBe(true);
   for (const target of [
     page.getByRole('button', { name: 'Open menu' }),
-    page.getByRole('button', { name: 'Find flights' }),
+    page.getByRole('button', { name: 'Submit trip request' }),
     page.getByRole('button', { name: 'Plan a trip to Rome' }),
-    page.getByRole('button', { name: 'Start with a flexible trip' }),
+    page.getByRole('button', { name: 'Build a trip' }),
     page.getByRole('contentinfo').getByRole('link', { name: 'Support' }),
   ]) {
     await target.scrollIntoViewIfNeeded();
@@ -1838,7 +1838,7 @@ test('keeps 390px below-fold sections compact around the horizontal destination 
   expect(destinationBoxes[1]!.right).toBeGreaterThan(390);
 
   const capabilityItems = page.getByRole('list', {
-    name: 'How Wayfare plans flights',
+    name: 'How Flight Catchers plans a trip',
   }).locator(':scope > li');
   await expect(capabilityItems).toHaveCount(3);
   const capabilityBoxes = await capabilityItems.evaluateAll((items) => (
@@ -1853,7 +1853,7 @@ test('keeps 390px below-fold sections compact around the horizontal destination 
   }
 
   const [editorialMark, editorialCopy] = await Promise.all([
-    page.locator('.travel-editorial [data-wayfare-mark="true"]').boundingBox(),
+    page.locator('.travel-editorial [data-flight-catchers-mark="true"]').boundingBox(),
     page.locator('.travel-editorial__copy').boundingBox(),
   ]);
   await expect(page.locator('.travel-editorial img')).toHaveCount(0);
@@ -1920,9 +1920,9 @@ test('keeps the transcript as the sole flexible row before trip context exists',
   });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.getByRole('textbox', { name: 'Ask about a flight' })
+  await page.getByRole('textbox', { name: 'Ask the travel assistant' })
     .fill('Islamabad to Rome for two, next weekend');
-  await page.getByRole('button', { name: 'Find flights' }).click();
+  await page.getByRole('button', { name: 'Submit trip request' }).click();
 
   const conversation = page.getByRole('region', { name: 'Travel conversation' });
   await expect(conversation.getByText(
@@ -1995,9 +1995,9 @@ test('keeps terminal errors bounded in the stable lower chrome row', async ({
   });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
-  await page.getByRole('textbox', { name: 'Ask about a flight' })
+  await page.getByRole('textbox', { name: 'Ask the travel assistant' })
     .fill('Islamabad to Rome for two, next weekend');
-  await page.getByRole('button', { name: 'Find flights' }).click();
+  await page.getByRole('button', { name: 'Submit trip request' }).click();
 
   const conversation = page.getByRole('region', { name: 'Travel conversation' });
   await expect(conversation.getByRole('alert')).toBeVisible();

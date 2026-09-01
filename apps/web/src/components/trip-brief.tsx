@@ -19,6 +19,10 @@ const PHASE_LABELS: Readonly<Record<TripProjection['phase'], string>> = {
   selected: 'Fare selected',
   verifying: 'Verifying fare',
   verified: 'Fare verified',
+  'comparing-stays': 'Comparing stays',
+  'stay-selected': 'Stay selected',
+  rewards: 'Reviewing rewards',
+  'trip-review': 'Trip review',
   error: 'Needs attention',
 };
 
@@ -31,6 +35,10 @@ const COMPLETED_SEGMENTS: Readonly<Record<TripProjection['phase'], number>> = {
   selected: 4,
   verifying: 5,
   verified: 6,
+  'comparing-stays': 3,
+  'stay-selected': 4,
+  rewards: 3,
+  'trip-review': 5,
   error: 0,
 };
 
