@@ -36,9 +36,39 @@ HTTPS origin. For the maintained Experience environment that origin is:
 https://wayfare-experience.fly.dev
 ```
 
-## Deploy the maintained Experience
+## Automatic maintained deployment
 
-Authenticate with Fly, then deploy from the repository root:
+The `CI` GitHub Actions workflow deploys the maintained Experience after every
+successful push to `main`. Pull requests and merge-queue checks run the same
+quality gate but never receive the production environment or deploy to Fly.
+
+The `production` GitHub environment owns these deployment coordinates:
+
+- `NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID` environment variable: the stable,
+  public Assistant embed ID.
+- `NEXT_PUBLIC_NOODLE_SERVICE_URL` environment variable:
+  `https://cloud.noodleseed.dev`.
+- `FLY_API_TOKEN` environment secret: an app-scoped deploy token for
+  `wayfare-experience`. It is never passed to the Docker build.
+
+The deployment job waits for `offline-quality-gates`, serializes production
+deployments, uses immutable action and Fly CLI versions, waits for the Fly
+rollout, and verifies both Fly status and an HTTP response from
+`https://wayfare-experience.fly.dev`.
+
+Rotate the app-scoped token without printing it to the terminal:
+
+```sh
+fly tokens create deploy \
+  --app wayfare-experience \
+  --name github-actions-production \
+  --expiry 8760h | gh secret set FLY_API_TOKEN --env production
+```
+
+## Manual recovery deployment
+
+If GitHub Actions is unavailable, authenticate with Fly and deploy from the
+repository root:
 
 ```sh
 fly auth login
@@ -48,8 +78,8 @@ fly deploy \
 ```
 
 Run `fly status`, inspect `fly logs`, and exercise a real browser conversation
-after each deployment. A successful image rollout does not by itself prove the
-Assistant origin binding or live Nuitee workflow.
+after each manual recovery deployment. A successful image rollout does not by
+itself prove the Assistant origin binding or live Nuitee workflow.
 
 ## Deploy your own copy
 

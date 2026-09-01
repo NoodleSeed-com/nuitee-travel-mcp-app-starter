@@ -432,6 +432,32 @@ describe('public repository contracts', () => {
     expect(workspace).toContain("'@noodleseed/assistant@1.27.0'");
   });
 
+  it('gates Fly production deployment behind main-branch quality checks', async () => {
+    const workflow = await repositoryFile('.github/workflows/ci.yml');
+
+    expect(workflow).toContain('deploy-fly-experience:');
+    expect(workflow).toContain("if: github.event_name == 'push' && github.ref == 'refs/heads/main'");
+    expect(workflow).toContain('needs: offline-quality-gates');
+    expect(workflow).toContain('name: production');
+    expect(workflow).toContain('url: https://wayfare-experience.fly.dev');
+    expect(workflow).toContain('group: fly-production');
+    expect(workflow).toContain('cancel-in-progress: false');
+    expect(workflow).toContain(
+      'superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1',
+    );
+    expect(workflow).toContain('version: 0.4.97');
+    expect(workflow).toContain('FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}');
+    expect(workflow).toContain(
+      'NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID: ${{ vars.NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID }}',
+    );
+    expect(workflow).toContain(
+      'NEXT_PUBLIC_NOODLE_SERVICE_URL: ${{ vars.NEXT_PUBLIC_NOODLE_SERVICE_URL }}',
+    );
+    expect(workflow).toContain('flyctl deploy --remote-only');
+    expect(workflow).toContain('flyctl status --app "$FLY_APP"');
+    expect(workflow).toContain('curl --fail --silent --show-error');
+  });
+
   it('ships sanitized community intake and identifies generated guidance', async () => {
     const [attributes, pullRequest, bugReport, featureRequest, generatedGuide, releaseChecklist, changelog] = await Promise.all([
       repositoryFile('.gitattributes'),

@@ -28,3 +28,51 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:browser
       - run: pnpm ci:offline
+
+  deploy-fly-experience:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: offline-quality-gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: fly-production
+      cancel-in-progress: false
+    environment:
+      name: production
+      url: https://wayfare-experience.fly.dev
+    env:
+      FLY_APP: wayfare-experience
+      FLY_DEPLOY_URL: https://wayfare-experience.fly.dev
+      NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID: ${{ vars.NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID }}
+      NEXT_PUBLIC_NOODLE_SERVICE_URL: ${{ vars.NEXT_PUBLIC_NOODLE_SERVICE_URL }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1
+        with:
+          version: 0.4.97
+      - name: Verify deployment coordinates
+        run: |
+          test -n "$NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID"
+          test -n "$NEXT_PUBLIC_NOODLE_SERVICE_URL"
+      - name: Deploy Fly Experience
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          test -n "$FLY_API_TOKEN"
+          flyctl deploy --remote-only \
+            --app "$FLY_APP" \
+            --build-arg NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID="$NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID" \
+            --build-arg NEXT_PUBLIC_NOODLE_SERVICE_URL="$NEXT_PUBLIC_NOODLE_SERVICE_URL" \
+            --wait-timeout 5m
+      - name: Verify Fly deployment
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          flyctl status --app "$FLY_APP"
+          curl --fail --silent --show-error \
+            --retry 12 \
+            --retry-delay 5 \
+            --retry-all-errors \
+            "$FLY_DEPLOY_URL" > /dev/null
