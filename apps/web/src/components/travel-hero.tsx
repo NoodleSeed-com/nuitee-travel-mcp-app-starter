@@ -4,12 +4,12 @@ import Image from 'next/image';
 import {
   ArrowRight,
   BadgeCheck,
-  ListFilter,
+  Hotel,
   MessageCircle,
-  Search,
+  PlaneTakeoff,
 } from 'lucide-react';
 import type { Ref } from 'react';
-import { starterConfig } from '../../../../starter.config';
+import { siteConfig } from '../lib/site-config';
 import {
   NEUTRAL_TRAVEL_DEFAULTS,
   type TravelDefaults,
@@ -38,21 +38,21 @@ export function TravelHero({
     <section className="travel-hero" aria-labelledby="travel-home-title">
       <div className="travel-hero__content">
         <div className="travel-hero__copy">
-          <h1 id="travel-home-title">Where will you go next?</h1>
-          <p>Tell Wayfare the trip you have in mind.</p>
+          <h1 id="travel-home-title">Plan your whole trip</h1>
+          <p>Flights, stays, and rewards—brought together in one conversation.</p>
         </div>
         <TravelComposer
           formLabel="Plan a trip"
           inputId="travel-prompt"
           inputRef={inputRef}
           onSubmit={onStart}
-          placeholder={`${promptOrigin} to Rome for two, next weekend`}
-          submitLabel="Find flights"
+          placeholder={`${promptOrigin} to somewhere warm for two, next week`}
+          submitLabel="Submit trip request"
           variant="hero"
-          visibleSubmitLabel="Find flights"
+          visibleSubmitLabel="Plan a trip"
         />
         <ul className="travel-starter-prompts" aria-label="Suggested trips">
-          {starterConfig.prompts.slice(0, 2).map((prompt) => (
+          {siteConfig.prompts.slice(0, 2).map((prompt) => (
             <li key={prompt}>
               <button type="button" onClick={() => onStart(prompt)}>
                 {prompt}
@@ -64,7 +64,7 @@ export function TravelHero({
           <p className="travel-zero-state__error" role="alert">{launchError}</p>
         ) : null}
         <div
-          aria-label="Example conversation to flight plan"
+          aria-label="One conversation for the whole trip"
           className="travel-hero__media"
           role="group"
         >
@@ -75,18 +75,19 @@ export function TravelHero({
               fill
               priority
               sizes="(max-width: 767px) 100vw, 1080px"
-              src="/images/wayfare-hybrid-hero-v2.jpg"
+              src={siteConfig.brand.heroImagePath}
+              style={{ objectPosition: siteConfig.brand.heroImagePosition }}
             />
             <div className="travel-hero__media-veil" aria-hidden="true" />
             <div className="travel-hero__journey">
-              <span>Example planning flow</span>
-              <strong>One message. A clearer flight plan.</strong>
+              <span>Your trip, brought together</span>
+              <strong>Flights, stays, and rewards. One plan.</strong>
               <div className="travel-hero__route">
                 <span>{routeOrigin}</span>
                 <ArrowRight aria-hidden="true" strokeWidth={1.75} />
-                <span>Rome (FCO)</span>
+                <span>Your next destination</span>
               </div>
-              <small>2 travelers · Next weekend</small>
+              <small>Your dates · Your preferences · One plan</small>
             </div>
           </div>
 
@@ -96,7 +97,7 @@ export function TravelHero({
             </span>
             <div>
               <strong>Your request</strong>
-              <p>Find me a weekend flight to Rome for two.</p>
+              <p>Plan a complete trip for two next week.</p>
             </div>
           </article>
 
@@ -109,23 +110,26 @@ export function TravelHero({
               <ul>
                 <li>Route and dates</li>
                 <li>Traveler count</li>
-                <li>Flight preferences</li>
+                <li>Flights, stays, and rewards</li>
               </ul>
             </div>
           </article>
 
-          <ol className="travel-hero__steps" aria-label="Wayfare planning steps">
+          <ol
+            aria-label="Build your trip with Wayfare"
+            className="travel-hero__steps"
+          >
             <li>
-              <Search aria-hidden="true" strokeWidth={1.75} />
-              <span>Search live flights</span>
+              <PlaneTakeoff aria-hidden="true" strokeWidth={1.75} />
+              <span>Flight</span>
             </li>
             <li>
-              <ListFilter aria-hidden="true" strokeWidth={1.75} />
-              <span>Compare options</span>
+              <Hotel aria-hidden="true" strokeWidth={1.75} />
+              <span>Stay</span>
             </li>
             <li>
               <BadgeCheck aria-hidden="true" strokeWidth={1.75} />
-              <span>Verify current fare</span>
+              <span>Rewards review</span>
             </li>
           </ol>
         </div>

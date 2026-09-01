@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { starterConfig } from '../../../../starter.config';
+import { siteConfig } from '../lib/site-config';
 
 interface TravelNavigationDialogProps {
   readonly mode: 'hero' | 'conversation';
@@ -118,19 +118,19 @@ export function TravelNavigationDialog({
         <button onClick={() => dismiss(primaryAction.onClick)} type="button">
           {primaryAction.label}
         </button>
-        <a href={starterConfig.website.developerPath}>For developers</a>
+        <a href={siteConfig.website.developerPath}>For developers</a>
         <button onClick={() => dismiss(onOpenSettings)} type="button">Settings</button>
-        <a href={starterConfig.website.supportPath}>Support</a>
-        {starterConfig.website.privacyUrl ? (
-          <a href={starterConfig.website.privacyUrl}>Privacy</a>
+        <a href={siteConfig.website.supportPath}>Support</a>
+        {siteConfig.website.privacyUrl ? (
+          <a href={siteConfig.website.privacyUrl}>Privacy</a>
         ) : (
           <span className="travel-navigation-dialog__unconfigured">
             <span>Privacy</span>
             <small>Not configured</small>
           </span>
         )}
-        {starterConfig.website.termsUrl ? (
-          <a href={starterConfig.website.termsUrl}>Terms</a>
+        {siteConfig.website.termsUrl ? (
+          <a href={siteConfig.website.termsUrl}>Terms</a>
         ) : (
           <span className="travel-navigation-dialog__unconfigured">
             <span>Terms</span>

@@ -367,8 +367,15 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
   }
 
   const search = object(input.search);
-  const origin = text(search?.origin, 3)?.toUpperCase();
-  const destination = text(search?.destination, 3)?.toUpperCase();
+  const normalizeAirportCode = (value: string | undefined) => {
+    // Nuitee's flight search currently rejects Toronto's metro-area code.
+    // Keep this provider-specific compatibility rule at the gateway boundary
+    // so every model/host sends the same actual airport code upstream.
+    if (value === 'YTO') return 'YYZ';
+    return value;
+  };
+  const origin = normalizeAirportCode(text(search?.origin, 3)?.toUpperCase());
+  const destination = normalizeAirportCode(text(search?.destination, 3)?.toUpperCase());
   const departureDate = search?.departureDate;
   const returnDate = search?.returnDate === '' || search?.returnDate === null ? undefined : search?.returnDate;
   const adults = finiteNumber(search?.adults);

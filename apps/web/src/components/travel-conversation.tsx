@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { starterConfig } from '../../../../starter.config';
+import { siteConfig } from '../lib/site-config';
 import { presentAssistantError } from '../lib/assistant-error';
 import type { ReadyPublicAssistantRuntime } from '../lib/assistant-config';
 import { isNearTranscriptEnd } from '../lib/conversation-scroll';
@@ -32,9 +32,23 @@ interface TravelConversationProps {
 }
 
 function conversationCopy(projection: TripProjection) {
+  if (projection.focus === 'stays') {
+    return {
+      title: projection.stayDestination ? `Stay in ${projection.stayDestination}` : 'Compare stays',
+      placeholder: projection.phase === 'stay-selected'
+        ? 'Review the trip or change the stay…'
+        : 'Refine the destination, dates, or rooms…',
+    };
+  }
+  if (projection.focus === 'rewards') {
+    return { title: 'Illustrative rewards', placeholder: 'Ask about the tier or benefits…' };
+  }
+  if (projection.focus === 'trip') {
+    return { title: 'Your travel plan', placeholder: 'Adjust a flight or stay…' };
+  }
   const title = projection.origin && projection.destination
     ? `${projection.origin} to ${projection.destination}`
-    : 'Plan your flight';
+    : 'Plan your trip';
   switch (projection.phase) {
     case 'planned':
     case 'searching':
@@ -46,6 +60,11 @@ function conversationCopy(projection: TripProjection) {
     case 'verifying':
     case 'verified':
       return { title, placeholder: 'Ask about or verify this fare…' };
+    case 'comparing-stays':
+    case 'stay-selected':
+    case 'rewards':
+    case 'trip-review':
+      return { title, placeholder: 'Tell Wayfare what you need…' };
     case 'error':
       return { title, placeholder: 'Tell Wayfare what to change…' };
     case 'idle':
@@ -266,7 +285,7 @@ export function TravelConversation({
     >
       <header className="travel-conversation__header">
         <p className="assistant-identity">
-          {starterConfig.brand.assistantName}
+          {siteConfig.brand.assistantName}
         </p>
         <h1>{copy.title}</h1>
       </header>

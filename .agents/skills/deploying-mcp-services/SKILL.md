@@ -3,7 +3,7 @@ name: deploying-mcp-services
 description: "Use when the user explicitly requests a Noodle Seed hosted link, configuration write, deployment, access change, rollback, or connection write."
 ---
 
-<!-- noodle-skill version:0.87.1 hash:93e735b7ffb45df1 -->
+<!-- noodle-skill version:0.88.0 hash:93e735b7ffb45df1 -->
 
 # deploying-mcp-services
 

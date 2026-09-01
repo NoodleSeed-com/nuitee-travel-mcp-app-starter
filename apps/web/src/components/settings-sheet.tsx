@@ -2,7 +2,7 @@
 
 import { X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
-import { starterConfig } from '../../../../starter.config';
+import { siteConfig } from '../lib/site-config';
 
 interface SettingsSheetProps {
   readonly open: boolean;
@@ -75,7 +75,7 @@ export function SettingsSheet({
     >
       <header className="settings-sheet__header">
         <div>
-          <p className="settings-sheet__eyebrow">Wayfare</p>
+          <p className="settings-sheet__eyebrow">{siteConfig.brand.name}</p>
           <h2 id="settings-title">Settings</h2>
         </div>
         <button
@@ -94,17 +94,17 @@ export function SettingsSheet({
         aria-labelledby="settings-help-title"
       >
         <h3 id="settings-help-title">Help &amp; privacy</h3>
-        <a href={starterConfig.website.supportPath}>Support</a>
-        {starterConfig.website.privacyUrl ? (
-          <a href={starterConfig.website.privacyUrl}>Privacy</a>
+        <a href={siteConfig.website.supportPath}>Support</a>
+        {siteConfig.website.privacyUrl ? (
+          <a href={siteConfig.website.privacyUrl}>Privacy</a>
         ) : (
           <span className="settings-sheet__unconfigured">
             <span>Privacy</span>
             <small>Not configured</small>
           </span>
         )}
-        {starterConfig.website.termsUrl ? (
-          <a href={starterConfig.website.termsUrl}>Terms</a>
+        {siteConfig.website.termsUrl ? (
+          <a href={siteConfig.website.termsUrl}>Terms</a>
         ) : (
           <span className="settings-sheet__unconfigured">
             <span>Terms</span>
