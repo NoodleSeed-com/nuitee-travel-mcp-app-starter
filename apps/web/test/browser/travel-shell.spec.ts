@@ -61,6 +61,17 @@ async function expectHorizontalFit(page: Page, width: number) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
 }
 
+async function expectDestinationWindowsSettled(page: Page) {
+  const section = page.locator('#places-to-start');
+  await section.scrollIntoViewIfNeeded();
+  await expect(section).toHaveAttribute('data-revealed', 'true');
+  await expect.poll(() => section.locator('.destination-inspiration__grid > li')
+    .evaluateAll((items) => items.every((item) => {
+      const style = getComputedStyle(item);
+      return style.opacity === '1' && style.transform === 'none';
+    }))).toBe(true);
+}
+
 async function expectMinimumTargetSize(
   locator: ReturnType<Page['locator']>,
 ) {
@@ -161,6 +172,38 @@ test('renders the premium zero-state first fold without opening an assistant ses
   expect(assistantRequests).toEqual([]);
 });
 
+test('switches immersive planning scenes without opening an assistant session', async ({
+  page,
+}) => {
+  const assistantRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/v1/assistant/')) {
+      assistantRequests.push(request.url());
+    }
+  });
+
+  await page.goto('/');
+  const hero = page.locator('.travel-hero__experience');
+  const modes = page.getByRole('tablist', { name: 'Choose a planning view' });
+  await expect(hero).toHaveAttribute('data-mode', 'explore');
+  await expect(page.locator('.travel-hero__window-shell')).toHaveCount(3);
+
+  for (const [label, mode, heading, image] of [
+    ['Flights', 'flight', 'Choose your horizon', 'wayfare-cockpit-v1'],
+    ['Stays', 'stay', 'Wake up somewhere new', 'wayfare-stay-v1'],
+    ['Flight + Stay', 'flight-stay', 'From takeoff to check-in', 'wayfare-flight-stay-v1'],
+  ] as const) {
+    await modes.getByRole('tab', { name: label }).click();
+    await expect(hero).toHaveAttribute('data-mode', mode);
+    await expect(page.getByRole('heading', { level: 1, name: heading }))
+      .toBeVisible();
+    await expect(hero.locator('.travel-hero__image')).toHaveAttribute('src', new RegExp(image));
+    await expect(page.locator('.travel-hero__window-shell')).toHaveCount(0);
+  }
+
+  expect(assistantRequests).toEqual([]);
+});
+
 test('uses a granted browser location for the visible origin and currency defaults', async ({
   context,
   page,
@@ -174,7 +217,6 @@ test('uses a granted browser location for the visible origin and currency defaul
 
   await expect(page.getByRole('combobox', { name: 'Currency' }))
     .toHaveValue('PKR');
-  await expect(page.getByText('Islamabad (ISB)', { exact: true })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Ask the travel assistant' }))
     .toHaveAttribute('placeholder', 'Islamabad to somewhere warm for two, next week');
 });
@@ -206,7 +248,6 @@ test('keeps neutral travel defaults when browser location is denied', async ({
 
   await expect(page.getByRole('combobox', { name: 'Currency' }))
     .toHaveValue('USD');
-  await expect(page.getByText('Your departure', { exact: true })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Ask the travel assistant' }))
     .toHaveAttribute('placeholder', 'Your departure to somewhere warm for two, next week');
 });
@@ -315,7 +356,7 @@ test('keeps the cinematic hero legible, fitted, and keyboard-reachable on deskto
     const image = getComputedStyle(document.querySelector('.travel-hero__image')!);
     return { headingColor: heading.color, imageFit: image.objectFit };
   });
-  expect(heroAppearance.headingColor).toBe('rgb(11, 31, 51)');
+  expect(heroAppearance.headingColor).toBe('rgb(255, 255, 255)');
   expect(heroAppearance.imageFit).toBe('cover');
 
   const developerLink = page.getByRole('navigation', {
@@ -431,14 +472,23 @@ test('uses a premium desktop destination row and a 390px scroll-snap peek', asyn
 
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
+  await expectDestinationWindowsSettled(page);
   let boxes = await page.locator('.destination-card').evaluateAll((cards) => cards.map((card) => {
     const bounds = card.getBoundingClientRect();
     return { bottom: bounds.bottom, left: bounds.left, right: bounds.right, top: bounds.top };
   }));
-  expect(boxes).toHaveLength(3);
-  expect(boxes.map(({ top }) => top)).toEqual([boxes[0]!.top, boxes[0]!.top, boxes[0]!.top]);
+  expect(boxes).toHaveLength(5);
+  expect(boxes.map(({ top }) => top)).toEqual([
+    boxes[0]!.top,
+    boxes[0]!.top,
+    boxes[0]!.top,
+    boxes[0]!.top,
+    boxes[0]!.top,
+  ]);
   expect(boxes[0]!.right).toBeLessThanOrEqual(boxes[1]!.left);
   expect(boxes[1]!.right).toBeLessThanOrEqual(boxes[2]!.left);
+  expect(boxes[2]!.right).toBeLessThanOrEqual(boxes[3]!.left);
+  expect(boxes[3]!.right).toBeLessThanOrEqual(boxes[4]!.left);
 
   await page.setViewportSize({ width: 390, height: 844 });
   boxes = await page.locator('.destination-card').evaluateAll((cards) => cards.map((card) => {
@@ -464,6 +514,8 @@ test('uses a premium desktop destination row and a 390px scroll-snap peek', asyn
     boxes[0]!.top,
     boxes[0]!.top,
     boxes[0]!.top,
+    boxes[0]!.top,
+    boxes[0]!.top,
   ]);
   expect(boxes[0]!.right).toBeLessThan(390);
   expect(boxes[1]!.left).toBeLessThan(390);
@@ -477,6 +529,7 @@ test('keeps tablet destination cards compact and comparable', async ({
 
   await page.setViewportSize({ width: 768, height: 1024 });
   await page.goto('/');
+  await expectDestinationWindowsSettled(page);
   const boxes = await page.locator('.destination-card').evaluateAll((cards) => (
     cards.map((card) => {
       const bounds = card.getBoundingClientRect();
@@ -486,7 +539,7 @@ test('keeps tablet destination cards compact and comparable', async ({
   const widths = boxes.map(({ width }) => width);
   const heights = boxes.map(({ height }) => height);
 
-  expect(boxes).toHaveLength(3);
+  expect(boxes).toHaveLength(5);
   expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(1);
   expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1);
 });
@@ -1840,9 +1893,10 @@ test('keeps 390px below-fold sections compact around the horizontal destination 
   test.skip(testInfo.project.name !== 'mobile-chromium');
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
+  await expectDestinationWindowsSettled(page);
 
   const destinationCards = page.locator('.destination-card');
-  await expect(destinationCards).toHaveCount(3);
+  await expect(destinationCards).toHaveCount(5);
   const destinationBoxes = await destinationCards.evaluateAll((cards) => (
     cards.map((card) => {
       const bounds = card.getBoundingClientRect();
@@ -1864,6 +1918,8 @@ test('keeps 390px below-fold sections compact around the horizontal destination 
     }
   }
   expect(destinationBoxes.map(({ top }) => top)).toEqual([
+    destinationBoxes[0]!.top,
+    destinationBoxes[0]!.top,
     destinationBoxes[0]!.top,
     destinationBoxes[0]!.top,
     destinationBoxes[0]!.top,

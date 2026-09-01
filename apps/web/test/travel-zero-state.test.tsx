@@ -76,33 +76,37 @@ describe('travel assistant zero state', () => {
       .getAllByRole('button')).toHaveLength(2);
   });
 
-  it('turns the hero image into a non-interactive conversation-to-trip story', () => {
+  it('offers four immersive planning modes without starting a conversation', () => {
+    const onStart = vi.fn();
+    render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
+
+    const modes = screen.getByRole('tablist', { name: 'Choose a planning view' });
+    expect(within(modes).getAllByRole('tab')).toHaveLength(4);
+    expect(within(modes).getByRole('tab', { name: 'Explore' }))
+      .toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByTestId('hero-window-deck').children).toHaveLength(3);
+
+    fireEvent.click(within(modes).getByRole('tab', { name: 'Flights' }));
+
+    expect(onStart).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', {
+      level: 1,
+      name: 'Choose your horizon',
+    })).toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
+      .toHaveAttribute('placeholder', 'Where do you want to fly?');
+  });
+
+  it('renders a three-window explore scene around the real trip composer', () => {
     const { container } = render(
       <TravelZeroState inputRef={createRef()} onStart={vi.fn()} />,
     );
 
-    const story = screen.getByRole('group', {
-      name: 'One conversation for the whole trip',
-    });
-    expect(within(story).getByText('Your trip, brought together')).toBeVisible();
-    expect(within(story).getByText('Flights, stays, and rewards. One plan.'))
-      .toBeVisible();
-    expect(within(story).getByText('Your departure')).toBeVisible();
-    expect(within(story).getByText('Your next destination')).toBeVisible();
-    expect(within(story).getByText(
-      'Plan a complete trip for two next week.',
-    )).toBeVisible();
-    expect(within(story).getByText('Wayfare understands')).toBeVisible();
-    const sequence = within(story).getByRole('list', {
-      name: 'Build your trip with Wayfare',
-    });
-    expect(within(sequence).getByText('Flight')).toBeVisible();
-    expect(within(sequence).getByText('Stay')).toBeVisible();
-    expect(within(sequence).getByText('Rewards review')).toBeVisible();
-    expect(story.querySelectorAll(
-      'a, button, input, select, textarea, [tabindex]',
-    )).toHaveLength(0);
-    expect(container.querySelector('.travel-hero__media-frame img[alt=""]'))
+    const panel = screen.getByRole('tabpanel', { name: 'Explore' });
+    expect(within(panel).getByText('Your trip, brought together')).toBeVisible();
+    expect(within(panel).getByText('A window into what comes next')).toBeVisible();
+    expect(screen.getByTestId('hero-window-deck').children).toHaveLength(3);
+    expect(container.querySelector('.travel-hero__experience img[alt=""]'))
       .toHaveAttribute('src', expect.stringContaining('wayfare-hybrid-hero-v2'));
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute(
@@ -124,7 +128,6 @@ describe('travel assistant zero state', () => {
       />,
     );
 
-    expect(screen.getByText('Islamabad (ISB)')).toBeVisible();
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute(
         'placeholder',
@@ -175,7 +178,7 @@ describe('travel assistant zero state', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Places to start' }))
       .toBeVisible();
     expect(screen.getAllByRole('button', { name: /Plan a trip to/u }))
-      .toHaveLength(3);
+      .toHaveLength(5);
     const capabilityList = screen.getByRole('list', {
       name: 'Start with flights, stays, or rewards',
     });
@@ -264,7 +267,7 @@ describe('travel assistant zero state', () => {
     expect(words.length).toBeLessThanOrEqual(150);
   });
 
-  it('advertises half-width tablet destination images for every equal card', () => {
+  it('advertises compact destination-window images at each breakpoint', () => {
     const { container } = render(
       <TravelZeroState inputRef={{ current: null }} onStart={vi.fn()} />,
     );
@@ -272,11 +275,11 @@ describe('travel assistant zero state', () => {
       '.destination-card img',
     );
 
-    expect(images).toHaveLength(3);
+    expect(images).toHaveLength(5);
     for (const image of images) {
       expect(image).toHaveAttribute(
         'sizes',
-        '(max-width: 767px) 82vw, (max-width: 1023px) 50vw, 33vw',
+        '(max-width: 767px) 78vw, (max-width: 1023px) 42vw, 22vw',
       );
     }
   });
