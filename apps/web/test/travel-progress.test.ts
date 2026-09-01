@@ -9,6 +9,10 @@ describe('plain-language assistant activity', () => {
     ['search_flights', 'Searching current flights'],
     ['select_flight_offer', 'Saving your fare choice'],
     ['verify_flight_offer', 'Verifying the current fare'],
+    ['search_hotels', 'Finding stays'],
+    ['select_hotel', 'Adding the stay'],
+    ['open_loyalty', 'Opening illustrative rewards'],
+    ['review_trip', 'Reviewing selected travel'],
     ['internal_future_tool', 'Working on your request'],
   ])('maps %s without exposing an identifier', (tool, copy) => {
     const event = {
@@ -44,6 +48,10 @@ describe('plain-language assistant activity', () => {
       event: 'tool_started',
       data: { id: 'call-select', tool: 'select_flight_offer' },
     })).toEqual({ label: 'Saving your fare choice' });
+    expect(progressForEvent({
+      event: 'tool_started',
+      data: { id: 'call-hotel', tool: 'search_hotels' },
+    })).toEqual({ label: 'Finding stays' });
   });
 
   it.each<AssistantClientEvent>([

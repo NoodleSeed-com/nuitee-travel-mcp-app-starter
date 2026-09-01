@@ -54,7 +54,7 @@ describe('server contract', () => {
     expect(manifest.tools.map((entry: any) => entry.name)).toEqual(expectedAllTools);
     expect(select).toMatchObject({
       visibility: ['app'],
-      annotations: { confirm: true },
+      annotations: { readOnlyHint: true },
     });
     expect(JSON.stringify(select?.inputSchema)).toContain('selectionId');
     expect(verify?.description).toContain('verify again');
@@ -266,7 +266,9 @@ describe('server contract', () => {
     expect(guideWire).toContain('one focused question');
     expect(guideWire).toContain('one adult');
     expect(guideWire).toContain('Economy');
-    expect(guideWire).toContain('metro');
+    expect(guideWire).toContain('actual airport code');
+    expect(guideWire).toContain('YYZ for Toronto');
+    expect(guideWire).toContain('not YTO');
     expect(guideWire).toContain('untrusted page');
     expect(guideWire).toContain('explicit traveler');
     expect(guideWire).toContain('omitted');
@@ -334,7 +336,7 @@ describe('server contract', () => {
     ]);
     expect(manifest.server.assistant.layout).toEqual({ mode: 'inline' });
     expect(manifest.tools.find((tool) => tool.name === 'select_flight_offer'))
-      .toMatchObject({ visibility: ['app'], annotations: { confirm: true } });
+      .toMatchObject({ visibility: ['app'], annotations: { readOnlyHint: true } });
     for (const name of expectedAllTools) {
       expect(manifest.tools.filter((tool) => tool.name === name)).toHaveLength(1);
     }

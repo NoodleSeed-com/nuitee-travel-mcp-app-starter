@@ -210,6 +210,7 @@ describe('public repository contracts', () => {
       readme,
       customization,
       heroSource,
+      siteConfigSource,
       footerSource,
       heroAsset,
       webPackage,
@@ -217,13 +218,15 @@ describe('public repository contracts', () => {
       repositoryFile('README.md'),
       repositoryFile('docs/customization.md'),
       repositoryFile('apps/web/src/components/travel-hero.tsx'),
+      repositoryFile('apps/web/src/lib/site-config.ts'),
       repositoryFile('apps/web/src/components/travel-footer.tsx'),
       stat(new URL('../apps/web/public/images/wayfare-hybrid-hero-v2.jpg', import.meta.url)),
       repositoryJson('apps/web/package.json'),
     ]);
 
     expect(heroAsset.size).toBeGreaterThan(0);
-    expect(heroSource).toContain('wayfare-hybrid-hero-v2.jpg');
+    expect(heroSource).toContain('siteConfig.brand.heroImagePath');
+    expect(siteConfigSource).toContain('/images/wayfare-hybrid-hero-v2.jpg');
     expect(footerSource).toContain('Built on Noodle Seed · Powered by Nuitee');
     expect(webPackage.dependencies['@paper-design/shaders-react']).toBeUndefined();
     expect(readme).toContain('hybrid cinematic');
@@ -425,7 +428,7 @@ describe('public repository contracts', () => {
     expect(workflow).not.toMatch(/uses:\s+[^\s]+@v\d/);
     expect(dependabot).toContain('package-ecosystem: github-actions');
     expect(workspace).toContain('minimumReleaseAge: 1440');
-    expect(workspace).toContain("'@noodleseed/one@0.147.1'");
+    expect(workspace).toContain("'@noodleseed/one@0.149.0'");
     expect(workspace).toContain("'@noodleseed/assistant@1.27.0'");
   });
 

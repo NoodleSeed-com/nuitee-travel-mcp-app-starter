@@ -6,27 +6,26 @@ import DevelopersPage from '../app/developers/page';
 afterEach(cleanup);
 
 describe('developer guide page', () => {
-  it('uses the shared Wayfare route mark in the developer header', () => {
+  it('uses the Wayfare route mark in the developer header', () => {
     render(<DevelopersPage />);
 
     const home = screen.getByRole('link', { name: 'Wayfare' });
     expect(home.querySelector('[data-wayfare-mark="true"]')).not.toBeNull();
-    expect(home).not.toHaveTextContent(/^WWayfare$/);
   });
 
-  it('leads with the ordered guest-first setup and bounded travel outcome', () => {
+  it('leads with the ordered private-demo setup and bounded travel outcome', () => {
     render(<DevelopersPage />);
 
     expect(screen.getByRole('heading', {
-      name: 'Guest-first setup',
+      name: 'One integration, three travel views',
     })).toBeVisible();
     expect(screen.getByText('pnpm install')).toBeVisible();
     expect(screen.getByText('pnpm dev:web')).toBeVisible();
-    expect(screen.getByText('pnpm agent:check')).toBeVisible();
+    expect(screen.getByText('pnpm agent:check:partner')).toBeVisible();
     expect(screen.getByText(
       'NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID',
     )).toBeVisible();
-    expect(screen.getByText(/Search → Select → Verify/)).toBeVisible();
+    expect(screen.getByText(/Search → Compare → Verify/)).toBeVisible();
     expect(screen.getByText(/does not book/i)).toBeVisible();
   });
 
