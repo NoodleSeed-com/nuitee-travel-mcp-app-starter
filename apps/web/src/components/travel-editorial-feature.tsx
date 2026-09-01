@@ -2,7 +2,7 @@
 
 import type React from 'react';
 import { landingEditorialFeature } from '../lib/landing-content';
-import { FlightCatchersBrand } from './flight-catchers-brand';
+import { WayfareMark } from './wayfare-mark';
 
 interface TravelEditorialFeatureProps {
   readonly onStart: (prompt: string) => void;
@@ -16,7 +16,7 @@ export function TravelEditorialFeature({
       aria-labelledby="travel-editorial-title"
       className="travel-editorial travel-landing__section"
     >
-      <FlightCatchersBrand className="travel-editorial__mark" variant="mark" />
+      <WayfareMark className="travel-editorial__mark" />
       <div className="travel-editorial__copy">
         <h2 id="travel-editorial-title">
           {landingEditorialFeature.heading}

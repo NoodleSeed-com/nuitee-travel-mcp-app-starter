@@ -31,8 +31,8 @@ export function TravelZeroState({
         launchError={launchError}
         onStart={onStart}
       />
+      <TravelCapabilityStrip onStart={onStart} />
       <DestinationInspiration onStart={onStart} />
-      <TravelCapabilityStrip />
       <TravelEditorialFeature onStart={onStart} />
     </div>
   );

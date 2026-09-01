@@ -107,14 +107,6 @@ code {
   height: 24px;
 }
 
-.travel-wordmark__logo {
-  display: block;
-  width: clamp(8.6rem, 14vw, 11.25rem);
-  height: auto;
-  max-height: 52px;
-  object-fit: contain;
-}
-
 .settings-sheet__links h3 {
   margin: 1rem 0 0.75rem;
   color: var(--travel-muted);
@@ -360,15 +352,15 @@ code {
 .travel-hero__journey {
   position: absolute;
   z-index: 1;
-  top: 50%;
+  top: 43%;
   left: 50%;
   display: grid;
   width: min(58%, 39rem);
-  gap: 0.75rem;
+  gap: 0.55rem;
   color: #fff;
   text-align: center;
   text-shadow: 0 2px 18px rgb(4 20 36 / 38%);
-  transform: translate(-50%, -30%);
+  transform: translate(-50%, -50%);
 }
 
 .travel-hero__journey > span {
@@ -379,10 +371,11 @@ code {
 }
 
 .travel-hero__journey > strong {
-  font-size: clamp(2rem, 4vw, 3.9rem);
+  font-size: clamp(1.9rem, 3.2vw, 3rem);
   font-weight: 640;
-  letter-spacing: -0.055em;
-  line-height: 0.98;
+  letter-spacing: -0.045em;
+  line-height: 1.02;
+  text-wrap: balance;
 }
 
 .travel-hero__journey > small {
@@ -541,6 +534,7 @@ code {
 }
 
 .travel-hero__steps li {
+  position: relative;
   display: flex;
   min-width: 0;
   min-height: 68px;
@@ -557,6 +551,24 @@ code {
   line-height: 1.3;
   text-align: left;
   animation: wayfare-story-rise 620ms 180ms var(--travel-ease-out) both;
+}
+
+.travel-hero__steps li:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  top: 50%;
+  right: -0.76rem;
+  z-index: 1;
+  display: grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  border: 1px solid rgb(216 222 231 / 88%);
+  border-radius: 50%;
+  background: var(--travel-raised);
+  color: var(--travel-blue);
+  font-size: 0.82rem;
+  transform: translateY(-50%);
 }
 
 .travel-hero__steps svg {
@@ -623,6 +635,7 @@ code {
 
 .destination-inspiration {
   padding-top: clamp(3rem, 6vw, 5rem);
+  padding-bottom: clamp(3rem, 6vw, 5rem);
   scroll-margin-top: 1rem;
 }
 
@@ -704,53 +717,106 @@ code {
 }
 
 .travel-capabilities {
-  padding-top: clamp(3rem, 6vw, 5rem);
-  padding-bottom: clamp(3rem, 6vw, 5rem);
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.travel-capabilities__heading {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+
+.travel-capabilities__heading > span {
+  color: var(--travel-blue);
+  font-size: 0.7rem;
+  font-weight: 720;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.travel-capabilities__heading h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.6vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
 }
 
 .travel-capabilities ol {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.7rem, 1.5vw, 1rem);
   margin: 0;
   padding: 0;
-  border-block: 1px solid var(--travel-boundary);
   list-style: none;
 }
 
 .travel-capabilities li {
+  min-width: 0;
+}
+
+.travel-capabilities button {
   display: grid;
-  grid-template-columns: 1.4rem minmax(0, 1fr);
+  width: 100%;
+  min-height: 8.25rem;
+  height: 100%;
+  grid-template-columns: 2.75rem minmax(0, 1fr) 1.25rem;
   align-items: start;
   gap: 0.8rem;
-  padding: clamp(1.25rem, 2.5vw, 1.75rem);
+  padding: 1rem;
+  border: 1px solid var(--travel-boundary);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--travel-raised) 92%, var(--travel-canvas));
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--travel-ink) 5%, transparent);
+  color: var(--travel-ink);
+  text-align: left;
+  transition:
+    border-color 180ms var(--travel-ease-out),
+    box-shadow 180ms var(--travel-ease-out),
+    transform 180ms var(--travel-ease-out);
 }
 
-.travel-capabilities li + li {
-  border-left: 1px solid var(--travel-boundary);
-}
-
-.travel-capabilities svg {
-  width: 20px;
-  height: 20px;
-  margin-top: 0.05rem;
+.travel-capabilities__icon {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--travel-blue) 9%, var(--travel-raised));
   color: var(--travel-blue);
 }
 
-.travel-capabilities li > div {
-  display: grid;
-  gap: 0.35rem;
+.travel-capabilities__icon svg,
+.travel-capabilities__arrow {
+  width: 20px;
+  height: 20px;
 }
 
-.travel-capabilities strong {
+.travel-capabilities__copy {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  padding-top: 0.15rem;
+}
+
+.travel-capabilities__copy strong {
   font-size: 0.95rem;
-  font-weight: 650;
+  font-weight: 680;
   letter-spacing: -0.015em;
 }
 
-.travel-capabilities span {
+.travel-capabilities__copy > span {
   color: var(--travel-muted);
   font-size: 0.79rem;
   line-height: 1.55;
+}
+
+.travel-capabilities__arrow {
+  margin-top: 0.25rem;
+  color: var(--travel-muted);
 }
 
 .travel-editorial {
@@ -846,10 +912,28 @@ code {
 
 .travel-footer__brand > span,
 .travel-footer__session > span,
+.travel-footer__limitations,
 .travel-footer__attribution {
   color: var(--travel-muted);
   font-size: 0.74rem;
   line-height: 1.5;
+}
+
+.travel-footer__limitations {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: baseline;
+  gap: 0.55rem;
+  margin: 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--travel-boundary);
+}
+
+.travel-footer__limitations strong {
+  flex: 0 0 auto;
+  color: var(--travel-ink);
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
 .travel-footer nav {
@@ -904,6 +988,12 @@ code {
 
   .travel-editorial__copy button:hover {
     background: #e8f1ff;
+  }
+
+  .travel-capabilities button:hover {
+    border-color: color-mix(in srgb, var(--travel-blue) 38%, var(--travel-boundary));
+    box-shadow: 0 18px 38px color-mix(in srgb, var(--travel-ink) 9%, transparent);
+    transform: translateY(-2px);
   }
 
   .travel-footer nav > a:hover {
@@ -1707,12 +1797,15 @@ code {
   }
 
   .travel-capabilities li {
-    padding-inline: 0;
+    padding: 0;
   }
 
   .travel-capabilities li + li {
-    border-top: 1px solid var(--travel-boundary);
-    border-left: 0;
+    border: 0;
+  }
+
+  .travel-capabilities button {
+    min-height: 0;
   }
 
   .travel-editorial {
@@ -1750,7 +1843,14 @@ code {
 
   .travel-footer__attribution {
     grid-column: auto;
+    order: 5;
+  }
+
+  .travel-footer__limitations {
+    grid-column: auto;
     order: 4;
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .settings-sheet {
@@ -2078,6 +2178,10 @@ code {
   color: var(--travel-ink);
 }
 
+.trip-brief__stay {
+  color: var(--travel-ink);
+}
+
 .trip-brief__route strong {
   font-weight: 650;
 }
@@ -2196,11 +2300,6 @@ code {
 
   .travel-header .travel-wordmark {
     font-size: 0.95rem;
-  }
-
-  .travel-wordmark__logo {
-    width: 7.8rem;
-    max-height: 44px;
   }
 
   .travel-header nav {

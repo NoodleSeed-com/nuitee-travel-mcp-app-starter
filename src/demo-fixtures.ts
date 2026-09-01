@@ -57,7 +57,7 @@ export const DEMO_HOTEL_CATALOG: Readonly<Record<string, readonly HotelFixture[]
       city: 'Lisbon',
       countryCode: 'PT',
       neighborhood: 'Baixa concept district',
-      description: 'An illustrative central stay created for a bounded Flight Catchers comparison.',
+      description: 'An illustrative central stay created for a bounded Wayfare comparison.',
       roomName: 'Lantern king room',
       category: 4,
       amenities: ['Breakfast preview', 'Rooftop concept', 'Wi-Fi', 'Workspace'],
@@ -202,7 +202,7 @@ const LOYALTY_FIXTURE = {
     'Illustrative rewards profile for Preview traveler: Explorer concept tier with 42,500 synthetic points. No real account was accessed and no points action is available.',
   member: {
     displayName: 'Preview traveler',
-    reference: 'FC-PREVIEW-0001',
+    reference: 'WAYFARE-PREVIEW-0001',
     tier: 'Explorer concept tier',
     pointsBalance: 42_500,
   },

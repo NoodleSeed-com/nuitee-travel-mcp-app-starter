@@ -2,7 +2,6 @@ import '@fontsource-variable/inter';
 import '@noodleseed/one/react/styles.css';
 import type { CSSProperties } from 'react';
 import { Feedback, Flow, Frame, Region, StatusBadge, useBranding, useLayout, useSendFollowUpMessage, useToolInfo, useWidgetReady } from '../helpers.js';
-import { flightCatchersDemoConfig } from '../demo-config.js';
 import type { DemoHomeOutput } from '../demo-schemas.js';
 import type { HomeOutput } from '../flight-schemas.js';
 import { starterConfig } from '../starter-config.js';
@@ -24,8 +23,10 @@ const domainIcons = {
 export function isHome(value: unknown): value is TravelHomeOutput {
   if (value === null || typeof value !== 'object') return false;
   const candidate = value as Partial<TravelHomeOutput>;
-  const demo = candidate.brand === flightCatchersDemoConfig.brand.name;
-  const expected = demo
+  const expanded = Array.isArray(candidate.domains) && candidate.domains.some(
+    (domain) => domain?.availability === 'illustrative',
+  );
+  const expected = expanded
     ? [
         ['Flights', 'available'],
         ['Stays', 'illustrative'],
@@ -41,12 +42,12 @@ export function isHome(value: unknown): value is TravelHomeOutput {
         ['Experiences', 'coming_soon'],
       ] as const;
   return candidate.status === 'ready' &&
-    (candidate.brand === starterConfig.brand.name || demo) &&
+    candidate.brand === starterConfig.brand.name &&
     typeof candidate.message === 'string' && candidate.message.length <= 300 &&
     typeof candidate.fallback === 'string' && candidate.fallback.length <= 700 &&
     Array.isArray(candidate.domains) && candidate.domains.length === expected.length && candidate.domains.every((domain, index) =>
       domain !== null && typeof domain === 'object' && domain.name === expected[index][0] && domain.availability === expected[index][1]) &&
-    (!demo || ('disclosure' in candidate && typeof candidate.disclosure === 'string' && candidate.disclosure.length <= 320));
+    (!expanded || ('disclosure' in candidate && typeof candidate.disclosure === 'string' && candidate.disclosure.length <= 320));
 }
 
 export function TravelHomeView({
@@ -65,7 +66,7 @@ export function TravelHomeView({
   readonly brandStyle?: CSSProperties;
 }) {
   const frameClassName = theme === 'dark' ? 'cc-app cc-theme-dark' : 'cc-app';
-  const demo = data?.brand === flightCatchersDemoConfig.brand.name;
+  const demo = data !== undefined && 'disclosure' in data;
 
   if (state === 'loading') {
     return (

@@ -2,6 +2,7 @@
 
 import {
   Armchair,
+  BedDouble,
   CalendarDays,
   ChevronDown,
   MapPin,
@@ -46,10 +47,13 @@ export function TripBrief({
   projection,
 }: Readonly<{ projection: TripProjection }>) {
   const [expanded, setExpanded] = useState(false);
-  if (projection.phase === 'idle') return null;
+  if (!projection.hasFlightSelection && !projection.hasStaySelection) return null;
   const completedSegments = COMPLETED_SEGMENTS[projection.phase];
   const hasSecondaryDetails = Boolean(
-    projection.returnDate || projection.currency || projection.country,
+    projection.returnDate
+      || projection.checkOutDate
+      || projection.currency
+      || projection.country,
   );
 
   return (
@@ -63,10 +67,22 @@ export function TripBrief({
             <strong>{projection.destination ?? '—'}</strong>
           </p>
         ) : null}
+        {projection.stayDestination ? (
+          <p className="trip-brief__fact trip-brief__stay">
+            <BedDouble aria-hidden="true" />
+            <strong>Stay in {projection.stayDestination}</strong>
+          </p>
+        ) : null}
         {projection.departureDate ? (
           <p className="trip-brief__fact">
             <CalendarDays aria-hidden="true" />
             <span>{projection.departureDate}</span>
+          </p>
+        ) : null}
+        {!projection.departureDate && projection.checkInDate ? (
+          <p className="trip-brief__fact">
+            <CalendarDays aria-hidden="true" />
+            <span>{projection.checkInDate}</span>
           </p>
         ) : null}
         {projection.travelers ? (
@@ -116,6 +132,12 @@ export function TripBrief({
             <div>
               <dt>Return</dt>
               <dd>{projection.returnDate}</dd>
+            </div>
+          ) : null}
+          {projection.checkOutDate ? (
+            <div>
+              <dt>Check-out</dt>
+              <dd>{projection.checkOutDate}</dd>
             </div>
           ) : null}
           {projection.currency ? (

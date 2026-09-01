@@ -1,37 +1,37 @@
-export const flightCatchersDemoConfig = {
-  mode: 'private_partner_demo',
+export const travelCompanionDemoConfig = {
+  mode: 'expanded_travel_preview',
   brand: {
-    name: 'Flight Catchers',
-    assistantName: 'Flight Catchers travel assistant',
-    tagline: 'Flights, hotels, and rewards in one conversation.',
+    name: 'Wayfare',
+    assistantName: 'Wayfare travel assistant',
+    tagline: 'Travel, planned around you.',
     intro:
       'Search current flights, compare illustrative stays, and preview rewards in one conversation.',
     palette: {
       light: {
-        ink: '#071D29',
-        primary: '#006D84',
-        primaryHover: '#005769',
-        focus: '#007D95',
-        decorativeCyan: '#00AFC3',
-        canvas: '#F5FAFB',
+        ink: '#0B1F33',
+        primary: '#2F70E8',
+        primaryHover: '#245FC8',
+        focus: '#2F70E8',
+        decorativeCyan: '#4DB8AE',
+        canvas: '#F7F8FA',
         surface: '#FFFFFF',
-        surfaceTint: '#E8F7F9',
-        muted: '#536A73',
-        boundary: '#CFE0E5',
+        surfaceTint: '#EEF4FD',
+        muted: '#526173',
+        boundary: '#D8DEE7',
         onPrimary: '#FFFFFF',
       },
       dark: {
-        ink: '#F3FAFC',
-        primary: '#55D6E5',
-        primaryHover: '#7DE3ED',
-        focus: '#55D6E5',
-        decorativeCyan: '#55D6E5',
-        canvas: '#061A22',
-        surface: '#0A222C',
-        surfaceTint: '#10323D',
-        muted: '#B5C7CD',
-        boundary: '#24404A',
-        onPrimary: '#071D29',
+        ink: '#F7F8FA',
+        primary: '#9DC4F7',
+        primaryHover: '#BCD6FA',
+        focus: '#9DC4F7',
+        decorativeCyan: '#8AD5CE',
+        canvas: '#081725',
+        surface: '#0B1F33',
+        surfaceTint: '#142D45',
+        muted: '#B8C4D1',
+        boundary: '#2B4157',
+        onPrimary: '#0B1F33',
       },
     },
     colorUsage: {
@@ -59,13 +59,19 @@ export const flightCatchersDemoConfig = {
   },
   assets: {
     logo: {
-      status: 'temporary_demo_asset',
-      sourcePath: 'apps/web/public/brand/flight-catchers-demo-logo.png',
-      compactMarkPath: null,
-      lightWordmarkPath: 'apps/web/public/brand/flight-catchers-demo-logo.png',
-      darkWordmarkPath: 'apps/web/public/brand/flight-catchers-demo-logo.png',
-      provenanceRecordPath: 'docs/assets/flight-catchers-logo.md',
+      status: 'repository_vector_component',
+      sourcePath: 'apps/web/src/components/wayfare-mark.tsx',
+      provenanceRecordPath: 'docs/architecture.md',
       reviewedBinaryBlob: false,
+    },
+    hero: {
+      status: 'repository_owned_starter_asset',
+      sourcePath: 'apps/web/public/images/wayfare-hybrid-hero-v2.jpg',
+      provenanceRecordPath: 'docs/visual-assets/wayfare-premium-concierge.md',
+      sha256:
+        '5834743c2c7b9802bc903ee60e2da6770d2b23373014abd04e7e4d30e09be4eb',
+      licenseConfirmed: true,
+      reviewedBinaryBlob: true,
     },
   },
   publicRelease: {
@@ -74,12 +80,9 @@ export const flightCatchersDemoConfig = {
     brandAuthorizationReference: null,
     assetLicenseReference: null,
     blockers: [
-      'record_brand_authorization',
-      'replace_temporary_logo_with_original_asset',
-      'record_asset_provenance',
-      'complete_final_brand_review',
+      'complete_final_release_review',
     ],
   },
 } as const;
 
-export type FlightCatchersDemoConfig = typeof flightCatchersDemoConfig;
+export type TravelCompanionDemoConfig = typeof travelCompanionDemoConfig;

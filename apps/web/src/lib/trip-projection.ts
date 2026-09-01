@@ -29,6 +29,8 @@ export interface TripProjection {
   readonly stayDestination?: string;
   readonly checkInDate?: string;
   readonly checkOutDate?: string;
+  readonly hasFlightSelection?: boolean;
+  readonly hasStaySelection?: boolean;
 }
 
 export const EMPTY_TRIP: TripProjection = { phase: 'idle' };
@@ -232,7 +234,9 @@ function projectResult(
       return searchProjection(result) ?? current;
     }
     case 'select_flight_offer':
-      if (result.status === 'selected') return { ...current, phase: 'selected' };
+      if (result.status === 'selected') {
+        return { ...current, phase: 'selected', hasFlightSelection: true };
+      }
       if (result.status === 'unavailable') return { ...current, phase: 'error' };
       return current;
     case 'verify_flight_offer': {
@@ -273,7 +277,12 @@ function projectResult(
     }
     case 'select_hotel':
       return result.status === 'selected'
-        ? { ...current, phase: 'stay-selected', focus: 'stays' }
+        ? {
+          ...current,
+          phase: 'stay-selected',
+          focus: 'stays',
+          hasStaySelection: true,
+        }
         : current;
     case 'open_loyalty':
       return result.status === 'success' && result.dataSource === 'illustrative'

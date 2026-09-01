@@ -1,5 +1,5 @@
 import { z } from '@noodleseed/one';
-import { flightCatchersDemoConfig } from './demo-config.js';
+import { travelCompanionDemoConfig } from './demo-config.js';
 import { selectionIdSchema } from './flight-schemas.js';
 
 export const syntheticDataSourceSchema = z.literal('illustrative');
@@ -11,7 +11,7 @@ export const demoCurrencySchema = z.enum(['CAD', 'USD', 'EUR']);
 
 export const demoHomeOutputSchema = z.object({
   status: z.literal('ready'),
-  brand: z.literal(flightCatchersDemoConfig.brand.name),
+  brand: z.literal(travelCompanionDemoConfig.brand.name),
   message: z.string().min(1).max(300),
   disclosure: z.string().min(20).max(320),
   domains: z.array(z.object({
@@ -130,7 +130,7 @@ export const demoLoyaltyOverviewSchema = z.object({
   fallback: z.string().trim().min(20).max(500),
   member: z.object({
     displayName: z.literal('Preview traveler'),
-    reference: z.literal('FC-PREVIEW-0001'),
+    reference: z.literal('WAYFARE-PREVIEW-0001'),
     tier: z.literal('Explorer concept tier'),
     pointsBalance: z.number().int().nonnegative().max(1_000_000),
   }),

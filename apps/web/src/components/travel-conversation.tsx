@@ -64,11 +64,11 @@ function conversationCopy(projection: TripProjection) {
     case 'stay-selected':
     case 'rewards':
     case 'trip-review':
-      return { title, placeholder: 'Tell Flight Catchers what you need…' };
+      return { title, placeholder: 'Tell Wayfare what you need…' };
     case 'error':
-      return { title, placeholder: 'Tell Flight Catchers what to change…' };
+      return { title, placeholder: 'Tell Wayfare what to change…' };
     case 'idle':
-      return { title, placeholder: 'Tell Flight Catchers what you need…' };
+      return { title, placeholder: 'Tell Wayfare what you need…' };
   }
 }
 

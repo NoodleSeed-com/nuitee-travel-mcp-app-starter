@@ -25,7 +25,7 @@ function searchDemoHotels(viewPolicy: Readonly<Record<string, unknown>>) {
   return tool('search_hotels', {
     title: 'Compare hotels',
     description:
-      'Compare deterministic illustrative hotel options for Flight Catchers. This never checks live hotel availability and cannot reserve or book. Use a city name or supported metro/IATA code with exact stay dates.',
+      'Compare deterministic illustrative hotel options for Wayfare. This never checks live hotel availability and cannot reserve or book. Use a city name or supported metro/IATA code with exact stay dates.',
     annotations: annotations.readOnly(),
     input: demoHotelSearchInputSchema,
     output: demoHotelSearchOutputSchema,
@@ -70,7 +70,7 @@ function openDemoLoyalty(viewPolicy: Readonly<Record<string, unknown>>) {
   return tool('open_loyalty', {
     title: 'Open rewards',
     description:
-      'Open the fixed synthetic Flight Catchers rewards concept. It accesses no real member account and cannot earn, transfer, apply, or redeem points.',
+      'Open the fixed synthetic Wayfare rewards concept. It accesses no real member account and cannot earn, transfer, apply, or redeem points.',
     annotations: annotations.readOnly(),
     input: z.object({}),
     output: demoLoyaltyOverviewSchema,

@@ -17,7 +17,7 @@ import type {
 } from '../demo-schemas.js';
 import './travel.css';
 
-export const FLIGHTCATCHERS_DEMO_DISCLOSURE =
+export const WAYFARE_PREVIEW_DISCLOSURE =
   'Flight results come from the connected flight provider. Stays and rewards are illustrative previews. Booking and redemption are unavailable.';
 
 type LoyaltyData = DemoLoyaltyOverview | DemoTripReview;
@@ -86,7 +86,7 @@ export function isDemoLoyaltyOverview(
     !boundedString(root.disclosure, 20, 320) ||
     !boundedString(root.fallback, 20, 500) ||
     member?.displayName !== 'Preview traveler' ||
-    member.reference !== 'FC-PREVIEW-0001' ||
+    member.reference !== 'WAYFARE-PREVIEW-0001' ||
     member.tier !== 'Explorer concept tier' ||
     !boundedInteger(member.pointsBalance, 0, 1_000_000) ||
     !boundedString(progress?.label, 2, 100) ||
@@ -172,7 +172,7 @@ function Disclosure() {
   return (
     <aside className="cc-demo-disclosure" aria-label="Illustrative data disclosure">
       <StatusBadge tone="info">Preview only</StatusBadge>
-      <p>{FLIGHTCATCHERS_DEMO_DISCLOSURE}</p>
+      <p>{WAYFARE_PREVIEW_DISCLOSURE}</p>
     </aside>
   );
 }
@@ -186,7 +186,7 @@ function LoyaltySkeleton({ theme, brandStyle }: {
       className={`cc-app cc-loyalty ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
       style={brandStyle}
       displayMode="auto"
-      title="Flight Catchers Rewards"
+      title="Wayfare Rewards"
       subtitle="Illustrative loyalty profile"
     >
       <section className="cc-loyalty-skeleton" role="status" aria-live="polite" aria-busy="true">
@@ -409,7 +409,7 @@ export function LoyaltyOverviewView({
   const frameClassName = `cc-app cc-loyalty ${theme === 'dark' ? 'cc-theme-dark' : ''}`;
   if (state === 'error') {
     return (
-      <Frame className={frameClassName} style={brandStyle} displayMode="auto" title="Flight Catchers Rewards">
+      <Frame className={frameClassName} style={brandStyle} displayMode="auto" title="Wayfare Rewards">
         <Feedback status="error">
           The loyalty experience could not load. No account, points, booking, or payment was changed.
         </Feedback>
@@ -418,7 +418,7 @@ export function LoyaltyOverviewView({
   }
   if (state === 'malformed' || !data) {
     return (
-      <Frame className={frameClassName} style={brandStyle} displayMode="auto" title="Flight Catchers Rewards">
+      <Frame className={frameClassName} style={brandStyle} displayMode="auto" title="Wayfare Rewards">
         <Feedback status="error">
           The result was incomplete, so no balance, benefit, or trip value was inferred.
         </Feedback>
@@ -432,7 +432,7 @@ export function LoyaltyOverviewView({
       className={frameClassName}
       style={brandStyle}
       displayMode="auto"
-      title={review ? 'Trip and rewards review' : 'Flight Catchers Rewards'}
+      title={review ? 'Trip and rewards review' : 'Wayfare Rewards'}
       subtitle={review ? 'Current flight context with simulated hotels and rewards' : 'Illustrative loyalty profile'}
       data-llm={data.fallback}
     >

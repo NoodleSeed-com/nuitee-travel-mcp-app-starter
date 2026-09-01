@@ -1,4 +1,4 @@
-import { FlightCatchersBrand } from '../../src/components/flight-catchers-brand';
+import { WayfareMark } from '../../src/components/wayfare-mark';
 import { siteConfig } from '../../src/lib/site-config';
 
 const setupSteps = [
@@ -33,7 +33,10 @@ export default function DevelopersPage() {
       <div className="developer-page__frame">
         <header className="developer-page__header">
           <a className="travel-wordmark" href="/">
-            <FlightCatchersBrand className="travel-wordmark__logo" priority />
+            <span aria-hidden="true" className="travel-wordmark__mark">
+              <WayfareMark />
+            </span>
+            <span>{siteConfig.brand.name}</span>
           </a>
           <a className="developer-page__home" href="/">
             Back to travel assistant

@@ -1,21 +1,19 @@
 import { starterConfig } from '../../../../starter.config';
-import { flightCatchersDemoConfig } from '../../../../src/demo-config';
+import { travelCompanionDemoConfig } from '../../../../src/demo-config';
 
-const light = flightCatchersDemoConfig.brand.palette.light;
-const dark = flightCatchersDemoConfig.brand.palette.dark;
+const light = travelCompanionDemoConfig.brand.palette.light;
+const dark = travelCompanionDemoConfig.brand.palette.dark;
 
 /**
- * Website-only identity for the private Flight Catchers demonstration.
- *
- * The canonical starterConfig intentionally remains Wayfare so the public
- * starter and its customization contract are not silently rebranded.
+ * The expanded travel companion keeps the canonical Wayfare identity while
+ * adding the bounded stays and rewards preview capabilities.
  */
 export const siteConfig = {
   brand: {
-    name: flightCatchersDemoConfig.brand.name,
-    assistantName: flightCatchersDemoConfig.brand.assistantName,
-    tagline: flightCatchersDemoConfig.brand.tagline,
-    intro: flightCatchersDemoConfig.brand.intro,
+    name: travelCompanionDemoConfig.brand.name,
+    assistantName: travelCompanionDemoConfig.brand.assistantName,
+    tagline: travelCompanionDemoConfig.brand.tagline,
+    intro: travelCompanionDemoConfig.brand.intro,
     accent: light.primary,
     signal: light.ink,
     canvas: light.canvas,
@@ -24,9 +22,10 @@ export const siteConfig = {
     ink: light.ink,
     muted: light.muted,
     boundary: light.boundary,
-    logoPath: '/brand/flight-catchers-demo-logo.png',
+    heroImagePath: '/images/wayfare-hybrid-hero-v2.jpg',
+    heroImagePosition: '50% 50%',
   },
-  disclosure: flightCatchersDemoConfig.disclosure,
+  disclosure: travelCompanionDemoConfig.disclosure,
   website: starterConfig.website,
   prompts: [
     'Find flights from Toronto to Lisbon next week for two adults.',

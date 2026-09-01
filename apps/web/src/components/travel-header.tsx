@@ -7,7 +7,7 @@ import {
   type SupportedCurrency,
 } from '../lib/travel-defaults';
 import { TravelNavigationDialog } from './travel-navigation-dialog';
-import { FlightCatchersBrand } from './flight-catchers-brand';
+import { WayfareMark } from './wayfare-mark';
 
 interface TravelHeaderProps {
   readonly currency: SupportedCurrency;
@@ -34,7 +34,10 @@ export function TravelHeader({
   return (
     <header className={`travel-header travel-header--${mode}`}>
       <a className="travel-wordmark" href="/">
-        <FlightCatchersBrand className="travel-wordmark__logo" priority />
+        <span aria-hidden="true" className="travel-wordmark__mark">
+          <WayfareMark />
+        </span>
+        <span>{siteConfig.brand.name}</span>
       </a>
       <nav aria-label="Primary navigation" className="travel-header__actions">
         <button type="button" onClick={directAction.onClick}>{directAction.label}</button>

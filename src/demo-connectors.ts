@@ -37,7 +37,7 @@ export const demoGatewayOutputSchema = z.object({
   nextHotelState: demoHotelSelectionStateSchema.optional(),
 });
 
-export const demoGateway = connector('flightcatchers_demo_gateway')
+export const demoGateway = connector('wayfare_preview_gateway')
   .version('1.0.0')
   .compute('execute', {
     type: 'read',

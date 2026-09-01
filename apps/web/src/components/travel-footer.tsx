@@ -32,6 +32,10 @@ export function TravelFooter(): React.JSX.Element {
         <p>Guest session</p>
         <span>No account is required to plan a trip.</span>
       </div>
+      <p className="travel-footer__limitations">
+        <strong>Planning note</strong>
+        <span>{siteConfig.disclosure.persistent}</span>
+      </p>
       <p className="travel-footer__attribution">
         Built on Noodle Seed · Powered by Nuitee
       </p>

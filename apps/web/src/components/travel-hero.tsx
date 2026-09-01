@@ -4,9 +4,9 @@ import Image from 'next/image';
 import {
   ArrowRight,
   BadgeCheck,
-  ListFilter,
+  Hotel,
   MessageCircle,
-  Search,
+  PlaneTakeoff,
 } from 'lucide-react';
 import type { Ref } from 'react';
 import { siteConfig } from '../lib/site-config';
@@ -15,7 +15,7 @@ import {
   type TravelDefaults,
 } from '../lib/travel-defaults';
 import { TravelComposer } from './travel-composer';
-import { FlightCatchersBrand } from './flight-catchers-brand';
+import { WayfareMark } from './wayfare-mark';
 
 interface TravelHeroProps {
   readonly defaults?: TravelDefaults;
@@ -38,15 +38,15 @@ export function TravelHero({
     <section className="travel-hero" aria-labelledby="travel-home-title">
       <div className="travel-hero__content">
         <div className="travel-hero__copy">
-          <h1 id="travel-home-title">Where will you go next?</h1>
-          <p>Plan flights, illustrative stays, and rewards in one conversation.</p>
+          <h1 id="travel-home-title">Plan your whole trip</h1>
+          <p>Flights, stays, and rewards—brought together in one conversation.</p>
         </div>
         <TravelComposer
           formLabel="Plan a trip"
           inputId="travel-prompt"
           inputRef={inputRef}
           onSubmit={onStart}
-          placeholder={`${promptOrigin} to Rome for two, next weekend`}
+          placeholder={`${promptOrigin} to somewhere warm for two, next week`}
           submitLabel="Submit trip request"
           variant="hero"
           visibleSubmitLabel="Plan a trip"
@@ -60,15 +60,11 @@ export function TravelHero({
             </li>
           ))}
         </ul>
-        <p className="travel-demo-disclosure">
-          <strong>{siteConfig.disclosure.badge}</strong>
-          <span>{siteConfig.disclosure.persistent}</span>
-        </p>
         {launchError ? (
           <p className="travel-zero-state__error" role="alert">{launchError}</p>
         ) : null}
         <div
-          aria-label="Example conversation to travel plan"
+          aria-label="One conversation for the whole trip"
           className="travel-hero__media"
           role="group"
         >
@@ -79,18 +75,19 @@ export function TravelHero({
               fill
               priority
               sizes="(max-width: 767px) 100vw, 1080px"
-              src="/images/wayfare-hybrid-hero-v2.jpg"
+              src={siteConfig.brand.heroImagePath}
+              style={{ objectPosition: siteConfig.brand.heroImagePosition }}
             />
             <div className="travel-hero__media-veil" aria-hidden="true" />
             <div className="travel-hero__journey">
-              <span>Example planning flow</span>
-              <strong>One conversation. A clearer travel plan.</strong>
+              <span>Your trip, brought together</span>
+              <strong>Flights, stays, and rewards. One plan.</strong>
               <div className="travel-hero__route">
                 <span>{routeOrigin}</span>
                 <ArrowRight aria-hidden="true" strokeWidth={1.75} />
-                <span>Rome (FCO)</span>
+                <span>Your next destination</span>
               </div>
-              <small>2 travelers · Next weekend</small>
+              <small>Your dates · Your preferences · One plan</small>
             </div>
           </div>
 
@@ -100,16 +97,16 @@ export function TravelHero({
             </span>
             <div>
               <strong>Your request</strong>
-              <p>Find me a weekend flight to Rome for two.</p>
+              <p>Plan a complete trip for two next week.</p>
             </div>
           </article>
 
           <article className="travel-hero__story-card travel-hero__story-card--wayfare">
             <span className="travel-hero__story-icon travel-hero__story-icon--wayfare">
-              <FlightCatchersBrand variant="mark" />
+              <WayfareMark />
             </span>
             <div>
-              <strong>Flight Catchers understands</strong>
+              <strong>Wayfare understands</strong>
               <ul>
                 <li>Route and dates</li>
                 <li>Traveler count</li>
@@ -118,18 +115,21 @@ export function TravelHero({
             </div>
           </article>
 
-          <ol className="travel-hero__steps" aria-label="Flight Catchers planning steps">
+          <ol
+            aria-label="Build your trip with Wayfare"
+            className="travel-hero__steps"
+          >
             <li>
-              <Search aria-hidden="true" strokeWidth={1.75} />
-              <span>Search current flights</span>
+              <PlaneTakeoff aria-hidden="true" strokeWidth={1.75} />
+              <span>Flight</span>
             </li>
             <li>
-              <ListFilter aria-hidden="true" strokeWidth={1.75} />
-              <span>Compare flights and stays</span>
+              <Hotel aria-hidden="true" strokeWidth={1.75} />
+              <span>Stay</span>
             </li>
             <li>
               <BadgeCheck aria-hidden="true" strokeWidth={1.75} />
-              <span>Verify the fare and review the trip</span>
+              <span>Rewards review</span>
             </li>
           </ol>
         </div>
