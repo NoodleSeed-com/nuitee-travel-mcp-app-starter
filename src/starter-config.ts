@@ -26,7 +26,11 @@ export const starterConfig = {
   ],
   widgets: { domain: null },
   embeddedAssistant: {
-    origins: ['http://localhost:3000', 'http://localhost:3001'],
+    origins: [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'https://wayfare-experience.fly.dev',
+    ],
   },
 } as const;
 

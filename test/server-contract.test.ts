@@ -318,6 +318,7 @@ describe('server contract', () => {
     expect(manifest.server.assistant.surfaces[0]?.origins).toEqual([
       'http://localhost:3000',
       'http://localhost:3001',
+      'https://wayfare-experience.fly.dev',
     ]);
     for (const origin of starterConfig.embeddedAssistant.origins) expect(wire).toContain(origin);
     expect(wire).not.toContain('https://app.example.com');

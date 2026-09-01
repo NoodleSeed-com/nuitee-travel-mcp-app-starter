@@ -6,6 +6,8 @@ The primary guest website guides a traveler through **Search → Select → Veri
 
 This is an independent starter, not an official Nuitee connector, airline partnership, booking product, or endorsement.
 
+**Experience:** [Open the hosted Wayfare demo](https://wayfare-experience.fly.dev). The hosted site is a demonstration environment, not a booking service; it stops after current-fare verification.
+
 ## Primary guest website
 
 The Next.js application in `apps/web/` is the main developer path. Wayfare uses a light, Inter-only hybrid cinematic landing: one centered headline and composer above a rounded local destination image, compact destination inspiration, and a factual Search · Compare · Verify row. Submitting a prompt moves into one centered chronological conversation with delayed anonymous Assistant admission and plain-language progress. The compact typed trip disclosure is absent until validated facts exist, stays collapsed by default, and is derived only from structured tool results—never conversation prose.
@@ -36,6 +38,8 @@ NEXT_PUBLIC_NOODLE_SERVICE_URL=<exact-service-origin>
 ```
 
 Both values are public deployment coordinates. Never place `NUITEE_API_KEY`, an Assistant client secret, or model credentials in a `NEXT_PUBLIC_` variable. The optional service URL must be one exact HTTPS origin, or an explicit loopback origin with a port for local development.
+
+For a small scale-to-zero website deployment, follow the checked-in [Fly.io Experience guide](docs/FLY_DEPLOYMENT.md). It keeps the Next.js shell on Fly while the Assistant, MCP server, provider credentials, and caller state remain on Noodle Cloud.
 
 The browser path is:
 

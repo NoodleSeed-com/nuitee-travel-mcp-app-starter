@@ -1,0 +1,16 @@
+.git
+.github
+.worktrees
+.superpowers
+.noodle
+.pnpm-store
+node_modules
+**/node_modules
+**/.next
+dist
+.env
+.env.*
+!.env.example
+test/browser/__screenshots__
+.vitest-attachments
+*.log
