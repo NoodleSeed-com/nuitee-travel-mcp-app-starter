@@ -239,6 +239,8 @@ test('switches every Private Jets and Cars atmosphere without opening a session'
     await expect(hero.locator('.travel-hero__image'))
       .toHaveAttribute('src', new RegExp(image));
   }
+  await expect(page.locator('#travel-home-title'))
+    .toHaveCSS('font-family', /Inter Variable/);
 
   await modes.getByRole('tab', { name: 'Cars' }).click();
   await expect(hero).toHaveAttribute('data-mode', 'car');
@@ -258,6 +260,12 @@ test('switches every Private Jets and Cars atmosphere without opening a session'
     await expect(hero.locator('.travel-hero__image'))
       .toHaveAttribute('src', new RegExp(image));
   }
+  await expect(page.locator('#travel-home-title'))
+    .toHaveCSS('font-family', /Inter Variable/);
+  await expect.poll(async () => (
+    hero.locator('.travel-composer--hero')
+      .evaluate((element) => getComputedStyle(element).boxShadow)
+  )).toContain('49, 216, 218');
 
   await carScenes.getByRole('tab', { name: 'Coastal Drive' }).click();
   await page.getByRole('button', { name: 'Airport pickup' }).click();

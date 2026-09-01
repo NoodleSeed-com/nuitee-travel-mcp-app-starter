@@ -2515,11 +2515,11 @@ code {
 .travel-hero__experience--private-jet .travel-hero__copy h1,
 .travel-hero__experience--car .travel-hero__copy h1 {
   max-width: 18ch;
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: clamp(3rem, 5.4vw, 5.6rem);
-  font-weight: 400;
-  letter-spacing: -0.055em;
-  line-height: 0.98;
+  font-weight: 640;
+  letter-spacing: -0.058em;
+  line-height: 0.95;
 }
 
 .travel-hero__experience--private-jet .travel-hero__copy > p:last-child,
@@ -2585,6 +2585,15 @@ code {
   box-shadow:
     0 24px 70px rgb(0 0 0 / 34%),
     0 0 0 1px rgb(25 227 227 / 18%);
+}
+
+.travel-hero__experience[data-scene='car-desert'] .travel-composer--hero {
+  border-color: rgb(49 216 218 / 88%);
+  box-shadow:
+    0 24px 70px rgb(0 0 0 / 36%),
+    0 0 0 1px rgb(49 216 218 / 72%),
+    0 0 34px rgb(49 216 218 / 38%),
+    inset 0 0 28px rgb(49 216 218 / 8%);
 }
 
 .travel-hero__experience--tone-dark .travel-composer__input {
