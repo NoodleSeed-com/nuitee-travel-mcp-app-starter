@@ -204,6 +204,68 @@ test('switches immersive planning scenes without opening an assistant session', 
   expect(assistantRequests).toEqual([]);
 });
 
+test('switches every Private Jets and Cars atmosphere without opening a session', async ({
+  page,
+}) => {
+  const assistantRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/v1/assistant/')) {
+      assistantRequests.push(request.url());
+    }
+  });
+
+  await page.goto('/');
+  const hero = page.locator('.travel-hero__experience');
+  const modes = page.getByRole('tablist', { name: 'Choose a planning view' });
+
+  await modes.getByRole('tab', { name: 'Private Jets' }).click();
+  await expect(hero).toHaveAttribute('data-mode', 'private-jet');
+  const privateScenes = page.getByRole('tablist', {
+    name: 'Choose a Private Jets atmosphere',
+  });
+  await expect(privateScenes.getByRole('tab')).toHaveCount(3);
+  await expect(hero).toHaveAttribute('data-image-state', 'loaded');
+  await privateScenes.getByRole('tab', { name: 'Daylight Lounge' }).click();
+  await expect(hero).toHaveAttribute('data-image-state', 'loaded');
+  for (const [label, scene, heading, image] of [
+    ['Daylight Lounge', 'private-daylight', 'Private aviation, made personal.', 'daylight-lounge-v1'],
+    ['Cockpit Sunset', 'private-cockpit', 'Describe the journey. We’ll handle the details.', 'cockpit-sunset-v1'],
+    ['Night Suite', 'private-night', 'The world, on your time.', 'night-suite-v1'],
+  ] as const) {
+    await privateScenes.getByRole('tab', { name: label }).click();
+    await expect(hero).toHaveAttribute('data-scene', scene);
+    await expect(page.getByRole('heading', { level: 1, name: heading }))
+      .toBeVisible();
+    await expect(hero.locator('.travel-hero__image'))
+      .toHaveAttribute('src', new RegExp(image));
+  }
+
+  await modes.getByRole('tab', { name: 'Cars' }).click();
+  await expect(hero).toHaveAttribute('data-mode', 'car');
+  const carScenes = page.getByRole('tablist', {
+    name: 'Choose a Cars atmosphere',
+  });
+  await expect(carScenes.getByRole('tab')).toHaveCount(3);
+  for (const [label, scene, heading, image] of [
+    ['Coastal Drive', 'car-coast', 'Where should the road take you?', 'coastal-road-v1'],
+    ['Alpine Arrival', 'car-alpine', 'Your ride, planned with the trip.', 'alpine-arrival-v1'],
+    ['Desert Escape', 'car-desert', 'Drive the destination.', 'desert-drive-v1'],
+  ] as const) {
+    await carScenes.getByRole('tab', { name: label }).click();
+    await expect(hero).toHaveAttribute('data-scene', scene);
+    await expect(page.getByRole('heading', { level: 1, name: heading }))
+      .toBeVisible();
+    await expect(hero.locator('.travel-hero__image'))
+      .toHaveAttribute('src', new RegExp(image));
+  }
+
+  await carScenes.getByRole('tab', { name: 'Coastal Drive' }).click();
+  await page.getByRole('button', { name: 'Airport pickup' }).click();
+  await expect(page.getByRole('textbox', { name: 'Ask the travel assistant' }))
+    .toHaveValue('I need a compact SUV at Lisbon airport next Friday for four days.');
+  expect(assistantRequests).toEqual([]);
+});
+
 test('uses a granted browser location for the visible origin and currency defaults', async ({
   context,
   page,

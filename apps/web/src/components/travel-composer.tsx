@@ -12,6 +12,11 @@ interface TravelComposerProps {
   readonly onSubmit: (prompt: string) => void;
   readonly placeholder?: string;
   readonly submitLabel?: string;
+  readonly suggestions?: readonly {
+    readonly label: string;
+    readonly prompt: string;
+  }[];
+  readonly suggestionsLabel?: string;
   readonly variant?: 'hero' | 'conversation';
   readonly visibleSubmitLabel?: string;
 }
@@ -25,6 +30,8 @@ export function TravelComposer({
   onSubmit,
   placeholder = 'Ask about dates, airports, or a route',
   submitLabel = 'Start trip',
+  suggestions = [],
+  suggestionsLabel = 'Suggested requests',
   variant = 'conversation',
   visibleSubmitLabel,
 }: Readonly<TravelComposerProps>) {
@@ -42,9 +49,13 @@ export function TravelComposer({
   return (
     <form
       aria-label={formLabel}
-      className={variant === 'hero'
-        ? 'travel-composer travel-composer--hero'
-        : 'travel-composer travel-composer--conversation'}
+      className={[
+        'travel-composer',
+        variant === 'hero'
+          ? 'travel-composer--hero'
+          : 'travel-composer--conversation',
+        suggestions.length > 0 ? 'travel-composer--with-suggestions' : '',
+      ].filter(Boolean).join(' ')}
       onSubmit={submit}
     >
       <textarea
@@ -87,6 +98,23 @@ export function TravelComposer({
           </button>
         )}
       </div>
+      {suggestions.length > 0 ? (
+        <ul
+          aria-label={suggestionsLabel}
+          className="travel-composer__suggestions"
+        >
+          {suggestions.map((suggestion) => (
+            <li key={suggestion.label}>
+              <button
+                onClick={() => setDraft(suggestion.prompt)}
+                type="button"
+              >
+                {suggestion.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </form>
   );
 }

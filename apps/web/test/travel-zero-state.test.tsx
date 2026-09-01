@@ -76,12 +76,12 @@ describe('travel assistant zero state', () => {
       .getAllByRole('button')).toHaveLength(2);
   });
 
-  it('offers four immersive planning modes without starting a conversation', () => {
+  it('offers six immersive planning modes without starting a conversation', () => {
     const onStart = vi.fn();
     render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
 
     const modes = screen.getByRole('tablist', { name: 'Choose a planning view' });
-    expect(within(modes).getAllByRole('tab')).toHaveLength(4);
+    expect(within(modes).getAllByRole('tab')).toHaveLength(6);
     expect(within(modes).getByRole('tab', { name: 'Explore' }))
       .toHaveAttribute('aria-selected', 'true');
     expect(screen.getByTestId('hero-window-deck').children).toHaveLength(3);
@@ -95,6 +95,68 @@ describe('travel assistant zero state', () => {
     })).toBeVisible();
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute('placeholder', 'Where do you want to fly?');
+  });
+
+  it('shows all three private-jet scenes without starting a conversation', () => {
+    const onStart = vi.fn();
+    render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
+
+    const modes = screen.getByRole('tablist', { name: 'Choose a planning view' });
+    fireEvent.click(within(modes).getByRole('tab', { name: 'Private Jets' }));
+
+    expect(screen.getByRole('heading', {
+      level: 1,
+      name: 'Private aviation, made personal.',
+    })).toBeVisible();
+    const scenes = screen.getByRole('tablist', {
+      name: 'Choose a Private Jets atmosphere',
+    });
+    expect(within(scenes).getAllByRole('tab')).toHaveLength(3);
+    expect(within(scenes).getByRole('tab', { name: 'Daylight Lounge' }))
+      .toHaveAttribute('aria-selected', 'true');
+
+    fireEvent.click(within(scenes).getByRole('tab', { name: 'Cockpit Sunset' }));
+
+    expect(onStart).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', {
+      level: 1,
+      name: 'Describe the journey. We’ll handle the details.',
+    })).toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
+      .toHaveAttribute(
+        'placeholder',
+        'I need a private jet from London to Nice next Friday for six, returning Sunday evening.',
+      );
+  });
+
+  it('keeps car suggestions conversational until the user submits', () => {
+    const onStart = vi.fn();
+    render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
+
+    const modes = screen.getByRole('tablist', { name: 'Choose a planning view' });
+    fireEvent.click(within(modes).getByRole('tab', { name: 'Cars' }));
+
+    expect(screen.getByRole('heading', {
+      level: 1,
+      name: 'Where should the road take you?',
+    })).toBeVisible();
+    const suggestions = screen.getByRole('list', {
+      name: 'Suggested Cars requests',
+    });
+    fireEvent.click(within(suggestions).getByRole('button', {
+      name: 'Airport pickup',
+    }));
+
+    expect(onStart).not.toHaveBeenCalled();
+    const composer = screen.getByRole('textbox', { name: 'Ask the travel assistant' });
+    expect(composer).toHaveValue(
+      'I need a compact SUV at Lisbon airport next Friday for four days.',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit car request' }));
+    expect(onStart).toHaveBeenCalledWith(
+      'I need a compact SUV at Lisbon airport next Friday for four days.',
+    );
   });
 
   it('renders a three-window explore scene around the real trip composer', () => {
