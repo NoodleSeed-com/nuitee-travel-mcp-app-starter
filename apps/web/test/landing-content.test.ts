@@ -5,7 +5,7 @@ import {
 } from '../src/lib/landing-content';
 
 describe('airline editorial landing content', () => {
-  it('defines three deterministic destination prompt entries', () => {
+  it('defines five deterministic destination prompt entries', () => {
     expect(landingDestinations).toEqual([
       {
         id: 'rome',
@@ -31,6 +31,22 @@ describe('airline editorial landing content', () => {
         imageSrc: '/images/destinations/istanbul-editorial-v2.jpg',
         imagePosition: '30% 50%',
       },
+      {
+        id: 'lisbon',
+        name: 'Lisbon',
+        descriptor: 'Sunlit stays',
+        prompt: 'Help me plan flights and a three-night stay in Lisbon.',
+        imageSrc: '/images/destinations/lisbon-editorial-v1.png',
+        imagePosition: '50% 54%',
+      },
+      {
+        id: 'banff',
+        name: 'Banff',
+        descriptor: 'Mountain escapes',
+        prompt: 'Plan a flight and hotel trip to Banff for two.',
+        imageSrc: '/images/destinations/banff-editorial-v1.png',
+        imagePosition: '50% 48%',
+      },
     ]);
   });
 
@@ -44,7 +60,7 @@ describe('airline editorial landing content', () => {
   });
 
   it('keeps every destination id and submitted prompt unique', () => {
-    expect(new Set(landingDestinations.map(({ id }) => id)).size).toBe(3);
-    expect(new Set(landingDestinations.map(({ prompt }) => prompt)).size).toBe(3);
+    expect(new Set(landingDestinations.map(({ id }) => id)).size).toBe(5);
+    expect(new Set(landingDestinations.map(({ prompt }) => prompt)).size).toBe(5);
   });
 });
