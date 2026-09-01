@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { starterConfig } from '../../../../starter.config';
+import { siteConfig } from '../lib/site-config';
 import {
   SUPPORTED_CURRENCIES,
   type SupportedCurrency,
@@ -37,11 +37,11 @@ export function TravelHeader({
         <span aria-hidden="true" className="travel-wordmark__mark">
           <WayfareMark />
         </span>
-        <span>{starterConfig.brand.name}</span>
+        <span>{siteConfig.brand.name}</span>
       </a>
       <nav aria-label="Primary navigation" className="travel-header__actions">
         <button type="button" onClick={directAction.onClick}>{directAction.label}</button>
-        <a href={starterConfig.website.developerPath}>For developers</a>
+        <a href={siteConfig.website.developerPath}>For developers</a>
       </nav>
       <select
         aria-label="Currency"

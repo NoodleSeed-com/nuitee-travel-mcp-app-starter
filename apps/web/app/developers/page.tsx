@@ -1,5 +1,5 @@
-import { starterConfig } from '../../../../starter.config';
 import { WayfareMark } from '../../src/components/wayfare-mark';
+import { siteConfig } from '../../src/lib/site-config';
 
 const setupSteps = [
   {
@@ -13,9 +13,9 @@ const setupSteps = [
     detail: 'Opens the guest shell locally. It does not start an assistant session until the first message is submitted.',
   },
   {
-    title: 'Validate the MCP',
-    command: 'pnpm agent:check',
-    detail: 'Runs the credential-free Noodle validation, smoke test, tool listing, and project checks.',
+    title: 'Validate the partner MCP',
+    command: 'pnpm agent:check:partner',
+    detail: 'Validates and smokes the isolated partner profile. The normal starter checks remain separate and credential-free.',
   },
   {
     title: 'Add the public embed ID',
@@ -33,10 +33,10 @@ export default function DevelopersPage() {
       <div className="developer-page__frame">
         <header className="developer-page__header">
           <a className="travel-wordmark" href="/">
-            <span className="travel-wordmark__mark" aria-hidden="true">
+            <span aria-hidden="true" className="travel-wordmark__mark">
               <WayfareMark />
             </span>
-            <span>{starterConfig.brand.name}</span>
+            <span>{siteConfig.brand.name}</span>
           </a>
           <a className="developer-page__home" href="/">
             Back to travel assistant
@@ -45,11 +45,12 @@ export default function DevelopersPage() {
 
         <article className="developer-guide" id="developer-guide">
           <header className="developer-guide__intro">
-            <p className="developer-guide__eyebrow">Developer template</p>
-            <h1>Guest-first setup</h1>
+            <p className="developer-guide__eyebrow">Private partner preview</p>
+            <h1>One integration, three travel views</h1>
             <p>
-              Run the primary Next.js experience without a website account,
-              database, assistant client secret, or login screen.
+              Reuse the starter&apos;s current-flight capabilities while this profile
+              adds visibly synthetic hotel and rewards views. The website never
+              receives the Nuitee or model credential.
             </p>
           </header>
 
@@ -73,11 +74,12 @@ export default function DevelopersPage() {
             aria-labelledby="verify-boundary"
           >
             <p className="developer-guide__eyebrow">Capability boundary</p>
-            <h2 id="verify-boundary">Verify Search → Select → Verify</h2>
+            <h2 id="verify-boundary">Search → Compare → Verify</h2>
             <p>
-              Finish the smoke test at a verified fare. This template does not
-              book, hold inventory, collect passenger details, take payment, or
-              issue a ticket.
+              Flights use the connected Nuitee provider. Hotels and loyalty are
+              deterministic illustrative data. The experience does not book, hold
+              inventory, redeem points, collect passenger details, take payment,
+              or issue a ticket.
             </p>
           </section>
 
@@ -108,12 +110,12 @@ export default function DevelopersPage() {
               or private deployment URLs in a report.
             </p>
             <nav aria-label="Developer help">
-              <a href={starterConfig.website.supportPath}>Support</a>
-              {starterConfig.website.privacyUrl ? (
-                <a href={starterConfig.website.privacyUrl}>Privacy</a>
+              <a href={siteConfig.website.supportPath}>Support</a>
+              {siteConfig.website.privacyUrl ? (
+                <a href={siteConfig.website.privacyUrl}>Privacy</a>
               ) : null}
-              {starterConfig.website.termsUrl ? (
-                <a href={starterConfig.website.termsUrl}>Terms</a>
+              {siteConfig.website.termsUrl ? (
+                <a href={siteConfig.website.termsUrl}>Terms</a>
               ) : null}
             </nav>
           </section>

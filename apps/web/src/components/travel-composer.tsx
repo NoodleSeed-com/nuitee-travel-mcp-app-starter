@@ -48,7 +48,7 @@ export function TravelComposer({
       onSubmit={submit}
     >
       <textarea
-        aria-label="Ask about a flight"
+        aria-label="Ask the travel assistant"
         className="travel-composer__input"
         id={inputId}
         onChange={(event) => setDraft(event.currentTarget.value)}

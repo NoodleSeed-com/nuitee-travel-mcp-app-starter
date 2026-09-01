@@ -2,6 +2,7 @@ import '@fontsource-variable/inter';
 import '@noodleseed/one/react/styles.css';
 import type { CSSProperties } from 'react';
 import { Feedback, Flow, Frame, Region, StatusBadge, useBranding, useLayout, useSendFollowUpMessage, useToolInfo, useWidgetReady } from '../helpers.js';
+import type { DemoHomeOutput } from '../demo-schemas.js';
 import type { HomeOutput } from '../flight-schemas.js';
 import { starterConfig } from '../starter-config.js';
 import { BedIcon, CarIcon, CompassIcon, PlaneIcon, StarIcon } from './icons.js';
@@ -9,6 +10,7 @@ import { SearchEditor, searchPrompt, type SearchDraft } from './search-editor.js
 import './travel.css';
 
 type HomeState = 'loading' | 'error' | 'malformed';
+type TravelHomeOutput = HomeOutput | DemoHomeOutput;
 
 const domainIcons = {
   Flights: PlaneIcon,
@@ -18,22 +20,34 @@ const domainIcons = {
   Experiences: CompassIcon,
 } as const;
 
-export function isHome(value: unknown): value is HomeOutput {
+export function isHome(value: unknown): value is TravelHomeOutput {
   if (value === null || typeof value !== 'object') return false;
-  const candidate = value as Partial<HomeOutput>;
-  const expected = [
-    ['Flights', 'available'],
-    ['Stays', 'coming_soon'],
-    ['Loyalty', 'coming_soon'],
-    ['Ground travel', 'coming_soon'],
-    ['Experiences', 'coming_soon'],
-  ] as const;
+  const candidate = value as Partial<TravelHomeOutput>;
+  const expanded = Array.isArray(candidate.domains) && candidate.domains.some(
+    (domain) => domain?.availability === 'illustrative',
+  );
+  const expected = expanded
+    ? [
+        ['Flights', 'available'],
+        ['Stays', 'illustrative'],
+        ['Loyalty', 'illustrative'],
+        ['Ground travel', 'coming_soon'],
+        ['Experiences', 'coming_soon'],
+      ] as const
+    : [
+        ['Flights', 'available'],
+        ['Stays', 'coming_soon'],
+        ['Loyalty', 'coming_soon'],
+        ['Ground travel', 'coming_soon'],
+        ['Experiences', 'coming_soon'],
+      ] as const;
   return candidate.status === 'ready' &&
     candidate.brand === starterConfig.brand.name &&
     typeof candidate.message === 'string' && candidate.message.length <= 300 &&
-    typeof candidate.fallback === 'string' && candidate.fallback.length <= 500 &&
+    typeof candidate.fallback === 'string' && candidate.fallback.length <= 700 &&
     Array.isArray(candidate.domains) && candidate.domains.length === expected.length && candidate.domains.every((domain, index) =>
-      domain !== null && typeof domain === 'object' && domain.name === expected[index][0] && domain.availability === expected[index][1]);
+      domain !== null && typeof domain === 'object' && domain.name === expected[index][0] && domain.availability === expected[index][1]) &&
+    (!expanded || ('disclosure' in candidate && typeof candidate.disclosure === 'string' && candidate.disclosure.length <= 320));
 }
 
 export function TravelHomeView({
@@ -41,15 +55,18 @@ export function TravelHomeView({
   state,
   theme,
   onSearchPrompt,
+  onDemoPrompt,
   brandStyle,
 }: {
-  readonly data?: HomeOutput;
+  readonly data?: TravelHomeOutput;
   readonly state?: HomeState;
   readonly theme: 'light' | 'dark';
   readonly onSearchPrompt?: (draft: SearchDraft) => void;
+  readonly onDemoPrompt?: (prompt: string) => void;
   readonly brandStyle?: CSSProperties;
 }) {
   const frameClassName = theme === 'dark' ? 'cc-app cc-theme-dark' : 'cc-app';
+  const demo = data !== undefined && 'disclosure' in data;
 
   if (state === 'loading') {
     return (
@@ -78,29 +95,44 @@ export function TravelHomeView({
       className={frameClassName}
       style={brandStyle}
       displayMode="auto"
-      title="Flight search"
-      subtitle="One-way or round trip"
+      title={demo ? 'Plan your travel' : 'Flight search'}
+      subtitle={demo ? 'Flights, illustrative stays, and rewards' : 'One-way or round trip'}
       data-llm={data.fallback}
     >
       <Flow variant="stack" density="comfortable">
         <section className="cc-home-intro" aria-label="Flight availability">
-          <StatusBadge className="cc-availability-badge" tone="success"><PlaneIcon />Flights available</StatusBadge>
+          <StatusBadge className="cc-availability-badge" tone="success"><PlaneIcon />{demo ? 'Current flights' : 'Flights available'}</StatusBadge>
           <p>{data.message}</p>
+          {demo ? <p className="cc-demo-disclosure">{data.disclosure}</p> : null}
         </section>
 
         <SearchEditor title="Trip details" onSubmit={onSearchPrompt} />
 
-        <Region title="Travel capabilities" description="Only Flights is connected in version one.">
+        <Region
+          title="Travel capabilities"
+          description={demo ? 'One conversation, with the source of every result kept visible.' : 'Only Flights is connected in version one.'}
+        >
           <ul className="cc-domain-grid" aria-label="Travel capability availability">
             {data.domains.map((domain) => {
               const DomainIcon = domainIcons[domain.name];
               return (
-              <li className={domain.availability === 'available' ? 'cc-domain cc-domain-available' : 'cc-domain'} key={domain.name}>
+              <li className={domain.availability !== 'coming_soon' ? 'cc-domain cc-domain-available' : 'cc-domain'} key={domain.name}>
                 <span className="cc-domain-icon"><DomainIcon /></span>
                 <span className="cc-domain-name">{domain.name}</span>
                 <span className="cc-domain-status">
-                  {domain.availability === 'available' ? 'Available' : 'Coming soon'}
+                  {'label' in domain ? domain.label : domain.availability === 'available' ? 'Available' : 'Coming soon'}
                 </span>
+                {domain.availability === 'illustrative' && onDemoPrompt ? (
+                  <button
+                    className="cc-domain-action"
+                    onClick={() => onDemoPrompt(domain.name === 'Stays'
+                      ? 'Show me hotels and ask only for the destination or dates you still need.'
+                      : 'Show my illustrative rewards.')}
+                    type="button"
+                  >
+                    {domain.name === 'Stays' ? 'Compare stays' : 'View rewards'}
+                  </button>
+                ) : null}
               </li>
               );
             })}
@@ -127,6 +159,9 @@ export default function TravelHome() {
       theme={layout.theme === 'dark' ? 'dark' : 'light'}
       onSearchPrompt={ready && layout.supports?.followUpMessage ? (draft) => {
         void sendFollowUp({ prompt: searchPrompt(draft) });
+      } : undefined}
+      onDemoPrompt={ready && layout.supports?.followUpMessage ? (prompt) => {
+        void sendFollowUp({ prompt });
       } : undefined}
       brandStyle={{
         '--cc-accent': branding.theme?.[layout.theme]?.accent ?? branding.accent ?? '#1E6049',

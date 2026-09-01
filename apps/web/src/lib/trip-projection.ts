@@ -9,6 +9,10 @@ export type TripPhase =
   | 'selected'
   | 'verifying'
   | 'verified'
+  | 'comparing-stays'
+  | 'stay-selected'
+  | 'rewards'
+  | 'trip-review'
   | 'error';
 
 export interface TripProjection {
@@ -21,6 +25,12 @@ export interface TripProjection {
   readonly cabinClass?: string;
   readonly currency?: string;
   readonly country?: string;
+  readonly focus?: 'stays' | 'rewards' | 'trip';
+  readonly stayDestination?: string;
+  readonly checkInDate?: string;
+  readonly checkOutDate?: string;
+  readonly hasFlightSelection?: boolean;
+  readonly hasStaySelection?: boolean;
 }
 
 export const EMPTY_TRIP: TripProjection = { phase: 'idle' };
@@ -224,7 +234,9 @@ function projectResult(
       return searchProjection(result) ?? current;
     }
     case 'select_flight_offer':
-      if (result.status === 'selected') return { ...current, phase: 'selected' };
+      if (result.status === 'selected') {
+        return { ...current, phase: 'selected', hasFlightSelection: true };
+      }
       if (result.status === 'unavailable') return { ...current, phase: 'error' };
       return current;
     case 'verify_flight_offer': {
@@ -240,6 +252,47 @@ function projectResult(
       }
       return current;
     }
+    case 'search_hotels': {
+      if (result.status !== 'success' && result.status !== 'empty') return current;
+      if (result.dataSource !== 'illustrative' || !isRecord(result.searchContext)) return current;
+      const destination = result.searchContext.destination;
+      const checkInDate = isoDate(result.searchContext, 'checkInDate');
+      const checkOutDate = isoDate(result.searchContext, 'checkOutDate');
+      if (
+        typeof destination !== 'string'
+        || destination.trim().length < 2
+        || destination.length > 80
+        || !checkInDate
+        || !checkOutDate
+        || checkOutDate <= checkInDate
+      ) return current;
+      return {
+        ...current,
+        phase: 'comparing-stays',
+        focus: 'stays',
+        stayDestination: destination,
+        checkInDate,
+        checkOutDate,
+      };
+    }
+    case 'select_hotel':
+      return result.status === 'selected'
+        ? {
+          ...current,
+          phase: 'stay-selected',
+          focus: 'stays',
+          hasStaySelection: true,
+        }
+        : current;
+    case 'open_loyalty':
+      return result.status === 'success' && result.dataSource === 'illustrative'
+        ? { ...current, phase: 'rewards', focus: 'rewards' }
+        : current;
+    case 'review_trip':
+      return (result.status === 'ready' || result.status === 'incomplete')
+        && result.dataSource === 'illustrative'
+        ? { ...current, phase: 'trip-review', focus: 'trip' }
+        : current;
     default:
       return current;
   }

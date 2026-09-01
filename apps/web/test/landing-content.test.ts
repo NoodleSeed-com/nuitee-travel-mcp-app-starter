@@ -34,12 +34,12 @@ describe('airline editorial landing content', () => {
     ]);
   });
 
-  it('defines one honest flexible-trip editorial prompt', () => {
+  it('defines one honest unified demo-trip editorial prompt', () => {
     expect(landingEditorialFeature).toEqual({
-      heading: 'Plans change. Wayfare keeps up.',
-      support: 'Refine the dates, travellers, cabin, and route as you go.',
-      action: 'Start with a flexible trip',
-      prompt: 'Help me find a trip somewhere warm with flexible dates.',
+      heading: 'One conversation, every part of the trip.',
+      support: 'Refine current flights, compare illustrative stays, and preview rewards as you go.',
+      action: 'Build a trip',
+      prompt: 'Help me build a trip somewhere warm with flexible dates and a hotel.',
     });
   });
 

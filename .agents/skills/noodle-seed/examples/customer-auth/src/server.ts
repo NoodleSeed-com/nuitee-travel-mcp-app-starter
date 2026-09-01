@@ -196,7 +196,6 @@ export default server(
         },
         composer: { leadingIcon: 'brand-mark', shape: 'pill' },
       },
-      suggestedPrompts: ['Explain how to connect this customer-authenticated MCP server'],
     }),
   },
   [

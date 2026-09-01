@@ -16,10 +16,42 @@ const starterView: AssistantViewData = {
   result: { status: 'success' },
 };
 
+const hotelView: AssistantViewData = {
+  id: 'hotel-view',
+  tool: 'search_hotels',
+  resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_hotels_widget',
+  result: { status: 'success', dataSource: 'illustrative' },
+};
+
+const loyaltyView: AssistantViewData = {
+  id: 'loyalty-view',
+  tool: 'open_loyalty',
+  resourceUri: 'ui://nuitee_travel_mcp_app_starter/open_loyalty_widget',
+  result: { status: 'success', dataSource: 'illustrative' },
+};
+
+const rewardFlightView: AssistantViewData = {
+  id: 'reward-flight-view',
+  tool: 'compare_reward_flights',
+  resourceUri: 'ui://nuitee_travel_mcp_app_starter/compare_reward_flights_widget',
+  result: { status: 'success', dataSource: 'illustrative' },
+};
+
+const reviewView: AssistantViewData = {
+  id: 'review-view',
+  tool: 'review_trip',
+  resourceUri: 'ui://nuitee_travel_mcp_app_starter/review_trip_widget',
+  result: { status: 'ready', dataSource: 'illustrative' },
+};
+
 describe('inline travel view admission', () => {
   it.each([
     ['flight search', searchView],
     ['travel starter', starterView],
+    ['demo hotel search', hotelView],
+    ['demo loyalty overview', loyaltyView],
+    ['illustrative reward-flight comparison', rewardFlightView],
+    ['trip review', reviewView],
   ])('admits the exact %s tool and resource pair', (_label, view) => {
     expect(isInlineTravelView(view)).toBe(true);
   });

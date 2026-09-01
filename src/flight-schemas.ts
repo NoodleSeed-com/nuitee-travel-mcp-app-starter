@@ -124,8 +124,8 @@ export const itinerarySchema = z.object({
 });
 
 export const searchInputSchema = z.object({
-  origin: z.string().regex(/^[A-Za-z]{3}$/).describe('Resolved origin IATA code derived from an unambiguous user-supplied city or airport name'),
-  destination: z.string().regex(/^[A-Za-z]{3}$/).describe('Resolved destination IATA code derived from an unambiguous user-supplied city or airport name'),
+  origin: z.string().regex(/^[A-Za-z]{3}$/).describe('Resolved actual-airport IATA code derived from an unambiguous user-supplied city or airport name; use YYZ for Toronto, not the YTO metro code'),
+  destination: z.string().regex(/^[A-Za-z]{3}$/).describe('Resolved actual-airport IATA code derived from an unambiguous user-supplied city or airport name; use YYZ for Toronto, not the YTO metro code'),
   departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe('Outbound date in YYYY-MM-DD format; resolve relative language from the server-provided local date before calling'),
   returnDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe('Optional return date in YYYY-MM-DD format'),
   adults: z.number().int().min(1).max(9).default(1).describe('Adult traveler count; treat a generic passenger count as adults unless the user explicitly identifies children or infants'),
@@ -139,8 +139,8 @@ export const searchInputSchema = z.object({
 });
 
 export const flightPlanInputSchema = z.object({
-  origin: z.string().regex(/^[A-Z]{3}$/).describe('Resolved uppercase origin IATA code derived from an unambiguous user-supplied city or airport name'),
-  destination: z.string().regex(/^[A-Z]{3}$/).describe('Resolved uppercase destination or metro IATA code derived from an unambiguous user-supplied place'),
+  origin: z.string().regex(/^[A-Z]{3}$/).describe('Resolved uppercase actual-airport IATA code derived from an unambiguous user-supplied city or airport name; use YYZ for Toronto, not YTO'),
+  destination: z.string().regex(/^[A-Z]{3}$/).describe('Resolved uppercase actual-airport IATA code derived from an unambiguous user-supplied place; use YYZ for Toronto, not YTO'),
   currency: z.string().regex(/^[A-Z]{3}$/).default('USD').describe('Uppercase ISO 4217 display currency; an explicit traveler choice wins, otherwise a browser page default may be used'),
   country: z.string().regex(/^[A-Z]{2}$/).default('US').describe('Uppercase ISO 3166-1 alpha-2 pricing market; an explicit traveler choice wins, otherwise a browser page default may be used'),
 });

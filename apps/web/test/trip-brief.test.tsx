@@ -21,9 +21,28 @@ describe('trip brief', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('discloses secondary accepted trip facts on demand', () => {
-    render(<TripBrief projection={{
+  it('does not show a summary before an application-issued selection exists', () => {
+    const { container } = render(<TripBrief projection={{
       phase: 'planned',
+      origin: 'ISB',
+      destination: 'NYC',
+      departureDate: '2026-09-18',
+      returnDate: '2026-09-27',
+      travelers: '1 adult',
+      cabinClass: 'Economy',
+      currency: 'USD',
+      country: 'US',
+    }} />);
+
+    expect(screen.queryByRole('region', { name: 'Current trip' }))
+      .not.toBeInTheDocument();
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('discloses selected trip facts on demand', () => {
+    render(<TripBrief projection={{
+      phase: 'selected',
+      hasFlightSelection: true,
       origin: 'ISB',
       destination: 'NYC',
       departureDate: '2026-09-18',
@@ -40,7 +59,7 @@ describe('trip brief', () => {
     expect(brief).toHaveTextContent('Economy');
     expect(brief).not.toHaveTextContent('USD');
     expect(brief).not.toHaveTextContent('US market');
-    expect(brief).toHaveTextContent('Ready to search');
+    expect(brief).toHaveTextContent('Fare selected');
     expect(brief).not.toHaveTextContent(/point-of-sale/i);
 
     fireEvent.click(within(brief).getByRole('button', {
@@ -51,19 +70,19 @@ describe('trip brief', () => {
     expect(brief).toHaveTextContent('US market');
   });
 
-  it('renders only validated projected trip facts', () => {
+  it('renders a stay-only selection without inventing flight facts', () => {
     render(<TripBrief projection={{
-      phase: 'comparing',
-      origin: 'ISB',
-      destination: 'FCO',
-      departureDate: '2026-09-11',
-      returnDate: '2026-09-15',
-      travelers: '2 adults',
+      phase: 'stay-selected',
+      hasStaySelection: true,
+      focus: 'stays',
+      stayDestination: 'Lisbon',
+      checkInDate: '2026-09-18',
+      checkOutDate: '2026-09-21',
     }} />);
 
     expect(screen.getByRole('region', { name: 'Current trip' }))
-      .toHaveTextContent('ISB → FCO');
-    expect(screen.getByText('Comparing fares')).toBeVisible();
-    expect(screen.queryByText('Provider offer')).not.toBeInTheDocument();
+      .toHaveTextContent('Stay in Lisbon');
+    expect(screen.getByText('Stay selected')).toBeVisible();
+    expect(screen.queryByText('→')).not.toBeInTheDocument();
   });
 });

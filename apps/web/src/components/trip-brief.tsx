@@ -2,6 +2,7 @@
 
 import {
   Armchair,
+  BedDouble,
   CalendarDays,
   ChevronDown,
   MapPin,
@@ -19,6 +20,10 @@ const PHASE_LABELS: Readonly<Record<TripProjection['phase'], string>> = {
   selected: 'Fare selected',
   verifying: 'Verifying fare',
   verified: 'Fare verified',
+  'comparing-stays': 'Comparing stays',
+  'stay-selected': 'Stay selected',
+  rewards: 'Reviewing rewards',
+  'trip-review': 'Trip review',
   error: 'Needs attention',
 };
 
@@ -31,6 +36,10 @@ const COMPLETED_SEGMENTS: Readonly<Record<TripProjection['phase'], number>> = {
   selected: 4,
   verifying: 5,
   verified: 6,
+  'comparing-stays': 3,
+  'stay-selected': 4,
+  rewards: 3,
+  'trip-review': 5,
   error: 0,
 };
 
@@ -38,10 +47,13 @@ export function TripBrief({
   projection,
 }: Readonly<{ projection: TripProjection }>) {
   const [expanded, setExpanded] = useState(false);
-  if (projection.phase === 'idle') return null;
+  if (!projection.hasFlightSelection && !projection.hasStaySelection) return null;
   const completedSegments = COMPLETED_SEGMENTS[projection.phase];
   const hasSecondaryDetails = Boolean(
-    projection.returnDate || projection.currency || projection.country,
+    projection.returnDate
+      || projection.checkOutDate
+      || projection.currency
+      || projection.country,
   );
 
   return (
@@ -55,10 +67,22 @@ export function TripBrief({
             <strong>{projection.destination ?? '—'}</strong>
           </p>
         ) : null}
+        {projection.stayDestination ? (
+          <p className="trip-brief__fact trip-brief__stay">
+            <BedDouble aria-hidden="true" />
+            <strong>Stay in {projection.stayDestination}</strong>
+          </p>
+        ) : null}
         {projection.departureDate ? (
           <p className="trip-brief__fact">
             <CalendarDays aria-hidden="true" />
             <span>{projection.departureDate}</span>
+          </p>
+        ) : null}
+        {!projection.departureDate && projection.checkInDate ? (
+          <p className="trip-brief__fact">
+            <CalendarDays aria-hidden="true" />
+            <span>{projection.checkInDate}</span>
           </p>
         ) : null}
         {projection.travelers ? (
@@ -108,6 +132,12 @@ export function TripBrief({
             <div>
               <dt>Return</dt>
               <dd>{projection.returnDate}</dd>
+            </div>
+          ) : null}
+          {projection.checkOutDate ? (
+            <div>
+              <dt>Check-out</dt>
+              <dd>{projection.checkOutDate}</dd>
             </div>
           ) : null}
           {projection.currency ? (

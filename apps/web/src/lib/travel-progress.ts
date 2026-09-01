@@ -22,6 +22,14 @@ export function progressForEvent(
       return { label: 'Saving your fare choice' };
     case 'verify_flight_offer':
       return { label: 'Verifying the current fare', phase: 'verifying' };
+    case 'search_hotels':
+      return { label: 'Finding stays' };
+    case 'select_hotel':
+      return { label: 'Adding the stay' };
+    case 'open_loyalty':
+      return { label: 'Opening illustrative rewards' };
+    case 'review_trip':
+      return { label: 'Reviewing selected travel' };
     default:
       return { label: 'Working on your request' };
   }

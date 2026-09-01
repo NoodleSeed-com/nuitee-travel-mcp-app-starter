@@ -13,8 +13,8 @@ importers:
         version: 5.3.0
     devDependencies:
       '@noodleseed/one':
-        specifier: 0.147.1
-        version: 0.147.1
+        specifier: 0.149.0
+        version: 0.149.0
       '@types/react':
         specifier: 19.2.18
         version: 19.2.18
@@ -49,8 +49,8 @@ importers:
         specifier: 5.3.0
         version: 5.3.0
       '@noodleseed/assistant':
-        specifier: 1.27.0
-        version: 1.27.0(@modelcontextprotocol/sdk@1.30.0(zod@4.4.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: 1.28.0
+        version: 1.28.0(@modelcontextprotocol/sdk@1.30.0(zod@4.4.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       lucide-react:
         specifier: 1.26.0
         version: 1.26.0(react@19.2.8)
@@ -500,8 +500,17 @@ packages:
       react:
         optional: true
 
-  '@noodleseed/one@0.147.1':
-    resolution: {integrity: sha512-N9hUis/3g4eo3t5DCbrFHzrwIwpSasIZh6jvzZyEXhoX95Uy9BWhmSDuYiCokuRVtTtwWwevoCW8XaA7ZEgSIg==}
+  '@noodleseed/assistant@1.28.0':
+    resolution: {integrity: sha512-YSI9G4UM1UhYtu/3d+0boPAr8HcmknAuxSsd2yJypn11aURLwVKTjzG9bfWogo3s3WuK+Tr+g5XBmnMydVR3XA==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      react: '>=18.2.0 <20'
+    peerDependenciesMeta:
+      react:
+        optional: true
+
+  '@noodleseed/one@0.149.0':
+    resolution: {integrity: sha512-UPuoFfY2KcSvh9NsMjaMhbM0jksklC9LZSVgaYwoGPrGY94eFXFhuHBj/4UhV0SzRI+0gqZPidiBPmuZqWhaWw==}
     engines: {node: '>=24'}
     hasBin: true
     bundledDependencies:
@@ -1784,10 +1793,6 @@ packages:
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
 
-  picomatch@4.0.5:
-    resolution: {integrity: sha512-RvwwcruNjI1ncT5xRakeyS9Lf8lcItv34KD+aif+VH9kduAyfYBipGh12274xtenIPZ119/R9BdTBa8gAwSh0A==}
-    engines: {node: '>=12'}
-
   picomatch@4.0.7:
     resolution: {integrity: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==}
     engines: {node: '>=12'}
@@ -2501,7 +2506,20 @@ snapshots:
       - '@modelcontextprotocol/sdk'
       - react-dom
 
-  '@noodleseed/one@0.147.1': {}
+  '@noodleseed/assistant@1.28.0(@modelcontextprotocol/sdk@1.30.0(zod@4.4.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+    dependencies:
+      '@modelcontextprotocol/ext-apps': 1.7.5(@modelcontextprotocol/sdk@1.30.0(zod@4.4.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(zod@4.4.3)
+      ai: 6.0.201(zod@4.4.3)
+      dompurify: 3.4.14
+      marked: 16.4.2
+      zod: 4.4.3
+    optionalDependencies:
+      react: 19.2.8
+    transitivePeerDependencies:
+      - '@modelcontextprotocol/sdk'
+      - react-dom
+
+  '@noodleseed/one@0.149.0': {}
 
   '@opentelemetry/api@1.9.1': {}
 
@@ -3033,9 +3051,9 @@ snapshots:
 
   fast-uri@3.1.5: {}
 
-  fdir@6.5.0(picomatch@4.0.5):
+  fdir@6.5.0(picomatch@4.0.7):
     optionalDependencies:
-      picomatch: 4.0.5
+      picomatch: 4.0.7
 
   finalhandler@2.1.1:
     dependencies:
@@ -3698,8 +3716,6 @@ snapshots:
 
   picocolors@1.1.1: {}
 
-  picomatch@4.0.5: {}
-
   picomatch@4.0.7: {}
 
   pkce-challenge@5.0.1: {}
@@ -4006,8 +4022,8 @@ snapshots:
 
   tinyglobby@0.2.17:
     dependencies:
-      fdir: 6.5.0(picomatch@4.0.5)
-      picomatch: 4.0.5
+      fdir: 6.5.0(picomatch@4.0.7)
+      picomatch: 4.0.7
 
   tinyrainbow@3.1.1: {}
 
@@ -4118,7 +4134,7 @@ snapshots:
   vite@8.2.2(@types/node@26.2.0):
     dependencies:
       lightningcss: 1.33.0
-      picomatch: 4.0.5
+      picomatch: 4.0.7
       postcss: 8.5.26
       rolldown: 1.2.5
       tinyglobby: 0.2.17
