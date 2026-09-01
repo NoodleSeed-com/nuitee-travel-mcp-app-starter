@@ -142,7 +142,7 @@ test('renders the premium zero-state first fold without opening an assistant ses
 
   await expect(page.getByRole('heading', {
     level: 1,
-    name: 'Where will you go next?',
+    name: 'Plan your whole trip',
   })).toBeVisible();
   await expect(page.getByRole('heading', {
     level: 2,
@@ -176,7 +176,7 @@ test('uses a granted browser location for the visible origin and currency defaul
     .toHaveValue('PKR');
   await expect(page.getByText('Islamabad (ISB)', { exact: true })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Ask the travel assistant' }))
-    .toHaveAttribute('placeholder', 'Islamabad to Rome for two, next weekend');
+    .toHaveAttribute('placeholder', 'Islamabad to somewhere warm for two, next week');
 });
 
 test('keeps neutral travel defaults when browser location is denied', async ({
@@ -208,7 +208,7 @@ test('keeps neutral travel defaults when browser location is denied', async ({
     .toHaveValue('USD');
   await expect(page.getByText('Your departure', { exact: true })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Ask the travel assistant' }))
-    .toHaveAttribute('placeholder', 'Your departure to Rome for two, next weekend');
+    .toHaveAttribute('placeholder', 'Your departure to somewhere warm for two, next week');
 });
 
 test('keeps the premium desktop hero heading on one line with rounded visual surfaces', async ({
@@ -230,7 +230,7 @@ test('keeps the premium desktop hero heading on one line with rounded visual sur
     expect(Math.abs(center - (viewport!.width / 2))).toBeLessThanOrEqual(2);
   }
 
-  await expect(page.getByRole('link', { name: 'Flight Catchers' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Wayfare' })).toBeVisible();
   const headlineLayout = await page.locator('#travel-home-title').evaluate((element) => {
     const style = getComputedStyle(element);
     return {
@@ -260,7 +260,7 @@ test('keeps the premium desktop hero heading on one line with rounded visual sur
   }
   await expect(page.locator('.travel-editorial img')).toHaveCount(0);
   await expect(page.locator(
-    '.travel-editorial [data-flight-catchers-mark="true"]',
+    '.travel-editorial [data-wayfare-mark="true"]',
   )).toBeVisible();
 });
 
@@ -315,7 +315,7 @@ test('keeps the cinematic hero legible, fitted, and keyboard-reachable on deskto
     const image = getComputedStyle(document.querySelector('.travel-hero__image')!);
     return { headingColor: heading.color, imageFit: image.objectFit };
   });
-  expect(heroAppearance.headingColor).toBe('rgb(7, 29, 41)');
+  expect(heroAppearance.headingColor).toBe('rgb(11, 31, 51)');
   expect(heroAppearance.imageFit).toBe('cover');
 
   const developerLink = page.getByRole('navigation', {
@@ -374,22 +374,49 @@ test('keeps motion reduced without restoring the retired animation layer', async
   await expect(page.locator('[data-atmosphere-canvas]')).toHaveCount(0);
 });
 
-test('keeps the next section discoverable with desktop targets at least 44px', async ({
+test('keeps the next planning section discoverable with consistent desktop spacing and targets', async ({
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium');
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
 
-  const destinationTop = await page.locator('#places-to-start').evaluate((section) => (
-    section.getBoundingClientRect().top
-  ));
+  const [intentBounds, intentCardsBounds, destinationBounds,
+    destinationHeadingBounds, destinationCardsBounds, editorialBounds] = await Promise.all([
+    page.locator('.travel-capabilities').boundingBox(),
+    page.locator('.travel-capabilities ol').boundingBox(),
+    page.locator('#places-to-start').boundingBox(),
+    page.locator('#places-to-start .travel-section-heading').boundingBox(),
+    page.locator('.destination-inspiration__grid').boundingBox(),
+    page.locator('.travel-editorial').boundingBox(),
+  ]);
+  expect(intentBounds).not.toBeNull();
+  expect(intentCardsBounds).not.toBeNull();
+  expect(destinationBounds).not.toBeNull();
+  expect(destinationHeadingBounds).not.toBeNull();
+  expect(destinationCardsBounds).not.toBeNull();
+  expect(editorialBounds).not.toBeNull();
+  const intentTop = intentBounds!.y;
+  const destinationTop = destinationBounds!.y;
+  const intentToDestination = destinationHeadingBounds!.y
+    - (intentCardsBounds!.y + intentCardsBounds!.height);
+  const destinationToEditorial = editorialBounds!.y
+    - (destinationCardsBounds!.y + destinationCardsBounds!.height);
+  expect(intentTop).toBeGreaterThan(0);
+  expect(intentTop).toBeLessThanOrEqual(1120);
   expect(destinationTop).toBeGreaterThan(0);
-  expect(destinationTop).toBeLessThanOrEqual(1120);
+  expect(destinationTop).toBeLessThanOrEqual(1500);
+  expect(intentToDestination).toBeGreaterThanOrEqual(40);
+  expect(intentToDestination).toBeLessThanOrEqual(128);
+  expect(destinationToEditorial).toBeGreaterThanOrEqual(40);
+  expect(destinationToEditorial).toBeLessThanOrEqual(128);
 
   const targets = [
     page.getByRole('button', { name: 'Open menu' }),
     page.getByRole('button', { name: 'Submit trip request' }),
+    page.getByRole('button', { name: 'Search flights' }),
+    page.getByRole('button', { name: 'Compare stays' }),
+    page.getByRole('button', { name: 'Explore rewards' }),
     ...await page.locator('.destination-card').all(),
     page.getByRole('button', { name: 'Build a trip' }),
     ...await page.getByRole('contentinfo').getByRole('link').all(),
@@ -679,7 +706,7 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
         id: initializeId,
         method: 'ui/initialize',
         params: {
-          appInfo: { name: 'Flight Catchers browser fixture', version: '1.0.0' },
+          appInfo: { name: 'Wayfare browser fixture', version: '1.0.0' },
           appCapabilities: {},
           protocolVersion: '2025-11-21',
         },
@@ -790,6 +817,14 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
           id: `typed-search-result-turn-${turnRequests}`,
           tool: 'search_flights',
           result,
+        }),
+        frame('tool_completed', {
+          id: `selected-flight-turn-${turnRequests}`,
+          tool: 'select_flight_offer',
+          result: {
+            status: 'selected',
+            selectionId: 'sel_0123456789abcdef0123456789abcdef',
+          },
         }),
         frame('done', {}),
         '',
@@ -999,8 +1034,8 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
   await expect(currentTrip).not.toContainText('London');
   await expect(currentTrip).not.toContainText('First');
   const routeProgress = currentTrip.getByLabel('Trip progress');
-  await expect(routeProgress).toHaveAttribute('data-phase', 'comparing');
-  await expect(routeProgress.locator('[data-complete="true"]')).toHaveCount(3);
+  await expect(routeProgress).toHaveAttribute('data-phase', 'selected');
+  await expect(routeProgress.locator('[data-complete="true"]')).toHaveCount(4);
 
   const primaryAction = transcript.getByRole('button', { name: 'Confirm' });
   const primaryActionAppearance = await primaryAction.evaluate((button) => {
@@ -1838,7 +1873,7 @@ test('keeps 390px below-fold sections compact around the horizontal destination 
   expect(destinationBoxes[1]!.right).toBeGreaterThan(390);
 
   const capabilityItems = page.getByRole('list', {
-    name: 'How Flight Catchers plans a trip',
+    name: 'Start with flights, stays, or rewards',
   }).locator(':scope > li');
   await expect(capabilityItems).toHaveCount(3);
   const capabilityBoxes = await capabilityItems.evaluateAll((items) => (
@@ -1853,7 +1888,7 @@ test('keeps 390px below-fold sections compact around the horizontal destination 
   }
 
   const [editorialMark, editorialCopy] = await Promise.all([
-    page.locator('.travel-editorial [data-flight-catchers-mark="true"]').boundingBox(),
+    page.locator('.travel-editorial [data-wayfare-mark="true"]').boundingBox(),
     page.locator('.travel-editorial__copy').boundingBox(),
   ]);
   await expect(page.locator('.travel-editorial img')).toHaveCount(0);

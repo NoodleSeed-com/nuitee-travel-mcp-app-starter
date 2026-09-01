@@ -100,7 +100,7 @@ const render = (props: Parameters<typeof RewardFlightResultsView>[0]) =>
 
 const visibleText = (markup: string) => markup.replace(/<[^>]*>/gu, ' ');
 
-describe('Flight Catchers illustrative reward-flight widget', () => {
+describe('Wayfare illustrative reward-flight widget', () => {
   it('renders a geometry-matched accessible skeleton', () => {
     const markup = render({ state: 'loading', displayMode: 'inline', theme: 'light' });
     expect(markup).toContain('cc-reward-flight-skeleton');

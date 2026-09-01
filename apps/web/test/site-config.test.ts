@@ -1,17 +1,15 @@
-import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { starterConfig } from '../../../starter.config';
-import { flightCatchersDemoConfig } from '../../../src/demo-config';
+import { travelCompanionDemoConfig } from '../../../src/demo-config';
 import { siteConfig } from '../src/lib/site-config';
 
-describe('private demo website identity', () => {
-  it('does not overwrite the canonical starter identity', () => {
+describe('Wayfare companion website identity', () => {
+  it('uses the canonical Wayfare identity', () => {
     expect(starterConfig.brand.name).toBe('Wayfare');
-    expect(siteConfig.brand.name).toBe('Flight Catchers');
+    expect(siteConfig.brand.name).toBe('Wayfare');
     expect(siteConfig.brand.assistantName)
-      .toBe(flightCatchersDemoConfig.brand.assistantName);
+      .toBe(travelCompanionDemoConfig.brand.assistantName);
   });
 
   it('keeps every prompt within the supported demo boundary', () => {
@@ -24,18 +22,13 @@ describe('private demo website identity', () => {
     );
   });
 
-  it('uses a checked-in temporary asset with a recorded public-release block', async () => {
-    const logo = await readFile(resolve(
-      process.cwd(),
-      'public/brand/flight-catchers-demo-logo.png',
-    ));
-
-    expect([...logo.subarray(0, 8)])
-      .toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
-    expect(flightCatchersDemoConfig.assets.logo.reviewedBinaryBlob).toBe(false);
-    expect(flightCatchersDemoConfig.publicRelease.ready).toBe(false);
-    expect(flightCatchersDemoConfig.publicRelease.blockers)
-      .toContain('replace_temporary_logo_with_original_asset');
+  it('uses the canonical Wayfare hero and vector brand mark', () => {
+    expect(siteConfig.brand.heroImagePath)
+      .toBe('/images/wayfare-hybrid-hero-v2.jpg');
+    expect(travelCompanionDemoConfig.assets.logo.status)
+      .toBe('repository_vector_component');
+    expect(travelCompanionDemoConfig.assets.hero.status)
+      .toBe('repository_owned_starter_asset');
   });
 
   it('keeps the mixed-source disclosure persistent and explicit', () => {

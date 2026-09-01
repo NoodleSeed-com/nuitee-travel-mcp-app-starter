@@ -89,7 +89,7 @@ const render = (props: Parameters<typeof HotelResultsView>[0]) =>
 
 const visibleText = (markup: string) => markup.replace(/<[^>]*>/gu, ' ');
 
-describe('Flight Catchers demo hotel widget', () => {
+describe('Wayfare illustrative hotel widget', () => {
   it('renders a geometry-matched shimmer skeleton with a next-card peek', () => {
     const markup = render({ state: 'loading', displayMode: 'inline', theme: 'light' });
 

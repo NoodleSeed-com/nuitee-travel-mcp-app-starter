@@ -14,10 +14,10 @@ afterEach(() => {
 });
 
 describe('travel assistant zero state', () => {
-  it('uses the private Flight Catchers demo identity', () => {
+  it('uses the Wayfare identity with the expanded travel experience', () => {
     expect(siteConfig.brand).toMatchObject({
-      name: 'Flight Catchers',
-      tagline: 'Flights, hotels, and rewards in one conversation.',
+      name: 'Wayfare',
+      tagline: 'Travel, planned around you.',
     });
   });
 
@@ -30,13 +30,13 @@ describe('travel assistant zero state', () => {
 
     expect(screen.getByRole('heading', {
       level: 1,
-      name: 'Where will you go next?',
+      name: 'Plan your whole trip',
     })).toBeVisible();
     expect(screen.getByText(
-      'Plan flights, illustrative stays, and rewards in one conversation.',
+      'Flights, stays, and rewards—brought together in one conversation.',
     )).toBeVisible();
     expect(screen.getAllByRole('form', { name: 'Plan a trip' })).toHaveLength(1);
-    expect(screen.getAllByText(siteConfig.brand.name)).toHaveLength(1);
+    expect(screen.getAllByText(siteConfig.brand.name)).toHaveLength(2);
     expect(screen.queryByText('Guest trip')).not.toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'For developers' }))
       .toHaveLength(2);
@@ -55,7 +55,7 @@ describe('travel assistant zero state', () => {
     expect(screen.getByRole('link', { name: 'Skip to content' }))
       .toHaveAttribute('href', '#travel-canvas');
     expect(screen.getByRole('region', {
-      name: 'Where will you go next?',
+      name: 'Plan your whole trip',
     })).not.toHaveAttribute('id', 'travel-canvas');
     expect(container.querySelector('main#travel-canvas')).toHaveAttribute(
       'tabindex',
@@ -63,7 +63,7 @@ describe('travel assistant zero state', () => {
     );
   });
 
-  it('uses the accepted hybrid hero master with only two starter prompts', () => {
+  it('uses the Wayfare hero with only two starter prompts', () => {
     const { container } = render(
       <TravelZeroState inputRef={createRef()} onStart={vi.fn()} />,
     );
@@ -82,20 +82,23 @@ describe('travel assistant zero state', () => {
     );
 
     const story = screen.getByRole('group', {
-      name: 'Example conversation to travel plan',
+      name: 'One conversation for the whole trip',
     });
-    expect(within(story).getByText('Example planning flow')).toBeVisible();
-    expect(within(story).getByText('One conversation. A clearer travel plan.'))
+    expect(within(story).getByText('Your trip, brought together')).toBeVisible();
+    expect(within(story).getByText('Flights, stays, and rewards. One plan.'))
       .toBeVisible();
     expect(within(story).getByText('Your departure')).toBeVisible();
-    expect(within(story).getByText('Rome (FCO)')).toBeVisible();
+    expect(within(story).getByText('Your next destination')).toBeVisible();
     expect(within(story).getByText(
-      'Find me a weekend flight to Rome for two.',
+      'Plan a complete trip for two next week.',
     )).toBeVisible();
-    expect(within(story).getByText('Flight Catchers understands')).toBeVisible();
-    expect(within(story).getByText('Search current flights')).toBeVisible();
-    expect(within(story).getByText('Compare flights and stays')).toBeVisible();
-    expect(within(story).getByText('Verify the fare and review the trip')).toBeVisible();
+    expect(within(story).getByText('Wayfare understands')).toBeVisible();
+    const sequence = within(story).getByRole('list', {
+      name: 'Build your trip with Wayfare',
+    });
+    expect(within(sequence).getByText('Flight')).toBeVisible();
+    expect(within(sequence).getByText('Stay')).toBeVisible();
+    expect(within(sequence).getByText('Rewards review')).toBeVisible();
     expect(story.querySelectorAll(
       'a, button, input, select, textarea, [tabindex]',
     )).toHaveLength(0);
@@ -104,7 +107,7 @@ describe('travel assistant zero state', () => {
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute(
         'placeholder',
-        'Your departure to Rome for two, next weekend',
+        'Your departure to somewhere warm for two, next week',
       );
   });
 
@@ -125,7 +128,7 @@ describe('travel assistant zero state', () => {
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute(
         'placeholder',
-        'Islamabad to Rome for two, next weekend',
+        'Islamabad to somewhere warm for two, next week',
       );
   });
 
@@ -152,11 +155,12 @@ describe('travel assistant zero state', () => {
     expect(inputRef.current).toHaveAttribute('id', 'travel-prompt');
   });
 
-  it('keeps destination discovery directly after the singular hero hierarchy', () => {
+  it('places the three trip entry points directly after the hero', () => {
     render(<TravelZeroState inputRef={createRef()} onStart={vi.fn()} />);
 
-    expect(screen.queryByRole('link', { name: 'Explore destinations' }))
-      .not.toBeInTheDocument();
+    expect(screen.getByRole('region', {
+      name: 'Start with flights, stays, or rewards',
+    })).toBeVisible();
     expect(screen.getByRole('region', { name: 'Places to start' }))
       .toHaveAttribute('id', 'places-to-start');
   });
@@ -173,12 +177,12 @@ describe('travel assistant zero state', () => {
     expect(screen.getAllByRole('button', { name: /Plan a trip to/u }))
       .toHaveLength(3);
     const capabilityList = screen.getByRole('list', {
-      name: 'How Flight Catchers plans a trip',
+      name: 'Start with flights, stays, or rewards',
     });
     expect(capabilityList).toBeVisible();
-    expect(within(capabilityList).getByText('Search current flights')).toBeVisible();
-    expect(within(capabilityList).getByText('Compare the trip')).toBeVisible();
-    expect(within(capabilityList).getByText('Review rewards')).toBeVisible();
+    expect(within(capabilityList).getByText('Search flights')).toBeVisible();
+    expect(within(capabilityList).getByText('Compare stays')).toBeVisible();
+    expect(within(capabilityList).getByText('Explore rewards')).toBeVisible();
     expect(screen.getByRole('heading', {
       level: 2,
       name: 'One conversation, every part of the trip.',
@@ -194,8 +198,8 @@ describe('travel assistant zero state', () => {
     expect(landing).not.toBeNull();
     const orderedRegions = [
       '.travel-hero',
-      '.destination-inspiration',
       '.travel-capabilities',
+      '.destination-inspiration',
       '.travel-editorial',
     ].map((selector) => landing!.querySelector(selector));
     expect(orderedRegions.every((region, index) => (
@@ -209,16 +213,22 @@ describe('travel assistant zero state', () => {
     expect(main!.nextElementSibling).toBe(contentinfoLandmarks[0]);
   });
 
-  it('keeps the capability strip explanatory instead of interactive', () => {
-    const { container } = render(
-      <TravelZeroState inputRef={{ current: null }} onStart={vi.fn()} />,
-    );
+  it('starts each supported intent through the same conversation callback', () => {
+    const onStart = vi.fn();
+    render(<TravelZeroState inputRef={{ current: null }} onStart={onStart} />);
 
-    const capabilityStrip = container.querySelector('.travel-capabilities');
-    expect(capabilityStrip).not.toBeNull();
-    expect(capabilityStrip!.querySelectorAll(
-      'a, button, input, select, textarea, [tabindex]',
-    )).toHaveLength(0);
+    const intents = screen.getByRole('region', {
+      name: 'Start with flights, stays, or rewards',
+    });
+    for (const [label, prompt] of [
+      ['Search flights', siteConfig.prompts[0]],
+      ['Compare stays', siteConfig.prompts[1]],
+      ['Explore rewards', siteConfig.prompts[2]],
+    ] as const) {
+      fireEvent.click(within(intents).getByRole('button', { name: label }));
+      expect(onStart).toHaveBeenLastCalledWith(prompt);
+    }
+    expect(onStart).toHaveBeenCalledTimes(3);
   });
 
   it('keeps the complete landing and sibling footer copy concise', () => {
@@ -244,6 +254,11 @@ describe('travel assistant zero state', () => {
     expect(countedCopy).toHaveTextContent(
       'No account is required to plan a trip.',
     );
+    expect(footer).toHaveTextContent(
+      siteConfig.disclosure.persistent,
+    );
+    expect(within(main!).queryByText(siteConfig.disclosure.persistent))
+      .not.toBeInTheDocument();
     const words = (countedCopy.textContent ?? '').trim().split(/\s+/);
 
     expect(words.length).toBeLessThanOrEqual(150);

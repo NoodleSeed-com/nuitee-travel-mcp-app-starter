@@ -47,17 +47,17 @@ function withoutFinePointerBlocks(css: string): string {
   return remaining;
 }
 
-describe('Flight Catchers premium travel theme', () => {
+describe('Wayfare premium travel theme', () => {
   it('keeps the approved checked-in colors and accessible contrast pairs', () => {
     expect(siteConfig.brand).toMatchObject({
-      accent: '#006D84',
-      signal: '#071D29',
-      canvas: '#F5FAFB',
+      accent: '#2F70E8',
+      signal: '#0B1F33',
+      canvas: '#F7F8FA',
       surface: '#FFFFFF',
-      surfaceDark: '#0A222C',
-      ink: '#071D29',
-      muted: '#536A73',
-      boundary: '#CFE0E5',
+      surfaceDark: '#0B1F33',
+      ink: '#0B1F33',
+      muted: '#526173',
+      boundary: '#D8DEE7',
     });
 
     expect(contrastRatio(siteConfig.brand.ink, siteConfig.brand.canvas))

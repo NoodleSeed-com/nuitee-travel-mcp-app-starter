@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { flightCatchersDemoConfig } from '../src/demo-config.js';
+import { travelCompanionDemoConfig } from '../src/demo-config.js';
 
 function relativeLuminance(hex: string) {
   const channels = hex
@@ -23,31 +23,31 @@ function contrastRatio(first: string, second: string) {
   );
 }
 
-describe('Flight Catchers demo brand contract', () => {
-  it('keeps the partner demo separate from the public starter identity', () => {
-    expect(flightCatchersDemoConfig.mode).toBe('private_partner_demo');
-    expect(flightCatchersDemoConfig.brand).toMatchObject({
-      name: 'Flight Catchers',
-      assistantName: 'Flight Catchers travel assistant',
-      tagline: 'Flights, hotels, and rewards in one conversation.',
+describe('Wayfare expanded travel brand contract', () => {
+  it('uses Wayfare while retaining the expanded travel profile', () => {
+    expect(travelCompanionDemoConfig.mode).toBe('expanded_travel_preview');
+    expect(travelCompanionDemoConfig.brand).toMatchObject({
+      name: 'Wayfare',
+      assistantName: 'Wayfare travel assistant',
+      tagline: 'Travel, planned around you.',
     });
   });
 
   it('keeps the live and synthetic data boundary persistently visible', () => {
-    expect(flightCatchersDemoConfig.dataSources).toEqual({
+    expect(travelCompanionDemoConfig.dataSources).toEqual({
       flights: { mode: 'live_sandbox', label: 'Current flight fares' },
       hotels: { mode: 'synthetic_fixture', label: 'Illustrative stays' },
       loyalty: { mode: 'synthetic_fixture', label: 'Illustrative rewards' },
     });
-    expect(flightCatchersDemoConfig.disclosure.badge).toBe('Preview only');
-    expect(flightCatchersDemoConfig.disclosure.persistent).toMatch(/connected flight provider/u);
-    expect(flightCatchersDemoConfig.disclosure.persistent).toMatch(/Stays and rewards are illustrative/u);
-    expect(flightCatchersDemoConfig.disclosure.persistent).toMatch(/Booking and redemption are unavailable/u);
-    expect(flightCatchersDemoConfig.disclosure.persistent).not.toMatch(/\bdemo\b|\bsandbox\b/iu);
+    expect(travelCompanionDemoConfig.disclosure.badge).toBe('Preview only');
+    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/connected flight provider/u);
+    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Stays and rewards are illustrative/u);
+    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Booking and redemption are unavailable/u);
+    expect(travelCompanionDemoConfig.disclosure.persistent).not.toMatch(/\bdemo\b|\bsandbox\b/iu);
   });
 
   it('uses accessible action, focus, text, and muted-text color pairs', () => {
-    const { light, dark } = flightCatchersDemoConfig.brand.palette;
+    const { light, dark } = travelCompanionDemoConfig.brand.palette;
 
     expect(contrastRatio(light.primary, light.onPrimary)).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(light.focus, light.canvas)).toBeGreaterThanOrEqual(3);
@@ -57,30 +57,20 @@ describe('Flight Catchers demo brand contract', () => {
     expect(contrastRatio(dark.focus, dark.canvas)).toBeGreaterThanOrEqual(3);
     expect(contrastRatio(dark.ink, dark.canvas)).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(dark.muted, dark.canvas)).toBeGreaterThanOrEqual(4.5);
-    expect(flightCatchersDemoConfig.brand.colorUsage.decorativeCyan).toBe('decoration_only');
+    expect(travelCompanionDemoConfig.brand.colorUsage.decorativeCyan).toBe('decoration_only');
   });
 
-  it('fails closed on temporary-logo and public-release readiness', () => {
-    expect(flightCatchersDemoConfig.assets.logo).toMatchObject({
-      status: 'temporary_demo_asset',
-      sourcePath: 'apps/web/public/brand/flight-catchers-demo-logo.png',
-      compactMarkPath: null,
-      lightWordmarkPath: 'apps/web/public/brand/flight-catchers-demo-logo.png',
-      darkWordmarkPath: 'apps/web/public/brand/flight-catchers-demo-logo.png',
-      provenanceRecordPath: 'docs/assets/flight-catchers-logo.md',
+  it('uses the canonical repository-owned Wayfare assets', () => {
+    expect(travelCompanionDemoConfig.assets.logo).toMatchObject({
+      status: 'repository_vector_component',
+      sourcePath: 'apps/web/src/components/wayfare-mark.tsx',
       reviewedBinaryBlob: false,
     });
-    expect(flightCatchersDemoConfig.publicRelease).toMatchObject({
-      ready: false,
-      status: 'blocked_pending_owner_review',
-      brandAuthorizationReference: null,
-      assetLicenseReference: null,
+    expect(travelCompanionDemoConfig.assets.hero).toMatchObject({
+      status: 'repository_owned_starter_asset',
+      sourcePath: 'apps/web/public/images/wayfare-hybrid-hero-v2.jpg',
+      provenanceRecordPath: 'docs/visual-assets/wayfare-premium-concierge.md',
+      reviewedBinaryBlob: true,
     });
-    expect(flightCatchersDemoConfig.publicRelease.blockers).toEqual([
-      'record_brand_authorization',
-      'replace_temporary_logo_with_original_asset',
-      'record_asset_provenance',
-      'complete_final_brand_review',
-    ]);
   });
 });

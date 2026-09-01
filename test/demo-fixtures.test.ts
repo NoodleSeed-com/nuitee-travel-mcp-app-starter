@@ -41,7 +41,7 @@ const rewardSearchInput = {
   currency: 'CAD' as const,
 };
 
-describe('synthetic Flight Catchers demo fixtures', () => {
+describe('synthetic Wayfare travel fixtures', () => {
   it('validates hotel dates, traveler bounds, room relationships, and supported currencies', () => {
     expect(demoHotelSearchInputSchema.parse(searchInput)).toEqual(searchInput);
     expect(demoHotelSearchInputSchema.safeParse({
@@ -142,7 +142,7 @@ describe('synthetic Flight Catchers demo fixtures', () => {
       dataSource: 'illustrative',
       member: {
         displayName: 'Preview traveler',
-        reference: 'FC-PREVIEW-0001',
+        reference: 'WAYFARE-PREVIEW-0001',
         tier: 'Explorer concept tier',
       },
     });

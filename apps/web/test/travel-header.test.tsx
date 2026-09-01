@@ -8,7 +8,7 @@ afterEach(() => {
 });
 
 describe('travel header', () => {
-  it('renders the repository-owned Flight Catchers demo logo', () => {
+  it('renders the repository-owned Wayfare route mark beside the wordmark', () => {
     render(
       <TravelHeader
         currency="USD"
@@ -20,8 +20,8 @@ describe('travel header', () => {
       />,
     );
 
-    const home = screen.getByRole('link', { name: 'Flight Catchers' });
-    expect(home.querySelector('[data-flight-catchers-logo="true"]')).not.toBeNull();
+    const home = screen.getByRole('link', { name: 'Wayfare' });
+    expect(home.querySelector('[data-wayfare-mark="true"]')).not.toBeNull();
   });
 
   it('keeps hero navigation focused on planning and opens settings from the menu', () => {

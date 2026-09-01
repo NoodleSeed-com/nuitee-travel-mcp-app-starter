@@ -163,7 +163,7 @@ describe('guest travel conversation lifecycle', () => {
       .not.toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'New trip' })).toHaveLength(1);
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
-      .toHaveAttribute('placeholder', 'Tell Flight Catchers what you need…');
+      .toHaveAttribute('placeholder', 'Tell Wayfare what you need…');
     expect(screen.getAllByRole('region', { name: 'Travel conversation' }))
       .toHaveLength(1);
     expect(screen.queryByRole('region', { name: 'Travel workspace' }))
@@ -292,7 +292,7 @@ describe('guest travel conversation lifecycle', () => {
     expect(conversation.children).toHaveLength(5);
   });
 
-  it('uses the typed plan to align the heading, composer, and live brief', async () => {
+  it('uses the typed plan to align the heading and composer without a premature summary', async () => {
     assistantMock.useNoodleAssistant.mockImplementation(() => ({
       client,
       messages: [{
@@ -329,16 +329,9 @@ describe('guest travel conversation lifecycle', () => {
       .toBeVisible();
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute('placeholder', 'Adjust the trip or add a preference…');
-    const conversation = screen.getByRole('region', { name: 'Travel conversation' });
-    const brief = screen.getByRole('region', { name: 'Current trip' });
-    const transcript = within(conversation).getByRole('log', {
-      name: 'Conversation transcript',
-    });
-    expect(brief).toHaveTextContent('ISB → NYC');
-    expect(conversation).toContainElement(brief);
-    expect(brief.compareDocumentPosition(transcript)
-      & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getByText('Ready to search')).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'Current trip' }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByText('Ready to search')).not.toBeInTheDocument();
   });
 
   it('keeps typed trip context compact until the traveler expands it', async () => {
@@ -347,25 +340,38 @@ describe('guest travel conversation lifecycle', () => {
       messages: [{
         id: 'assistant-plan-context',
         role: 'assistant',
-        parts: [{
-          type: 'data-tool-result',
-          data: {
-            id: 'call-plan-context',
-            tool: 'plan_flight_search',
-            result: {
-              status: 'planned',
-              message: 'Trip details are ready. Search current fares now.',
-              origin: 'ISB',
-              destination: 'FCO',
-              departureDate: '2026-08-31',
-              returnDate: '2026-09-07',
-              adults: 2,
-              cabinClass: 'ECONOMY',
-              currency: 'USD',
-              country: 'US',
+        parts: [
+          {
+            type: 'data-tool-result',
+            data: {
+              id: 'call-plan-context',
+              tool: 'plan_flight_search',
+              result: {
+                status: 'planned',
+                message: 'Trip details are ready. Search current fares now.',
+                origin: 'ISB',
+                destination: 'FCO',
+                departureDate: '2026-08-31',
+                returnDate: '2026-09-07',
+                adults: 2,
+                cabinClass: 'ECONOMY',
+                currency: 'USD',
+                country: 'US',
+              },
             },
           },
-        }],
+          {
+            type: 'data-tool-result',
+            data: {
+              id: 'call-select-context',
+              tool: 'select_flight_offer',
+              result: {
+                status: 'selected',
+                selectionId: 'sel_0123456789abcdef0123456789abcdef',
+              },
+            },
+          },
+        ],
       }],
       status: 'ready',
       error: undefined,
@@ -392,25 +398,38 @@ describe('guest travel conversation lifecycle', () => {
       messages: [{
         id: 'assistant-plan-primary-facts',
         role: 'assistant',
-        parts: [{
-          type: 'data-tool-result',
-          data: {
-            id: 'call-plan-primary-facts',
-            tool: 'search_flights',
-            result: {
-              status: 'success',
-              searchContext: {
-                origin: 'ISB',
-                destination: 'FCO',
-                departureDate: '2026-08-31',
-                adults: 2,
-                children: 0,
-                infants: 0,
-                cabinClass: 'ECONOMY',
+        parts: [
+          {
+            type: 'data-tool-result',
+            data: {
+              id: 'call-plan-primary-facts',
+              tool: 'search_flights',
+              result: {
+                status: 'success',
+                searchContext: {
+                  origin: 'ISB',
+                  destination: 'FCO',
+                  departureDate: '2026-08-31',
+                  adults: 2,
+                  children: 0,
+                  infants: 0,
+                  cabinClass: 'ECONOMY',
+                },
               },
             },
           },
-        }],
+          {
+            type: 'data-tool-result',
+            data: {
+              id: 'call-select-primary-facts',
+              tool: 'select_flight_offer',
+              result: {
+                status: 'selected',
+                selectionId: 'sel_0123456789abcdef0123456789abcdef',
+              },
+            },
+          },
+        ],
       }],
       status: 'ready',
       error: undefined,
@@ -507,8 +526,8 @@ describe('guest travel conversation lifecycle', () => {
       .not.toBeInTheDocument();
     expect(screen.queryByRole('complementary', { name: 'Live trip brief' }))
       .not.toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Current trip' }))
-      .toHaveTextContent('ISB → NYC');
+    expect(screen.queryByRole('region', { name: 'Current trip' }))
+      .not.toBeInTheDocument();
   });
 
   it('collapses duplicate failed search Apps and preserves an in-conversation recovery path', async () => {
@@ -759,7 +778,7 @@ describe('guest travel conversation lifecycle', () => {
     submitPrompt('JFK to Lisbon next month');
 
     expect(screen.getByRole('heading', {
-      name: 'Where will you go next?',
+      name: 'Plan your whole trip',
     })).toBeVisible();
     expect(screen.getAllByRole('alert')).toHaveLength(1);
     expect(screen.getByRole('alert')).toHaveTextContent('Add the public embed.');
@@ -923,7 +942,7 @@ describe('guest travel conversation lifecycle', () => {
     expect(conversationStatus()).toHaveTextContent(
       'Searching current flights',
     );
-    expect(screen.getByText('Searching')).toBeVisible();
+    expect(screen.queryByText('Searching')).not.toBeInTheDocument();
 
     hookState = {
       status: 'error',
@@ -1104,13 +1123,10 @@ describe('guest travel conversation lifecycle', () => {
 
     submitPrompt('JFK to Lisbon in October');
 
-    expect(await screen.findByRole('region', {
-      name: 'Current trip',
-    })).toHaveTextContent('SFO → NRT');
-    expect(screen.getByRole('region', {
-      name: 'Current trip',
-    })).not.toHaveTextContent('JFK → LIS');
-    expect(screen.getByText('No fares found')).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'Current trip' }))
+      .not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'SFO to NRT' })).toBeVisible();
+    expect(screen.queryByText('No fares found')).not.toBeInTheDocument();
     const conversation = screen.getByRole('region', { name: 'Travel conversation' });
     const activityRegion = within(conversation).getByRole('status');
     expect(activityRegion).toBeEmptyDOMElement();
@@ -1152,12 +1168,9 @@ describe('guest travel conversation lifecycle', () => {
     });
 
     expect(activityRegion).toHaveTextContent('Searching current flights');
-    expect(screen.getByText('Searching')).toBeVisible();
-    const progress = within(
-      await screen.findByRole('region', { name: 'Current trip' }),
-    ).getByLabelText('Trip progress');
-    expect(progress).toHaveAttribute('data-phase', 'searching');
-    expect(progress.querySelectorAll('[data-complete="true"]')).toHaveLength(2);
+    expect(screen.queryByText('Searching')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Current trip' }))
+      .not.toBeInTheDocument();
     expect(document.body).not.toHaveTextContent('search_flights');
     expect(within(conversation).getAllByRole('status')).toHaveLength(1);
 
@@ -1173,7 +1186,7 @@ describe('guest travel conversation lifecycle', () => {
     });
 
     expect(activityRegion).toBeEmptyDOMElement();
-    expect(screen.getByText('No fares found')).toBeVisible();
+    expect(screen.queryByText('No fares found')).not.toBeInTheDocument();
   });
 
   it('keeps the newest active tool visible when an earlier call completes', async () => {
@@ -1317,7 +1330,7 @@ describe('guest travel conversation lifecycle', () => {
     })).not.toBeInTheDocument();
     expect(screen.queryByText('No trip started')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', {
-      name: 'Where will you go next?',
+      name: 'Plan your whole trip',
     })).toBeVisible();
   });
 

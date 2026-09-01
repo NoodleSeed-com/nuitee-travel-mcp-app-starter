@@ -144,11 +144,37 @@ describe('structured trip projection', () => {
       }),
     ])).toEqual({
       phase: 'selected',
+      hasFlightSelection: true,
       origin: 'JFK',
       destination: 'LIS',
       departureDate: '2026-10-12',
       returnDate: '2026-10-18',
       travelers: '2 adults',
+    });
+  });
+
+  it('tracks a stay selection without projecting its opaque identifier', () => {
+    expect(projectTrip([
+      messageWithToolResult('search_hotels', {
+        status: 'success',
+        dataSource: 'illustrative',
+        searchContext: {
+          destination: 'Lisbon',
+          checkInDate: '2026-10-12',
+          checkOutDate: '2026-10-18',
+        },
+      }),
+      messageWithToolResult('select_hotel', {
+        status: 'selected',
+        selectionId: 'stay_private_opaque',
+      }),
+    ])).toEqual({
+      phase: 'stay-selected',
+      hasStaySelection: true,
+      focus: 'stays',
+      stayDestination: 'Lisbon',
+      checkInDate: '2026-10-12',
+      checkOutDate: '2026-10-18',
     });
   });
 

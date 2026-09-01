@@ -35,7 +35,7 @@ function modelVisible(manifest: any) {
     .map((entry: any) => entry.name);
 }
 
-describe('Flight Catchers demo profile', () => {
+describe('Wayfare expanded travel profile', () => {
   it('leaves every normal starter entrypoint on its existing capability surface', async () => {
     const live = await liveApp.toManifest() as any;
     const embedded = await embeddedApp.toManifest() as any;
@@ -65,7 +65,7 @@ describe('Flight Catchers demo profile', () => {
     }
 
     const wire = JSON.stringify(manifest);
-    expect(wire).toContain('Flight Catchers');
+    expect(wire).toContain('Wayfare');
     expect(wire).toContain('illustrative');
     expect(wire).toContain('hotel-results');
     expect(wire).toContain('loyalty-overview');
@@ -96,7 +96,7 @@ describe('Flight Catchers demo profile', () => {
     const liveNuitee = liveCatalog?.connectors.filter((entry: any) => entry.id.startsWith('nuitee_'));
     const demoNuitee = demoCatalog?.connectors.filter((entry: any) => entry.id.startsWith('nuitee_'));
     expect(demoNuitee).toEqual(liveNuitee);
-    expect(demoCatalog?.connectors.find((entry: any) => entry.id === 'flightcatchers_demo_gateway'))
+    expect(demoCatalog?.connectors.find((entry: any) => entry.id === 'wayfare_preview_gateway'))
       .toMatchObject({ kind: 'custom', operations: { execute: { type: 'read' } } });
 
     const sources = await Promise.all([

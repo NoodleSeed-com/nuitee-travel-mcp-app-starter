@@ -6,11 +6,11 @@ import DevelopersPage from '../app/developers/page';
 afterEach(cleanup);
 
 describe('developer guide page', () => {
-  it('uses the Flight Catchers demo logo in the developer header', () => {
+  it('uses the Wayfare route mark in the developer header', () => {
     render(<DevelopersPage />);
 
-    const home = screen.getByRole('link', { name: 'Flight Catchers' });
-    expect(home.querySelector('[data-flight-catchers-logo="true"]')).not.toBeNull();
+    const home = screen.getByRole('link', { name: 'Wayfare' });
+    expect(home.querySelector('[data-wayfare-mark="true"]')).not.toBeNull();
   });
 
   it('leads with the ordered private-demo setup and bounded travel outcome', () => {

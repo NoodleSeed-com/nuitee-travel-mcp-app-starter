@@ -35,7 +35,7 @@ vi.mock('../src/helpers.js', () => {
   };
 });
 import {
-  FLIGHTCATCHERS_DEMO_DISCLOSURE,
+  WAYFARE_PREVIEW_DISCLOSURE,
   LoyaltyOverviewView,
   isDemoLoyaltyOverview,
   isDemoTripReview,
@@ -44,12 +44,12 @@ import {
 const loyalty: DemoLoyaltyOverview = {
   status: 'success',
   dataSource: 'illustrative',
-  disclosure: FLIGHTCATCHERS_DEMO_DISCLOSURE,
+  disclosure: WAYFARE_PREVIEW_DISCLOSURE,
   fallback:
-    'Preview traveler has 84,500 simulated Flight Catchers points and an illustrative Explorer concept tier.',
+    'Preview traveler has 84,500 simulated Wayfare points and an illustrative Explorer concept tier.',
   member: {
     displayName: 'Preview traveler',
-    reference: 'FC-PREVIEW-0001',
+    reference: 'WAYFARE-PREVIEW-0001',
     tier: 'Explorer concept tier',
     pointsBalance: 84_500,
   },
@@ -83,7 +83,7 @@ const loyalty: DemoLoyaltyOverview = {
 const review: DemoTripReview = {
   status: 'ready',
   dataSource: 'illustrative',
-  disclosure: FLIGHTCATCHERS_DEMO_DISCLOSURE,
+  disclosure: WAYFARE_PREVIEW_DISCLOSURE,
   fallback:
     'The selected current flight and simulated hotel are shown separately with an illustrative rewards overview.',
   flight: {
@@ -115,7 +115,7 @@ const render = (
 
 const visibleText = (markup: string) => markup.replace(/<[^>]*>/gu, ' ');
 
-describe('Flight Catchers loyalty widget', () => {
+describe('Wayfare loyalty widget', () => {
   it('uses a geometry-matched, accessible loading skeleton', () => {
     const markup = render({ state: 'loading', theme: 'light' });
 
@@ -143,7 +143,7 @@ describe('Flight Catchers loyalty widget', () => {
   it('shows the synthetic overview with disclosure, tier progress, benefits, and no action CTA', () => {
     const markup = render({ data: loyalty, theme: 'light', locale: 'en-CA' });
 
-    expect(markup).toContain(FLIGHTCATCHERS_DEMO_DISCLOSURE);
+    expect(markup).toContain(WAYFARE_PREVIEW_DISCLOSURE);
     expect(markup).toContain('Preview only');
     expect(markup).toContain('Simulated points balance');
     expect(markup).toContain('84,500');
