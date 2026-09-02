@@ -22,7 +22,7 @@ export const siteConfig = {
     ink: light.ink,
     muted: light.muted,
     boundary: light.boundary,
-    heroImagePath: '/images/wayfare-hybrid-hero-v2.jpg',
+    heroImagePath: '/images/immersive/wayfare-explore-windows-v2.png',
     heroImagePosition: '50% 50%',
   },
   disclosure: travelCompanionDemoConfig.disclosure,
@@ -31,6 +31,7 @@ export const siteConfig = {
     'Find flights from Toronto to Lisbon next week for two adults.',
     'Compare hotels in Lisbon for three nights.',
     'Show my illustrative rewards and review this trip.',
+    'Compare illustrative travel protection for two adults travelling from Toronto to Lisbon from 8 to 15 September 2026, with an estimated trip cost of CAD 2,500.',
   ],
 } as const;
 

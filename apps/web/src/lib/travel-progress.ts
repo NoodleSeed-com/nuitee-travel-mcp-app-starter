@@ -28,6 +28,8 @@ export function progressForEvent(
       return { label: 'Adding the stay' };
     case 'open_loyalty':
       return { label: 'Opening illustrative rewards' };
+    case 'compare_travel_insurance':
+      return { label: 'Comparing illustrative travel protection' };
     case 'review_trip':
       return { label: 'Reviewing selected travel' };
     default:

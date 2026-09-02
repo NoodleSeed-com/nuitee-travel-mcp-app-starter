@@ -195,6 +195,7 @@ describe('structured trip projection', () => {
       }),
     ])).toEqual({
       phase: 'verified',
+      hasFlightSelection: true,
       origin: 'JFK',
       destination: 'LIS',
       departureDate: '2026-10-12',
@@ -403,8 +404,38 @@ describe('structured trip projection', () => {
       }),
     ]);
 
-    expect(projected).toEqual({ phase: 'trip-review', focus: 'trip' });
+    expect(projected).toEqual({
+      phase: 'trip-review',
+      focus: 'trip',
+      hasRewardsReview: true,
+    });
     expect(JSON.stringify(projected)).not.toContain('private-value');
+    expect(JSON.stringify(projected)).not.toContain('999');
+  });
+
+  it('projects only the safe illustrative insurance comparison status', () => {
+    const projected = projectTrip([messageWithToolResult('compare_travel_insurance', {
+      status: 'success',
+      dataSource: 'illustrative',
+      comparisonId: 'inscmp_private_opaque',
+      searchContext: {
+        destination: 'Portugal',
+        departureDate: '2026-10-12',
+        returnDate: '2026-10-18',
+        adults: 2,
+        children: 0,
+        residenceCountry: 'CA',
+        currency: 'CAD',
+      },
+      plans: [{ illustrativePrice: { amount: 999, currency: 'CAD' } }],
+    })]);
+
+    expect(projected).toEqual({
+      phase: 'insurance',
+      focus: 'insurance',
+      hasInsuranceComparison: true,
+    });
+    expect(JSON.stringify(projected)).not.toContain('private_opaque');
     expect(JSON.stringify(projected)).not.toContain('999');
   });
 

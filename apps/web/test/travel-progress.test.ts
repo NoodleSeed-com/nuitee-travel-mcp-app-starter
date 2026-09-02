@@ -12,6 +12,7 @@ describe('plain-language assistant activity', () => {
     ['search_hotels', 'Finding stays'],
     ['select_hotel', 'Adding the stay'],
     ['open_loyalty', 'Opening illustrative rewards'],
+    ['compare_travel_insurance', 'Comparing illustrative travel protection'],
     ['review_trip', 'Reviewing selected travel'],
     ['internal_future_tool', 'Working on your request'],
   ])('maps %s without exposing an identifier', (tool, copy) => {

@@ -5,8 +5,9 @@ import { describe, expect, it } from 'vitest';
 const publicRoot = join(import.meta.dirname, '..', 'public');
 
 const expectedMasters = [
-  '/images/wayfare-hybrid-hero-v2.jpg',
-  '/images/immersive/wayfare-cockpit-v1.png',
+  '/images/immersive/wayfare-explore-windows-v2.png',
+  '/images/immersive/wayfare-cockpit-v2.png',
+  '/images/immersive/wayfare-insurance-v1.png',
   '/images/immersive/wayfare-stay-v1.png',
   '/images/immersive/wayfare-flight-stay-v1.png',
   '/images/destinations/rome-editorial-v2.jpg',

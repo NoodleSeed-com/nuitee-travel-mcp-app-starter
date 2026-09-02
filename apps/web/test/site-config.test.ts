@@ -13,9 +13,10 @@ describe('Wayfare companion website identity', () => {
   });
 
   it('keeps every prompt within the supported demo boundary', () => {
-    expect(siteConfig.prompts).toHaveLength(3);
+    expect(siteConfig.prompts).toHaveLength(4);
     expect(siteConfig.prompts.join(' ')).toMatch(/flights/i);
     expect(siteConfig.prompts.join(' ')).toMatch(/compare hotels/i);
+    expect(siteConfig.prompts.join(' ')).toMatch(/travel protection/i);
     expect(siteConfig.prompts.join(' ')).toMatch(/illustrative rewards/i);
     expect(siteConfig.prompts.join(' ')).not.toMatch(
       /book|checkout|pay|redeem|cancel/i,
@@ -24,7 +25,7 @@ describe('Wayfare companion website identity', () => {
 
   it('uses the canonical Wayfare hero and vector brand mark', () => {
     expect(siteConfig.brand.heroImagePath)
-      .toBe('/images/wayfare-hybrid-hero-v2.jpg');
+      .toBe('/images/immersive/wayfare-explore-windows-v2.png');
     expect(travelCompanionDemoConfig.assets.logo.status)
       .toBe('repository_vector_component');
     expect(travelCompanionDemoConfig.assets.hero.status)
@@ -36,10 +37,10 @@ describe('Wayfare companion website identity', () => {
       'Flight results come from the connected flight provider.',
     );
     expect(siteConfig.disclosure.persistent).toContain(
-      'Stays and rewards are illustrative previews.',
+      'Stays, rewards, and travel protection are illustrative previews.',
     );
     expect(siteConfig.disclosure.persistent).toContain(
-      'Booking and redemption are unavailable.',
+      'Booking, redemption, and policy purchase are unavailable.',
     );
     expect(siteConfig.disclosure.persistent).not.toMatch(/\bdemo\b|\bsandbox\b/iu);
   });

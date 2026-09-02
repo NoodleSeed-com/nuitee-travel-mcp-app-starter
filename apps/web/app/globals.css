@@ -154,8 +154,10 @@ code {
   padding: 0.65rem 0.7rem 0.65rem 1.3rem;
   border: 1px solid var(--travel-boundary);
   border-radius: 999px;
-  background: var(--travel-raised);
+  background: color-mix(in srgb, var(--travel-raised) 86%, transparent);
   box-shadow: 0 14px 38px color-mix(in srgb, var(--travel-ink) 8%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(1.06);
+  backdrop-filter: blur(16px) saturate(1.06);
   text-align: left;
   transition:
     border-color 180ms var(--travel-ease-out),
@@ -295,74 +297,7 @@ code {
 }
 
 .travel-hero__experience--explore .travel-hero__image {
-  filter: saturate(0.88) brightness(0.82);
-}
-
-.travel-hero__window-deck {
-  position: absolute;
-  z-index: 1;
-  top: 33%;
-  left: 50%;
-  display: grid;
-  width: min(82%, 60rem);
-  height: 38%;
-  grid-template-columns: 0.88fr 1.08fr 0.88fr;
-  align-items: center;
-  gap: clamp(0.75rem, 2.2vw, 1.65rem);
-  padding: clamp(0.8rem, 1.8vw, 1.35rem);
-  border: 1px solid rgb(255 255 255 / 52%);
-  border-radius: 38px;
-  background: linear-gradient(145deg, rgb(242 245 245 / 88%), rgb(198 208 211 / 82%));
-  box-shadow:
-    0 22px 70px rgb(3 17 29 / 28%),
-    inset 0 1px 1px rgb(255 255 255 / 90%);
-  transform: translateX(-50%);
-  backdrop-filter: blur(12px);
-}
-
-.travel-hero__window-shell {
-  display: grid;
-  width: 100%;
-  height: 86%;
-  place-items: stretch;
-  padding: clamp(0.42rem, 1vw, 0.72rem);
-  border: 1px solid rgb(255 255 255 / 90%);
-  border-radius: 48% / 21%;
-  background: linear-gradient(145deg, #f8f8f5, #c7d0d2);
-  box-shadow:
-    0 12px 26px rgb(4 20 36 / 18%),
-    inset 0 0 0 1px rgb(81 99 112 / 18%);
-  transform: translateY(3%);
-}
-
-.travel-hero__window-shell:nth-child(2) {
-  z-index: 1;
-  height: 100%;
-  transform: scale(1.055);
-}
-
-.travel-hero__window-view {
-  position: relative;
-  overflow: hidden;
-  border-radius: 48% / 19%;
-  background-image: url('/images/wayfare-hybrid-hero-v2.jpg');
-  background-repeat: no-repeat;
-  background-size: 335% 145%;
-  box-shadow:
-    inset 0 0 0 2px rgb(5 24 40 / 34%),
-    inset 0 16px 28px rgb(5 24 40 / 16%);
-}
-
-.travel-hero__window-shell:nth-child(1) .travel-hero__window-view {
-  background-position: 0% 49%;
-}
-
-.travel-hero__window-shell:nth-child(2) .travel-hero__window-view {
-  background-position: 50% 48%;
-}
-
-.travel-hero__window-shell:nth-child(3) .travel-hero__window-view {
-  background-position: 100% 49%;
+  filter: saturate(0.9) brightness(0.86);
 }
 
 .travel-hero__interface {
@@ -472,9 +407,10 @@ code {
   width: min(100%, 50rem);
   margin: 0 auto;
   border-color: rgb(255 255 255 / 62%);
-  background: rgb(255 255 255 / 94%);
+  background: rgb(255 255 255 / 86%);
   box-shadow: 0 20px 54px rgb(4 20 36 / 24%);
-  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(16px) saturate(1.06);
+  backdrop-filter: blur(16px) saturate(1.06);
 }
 
 .travel-composer--hero .travel-composer__send {
@@ -534,12 +470,6 @@ code {
     min-height: 42rem;
   }
 
-  .travel-hero__window-deck {
-    top: 34%;
-    width: 88%;
-    height: 35%;
-  }
-
   .travel-hero__mode {
     padding-inline: 0.55rem;
   }
@@ -592,28 +522,6 @@ code {
   .travel-hero__copy > p:last-child {
     max-width: 28rem;
     font-size: 0.86rem;
-  }
-
-  .travel-hero__window-deck {
-    top: 36%;
-    left: 0.8rem;
-    width: calc(100% - 1.6rem);
-    height: 32%;
-    grid-template-columns: 0.78fr 1fr 0.78fr;
-    gap: 0.45rem;
-    padding: 0.6rem;
-    border-radius: 24px;
-    transform: none;
-  }
-
-  .travel-hero__window-shell {
-    min-width: 0;
-    padding: 0.3rem;
-  }
-
-  .travel-hero__window-shell:nth-child(1),
-  .travel-hero__window-shell:nth-child(3) {
-    opacity: 0.78;
   }
 
   .travel-hero__detail {
@@ -1486,7 +1394,7 @@ code {
   bottom: 0.75rem;
   grid-area: composer;
   margin: 0;
-  background: var(--travel-raised);
+  background: color-mix(in srgb, var(--travel-raised) 86%, transparent);
 }
 
 .settings-sheet {
@@ -2453,8 +2361,8 @@ code {
 /* Conversation-first Private Jets and Cars experiences. The photographic
    layers stay decorative; every word and control remains live HTML. */
 .travel-hero__modes {
-  width: min(100%, 58rem);
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  width: min(100%, 68rem);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
 .travel-composer--with-suggestions {
@@ -2574,13 +2482,13 @@ code {
 
 .travel-hero__experience--tone-light .travel-composer--hero {
   border-color: rgb(255 255 255 / 72%);
-  background: rgb(255 253 249 / 91%);
+  background: rgb(255 253 249 / 84%);
   color: var(--travel-ink);
 }
 
 .travel-hero__experience--tone-dark .travel-composer--hero {
   border-color: rgb(30 224 224 / 62%);
-  background: rgb(4 24 40 / 94%);
+  background: rgb(4 24 40 / 82%);
   color: #fff;
   box-shadow:
     0 24px 70px rgb(0 0 0 / 34%),
@@ -2739,6 +2647,17 @@ code {
 @media (max-width: 1023px) {
   .travel-hero__modes {
     width: 100%;
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    justify-content: start;
+    overflow-x: auto;
+    border-radius: 18px;
+    scrollbar-width: none;
+  }
+
+  .travel-hero__modes::-webkit-scrollbar {
+    display: none;
   }
 
   .travel-hero__mode {
@@ -2758,7 +2677,7 @@ code {
 
 @media (max-width: 767px) {
   .travel-hero__modes {
-    grid-template-columns: repeat(6, max-content);
+    grid-template-columns: none;
   }
 
   .travel-hero__experience--private-jet,

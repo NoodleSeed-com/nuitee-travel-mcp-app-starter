@@ -70,21 +70,21 @@ describe('travel assistant zero state', () => {
 
     expect(container.querySelector('.travel-hero img[alt=""]')).toHaveAttribute(
       'src',
-      expect.stringContaining('wayfare-hybrid-hero-v2'),
+      expect.stringContaining('wayfare-explore-windows-v2'),
     );
     expect(within(screen.getByRole('list', { name: 'Suggested trips' }))
       .getAllByRole('button')).toHaveLength(2);
   });
 
-  it('offers six immersive planning modes without starting a conversation', () => {
+  it('offers seven immersive planning modes without starting a conversation', () => {
     const onStart = vi.fn();
     render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
 
     const modes = screen.getByRole('tablist', { name: 'Choose a planning view' });
-    expect(within(modes).getAllByRole('tab')).toHaveLength(6);
+    expect(within(modes).getAllByRole('tab')).toHaveLength(7);
     expect(within(modes).getByRole('tab', { name: 'Explore' }))
       .toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByTestId('hero-window-deck').children).toHaveLength(3);
+    expect(screen.queryByTestId('hero-window-deck')).not.toBeInTheDocument();
 
     fireEvent.click(within(modes).getByRole('tab', { name: 'Flights' }));
 
@@ -95,6 +95,26 @@ describe('travel assistant zero state', () => {
     })).toBeVisible();
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute('placeholder', 'Where do you want to fly?');
+
+    fireEvent.click(within(modes).getByRole('tab', { name: 'Insurance' }));
+
+    expect(onStart).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', {
+      level: 1,
+      name: 'Compare with confidence',
+    })).toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
+      .toHaveAttribute(
+        'placeholder',
+        'Compare illustrative travel protection for my trip…',
+      );
+    expect(document.querySelector('.travel-hero__experience img[alt=""]'))
+      .toHaveAttribute('src', expect.stringContaining('wayfare-insurance-v1'));
+    expect(within(screen.getByRole('list', { name: 'Suggested trips' }))
+      .getAllByRole('button')).toHaveLength(1);
+    expect(screen.getByRole('button', {
+      name: siteConfig.prompts[3],
+    })).toBeVisible();
   });
 
   it('shows all three private-jet scenes without starting a conversation', () => {
@@ -167,9 +187,9 @@ describe('travel assistant zero state', () => {
     const panel = screen.getByRole('tabpanel', { name: 'Explore' });
     expect(within(panel).getByText('Your trip, brought together')).toBeVisible();
     expect(within(panel).getByText('A window into what comes next')).toBeVisible();
-    expect(screen.getByTestId('hero-window-deck').children).toHaveLength(3);
+    expect(screen.queryByTestId('hero-window-deck')).not.toBeInTheDocument();
     expect(container.querySelector('.travel-hero__experience img[alt=""]'))
-      .toHaveAttribute('src', expect.stringContaining('wayfare-hybrid-hero-v2'));
+      .toHaveAttribute('src', expect.stringContaining('wayfare-explore-windows-v2'));
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute(
         'placeholder',

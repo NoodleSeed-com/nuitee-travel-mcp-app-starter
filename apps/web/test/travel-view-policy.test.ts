@@ -44,6 +44,13 @@ const reviewView: AssistantViewData = {
   result: { status: 'ready', dataSource: 'illustrative' },
 };
 
+const insuranceView: AssistantViewData = {
+  id: 'insurance-view',
+  tool: 'compare_travel_insurance',
+  resourceUri: 'ui://nuitee_travel_mcp_app_starter/compare_travel_insurance_widget',
+  result: { status: 'success', dataSource: 'illustrative' },
+};
+
 describe('inline travel view admission', () => {
   it.each([
     ['flight search', searchView],
@@ -52,6 +59,7 @@ describe('inline travel view admission', () => {
     ['demo loyalty overview', loyaltyView],
     ['illustrative reward-flight comparison', rewardFlightView],
     ['trip review', reviewView],
+    ['illustrative travel-protection comparison', insuranceView],
   ])('admits the exact %s tool and resource pair', (_label, view) => {
     expect(isInlineTravelView(view)).toBe(true);
   });

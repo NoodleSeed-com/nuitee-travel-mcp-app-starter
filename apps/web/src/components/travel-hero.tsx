@@ -8,6 +8,7 @@ import {
   Hotel,
   Plane,
   PlaneTakeoff,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   type KeyboardEvent,
@@ -19,50 +20,20 @@ import {
   NEUTRAL_TRAVEL_DEFAULTS,
   type TravelDefaults,
 } from '../lib/travel-defaults';
+import {
+  coreHeroModes,
+  type CoreHeroMode,
+  type HeroModeDefinition,
+} from '../lib/travel-hero-content';
 import { TravelComposer } from './travel-composer';
 
-type HeroMode =
-  | 'explore'
-  | 'flight'
-  | 'stay'
-  | 'flight-stay'
-  | 'private-jet'
-  | 'car';
-
-type HeroSceneLayout = 'standard' | 'center' | 'editorial';
-type HeroSceneTone = 'standard' | 'light' | 'dark';
+type HeroMode = CoreHeroMode | 'private-jet' | 'car';
 
 interface TravelHeroProps {
   readonly defaults?: TravelDefaults;
   readonly inputRef: Ref<HTMLTextAreaElement>;
   readonly launchError?: string | null;
   readonly onStart: (prompt: string) => void;
-}
-
-interface HeroSuggestion {
-  readonly label: string;
-  readonly prompt: string;
-}
-
-interface HeroSceneDefinition {
-  readonly id: string;
-  readonly label: string;
-  readonly eyebrow: string;
-  readonly heading: string;
-  readonly support: string;
-  readonly imageSrc: string;
-  readonly imagePosition: string;
-  readonly placeholder: string;
-  readonly detail?: string;
-  readonly layout?: HeroSceneLayout;
-  readonly tone?: HeroSceneTone;
-  readonly suggestions?: readonly HeroSuggestion[];
-}
-
-interface HeroModeDefinition {
-  readonly id: HeroMode;
-  readonly label: string;
-  readonly scenes: readonly HeroSceneDefinition[];
 }
 
 const privateDayPrompt =
@@ -78,67 +49,8 @@ const carAlpinePrompt =
 const carDesertPrompt =
   'Find me a convertible in Los Angeles for a three-day coastal drive, with one-way return in San Francisco.';
 
-const heroModes: readonly HeroModeDefinition[] = [
-  {
-    id: 'explore',
-    label: 'Explore',
-    scenes: [{
-      id: 'explore-windows',
-      label: 'Explore',
-      eyebrow: 'Your trip, brought together',
-      heading: 'Plan your whole trip',
-      support: 'Flights, stays, and rewards—brought together in one conversation.',
-      imageSrc: siteConfig.brand.heroImagePath,
-      imagePosition: '50% 50%',
-      placeholder: 'to somewhere warm for two, next week',
-      detail: 'A window into what comes next',
-    }],
-  },
-  {
-    id: 'flight',
-    label: 'Flights',
-    scenes: [{
-      id: 'flight-cockpit',
-      label: 'Flights',
-      eyebrow: 'Flight planning',
-      heading: 'Choose your horizon',
-      support: 'Compare current routes and fares around the journey you have in mind.',
-      imageSrc: '/images/immersive/wayfare-cockpit-v1.png',
-      imagePosition: '50% 50%',
-      placeholder: 'Where do you want to fly?',
-      detail: 'Round trip · 1 adult · Economy',
-    }],
-  },
-  {
-    id: 'stay',
-    label: 'Stays',
-    scenes: [{
-      id: 'stay-suite',
-      label: 'Stays',
-      eyebrow: 'Stay planning',
-      heading: 'Wake up somewhere new',
-      support: 'Compare welcoming stays around your destination and travel dates.',
-      imageSrc: '/images/immersive/wayfare-stay-v1.png',
-      imagePosition: '50% 50%',
-      placeholder: 'Where would you like to stay?',
-      detail: '2 guests · 1 room · Flexible dates',
-    }],
-  },
-  {
-    id: 'flight-stay',
-    label: 'Flight + Stay',
-    scenes: [{
-      id: 'flight-stay-coast',
-      label: 'Flight + Stay',
-      eyebrow: 'One connected plan',
-      heading: 'From takeoff to check-in',
-      support: 'Shape the journey and the stay together without switching planning flows.',
-      imageSrc: '/images/immersive/wayfare-flight-stay-v1.png',
-      imagePosition: '50% 50%',
-      placeholder: 'Plan my flight and stay…',
-      detail: 'Return flight · 2 guests · 3 nights',
-    }],
-  },
+const heroModes: readonly HeroModeDefinition<HeroMode>[] = [
+  ...coreHeroModes,
   {
     id: 'private-jet',
     label: 'Private Jets',
@@ -302,6 +214,7 @@ const modeIcons = {
   flight: PlaneTakeoff,
   stay: Hotel,
   'flight-stay': BedDouble,
+  insurance: ShieldCheck,
   'private-jet': Plane,
   car: CarFront,
 } as const;
@@ -372,6 +285,10 @@ export function TravelHero({
     setSceneId(nextSceneId);
   }
 
+  const starterPrompts = mode === 'insurance'
+    ? [siteConfig.prompts[3]]
+    : siteConfig.prompts.slice(0, 2);
+
   return (
     <section className="travel-hero" aria-labelledby="travel-home-title">
       <div className="travel-hero__content">
@@ -407,20 +324,6 @@ export function TravelHero({
           />
           <span aria-hidden="true" className="travel-hero__image-skeleton" />
           <span aria-hidden="true" className="travel-hero__media-veil" />
-
-          {mode === 'explore' ? (
-            <div
-              aria-hidden="true"
-              className="travel-hero__window-deck"
-              data-testid="hero-window-deck"
-            >
-              {[0, 1, 2].map((windowIndex) => (
-                <span className="travel-hero__window-shell" key={windowIndex}>
-                  <span className="travel-hero__window-view" />
-                </span>
-              ))}
-            </div>
-          ) : null}
 
           <div className="travel-hero__interface">
             <div
@@ -540,7 +443,7 @@ export function TravelHero({
           </div>
         ) : (
           <ul className="travel-starter-prompts" aria-label="Suggested trips">
-            {siteConfig.prompts.slice(0, 2).map((prompt) => (
+            {starterPrompts.map((prompt) => (
               <li key={prompt}>
                 <button type="button" onClick={() => onStart(prompt)}>
                   {prompt}

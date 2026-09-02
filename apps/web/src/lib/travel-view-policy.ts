@@ -7,6 +7,7 @@ const INLINE_TRAVEL_VIEW_URIS: Readonly<Record<string, string>> = {
   open_loyalty: 'ui://nuitee_travel_mcp_app_starter/open_loyalty_widget',
   compare_reward_flights: 'ui://nuitee_travel_mcp_app_starter/compare_reward_flights_widget',
   review_trip: 'ui://nuitee_travel_mcp_app_starter/review_trip_widget',
+  compare_travel_insurance: 'ui://nuitee_travel_mcp_app_starter/compare_travel_insurance_widget',
 };
 
 export function isInlineTravelView(view: AssistantViewData): boolean {

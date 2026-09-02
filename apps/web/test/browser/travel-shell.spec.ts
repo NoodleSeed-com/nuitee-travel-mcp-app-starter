@@ -186,12 +186,17 @@ test('switches immersive planning scenes without opening an assistant session', 
   const hero = page.locator('.travel-hero__experience');
   const modes = page.getByRole('tablist', { name: 'Choose a planning view' });
   await expect(hero).toHaveAttribute('data-mode', 'explore');
-  await expect(page.locator('.travel-hero__window-shell')).toHaveCount(3);
+  await expect(page.locator('.travel-hero__window-shell')).toHaveCount(0);
+  await expect(hero.locator('.travel-hero__image')).toHaveAttribute(
+    'src',
+    /wayfare-explore-windows-v2/,
+  );
 
   for (const [label, mode, heading, image] of [
-    ['Flights', 'flight', 'Choose your horizon', 'wayfare-cockpit-v1'],
+    ['Flights', 'flight', 'Choose your horizon', 'wayfare-cockpit-v2'],
     ['Stays', 'stay', 'Wake up somewhere new', 'wayfare-stay-v1'],
     ['Flight + Stay', 'flight-stay', 'From takeoff to check-in', 'wayfare-flight-stay-v1'],
+    ['Insurance', 'insurance', 'Compare with confidence', 'wayfare-insurance-v1'],
   ] as const) {
     await modes.getByRole('tab', { name: label }).click();
     await expect(hero).toHaveAttribute('data-mode', mode);
@@ -202,6 +207,38 @@ test('switches immersive planning scenes without opening an assistant session', 
   }
 
   expect(assistantRequests).toEqual([]);
+});
+
+test('keeps all seven standard planning tabs reachable without overlap at tablet width', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium');
+  await page.setViewportSize({ width: 820, height: 900 });
+  await page.goto('/');
+
+  const modes = page.getByRole('tablist', { name: 'Choose a planning view' });
+  await expect(modes.getByRole('tab')).toHaveCount(7);
+  const layout = await modes.evaluate((element) => {
+    const children = Array.from(element.children).map((child) => {
+      const bounds = child.getBoundingClientRect();
+      return { left: bounds.left, right: bounds.right };
+    });
+    return {
+      children,
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+      pageWidth: document.documentElement.scrollWidth,
+    };
+  });
+
+  expect(layout.scrollWidth).toBeGreaterThanOrEqual(layout.clientWidth);
+  expect(layout.pageWidth).toBe(820);
+  for (let index = 1; index < layout.children.length; index += 1) {
+    expect(layout.children[index]!.left)
+      .toBeGreaterThanOrEqual(layout.children[index - 1]!.right);
+  }
+  await modes.getByRole('tab', { name: 'Insurance' }).scrollIntoViewIfNeeded();
+  await expect(modes.getByRole('tab', { name: 'Insurance' })).toBeVisible();
 });
 
 test('switches every Private Jets and Cars atmosphere without opening a session', async ({
@@ -356,7 +393,7 @@ test('keeps the premium desktop hero heading on one line with rounded visual sur
   }
   await expect(page.locator('.travel-hero__image')).toHaveAttribute(
     'src',
-    /wayfare-hybrid-hero-v2/,
+    /wayfare-explore-windows-v2/,
   );
 
   for (const selector of [
