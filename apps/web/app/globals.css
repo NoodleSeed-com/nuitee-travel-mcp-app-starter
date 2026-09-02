@@ -1619,10 +1619,20 @@ code {
   background: var(--travel-raised);
 }
 
-.travel-header__currency {
-  min-width: 4.4rem;
+.travel-header__currency-control {
+  position: relative;
+  display: grid;
+  min-width: 6.75rem;
   min-height: 44px;
-  padding: 0 1.7rem 0 0.75rem;
+  align-items: center;
+}
+
+.travel-header__currency {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  appearance: none;
+  padding: 0 2.25rem 0 2.4rem;
   border: 1px solid var(--travel-boundary);
   border-radius: 999px;
   background-color: transparent;
@@ -1631,6 +1641,36 @@ code {
   font-size: 0.78rem;
   font-weight: 650;
   cursor: pointer;
+}
+
+.travel-header__currency-flag,
+.travel-header__currency-chevron {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.travel-header__currency-flag {
+  left: 0.8rem;
+  display: block;
+  width: 1.125rem;
+  height: 0.75rem;
+  overflow: hidden;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgb(7 24 39 / 14%);
+}
+
+.travel-header__currency-flag svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.travel-header__currency-chevron {
+  right: 0.75rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  color: var(--travel-muted);
 }
 
 .travel-header__actions {
@@ -2020,9 +2060,8 @@ code {
     height: 44px;
   }
 
-  .travel-header__currency {
-    min-width: 4rem;
-    padding-inline: 0.65rem 1.45rem;
+  .travel-header__currency-control {
+    min-width: 6.4rem;
   }
 
   .travel-navigation-dialog {

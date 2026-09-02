@@ -140,6 +140,67 @@ test('renders one agent-led start without opening an assistant session', async (
   expect(assistantRequests).toEqual([]);
 });
 
+test('aligns a local currency flag and custom chevron inside the native selector', async ({
+  page,
+}) => {
+  await page.goto('/');
+
+  const control = page.locator('.travel-header__currency-control');
+  const currency = page.getByRole('combobox', { name: 'Currency' });
+  const flag = control.locator('.travel-header__currency-flag');
+  const chevron = control.locator('.travel-header__currency-chevron');
+
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 720 });
+
+    const geometry = await control.evaluate((element) => {
+      const select = element.querySelector('select');
+      const flagElement = element.querySelector('.travel-header__currency-flag');
+      const chevronElement = element.querySelector('.travel-header__currency-chevron');
+      if (!select || !flagElement || !chevronElement) {
+        throw new Error('Expected the complete currency control');
+      }
+
+      const controlBounds = element.getBoundingClientRect();
+      const selectBounds = select.getBoundingClientRect();
+      const flagBounds = flagElement.getBoundingClientRect();
+      const chevronBounds = chevronElement.getBoundingClientRect();
+      const style = getComputedStyle(select);
+
+      return {
+        appearance: style.appearance,
+        controlHeight: controlBounds.height,
+        flagHeight: flagBounds.height,
+        flagInset: flagBounds.left - controlBounds.left,
+        flagWidth: flagBounds.width,
+        leftPadding: Number.parseFloat(style.paddingLeft),
+        rightPadding: Number.parseFloat(style.paddingRight),
+        selectHeight: selectBounds.height,
+        chevronInset: controlBounds.right - chevronBounds.right,
+        verticalCenterDifference: Math.abs(
+          (flagBounds.top + (flagBounds.height / 2))
+          - (chevronBounds.top + (chevronBounds.height / 2)),
+        ),
+      };
+    });
+
+    expect(geometry.appearance).toBe('none');
+    expect(geometry.controlHeight).toBeGreaterThanOrEqual(44);
+    expect(geometry.selectHeight).toBeGreaterThanOrEqual(44);
+    expect(geometry.flagWidth).toBeGreaterThanOrEqual(16);
+    expect(geometry.flagHeight).toBeGreaterThanOrEqual(10);
+    expect(geometry.flagInset).toBeGreaterThanOrEqual(10);
+    expect(geometry.chevronInset).toBeGreaterThanOrEqual(10);
+    expect(geometry.leftPadding).toBeGreaterThanOrEqual(34);
+    expect(geometry.rightPadding).toBeGreaterThanOrEqual(32);
+    expect(geometry.verticalCenterDifference).toBeLessThanOrEqual(1);
+  }
+
+  await expect(currency).toHaveValue('USD');
+  await expect(flag).toHaveAttribute('data-currency-flag', 'US');
+  await expect(flag.locator('svg')).toHaveCount(1);
+});
+
 test('uses a granted browser location for the visible origin and currency defaults', async ({
   context,
   page,

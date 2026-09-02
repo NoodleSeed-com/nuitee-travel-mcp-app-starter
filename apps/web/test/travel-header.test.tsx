@@ -189,4 +189,33 @@ describe('travel header', () => {
     expect(onCurrencyChange).toHaveBeenCalledOnce();
     expect(onCurrencyChange).toHaveBeenCalledWith('EUR');
   });
+
+  it('pairs the selected currency with a decorative local flag and chevron', () => {
+    const sharedProps = {
+      mode: 'hero' as const,
+      onCurrencyChange: vi.fn(),
+      onNewTrip: vi.fn(),
+      onOpenSettings: vi.fn(),
+      onPlanTrip: vi.fn(),
+    };
+    const { container, rerender } = render(
+      <TravelHeader currency="PKR" {...sharedProps} />,
+    );
+
+    const control = container.querySelector('.travel-header__currency-control');
+    const flag = container.querySelector('.travel-header__currency-flag');
+    const chevron = container.querySelector('.travel-header__currency-chevron');
+
+    expect(control).not.toBeNull();
+    expect(flag).toHaveAttribute('aria-hidden', 'true');
+    expect(flag).toHaveAttribute('data-currency-flag', 'PK');
+    expect(flag?.querySelector('svg')).not.toBeNull();
+    expect(chevron).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getByRole('option', { name: 'PKR' })).toHaveTextContent('PKR');
+
+    rerender(<TravelHeader currency="EUR" {...sharedProps} />);
+
+    expect(container.querySelector('.travel-header__currency-flag'))
+      .toHaveAttribute('data-currency-flag', 'EU');
+  });
 });
