@@ -1,4 +1,5 @@
 export type ErrorCode =
+  | 'invalid_search'
   | 'invalid_request'
   | 'configuration_required'
   | 'authentication'
@@ -22,6 +23,7 @@ export type GatewayError = {
 export type SearchInput = {
   readonly origin?: unknown;
   readonly destination?: unknown;
+  readonly tripType?: unknown;
   readonly departureDate?: unknown;
   readonly returnDate?: unknown;
   readonly adults?: unknown;
@@ -90,8 +92,12 @@ export type GatewayResult = {
  */
 export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): GatewayResult {
   const errorDetails: Record<ErrorCode, { message: string; retryable: boolean }> = {
+    invalid_search: {
+      message: 'The flight search details were inconsistent, so no provider request was sent. Check the trip type, airports, dates, passengers, cabin, currency, and point of sale.',
+      retryable: false,
+    },
     invalid_request: {
-      message: 'The flight request is incomplete or invalid. Check the airports, dates, passengers, cabin, currency, and point of sale.',
+      message: 'Nuitee rejected the flight request as invalid. Check the airports, dates, passengers, cabin, currency, and point of sale.',
       retryable: false,
     },
     configuration_required: {
@@ -376,8 +382,19 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
   };
   const origin = normalizeAirportCode(text(search?.origin, 3)?.toUpperCase());
   const destination = normalizeAirportCode(text(search?.destination, 3)?.toUpperCase());
+  const declaredTripType = text(search?.tripType, 16)?.toUpperCase();
   const departureDate = search?.departureDate;
-  const returnDate = search?.returnDate === '' || search?.returnDate === null ? undefined : search?.returnDate;
+  const requestedReturnDate = search?.returnDate === '' || search?.returnDate === null
+    ? undefined
+    : search?.returnDate;
+  const declaredTripTypeValid = declaredTripType === undefined ||
+    declaredTripType === 'ONE_WAY' || declaredTripType === 'ROUND_TRIP';
+  const tripType = declaredTripType === 'ONE_WAY' || declaredTripType === 'ROUND_TRIP'
+    ? declaredTripType
+    : requestedReturnDate !== undefined && requestedReturnDate !== departureDate
+      ? 'ROUND_TRIP'
+      : 'ONE_WAY';
+  const returnDate = tripType === 'ROUND_TRIP' ? requestedReturnDate : undefined;
   const adults = finiteNumber(search?.adults);
   const children = finiteNumber(search?.children);
   const infants = finiteNumber(search?.infants);
@@ -397,13 +414,14 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
   const valid =
     Boolean(origin && destination && /^[A-Z]{3}$/.test(origin) && /^[A-Z]{3}$/.test(destination) && origin !== destination) &&
     validDate(departureDate) && validDate(today) && departureDate >= today &&
-    (returnDate === undefined || (validDate(returnDate) && returnDate > departureDate)) &&
+    declaredTripTypeValid &&
+    (tripType === 'ONE_WAY' || (validDate(returnDate) && returnDate > departureDate)) &&
     integers && adults !== undefined && children !== undefined && infants !== undefined &&
     adults >= 1 && adults <= 9 && children >= 0 && infants >= 0 && passengerTotal <= 9 && infants <= adults && agesValid &&
     Boolean(cabinClass && ['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST'].includes(cabinClass)) &&
     Boolean(currency && /^[A-Z]{3}$/.test(currency)) && Boolean(country && /^[A-Z]{2}$/.test(country)) &&
     requestedAtTime !== undefined;
-  if (!valid || !requestedAt) return fail('search', 'invalid_request');
+  if (!valid || !requestedAt) return fail('search', 'invalid_search');
 
   const legs = [
     { origin, destination, date: departureDate, direction: 'OUTBOUND' },
@@ -423,6 +441,7 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
   const searchContext = {
     origin,
     destination,
+    tripType,
     departureDate,
     ...(returnDate ? { returnDate } : {}),
     adults,

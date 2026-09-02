@@ -24,11 +24,23 @@ import {
 import { TravelComposer } from './travel-composer';
 import { TravelMessage } from './travel-message';
 import { TripBrief } from './trip-brief';
+import {
+  ImmersiveConversationSkeleton,
+  ImmersiveTripRail,
+} from './experience/immersive-trip-rail';
 
 interface TravelConversationProps {
+  readonly appearance?: 'standard' | 'immersive';
+  readonly className?: string;
   readonly defaults: TravelDefaults;
   readonly runtime: ReadyPublicAssistantRuntime;
   readonly initialPrompt: string;
+  readonly onInitialPromptAccepted?: () => void;
+  readonly onNewTrip?: () => void;
+  readonly promptRequest?: {
+    readonly id: number;
+    readonly prompt: string;
+  } | null;
 }
 
 function conversationCopy(projection: TripProjection) {
@@ -42,6 +54,12 @@ function conversationCopy(projection: TripProjection) {
   }
   if (projection.focus === 'rewards') {
     return { title: 'Illustrative rewards', placeholder: 'Ask about the tier or benefits…' };
+  }
+  if (projection.focus === 'insurance') {
+    return {
+      title: 'Illustrative travel protection',
+      placeholder: 'Adjust the trip details or compare the concepts…',
+    };
   }
   if (projection.focus === 'trip') {
     return { title: 'Your travel plan', placeholder: 'Adjust a flight or stay…' };
@@ -63,6 +81,7 @@ function conversationCopy(projection: TripProjection) {
     case 'comparing-stays':
     case 'stay-selected':
     case 'rewards':
+    case 'insurance':
     case 'trip-review':
       return { title, placeholder: 'Tell Wayfare what you need…' };
     case 'error':
@@ -128,10 +147,16 @@ function currentTurnHasToolError(messages: readonly AssistantUIMessage[]) {
 }
 
 export function TravelConversation({
+  appearance = 'standard',
+  className,
   defaults,
   runtime,
   initialPrompt,
+  onInitialPromptAccepted,
+  onNewTrip,
+  promptRequest,
 }: Readonly<TravelConversationProps>) {
+  const durableInitialPrompt = Boolean(onInitialPromptAccepted);
   const [principalKey] = useState(() => crypto.randomUUID());
   const { client, messages, status, error } = useNoodleAssistant({
     embedId: runtime.embedId,
@@ -143,30 +168,82 @@ export function TravelConversation({
     }),
     pageContext: () => toTravelPageContext(defaults),
   });
-  const initialPromptSentRef = useRef(false);
+  const initialPromptSendingRef = useRef(false);
+  const initialPromptAcceptedRef = useRef(false);
+  const onInitialPromptAcceptedRef = useRef(onInitialPromptAccepted);
+  const promptRequestIdRef = useRef<number | null>(null);
   const lastPromptRef = useRef(initialPrompt);
   const activeActivitiesRef = useRef(new Map<string, ToolActivity>());
   const transcriptContentRef = useRef<HTMLOListElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const followLatestRef = useRef(true);
   const [activity, setActivity] = useState<ToolActivity | null>(null);
+  const [initialPromptState, setInitialPromptState] = useState<
+    'pending' | 'sending' | 'failed' | 'sent'
+  >(() => durableInitialPrompt ? 'pending' : 'sent');
   const [stopRequested, setStopRequested] = useState(false);
   const stopRequestedRef = useRef(false);
   const busy = status === 'submitted' || status === 'streaming';
   const terminal = status === 'error' || Boolean(error);
   const terminalRef = useRef(terminal);
   terminalRef.current = terminal;
+  onInitialPromptAcceptedRef.current = onInitialPromptAccepted;
+
   useEffect(() => {
-    let active = true;
-    queueMicrotask(() => {
-      if (!active || initialPromptSentRef.current) return;
-      initialPromptSentRef.current = true;
-      void client.sendMessage(initialPrompt).catch(() => undefined);
+    if (!durableInitialPrompt) {
+      let active = true;
+      queueMicrotask(() => {
+        if (
+          !active
+          || initialPromptSendingRef.current
+          || initialPromptAcceptedRef.current
+        ) return;
+        initialPromptSendingRef.current = true;
+        initialPromptAcceptedRef.current = true;
+        lastPromptRef.current = initialPrompt;
+        followLatestRef.current = true;
+        void client.sendMessage(initialPrompt).catch(() => undefined).finally(() => {
+          initialPromptSendingRef.current = false;
+        });
+      });
+      return () => {
+        active = false;
+      };
+    }
+
+    if (
+      status !== 'ready'
+      || initialPromptState !== 'pending'
+      || initialPromptSendingRef.current
+      || initialPromptAcceptedRef.current
+    ) return;
+
+    initialPromptSendingRef.current = true;
+    setInitialPromptState('sending');
+    lastPromptRef.current = initialPrompt;
+    followLatestRef.current = true;
+    void client.sendMessage(initialPrompt).then(() => {
+      initialPromptAcceptedRef.current = true;
+      initialPromptSendingRef.current = false;
+      setInitialPromptState('sent');
+      onInitialPromptAcceptedRef.current?.();
+    }).catch(() => {
+      initialPromptSendingRef.current = false;
+      setInitialPromptState('failed');
     });
-    return () => {
-      active = false;
-    };
-  }, [client, initialPrompt]);
+  }, [client, durableInitialPrompt, initialPrompt, initialPromptState, status]);
+
+  useEffect(() => {
+    if (
+      status !== 'ready'
+      || !promptRequest
+      || promptRequestIdRef.current === promptRequest.id
+    ) return;
+    promptRequestIdRef.current = promptRequest.id;
+    lastPromptRef.current = promptRequest.prompt;
+    followLatestRef.current = true;
+    void client.sendMessage(promptRequest.prompt).catch(() => undefined);
+  }, [client, promptRequest, status]);
 
   useEffect(() => {
     const content = transcriptContentRef.current;
@@ -250,6 +327,9 @@ export function TravelConversation({
     [messages],
   );
   const copy = conversationCopy(projection);
+  const awaitingAssistantContent = appearance === 'immersive'
+    && busy
+    && visibleMessages.every((message) => message.role === 'user');
 
   function sendFollowUp(prompt: string) {
     followLatestRef.current = true;
@@ -267,11 +347,23 @@ export function TravelConversation({
     client.abort();
   }
 
+  function retryInitialPrompt() {
+    if (initialPromptSendingRef.current) return;
+    if (status === 'error') client.resetSession();
+    setInitialPromptState('pending');
+  }
+
+  const initialPromptProgress = durableInitialPrompt
+    && (initialPromptState === 'pending' || initialPromptState === 'sending')
+    ? 'Starting your trip…'
+    : '';
   const statusLabel = terminal
     ? ''
     : stopRequested
       ? ''
-      : activity?.label ?? (busy ? 'Assistant is responding' : '');
+      : initialPromptProgress
+        || activity?.label
+        || (busy ? 'Assistant is responding' : '');
   const errorPresentation = error && !hasToolError
     ? presentAssistantError(error)
     : null;
@@ -280,7 +372,13 @@ export function TravelConversation({
     <section
       aria-busy={busy}
       aria-label="Travel conversation"
-      className="travel-conversation-shell"
+      className={[
+        'travel-conversation-shell',
+        appearance === 'immersive'
+          ? 'travel-conversation-shell--immersive'
+          : '',
+        className ?? '',
+      ].filter(Boolean).join(' ')}
       data-scroll-owner="page"
     >
       <header className="travel-conversation__header">
@@ -288,6 +386,9 @@ export function TravelConversation({
           {siteConfig.brand.assistantName}
         </p>
         <h1>{copy.title}</h1>
+        {appearance === 'immersive' && onNewTrip ? (
+          <button onClick={onNewTrip} type="button">Start a new trip</button>
+        ) : null}
       </header>
       <div className="travel-conversation__context">
         <TripBrief projection={projection} />
@@ -307,9 +408,26 @@ export function TravelConversation({
             </li>
           ))}
         </ol>
+        {awaitingAssistantContent ? <ImmersiveConversationSkeleton /> : null}
         <div aria-hidden="true" data-testid="conversation-end" ref={conversationEndRef} />
       </div>
+      {appearance === 'immersive' ? (
+        <ImmersiveTripRail
+          busy={busy}
+          onPrompt={sendFollowUp}
+          projection={projection}
+        />
+      ) : null}
       <div className="travel-conversation__lower-chrome">
+        {durableInitialPrompt && initialPromptState === 'failed' ? (
+          <section className="assistant-error initial-prompt-error" role="alert">
+            <h2>Your request is still here</h2>
+            <p>The Assistant session did not start. Try the same request again without retyping it.</p>
+            <button onClick={retryInitialPrompt} type="button">
+              Retry starting trip
+            </button>
+          </section>
+        ) : null}
         {projection.phase === 'no-results' ? (
           <div
             aria-label="Refine this search"
@@ -365,7 +483,7 @@ export function TravelConversation({
         <p aria-live="polite" role="status">
           {statusLabel}
         </p>
-        {errorPresentation ? (
+        {errorPresentation && !(durableInitialPrompt && initialPromptState === 'failed') ? (
           <section className="assistant-error" role="alert">
             <h2>{errorPresentation.title}</h2>
             <p>{errorPresentation.message}</p>

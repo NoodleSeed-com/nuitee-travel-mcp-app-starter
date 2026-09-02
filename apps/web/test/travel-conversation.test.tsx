@@ -189,6 +189,7 @@ describe('guest travel conversation lifecycle', () => {
     const options = assistantMock.useNoodleAssistant.mock.calls.at(-1)?.[0];
     expect(options).not.toHaveProperty('context');
     expect(options.pageContext()).toEqual({
+      travelCountry: 'US',
       travelCurrency: 'USD',
       travelDefaultSource: 'fallback',
     });
@@ -212,6 +213,7 @@ describe('guest travel conversation lifecycle', () => {
     await waitFor(() => expect(client.sendMessage).toHaveBeenCalledOnce());
     let options = assistantMock.useNoodleAssistant.mock.calls.at(-1)?.[0];
     expect(options.pageContext()).toEqual({
+      travelCountry: 'US',
       travelCurrency: 'EUR',
       travelDefaultSource: 'fallback',
     });
@@ -221,6 +223,7 @@ describe('guest travel conversation lifecycle', () => {
     });
     options = assistantMock.useNoodleAssistant.mock.calls.at(-1)?.[0];
     expect(options.pageContext()).toEqual({
+      travelCountry: 'US',
       travelCurrency: 'GBP',
       travelDefaultSource: 'fallback',
     });

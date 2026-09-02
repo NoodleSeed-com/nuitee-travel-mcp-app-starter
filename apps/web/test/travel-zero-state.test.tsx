@@ -70,40 +70,126 @@ describe('travel assistant zero state', () => {
 
     expect(container.querySelector('.travel-hero img[alt=""]')).toHaveAttribute(
       'src',
-      expect.stringContaining('wayfare-hybrid-hero-v2'),
+      expect.stringContaining('wayfare-explore-windows-v2'),
     );
     expect(within(screen.getByRole('list', { name: 'Suggested trips' }))
       .getAllByRole('button')).toHaveLength(2);
   });
 
-  it('turns the hero image into a non-interactive conversation-to-trip story', () => {
+  it('offers seven immersive planning modes without starting a conversation', () => {
+    const onStart = vi.fn();
+    render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
+
+    const modes = screen.getByRole('tablist', { name: 'Choose a planning view' });
+    expect(within(modes).getAllByRole('tab')).toHaveLength(7);
+    expect(within(modes).getByRole('tab', { name: 'Explore' }))
+      .toHaveAttribute('aria-selected', 'true');
+    expect(screen.queryByTestId('hero-window-deck')).not.toBeInTheDocument();
+
+    fireEvent.click(within(modes).getByRole('tab', { name: 'Flights' }));
+
+    expect(onStart).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', {
+      level: 1,
+      name: 'Choose your horizon',
+    })).toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
+      .toHaveAttribute('placeholder', 'Where do you want to fly?');
+
+    fireEvent.click(within(modes).getByRole('tab', { name: 'Insurance' }));
+
+    expect(onStart).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', {
+      level: 1,
+      name: 'Compare with confidence',
+    })).toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
+      .toHaveAttribute(
+        'placeholder',
+        'Compare illustrative travel protection for my trip…',
+      );
+    expect(document.querySelector('.travel-hero__experience img[alt=""]'))
+      .toHaveAttribute('src', expect.stringContaining('wayfare-insurance-v1'));
+    expect(within(screen.getByRole('list', { name: 'Suggested trips' }))
+      .getAllByRole('button')).toHaveLength(1);
+    expect(screen.getByRole('button', {
+      name: siteConfig.prompts[3],
+    })).toBeVisible();
+  });
+
+  it('shows all three private-jet scenes without starting a conversation', () => {
+    const onStart = vi.fn();
+    render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
+
+    const modes = screen.getByRole('tablist', { name: 'Choose a planning view' });
+    fireEvent.click(within(modes).getByRole('tab', { name: 'Private Jets' }));
+
+    expect(screen.getByRole('heading', {
+      level: 1,
+      name: 'Private aviation, made personal.',
+    })).toBeVisible();
+    const scenes = screen.getByRole('tablist', {
+      name: 'Choose a Private Jets atmosphere',
+    });
+    expect(within(scenes).getAllByRole('tab')).toHaveLength(3);
+    expect(within(scenes).getByRole('tab', { name: 'Daylight Lounge' }))
+      .toHaveAttribute('aria-selected', 'true');
+
+    fireEvent.click(within(scenes).getByRole('tab', { name: 'Cockpit Sunset' }));
+
+    expect(onStart).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', {
+      level: 1,
+      name: 'Describe the journey. We’ll handle the details.',
+    })).toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
+      .toHaveAttribute(
+        'placeholder',
+        'I need a private jet from London to Nice next Friday for six, returning Sunday evening.',
+      );
+  });
+
+  it('keeps car suggestions conversational until the user submits', () => {
+    const onStart = vi.fn();
+    render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
+
+    const modes = screen.getByRole('tablist', { name: 'Choose a planning view' });
+    fireEvent.click(within(modes).getByRole('tab', { name: 'Cars' }));
+
+    expect(screen.getByRole('heading', {
+      level: 1,
+      name: 'Where should the road take you?',
+    })).toBeVisible();
+    const suggestions = screen.getByRole('list', {
+      name: 'Suggested Cars requests',
+    });
+    fireEvent.click(within(suggestions).getByRole('button', {
+      name: 'Airport pickup',
+    }));
+
+    expect(onStart).not.toHaveBeenCalled();
+    const composer = screen.getByRole('textbox', { name: 'Ask the travel assistant' });
+    expect(composer).toHaveValue(
+      'I need a compact SUV at Lisbon airport next Friday for four days.',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit car request' }));
+    expect(onStart).toHaveBeenCalledWith(
+      'I need a compact SUV at Lisbon airport next Friday for four days.',
+    );
+  });
+
+  it('renders a three-window explore scene around the real trip composer', () => {
     const { container } = render(
       <TravelZeroState inputRef={createRef()} onStart={vi.fn()} />,
     );
 
-    const story = screen.getByRole('group', {
-      name: 'One conversation for the whole trip',
-    });
-    expect(within(story).getByText('Your trip, brought together')).toBeVisible();
-    expect(within(story).getByText('Flights, stays, and rewards. One plan.'))
-      .toBeVisible();
-    expect(within(story).getByText('Your departure')).toBeVisible();
-    expect(within(story).getByText('Your next destination')).toBeVisible();
-    expect(within(story).getByText(
-      'Plan a complete trip for two next week.',
-    )).toBeVisible();
-    expect(within(story).getByText('Wayfare understands')).toBeVisible();
-    const sequence = within(story).getByRole('list', {
-      name: 'Build your trip with Wayfare',
-    });
-    expect(within(sequence).getByText('Flight')).toBeVisible();
-    expect(within(sequence).getByText('Stay')).toBeVisible();
-    expect(within(sequence).getByText('Rewards review')).toBeVisible();
-    expect(story.querySelectorAll(
-      'a, button, input, select, textarea, [tabindex]',
-    )).toHaveLength(0);
-    expect(container.querySelector('.travel-hero__media-frame img[alt=""]'))
-      .toHaveAttribute('src', expect.stringContaining('wayfare-hybrid-hero-v2'));
+    const panel = screen.getByRole('tabpanel', { name: 'Explore' });
+    expect(within(panel).getByText('Your trip, brought together')).toBeVisible();
+    expect(within(panel).getByText('A window into what comes next')).toBeVisible();
+    expect(screen.queryByTestId('hero-window-deck')).not.toBeInTheDocument();
+    expect(container.querySelector('.travel-hero__experience img[alt=""]'))
+      .toHaveAttribute('src', expect.stringContaining('wayfare-explore-windows-v2'));
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute(
         'placeholder',
@@ -124,7 +210,6 @@ describe('travel assistant zero state', () => {
       />,
     );
 
-    expect(screen.getByText('Islamabad (ISB)')).toBeVisible();
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute(
         'placeholder',
@@ -175,7 +260,7 @@ describe('travel assistant zero state', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Places to start' }))
       .toBeVisible();
     expect(screen.getAllByRole('button', { name: /Plan a trip to/u }))
-      .toHaveLength(3);
+      .toHaveLength(5);
     const capabilityList = screen.getByRole('list', {
       name: 'Start with flights, stays, or rewards',
     });
@@ -264,7 +349,7 @@ describe('travel assistant zero state', () => {
     expect(words.length).toBeLessThanOrEqual(150);
   });
 
-  it('advertises half-width tablet destination images for every equal card', () => {
+  it('advertises compact destination-window images at each breakpoint', () => {
     const { container } = render(
       <TravelZeroState inputRef={{ current: null }} onStart={vi.fn()} />,
     );
@@ -272,11 +357,11 @@ describe('travel assistant zero state', () => {
       '.destination-card img',
     );
 
-    expect(images).toHaveLength(3);
+    expect(images).toHaveLength(5);
     for (const image of images) {
       expect(image).toHaveAttribute(
         'sizes',
-        '(max-width: 767px) 82vw, (max-width: 1023px) 50vw, 33vw',
+        '(max-width: 767px) 78vw, (max-width: 1023px) 42vw, 22vw',
       );
     }
   });

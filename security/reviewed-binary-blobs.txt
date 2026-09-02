@@ -21,3 +21,20 @@ e6d793cc15a411fb0539dd5cec6dc0baf4002ab4 apps/web/public/images/destinations/rom
 # Current deterministic product previews, recaptured from the premium Wayfare revision.
 89ee2a00affed845604da63b37bb193aa1a03315 docs/images/travel-home.png
 aa6fb4d40dd0aa3941d740d09f1e9b6f2e22823d docs/images/flight-results.png
+# Active shared Wayfare hero masters, visually reviewed at original detail.
+060089d1f0fe41cbc89af3e2afe424dcb83a08a6 apps/web/public/images/immersive/wayfare-explore-windows-v2.png
+1940a8249a53ec3d774dbe76427cb70971321154 apps/web/public/images/immersive/wayfare-cockpit-v2.png
+b657e59195f697df14f6e7eda50c0b775deea053 apps/web/public/images/immersive/wayfare-insurance-v1.png
+# Additional travel imagery introduced by the immersive Wayfare experience,
+# visually reviewed at original detail for credentials and private data.
+06065455e974ef66ecf6a4a42106b3140761698e apps/web/public/images/destinations/banff-editorial-v1.png
+7c5311bf746424ffae352526dbaf9c316a35498c apps/web/public/images/destinations/lisbon-editorial-v1.png
+0274df7f0c274aea5731e3d0ecea1b885de090ee apps/web/public/images/immersive/cars/alpine-arrival-v1.png
+4cc0811eb8c87c24eba82eebd1a78f6b0869ff1c apps/web/public/images/immersive/cars/coastal-road-v1.png
+a94cc5a092becaf00900cafcc42e08e3d33081d7 apps/web/public/images/immersive/cars/desert-drive-v1.png
+d14d7200a59b5d8367dec5eb525e3dcac979a3ff apps/web/public/images/immersive/private-jets/cockpit-sunset-v1.png
+819f2591a338051f6a1e1e8bca433ce0436e1c51 apps/web/public/images/immersive/private-jets/daylight-lounge-v1.png
+8986e0476e8f984024e70bddf46df9599844b9ad apps/web/public/images/immersive/private-jets/night-suite-v1.png
+85e55bf133960d1acec0248427b4ee37948534cf apps/web/public/images/immersive/wayfare-cockpit-v1.png
+c5562474b0cb3bc29ae9d515683228ec3eac5c09 apps/web/public/images/immersive/wayfare-flight-stay-v1.png
+4280732ad050936c59d1681a0d019aed0edd0ae3 apps/web/public/images/immersive/wayfare-stay-v1.png

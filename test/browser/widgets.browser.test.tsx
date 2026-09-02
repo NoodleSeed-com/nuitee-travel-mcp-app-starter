@@ -319,6 +319,40 @@ describe('real-browser widget readiness', () => {
     expect(hasHorizontalOverflow()).toBe(false);
   });
 
+  it('keeps secondary verified-fare details collapsed until requested', async () => {
+    await page.viewport(720, 1_200);
+    mount(<FlightResultsView
+      result={search}
+      displayMode="inline"
+      view="review"
+      selectedSelectionId={itinerary.selectionId}
+      onBack={vi.fn()}
+      onVerify={vi.fn()}
+      verification={{
+        status: 'success',
+        selectionId: itinerary.selectionId,
+        availability: 'available',
+        priceChanged: false,
+        previousPrice: itinerary.price,
+        currentPrice: itinerary.price,
+        messages: [],
+        verifiedAt: itinerary.retrievedAt,
+      }}
+    />);
+
+    const toggle = page.getByRole('button', {
+      name: 'Fare conditions and price breakdown',
+    });
+    await expect.element(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect.element(page.getByText('Fictional Wi-Fi')).not.toBeVisible();
+
+    await toggle.click();
+
+    await expect.element(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect.element(page.getByText('Fictional Wi-Fi')).toBeVisible();
+    expect(hasHorizontalOverflow()).toBe(false);
+  });
+
   it('reflows without overflow under a 400% CSS zoom simulation', async () => {
     await page.viewport(1_280, 1_200);
     document.body.style.zoom = '4';

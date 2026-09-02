@@ -43,6 +43,7 @@ describe('useTravelDefaults', () => {
     });
     expect(result.current).toMatchObject({
       origin: { iata: 'ISB', city: 'Islamabad', country: 'PK' },
+      marketCountry: 'PK',
       currency: 'PKR',
       source: 'browser-geolocation',
     });
@@ -70,6 +71,7 @@ describe('useTravelDefaults', () => {
     await waitFor(() => expect(getCurrentPosition).toHaveBeenCalledOnce());
     expect(result.current).toMatchObject({
       currency: 'GBP',
+      marketCountry: 'GB',
       source: 'fallback',
     });
     expect(result.current.origin).toBeUndefined();
@@ -83,6 +85,7 @@ describe('useTravelDefaults', () => {
 
     expect(result.current).toMatchObject({
       currency: 'AUD',
+      marketCountry: 'AU',
       source: 'fallback',
     });
     expect(result.current.origin).toBeUndefined();

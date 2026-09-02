@@ -1,6 +1,8 @@
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { access, readFile, stat } from 'node:fs/promises';
+import { access, mkdtemp, open, readFile, rm, stat } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
@@ -35,15 +37,26 @@ function jpegDimensions(bytes: Buffer) {
 async function noodleValidate() {
   const executable = fileURLToPath(new URL('../node_modules/.bin/noodle', import.meta.url));
   const cwd = fileURLToPath(new URL('../', import.meta.url));
-  return new Promise<{ code: number | null; stdout: string; stderr: string }>((resolve, reject) => {
-    const child = spawn(executable, ['validate', '--json'], { cwd });
-    let stdout = '';
-    let stderr = '';
-    child.stdout.on('data', (chunk) => { stdout += chunk; });
-    child.stderr.on('data', (chunk) => { stderr += chunk; });
-    child.once('error', reject);
-    child.once('close', (code) => resolve({ code, stdout, stderr }));
-  });
+  const temporaryDirectory = await mkdtemp(join(tmpdir(), 'nuitee-noodle-validate-'));
+  const stdoutPath = join(temporaryDirectory, 'stdout.json');
+  const stdoutFile = await open(stdoutPath, 'w');
+  try {
+    const result = await new Promise<{ code: number | null; stderr: string }>((resolve, reject) => {
+      const child = spawn(executable, ['validate', '--json'], {
+        cwd,
+        stdio: ['ignore', stdoutFile.fd, 'pipe'],
+      });
+      let stderr = '';
+      child.stderr.on('data', (chunk) => { stderr += chunk; });
+      child.once('error', reject);
+      child.once('close', (code) => resolve({ code, stderr }));
+    });
+    await stdoutFile.close();
+    return { ...result, stdout: await readFile(stdoutPath, 'utf8') };
+  } finally {
+    await stdoutFile.close().catch(() => undefined);
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
 }
 
 describe('public repository contracts', () => {
@@ -191,6 +204,25 @@ describe('public repository contracts', () => {
       expect(ledger).toContain(`${dimensions.width} x ${dimensions.height}`);
       expect(ledger).toContain(hash);
     }
+
+    for (const [path, hash] of [
+      [
+        'apps/web/public/images/immersive/wayfare-explore-windows-v2.png',
+        '4f28eb6b9f00c101cb9a66d7731a07ae760d4cf61b436750a7e6172b0b98e41a',
+      ],
+      [
+        'apps/web/public/images/immersive/wayfare-cockpit-v2.png',
+        'cca500fbae39d3d593cc379f319ca64eae484ccbce5582a9620e571b66bac1a4',
+      ],
+      [
+        'apps/web/public/images/immersive/wayfare-insurance-v1.png',
+        '0750cee8fea894960331b79502ea6de460a6d7b84e2ca20a1cacb94ccdf537b0',
+      ],
+    ] as const) {
+      expect(ledger).toContain(path);
+      expect(ledger).toContain('1672 x 941');
+      expect(ledger).toContain(hash);
+    }
   });
 
   it('makes the Next.js guest website the primary README path', async () => {
@@ -205,31 +237,42 @@ describe('public repository contracts', () => {
     expect(readme).toContain('does not book');
   });
 
-  it('ships the Wayfare hybrid cinematic landing without the obsolete shader layer', async () => {
+  it('ships the shared Wayfare cinematic landing without the obsolete shader layer', async () => {
     const [
       readme,
       customization,
       heroSource,
+      heroContentSource,
       siteConfigSource,
       footerSource,
       heroAsset,
+      cockpitAsset,
+      insuranceAsset,
       webPackage,
     ] = await Promise.all([
       repositoryFile('README.md'),
       repositoryFile('docs/customization.md'),
       repositoryFile('apps/web/src/components/travel-hero.tsx'),
+      repositoryFile('apps/web/src/lib/travel-hero-content.ts'),
       repositoryFile('apps/web/src/lib/site-config.ts'),
       repositoryFile('apps/web/src/components/travel-footer.tsx'),
-      stat(new URL('../apps/web/public/images/wayfare-hybrid-hero-v2.jpg', import.meta.url)),
+      stat(new URL('../apps/web/public/images/immersive/wayfare-explore-windows-v2.png', import.meta.url)),
+      stat(new URL('../apps/web/public/images/immersive/wayfare-cockpit-v2.png', import.meta.url)),
+      stat(new URL('../apps/web/public/images/immersive/wayfare-insurance-v1.png', import.meta.url)),
       repositoryJson('apps/web/package.json'),
     ]);
 
     expect(heroAsset.size).toBeGreaterThan(0);
-    expect(heroSource).toContain('siteConfig.brand.heroImagePath');
-    expect(siteConfigSource).toContain('/images/wayfare-hybrid-hero-v2.jpg');
+    expect(cockpitAsset.size).toBeGreaterThan(0);
+    expect(insuranceAsset.size).toBeGreaterThan(0);
+    expect(heroSource).toContain('coreHeroModes');
+    expect(heroContentSource).toContain('/images/immersive/wayfare-explore-windows-v2.png');
+    expect(heroContentSource).toContain('/images/immersive/wayfare-cockpit-v2.png');
+    expect(heroContentSource).toContain('/images/immersive/wayfare-insurance-v1.png');
+    expect(siteConfigSource).toContain('/images/immersive/wayfare-explore-windows-v2.png');
     expect(footerSource).toContain('Built on Noodle Seed · Powered by Nuitee');
     expect(webPackage.dependencies['@paper-design/shaders-react']).toBeUndefined();
-    expect(readme).toContain('hybrid cinematic');
+    expect(readme).toContain('shared multi-mode cinematic');
     expect(readme).toContain('Search → Select → Verify');
     expect(customization).toContain('## Wayfare image system');
     await expect(access(new URL(
@@ -428,7 +471,7 @@ describe('public repository contracts', () => {
     expect(workflow).not.toMatch(/uses:\s+[^\s]+@v\d/);
     expect(dependabot).toContain('package-ecosystem: github-actions');
     expect(workspace).toContain('minimumReleaseAge: 1440');
-    expect(workspace).toContain("'@noodleseed/one@0.149.0'");
+    expect(workspace).toContain("'@noodleseed/one@0.151.1'");
     expect(workspace).toContain("'@noodleseed/assistant@1.27.0'");
   });
 

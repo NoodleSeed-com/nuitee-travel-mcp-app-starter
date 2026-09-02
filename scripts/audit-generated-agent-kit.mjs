@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { dirname, posix } from 'node:path';
 
 function gitLines(args) {
   return execFileSync('git', args, {
@@ -23,36 +23,75 @@ if (packageFiles.length === 0) {
   process.exit(1);
 }
 
-const exactVersion = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
 const issues = [];
-for (const path of packageFiles) {
+const managedRoots = [
+  {
+    root: '.agents/skills/',
+    manifestPath: '.agents/skills/.noodle-managed.json',
+    target: 'codex',
+  },
+  {
+    root: '.claude/skills/',
+    manifestPath: '.claude/skills/.noodle-managed.json',
+    target: 'claude-code',
+  },
+];
+const manifests = new Map();
+
+for (const managed of managedRoots) {
   let manifest;
   try {
-    manifest = JSON.parse(readFileSync(path, 'utf8'));
+    manifest = JSON.parse(readFileSync(managed.manifestPath, 'utf8'));
+  } catch {
+    issues.push({ path: managed.manifestPath, code: 'invalid_managed_manifest' });
+    continue;
+  }
+  if (
+    manifest.schemaVersion !== 1
+    || manifest.target !== managed.target
+    || typeof manifest.packageVersion !== 'string'
+    || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(manifest.packageVersion)
+    || !Array.isArray(manifest.files)
+  ) {
+    issues.push({ path: managed.manifestPath, code: 'invalid_managed_manifest' });
+    continue;
+  }
+  manifests.set(managed.root, {
+    packageVersion: manifest.packageVersion,
+    files: new Map(manifest.files.map((entry) => [entry.path, entry])),
+  });
+}
+
+for (const path of packageFiles) {
+  try {
+    JSON.parse(readFileSync(path, 'utf8'));
   } catch {
     issues.push({ path, code: 'invalid_package_json' });
     continue;
   }
-  for (const section of ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies']) {
-    for (const [name, version] of Object.entries(manifest[section] ?? {})) {
-      if (typeof version !== 'string' || !exactVersion.test(version)) {
-        issues.push({ path, code: 'mutable_dependency', dependency: name, section });
-      }
-    }
+  const managedRoot = managedRoots.find(({ root }) => path.startsWith(root));
+  const manifest = managedRoot ? manifests.get(managedRoot.root) : undefined;
+  const entry = manifest?.files.get(path);
+  if (!manifest || !entry) {
+    issues.push({ path, code: 'unmanaged_generated_example' });
+    continue;
   }
-  if (typeof manifest.packageManager !== 'string' || !/^pnpm@\d+\.\d+\.\d+$/.test(manifest.packageManager)) {
-    issues.push({ path, code: 'package_manager_not_pinned' });
+  const digest = createHash('sha256').update(readFileSync(path)).digest('hex');
+  if (
+    entry.sha256 !== digest
+    || entry.skill !== 'noodle-seed'
+    || entry.skillVersion !== manifest.packageVersion
+  ) {
+    issues.push({ path, code: 'managed_content_mismatch' });
   }
-  const lockfile = posix.join(dirname(path), 'pnpm-lock.yaml');
-  if (!tracked.has(lockfile)) issues.push({ path, code: 'lockfile_missing' });
 }
 
 if (issues.length > 0) {
   process.stdout.write(`${JSON.stringify({
     ok: false,
     error: {
-      code: 'generated_example_dependency_policy_failed',
-      message: 'Bundled runnable Agent Kit examples are outside the reviewed reproducible dependency boundary.',
+      code: 'generated_example_provenance_failed',
+      message: 'Bundled Agent Kit examples do not match their Noodle-managed provenance manifests.',
       issues,
     },
   })}\n`);
@@ -61,5 +100,9 @@ if (issues.length > 0) {
 
 process.stdout.write(`${JSON.stringify({
   ok: true,
-  data: { packageFiles: packageFiles.length, issues: 0 },
+  data: {
+    packageFiles: packageFiles.length,
+    managedKits: manifests.size,
+    issues: 0,
+  },
 })}\n`);

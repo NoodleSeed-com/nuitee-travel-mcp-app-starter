@@ -4,7 +4,14 @@ Customize the existing flights-first product before adding scope. Keep Wayfare f
 
 ## Wayfare image system
 
-The light, Inter-only hybrid cinematic landing uses four local high-resolution JPEG masters: `wayfare-hybrid-hero-v2.jpg` plus the Rome, London, and Istanbul `-editorial-v2.jpg` destinations. Each is a truthful native `1672 × 941` master—not a literal 4K source. Next.js makes responsive AVIF/WebP derivatives from the local files; preserve the explicit `sizes`, focal positions, priority behavior, and responsive crop checks when replacing one.
+The light, Inter-only cinematic landing uses the shared local hero masters
+declared in `apps/web/src/lib/travel-hero-content.ts`, plus the Rome, London, and
+Istanbul `-editorial-v2.jpg` destination masters. The standard and full-bleed
+experiences intentionally consume the same Explore, Flights, Stays, Flight +
+Stay, and Insurance paths. Each active hero is a truthful native `1672 × 941`
+master—not a literal 4K source. Next.js makes responsive AVIF/WebP derivatives
+from the local files; preserve the explicit `sizes`, focal positions, priority
+behavior, and responsive crop checks when replacing one.
 
 Read [the Wayfare provenance ledger](visual-assets/wayfare-premium-concierge.md) before changing an image. It records the accepted paths, native dimensions, byte counts, SHA-256 hashes, crop decisions, visual review, and rejected variants. Keep replacements local and owned, licensed, or generated; do not introduce a remote image origin, airline trademarks, liveries, copyrighted campaign art, or an image-based fare, availability, partnership, or destination guarantee. Every changed binary needs its own exact reviewed blob/path pair in `security/reviewed-binary-blobs.txt`; a filename or directory exception is not enough.
 
@@ -47,9 +54,10 @@ non-evidentiary inspiration. Do not fabricate a fare, discount, availability,
 airline partnership, destination guarantee, or any other commercial claim in an
 image or its prompt copy.
 
-The four committed masters were generated with OpenAI `image_gen`; their exact
-prompts, dimensions, conversion settings, crop notes, and visual-review results
-are recorded in [the Wayfare provenance ledger](visual-assets/wayfare-premium-concierge.md).
+The editorial destination masters and active core hero masters were generated
+with OpenAI `image_gen`; their prompt records or summaries, dimensions, crop
+notes, and visual-review results are recorded in
+[the Wayfare provenance ledger](visual-assets/wayfare-premium-concierge.md).
 Raw generation sources stay outside git. Exact-blob review proves which bytes
 were inspected for obvious logos, signage, faces, private data, and visual
 defects; it does not complete copyright, trademark, model/provider terms, or

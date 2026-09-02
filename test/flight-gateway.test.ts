@@ -47,7 +47,7 @@ describe('Nuitee gateway search preparation', () => {
       { kind: 'search', search: validSearchInput, today, requestedAt },
       { callOperation },
     );
-    expect(result.error?.code).toBe('invalid_request');
+    expect(result.error?.code).toBe('invalid_search');
     expect(callOperation).not.toHaveBeenCalled();
   });
 
@@ -68,6 +68,46 @@ describe('Nuitee gateway search preparation', () => {
     expect(result.status).toBe('success');
   });
 
+  it('drops a redundant return date from an explicit one-way search', () => {
+    const { result, callOperation } = search({
+      tripType: 'ONE_WAY',
+      returnDate: validSearchInput.departureDate,
+    });
+
+    expect(callOperation).toHaveBeenCalledWith(
+      'search',
+      expect.objectContaining({
+        legs: [{
+          origin: 'QZX',
+          destination: 'QZY',
+          date: '2030-04-20',
+          direction: 'OUTBOUND',
+        }],
+      }),
+    );
+    expect(result.searchContext).toEqual(expect.objectContaining({
+      tripType: 'ONE_WAY',
+    }));
+    expect(result.searchContext).not.toHaveProperty('returnDate');
+  });
+
+  it('recovers the legacy duplicate-date one-way shape without creating an inbound leg', () => {
+    const { result, callOperation } = search({
+      returnDate: validSearchInput.departureDate,
+    });
+
+    expect(callOperation).toHaveBeenCalledWith(
+      'search',
+      expect.objectContaining({
+        legs: [expect.objectContaining({ direction: 'OUTBOUND' })],
+      }),
+    );
+    expect(result.searchContext).toEqual(expect.objectContaining({
+      tripType: 'ONE_WAY',
+    }));
+    expect(result.searchContext).not.toHaveProperty('returnDate');
+  });
+
   it('normalizes the Toronto metro code to the provider-supported primary airport', () => {
     const { result, callOperation } = search({ origin: 'YTO' });
 
@@ -83,7 +123,10 @@ describe('Nuitee gateway search preparation', () => {
   });
 
   it('builds reverse OUTBOUND/INBOUND legs for a round trip', () => {
-    const { callOperation } = search({ returnDate: '2030-04-27' });
+    const { result, callOperation } = search({
+      tripType: 'ROUND_TRIP',
+      returnDate: '2030-04-27',
+    }, { data: [{ journeys: [] }] });
     expect(callOperation).toHaveBeenCalledWith(
       'search',
       expect.objectContaining({
@@ -93,6 +136,21 @@ describe('Nuitee gateway search preparation', () => {
         ],
       }),
     );
+    expect(result.searchContext).toEqual(expect.objectContaining({
+      tripType: 'ROUND_TRIP',
+      returnDate: '2030-04-27',
+    }));
+  });
+
+  it('rejects an explicit round trip without a later return before calling the provider', () => {
+    const { result, callOperation } = search({
+      tripType: 'ROUND_TRIP',
+      returnDate: validSearchInput.departureDate,
+    });
+
+    expect(result.error?.code).toBe('invalid_search');
+    expect(result.message).toContain('no provider request was sent');
+    expect(callOperation).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -114,7 +172,7 @@ describe('Nuitee gateway search preparation', () => {
   ])('rejects %s before any provider call', (_label, overrides) => {
     const { result, callOperation } = search(overrides);
     expect(result.status).toBe('error');
-    expect(result.error?.code).toBe('invalid_request');
+    expect(result.error?.code).toBe('invalid_search');
     expect(callOperation).not.toHaveBeenCalled();
   });
 });
@@ -151,7 +209,10 @@ describe('Nuitee gateway normalization', () => {
         { category: 'power', name: 'Seat power', available: true, aircraftType: 'Cedar 100' },
       ],
     });
-    expect(result.searchContext).toEqual(validSearchInput);
+    expect(result.searchContext).toEqual({
+      ...validSearchInput,
+      tripType: 'ONE_WAY',
+    });
     expect(result.itineraries?.[0]?.selectionId).toMatch(/^sel_[a-f0-9]{32}$/);
     expect(JSON.stringify(result.itineraries)).not.toContain('provider-offer-must-stay-private');
     expect(JSON.stringify(result.itineraries)).not.toContain('marketingLogo');

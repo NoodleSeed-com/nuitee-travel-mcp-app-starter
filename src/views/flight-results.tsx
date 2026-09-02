@@ -39,7 +39,7 @@ type ResultsState = 'loading' | 'malformed';
 type TravelView = 'search' | 'results' | 'review';
 
 const errorCodes = new Set([
-  'invalid_request', 'configuration_required', 'authentication', 'entitlement', 'rate_limited',
+  'invalid_search', 'invalid_request', 'configuration_required', 'authentication', 'entitlement', 'rate_limited',
   'timeout', 'provider_error', 'malformed_response', 'oversized_response', 'service_unavailable',
   'expired_offer', 'unavailable_offer', 'unknown_or_stale_selection',
 ]);
@@ -88,8 +88,10 @@ function isSearchContext(value: unknown): value is SearchContext {
   const candidate = record(value);
   if (!candidate) return false;
   const returnDate = candidate.returnDate;
+  const tripType = candidate.tripType;
   return typeof candidate.origin === 'string' && /^[A-Z]{3}$/.test(candidate.origin) &&
     typeof candidate.destination === 'string' && /^[A-Z]{3}$/.test(candidate.destination) &&
+    (tripType === undefined || tripType === 'ONE_WAY' || tripType === 'ROUND_TRIP') &&
     typeof candidate.departureDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(candidate.departureDate) &&
     (returnDate === undefined || (typeof returnDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(returnDate))) &&
     Number.isInteger(candidate.adults) && (candidate.adults as number) >= 1 && (candidate.adults as number) <= 9 &&
@@ -334,7 +336,6 @@ function FareCardSkeleton({ preview = false }: { readonly preview?: boolean }) {
           <span className="cc-skeleton-line" />
           <span className="cc-skeleton-block cc-shimmer cc-skeleton-code" />
         </div>
-        <span className="cc-skeleton-block cc-shimmer cc-skeleton-airports" />
         <div className="cc-leg-list">
           <section className="cc-leg cc-skeleton-leg">
             <div className="cc-skeleton-row">
@@ -554,7 +555,6 @@ function FareCard({ itinerary, selected, onSelect }: {
             <div className="cc-fare-heading">
               <CarrierIdentity carrier={itinerary.carrier} />
               <h3><span>{itinerary.route.origin}</span><PlaneIcon /><span>{itinerary.route.destination}</span></h3>
-              <p className="cc-airport-names">{airportLabel(itinerary.route, 'origin')} to {airportLabel(itinerary.route, 'destination')}</p>
             </div>
             {itinerary.isCheapest ? <StatusBadge className="cc-fare-highlight-badge" tone="info">Lowest fare</StatusBadge> : null}
           </header>
@@ -744,6 +744,9 @@ function FareReview({ itinerary, verification, onBack }: {
   readonly verification: Verification;
   readonly onBack?: () => void;
 }) {
+  const [secondaryVisible, setSecondaryVisible] = useState(false);
+  const secondaryId = useId();
+
   return (
     <section className="cc-review" aria-labelledby="cc-review-title">
       <header className="cc-review-header">
@@ -775,14 +778,29 @@ function FareReview({ itinerary, verification, onBack }: {
           </div>
           <p>Previous search price was {money(verification.previousPrice.total, verification.previousPrice.currency)}.</p>
         </div>
-        {itinerary.price.base !== undefined || itinerary.price.taxes !== undefined || itinerary.price.fees !== undefined ? (
-          <dl className="cc-price-breakdown">
-            {itinerary.price.base !== undefined ? <><dt>Base fare</dt><dd>{money(itinerary.price.base, itinerary.price.currency)}</dd></> : null}
-            {itinerary.price.taxes !== undefined ? <><dt>Taxes</dt><dd>{money(itinerary.price.taxes, itinerary.price.currency)}</dd></> : null}
-            {itinerary.price.fees !== undefined ? <><dt>Fees</dt><dd>{money(itinerary.price.fees, itinerary.price.currency)}</dd></> : null}
-          </dl>
-        ) : null}
-        <section className="cc-details cc-review-details">
+        <button
+          aria-controls={secondaryId}
+          aria-expanded={secondaryVisible}
+          className="cc-review-disclosure"
+          onClick={() => setSecondaryVisible((visible) => !visible)}
+          type="button"
+        >
+          <TagIcon />
+          Fare conditions and price breakdown
+          <span aria-hidden="true" className="cc-details-chevron" />
+        </button>
+        <section
+          className="cc-review-secondary"
+          hidden={!secondaryVisible}
+          id={secondaryId}
+        >
+          {itinerary.price.base !== undefined || itinerary.price.taxes !== undefined || itinerary.price.fees !== undefined ? (
+            <dl className="cc-price-breakdown">
+              {itinerary.price.base !== undefined ? <><dt>Base fare</dt><dd>{money(itinerary.price.base, itinerary.price.currency)}</dd></> : null}
+              {itinerary.price.taxes !== undefined ? <><dt>Taxes</dt><dd>{money(itinerary.price.taxes, itinerary.price.currency)}</dd></> : null}
+              {itinerary.price.fees !== undefined ? <><dt>Fees</dt><dd>{money(itinerary.price.fees, itinerary.price.currency)}</dd></> : null}
+            </dl>
+          ) : null}
           <FareDetailContent itinerary={itinerary} />
         </section>
         {verification.messages.length > 0 ? <ul className="cc-messages">{verification.messages.map((message, index) => <li key={`${index}-${message}`}>{message}</li>)}</ul> : null}

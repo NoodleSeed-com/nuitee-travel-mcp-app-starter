@@ -625,6 +625,9 @@ describe('FlightResults', () => {
     expect(review).toContain('Cedar Bay Test Aerodrome');
     expect(review).toContain('Cloudlight Economy');
     expect(review).toContain('Fictional Wi-Fi');
+    expect(review).toContain('Fare conditions and price breakdown');
+    expect(review).toContain('aria-expanded="false"');
+    expect(review).toContain('hidden=""');
     expect(review).not.toContain('cc-mark');
     for (const falseClaim of ['Boarding pass', 'Ticket number', 'Gate', 'Seat assigned', 'Book now']) expect(review).not.toContain(falseClaim);
   });
@@ -670,6 +673,7 @@ describe('FlightResults', () => {
     expect(css).toMatch(/\.cc-fare-face\s*\{[^}]*grid-area:\s*1\s*\/\s*1/s);
     expect(css).toMatch(/\.cc-fare-face\s*\{[^}]*transition:/s);
     expect(css).toMatch(/\.cc-fare-card-details\s*\{[^}]*background:/s);
+    expect(css).toMatch(/\.cc-carousel-slide\s*>\s*\.cc-fare-card\s*\{[^}]*min-block-size:\s*(?:30|31|32)rem/s);
     expect(css).toContain('var(--cc-carrier-accent, var(--cc-accent))');
     expect(css).toMatch(/\.cc-fare-back-header\s*\{[^}]*grid-template-columns:/s);
     expect(css).toMatch(/\.cc-fare-back-button\s*\{[^}]*border:\s*0/s);

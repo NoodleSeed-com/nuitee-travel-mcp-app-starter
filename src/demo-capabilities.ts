@@ -2,12 +2,15 @@ import { annotations, tool, z } from '@noodleseed/one';
 import {
   DEMO_DESTINATION_ALIASES,
   DEMO_HOTEL_CATALOG,
+  DEMO_INSURANCE_PLAN_CATALOG,
   DEMO_REWARD_FLIGHT_CATALOG,
   getSyntheticLoyaltyOverview,
 } from './demo-fixtures.js';
 import {
   demoHotelSearchInputSchema,
   demoHotelSearchOutputSchema,
+  demoInsuranceComparisonInputSchema,
+  demoInsuranceComparisonOutputSchema,
   demoLoyaltyOverviewSchema,
   demoRewardFlightSearchInputSchema,
   demoRewardFlightSearchOutputSchema,
@@ -18,6 +21,7 @@ import { demoHotelSelectionIdSchema } from './demo-schemas.js';
 
 interface DemoViewPolicies {
   readonly hotel: Readonly<Record<string, unknown>>;
+  readonly insurance: Readonly<Record<string, unknown>>;
   readonly loyalty: Readonly<Record<string, unknown>>;
 }
 
@@ -119,6 +123,41 @@ function compareDemoRewardFlights(viewPolicy: Readonly<Record<string, unknown>>)
   });
 }
 
+function compareDemoTravelInsurance(viewPolicy: Readonly<Record<string, unknown>>) {
+  return tool('compare_travel_insurance', {
+    title: 'Compare travel protection',
+    description:
+      'Compare exactly three deterministic illustrative travel-protection concepts for a destination and trip dates. This is not an insurance quote, policy, or recommendation; it checks no insurer, eligibility, availability, medical information, or policy wording and cannot purchase coverage.',
+    annotations: annotations.readOnly(),
+    input: demoInsuranceComparisonInputSchema,
+    output: demoInsuranceComparisonOutputSchema,
+    fulfil: ({ input, connectors }) => {
+      const gateway = connectors.demo.execute({
+        kind: 'insurance_compare',
+        insuranceComparison: input,
+        insuranceCatalog: DEMO_INSURANCE_PLAN_CATALOG,
+      });
+      return {
+        status: gateway.insuranceResult.status,
+        dataSource: gateway.insuranceResult.dataSource,
+        disclosure: gateway.insuranceResult.disclosure,
+        message: gateway.insuranceResult.message,
+        fallback: gateway.insuranceResult.fallback,
+        comparisonId: gateway.insuranceResult.comparisonId,
+        searchContext: gateway.insuranceResult.searchContext,
+        assumptions: gateway.insuranceResult.assumptions,
+        plans: gateway.insuranceResult.plans,
+      };
+    },
+    viewTitle: 'Illustrative travel protection',
+    viewDescription: 'Three source-labelled protection concepts with no quote, policy, eligibility decision, or purchase action.',
+    invoking: 'Comparing illustrative travel protection…',
+    invoked: 'Travel protection comparison ready',
+    view: { component: 'insurance-results', entry: './views/insurance-results.tsx' },
+    ...viewPolicy,
+  });
+}
+
 function reviewDemoTrip(viewPolicy: Readonly<Record<string, unknown>>) {
   return tool('review_trip', {
     title: 'Review selected trip',
@@ -192,10 +231,11 @@ export function createDemoCapabilities(viewPolicies: DemoViewPolicies) {
   const searchHotels = searchDemoHotels(viewPolicies.hotel);
   const loyalty = openDemoLoyalty(viewPolicies.loyalty);
   const rewardFlights = compareDemoRewardFlights(viewPolicies.loyalty);
+  const insurance = compareDemoTravelInsurance(viewPolicies.insurance);
   const review = reviewDemoTrip(viewPolicies.loyalty);
   const selectHotel = selectDemoHotel();
   return {
-    all: [searchHotels, loyalty, rewardFlights, review, selectHotel] as const,
-    publicSurface: [searchHotels, loyalty, rewardFlights, review, selectHotel] as const,
+    all: [searchHotels, loyalty, rewardFlights, insurance, review, selectHotel] as const,
+    publicSurface: [searchHotels, loyalty, rewardFlights, insurance, review, selectHotel] as const,
   };
 }

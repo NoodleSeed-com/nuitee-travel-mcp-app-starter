@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   resolveInitialCurrency,
+  resolveInitialMarketCountry,
   resolveNearestAirport,
   toTravelPageContext,
   type AirportRecord,
@@ -69,6 +70,12 @@ describe('travel defaults', () => {
     expect(resolveInitialCurrency({ locale: 'de-DE' })).toBe('EUR');
   });
 
+  it('derives a bounded pricing market from the browser locale', () => {
+    expect(resolveInitialMarketCountry('en-CA')).toBe('CA');
+    expect(resolveInitialMarketCountry('en-GB')).toBe('GB');
+    expect(resolveInitialMarketCountry('not-a-locale')).toBeUndefined();
+  });
+
   it('falls back to USD for malformed or unsupported locale data', () => {
     expect(resolveInitialCurrency({ locale: 'not-a-locale' })).toBe('USD');
     expect(resolveInitialCurrency({ locale: 'es-MX' })).toBe('USD');
@@ -101,5 +108,17 @@ describe('travel defaults', () => {
         travelCurrency: 'GBP',
         travelDefaultSource: 'fallback',
       });
+  });
+
+  it('projects the locale-derived market when geolocation is unavailable', () => {
+    expect(toTravelPageContext({
+      currency: 'CAD',
+      marketCountry: 'CA',
+      source: 'fallback',
+    })).toEqual({
+      travelCountry: 'CA',
+      travelCurrency: 'CAD',
+      travelDefaultSource: 'fallback',
+    });
   });
 });

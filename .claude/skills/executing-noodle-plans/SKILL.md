@@ -3,7 +3,7 @@ name: executing-noodle-plans
 description: "Use when the user asks to execute an approved, decision-complete implementation plan for a Noodle Seed project task by task with test-first changes, review, recovery, and final verification."
 ---
 
-<!-- noodle-skill version:0.88.0 hash:6a9f132ddb79352e -->
+<!-- noodle-skill version:0.91.0 hash:6a9f132ddb79352e -->
 
 # Execute a Noodle Seed implementation plan
 

@@ -35,6 +35,7 @@ export interface AirportDefault {
 export interface TravelDefaults {
   readonly origin?: AirportDefault;
   readonly currency: SupportedCurrency;
+  readonly marketCountry?: string;
   readonly source: 'browser-geolocation' | 'fallback';
 }
 
@@ -146,6 +147,15 @@ function localeRegion(locale: string) {
   }
 }
 
+export function resolveInitialMarketCountry(locale: string) {
+  try {
+    const region = new Intl.Locale(locale).region?.toUpperCase();
+    return region && /^[A-Z]{2}$/.test(region) ? region : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function resolveInitialCurrency({
   locale,
   airportCountry,
@@ -162,12 +172,13 @@ export function resolveInitialCurrency({
 }
 
 export function toTravelPageContext(defaults: TravelDefaults) {
+  const travelCountry = defaults.origin?.country ?? defaults.marketCountry;
   return {
     ...(defaults.origin ? {
       travelOrigin: defaults.origin.iata,
       travelOriginLabel: defaults.origin.city,
-      travelCountry: defaults.origin.country,
     } : {}),
+    ...(travelCountry ? { travelCountry } : {}),
     travelCurrency: defaults.currency,
     travelDefaultSource: defaults.source,
   } as const;

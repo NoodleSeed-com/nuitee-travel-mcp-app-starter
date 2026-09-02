@@ -21,7 +21,11 @@ export type SearchDraft = {
 
 function initialDraft(context?: SearchContext, placeLabels?: { readonly origin?: string; readonly destination?: string }): SearchDraft {
   return {
-    tripType: context ? (context.returnDate ? 'round_trip' : 'one_way') : 'round_trip',
+    tripType: context
+      ? (context.tripType === 'ROUND_TRIP' || (!context.tripType && context.returnDate)
+          ? 'round_trip'
+          : 'one_way')
+      : 'round_trip',
     origin: placeLabels?.origin ?? context?.origin ?? '',
     destination: placeLabels?.destination ?? context?.destination ?? '',
     departureDate: context?.departureDate ?? '',

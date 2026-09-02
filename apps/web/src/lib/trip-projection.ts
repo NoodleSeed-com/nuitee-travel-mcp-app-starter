@@ -12,6 +12,7 @@ export type TripPhase =
   | 'comparing-stays'
   | 'stay-selected'
   | 'rewards'
+  | 'insurance'
   | 'trip-review'
   | 'error';
 
@@ -25,12 +26,14 @@ export interface TripProjection {
   readonly cabinClass?: string;
   readonly currency?: string;
   readonly country?: string;
-  readonly focus?: 'stays' | 'rewards' | 'trip';
+  readonly focus?: 'stays' | 'rewards' | 'insurance' | 'trip';
   readonly stayDestination?: string;
   readonly checkInDate?: string;
   readonly checkOutDate?: string;
   readonly hasFlightSelection?: boolean;
   readonly hasStaySelection?: boolean;
+  readonly hasRewardsReview?: boolean;
+  readonly hasInsuranceComparison?: boolean;
 }
 
 export const EMPTY_TRIP: TripProjection = { phase: 'idle' };
@@ -248,7 +251,7 @@ function projectResult(
         && verification.status === 'success'
         && verification.availability === 'available'
       ) {
-        return { ...current, phase: 'verified' };
+        return { ...current, phase: 'verified', hasFlightSelection: true };
       }
       return current;
     }
@@ -286,7 +289,31 @@ function projectResult(
         : current;
     case 'open_loyalty':
       return result.status === 'success' && result.dataSource === 'illustrative'
-        ? { ...current, phase: 'rewards', focus: 'rewards' }
+        ? {
+          ...current,
+          phase: 'rewards',
+          focus: 'rewards',
+          hasRewardsReview: true,
+        }
+        : current;
+    case 'compare_reward_flights':
+      return (result.status === 'success' || result.status === 'empty')
+        && result.dataSource === 'illustrative'
+        ? {
+          ...current,
+          phase: 'rewards',
+          focus: 'rewards',
+          hasRewardsReview: true,
+        }
+        : current;
+    case 'compare_travel_insurance':
+      return result.status === 'success' && result.dataSource === 'illustrative'
+        ? {
+          ...current,
+          phase: 'insurance',
+          focus: 'insurance',
+          hasInsuranceComparison: true,
+        }
         : current;
     case 'review_trip':
       return (result.status === 'ready' || result.status === 'incomplete')

@@ -7,6 +7,8 @@ import {
   demoHotelSelectionIdSchema,
   demoHotelSelectionRecordSchema,
   demoHotelSelectionStateSchema,
+  demoInsuranceComparisonInputSchema,
+  demoInsuranceComparisonOutputSchema,
   demoLoyaltyOverviewSchema,
   demoRewardFlightSearchInputSchema,
   demoRewardFlightSearchOutputSchema,
@@ -15,7 +17,7 @@ import {
 } from './demo-schemas.js';
 
 const demoGatewayInputSchema = z.object({
-  kind: z.enum(['search', 'reward_search', 'review', 'select']),
+  kind: z.enum(['search', 'reward_search', 'insurance_compare', 'review', 'select']),
   search: demoHotelSearchInputSchema.optional(),
   catalog: z.unknown().optional(),
   aliases: z.unknown().optional(),
@@ -25,12 +27,15 @@ const demoGatewayInputSchema = z.object({
   selectionId: demoHotelSelectionIdSchema.optional(),
   rewardSearch: demoRewardFlightSearchInputSchema.optional(),
   rewardCatalog: z.unknown().optional(),
+  insuranceComparison: demoInsuranceComparisonInputSchema.optional(),
+  insuranceCatalog: z.unknown().optional(),
 });
 
 export const demoGatewayOutputSchema = z.object({
-  kind: z.enum(['search', 'reward_search', 'review', 'select']),
+  kind: z.enum(['search', 'reward_search', 'insurance_compare', 'review', 'select']),
   result: demoHotelSearchOutputSchema.optional(),
   rewardResult: demoRewardFlightSearchOutputSchema.optional(),
+  insuranceResult: demoInsuranceComparisonOutputSchema.optional(),
   records: z.array(demoHotelSelectionRecordSchema).max(10).optional(),
   review: demoTripReviewSchema.optional(),
   selection: demoSelectHotelOutputSchema.optional(),

@@ -277,6 +277,8 @@ describe('server contract', () => {
     expect(guideWire).toContain('search immediately');
     expect(guideWire).toContain('state the assumptions');
     expect(guideWire).toContain('one-way');
+    expect(guideWire).toContain('omit returnDate entirely');
+    expect(guideWire).toContain('strictly later');
     expect(guideWire).toContain('USD');
     expect(guideWire).toContain('US pricing market');
     expect(guideWire).toContain('Do not repeat the same search call');

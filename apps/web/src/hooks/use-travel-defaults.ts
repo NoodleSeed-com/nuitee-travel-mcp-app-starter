@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   resolveInitialCurrency,
+  resolveInitialMarketCountry,
   resolveNearestAirport,
   type SupportedCurrency,
   type TravelDefaults,
@@ -28,10 +29,14 @@ export function useTravelDefaults(
   const initialLocaleRef = useRef(locale);
   const geolocationRef = useRef(geolocation);
   const userSelectedCurrencyRef = useRef(false);
-  const [defaults, setDefaults] = useState<TravelDefaults>(() => ({
-    currency: resolveInitialCurrency({ locale }),
-    source: 'fallback',
-  }));
+  const [defaults, setDefaults] = useState<TravelDefaults>(() => {
+    const marketCountry = resolveInitialMarketCountry(locale);
+    return {
+      currency: resolveInitialCurrency({ locale }),
+      ...(marketCountry ? { marketCountry } : {}),
+      source: 'fallback',
+    };
+  });
 
   const setCurrency = useCallback((currency: SupportedCurrency) => {
     userSelectedCurrencyRef.current = true;
@@ -52,6 +57,7 @@ export function useTravelDefaults(
         if (!origin) return;
         setDefaults((current) => ({
           origin,
+          marketCountry: origin.country,
           currency: userSelectedCurrencyRef.current
             ? current.currency
             : resolveInitialCurrency({
