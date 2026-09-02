@@ -1,16 +1,25 @@
 # Wayfare landing imagery
 
-The active Wayfare landing uses a light, Inter-only hybrid cinematic composition:
-one rounded hero image window supports a centered conversation entry, and three
-compact destination images support discovery. The images are visual inspiration
-only; they do not evidence a fare, availability, discount, destination
-condition, airline relationship, or travel guarantee.
+The active Wayfare landing uses a light, Inter-only cinematic composition: a
+mode-aware hero supports a centered conversation entry, and three compact
+destination images support discovery. The standard and full-bleed experiences
+share exact core image paths through `apps/web/src/lib/travel-hero-content.ts`.
+The images are visual inspiration only; they do not evidence a fare,
+availability, discount, destination condition, airline relationship, insurance
+coverage, or travel guarantee.
 
 ## Checked-in local masters
 
-The four current local JPEG masters are:
+The active core hero masters are:
 
-- `apps/web/public/images/wayfare-hybrid-hero-v2.jpg`;
+- `apps/web/public/images/immersive/wayfare-explore-windows-v2.png`;
+- `apps/web/public/images/immersive/wayfare-cockpit-v2.png`;
+- `apps/web/public/images/immersive/wayfare-stay-v1.png`;
+- `apps/web/public/images/immersive/wayfare-flight-stay-v1.png`; and
+- `apps/web/public/images/immersive/wayfare-insurance-v1.png`.
+
+The editorial destination masters are:
+
 - `apps/web/public/images/destinations/rome-editorial-v2.jpg`;
 - `apps/web/public/images/destinations/london-editorial-v2.jpg`; and
 - `apps/web/public/images/destinations/istanbul-editorial-v2.jpg`.

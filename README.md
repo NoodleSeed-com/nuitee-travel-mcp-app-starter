@@ -10,11 +10,32 @@ This is an independent starter, not an official Nuitee connector, airline partne
 
 ## Primary guest website
 
-The Next.js application in `apps/web/` is the main developer path. Wayfare uses a light, Inter-only hybrid cinematic landing: one centered headline and composer above a rounded local destination image, compact destination inspiration, and a factual Search · Compare · Verify row. Submitting a prompt moves into one centered chronological conversation with delayed anonymous Assistant admission and plain-language progress. The compact typed trip disclosure is absent until validated facts exist, stays collapsed by default, and is derived only from structured tool results—never conversation prose.
+The Next.js application in `apps/web/` is the main developer path. Wayfare uses
+a light, Inter-only shared multi-mode cinematic landing with exact Explore,
+Flights, Stays, Flight + Stay, and Insurance imagery; Private Jets and Cars are
+conversation-first visual concepts. The alternate `/experience` route presents
+the five core modes as a full-bleed option using the same image paths. Submitting
+a prompt moves into one chronological conversation with delayed anonymous
+Assistant admission and plain-language progress. The compact typed trip
+disclosure is absent until validated facts exist, stays collapsed by default,
+and is derived only from structured tool results—never conversation prose.
 
-Official inline MCP Apps render at the exact chronological message part that needs interaction. Every distinct view ID remains in history; the website neither reconstructs App output as fare cards nor creates a second results workspace. Only `search_flights` with `ui://nuitee_travel_mcp_app_starter/search_flights_widget` and `open_travel_starter` with `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget` may reach `NoodleAppView`; every mismatch fails closed.
+Official inline MCP Apps render at the exact chronological message part that
+needs interaction. Every distinct view ID remains in history; the website
+neither reconstructs App output as fare cards nor creates a second results
+workspace. The exact fail-closed allowlist covers the home, flight results,
+illustrative stay results, loyalty overview, reward-flight comparison, trip
+review, and travel-protection comparison views. A tool/URI mismatch never
+reaches `NoodleAppView`.
 
-The route-line SVG in `apps/web/src/components/wayfare-mark.tsx` is the repository-owned Wayfare mark. Use the installed Lucide icons only for familiar, supported actions; do not introduce icons suggesting attachments, payment, booking, voice, or account management. The four checked-in local image masters are truthful native `1672 × 941` high-resolution web images, not literal 4K sources. Next.js serves responsive AVIF/WebP derivatives; their exact paths, bytes, hashes, visual review, and responsive crop decisions are in the [Wayfare provenance ledger](docs/visual-assets/wayfare-premium-concierge.md).
+The route-line SVG in `apps/web/src/components/wayfare-mark.tsx` is the
+repository-owned Wayfare mark. Use the installed Lucide icons only for familiar,
+supported actions; do not introduce icons suggesting attachments, payment,
+booking, voice, or account management. The shared core hero and editorial
+destination masters are truthful native `1672 × 941` high-resolution web
+images, not literal 4K sources. Next.js serves responsive AVIF/WebP derivatives;
+their exact paths, bytes, hashes, visual review, and responsive crop decisions
+are in the [Wayfare provenance ledger](docs/visual-assets/wayfare-premium-concierge.md).
 
 ```sh
 corepack enable
@@ -61,8 +82,18 @@ The guest template has no login button, application database, or `/api/assistant
 - Select an application-issued opaque fare handle inside the linked flight-results App.
 - Verify the active or explicitly selected fare against current availability and price.
 - Treat partial results, changed prices, unavailable offers, and expiry as normal bounded outcomes.
+- In the expanded Wayfare profile, compare deterministic illustrative stays,
+  rewards, reward-flight ideas, and travel protection while keeping those
+  sources visibly separate from current flight results.
+- Review an application-selected flight and illustrative stay without combining
+  them into a package price. Travel protection remains a stateless comparison.
 
-The product deliberately does not prebook, reserve, collect passengers, take payment, ticket, cancel, refund, manage loyalty, or search hotels and cars. “Stays,” “Loyalty,” “Ground travel,” and “Experiences” remain noninteractive presentation only.
+The product deliberately does not prebook, reserve, collect passengers, take
+payment, ticket, cancel, refund, access a real loyalty account, redeem points,
+quote or sell insurance, or search cars. Private Jets and Cars are visual
+conversation concepts only. Illustrative stays, rewards, and travel protection
+are available only through the expanded demo entrypoints; they never represent
+live inventory, accounts, eligibility, policies, or purchase support.
 
 ## Live Nuitee development
 

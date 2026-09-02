@@ -11,7 +11,7 @@ Noodle public Assistant surface ───── External MCP host
   └──────────────────┬──────────────────────┘
                      ▼
               shared travel MCP
-      open / plan / search / verify / App-only select
+       flight tools + expanded illustrative tools
                      │
          ┌───────────┴───────────┐
          ▼                       ▼
@@ -27,20 +27,38 @@ Noodle public Assistant surface ───── External MCP host
            official Flights API
 ```
 
-`apps/web/` is the primary product surface. Its light, Inter-only hybrid cinematic landing has one centered conversation entry; after submission it owns one centered chronological conversation, delayed guest admission, typed message rendering, and plain-language activity. `TravelMessage` preserves message-part order and delegates official inline MCP Apps to `NoodleAppView`. Every distinct view ID is a distinct chronological invocation and remains mounted in history; the website has no newest-only selector, generic App deduplication, second workspace, page-authored fare reconstruction, or viewport-dependent DOM reordering. The website calls neither Nuitee nor MCP tools directly. On the first submitted message, the official Assistant hook uses the public embed ID to open an anonymous session.
+`apps/web/` is the primary product surface. Its light, Inter-only shared
+multi-mode cinematic landing offers a standard presentation and a full-bleed
+`/experience` alternative backed by the same core hero catalog. After
+submission it owns one chronological conversation, delayed guest admission,
+typed message rendering, and plain-language activity. `TravelMessage` preserves
+message-part order and delegates official inline MCP Apps to `NoodleAppView`.
+Every distinct view ID is a distinct chronological invocation and remains
+mounted in history; the website has no newest-only selector, generic App
+deduplication, second results workspace, page-authored fare reconstruction, or
+viewport-dependent DOM reordering. The website calls neither Nuitee nor MCP
+tools directly. On the first submitted message, the official Assistant hook
+uses the public embed ID to open an anonymous session.
 
 The website admits only these exact linked-App identities:
 
 - `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget`;
-- `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget`.
+- `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget`;
+- `search_hotels` + `ui://nuitee_travel_mcp_app_starter/search_hotels_widget`;
+- `open_loyalty` + `ui://nuitee_travel_mcp_app_starter/open_loyalty_widget`;
+- `compare_reward_flights` + `ui://nuitee_travel_mcp_app_starter/compare_reward_flights_widget`;
+- `review_trip` + `ui://nuitee_travel_mcp_app_starter/review_trip_widget`; and
+- `compare_travel_insurance` + `ui://nuitee_travel_mcp_app_starter/compare_travel_insurance_widget`.
 
 A tool/URI mismatch fails closed inline and never reaches `NoodleAppView`. The compact typed trip disclosure stays inside the conversation, is absent before typed facts exist, and exposes only validated route, date, party, cabin, and optional secondary facts; it never parses Assistant prose.
 
-`apps/web/src/components/wayfare-mark.tsx` owns the deterministic route-line SVG mark. The website uses installed Lucide icons only for familiar supported actions and does not use icons to imply attachments, payment, booking, voice, or account capabilities. The rounded hero window and three destination cards use four local `1672 × 941` high-resolution JPEG masters. They are not claimed as literal 4K sources; Next.js produces responsive AVIF/WebP delivery from them. Exact bytes, hashes, crop choices, and visual-review evidence are in [the Wayfare provenance ledger](visual-assets/wayfare-premium-concierge.md).
+`apps/web/src/components/wayfare-mark.tsx` owns the deterministic route-line SVG mark. The website uses installed Lucide icons only for familiar supported actions and does not use icons to imply attachments, payment, booking, voice, or account capabilities. Both landing variants read the same mode-aware `1672 × 941` hero masters from `apps/web/src/lib/travel-hero-content.ts`; the editorial destination cards retain their local JPEG masters. None are claimed as literal 4K sources, and Next.js produces responsive AVIF/WebP delivery from them. Exact bytes, hashes, crop choices, and visual-review evidence are in [the Wayfare provenance ledger](visual-assets/wayfare-premium-concierge.md).
 
 `src/` owns the MCP server, model-facing workflows, exact public capability allowlist, connector, tools, state, and linked Apps. External MCP hosts enter the same server and provide their own model. No browser-specific or host-specific copy of the business tools exists.
 
-The public Assistant surface allowlists four model-visible tools plus one App-only helper, exactly:
+The baseline `src/embedded-server.ts` public Assistant surface remains
+flights-only and allowlists four model-visible tools plus one App-only helper,
+exactly:
 
 - `open_travel_starter`;
 - `plan_flight_search`;
@@ -50,12 +68,21 @@ The public Assistant surface allowlists four model-visible tools plus one App-on
 
 The last helper remains `visibility: ['app']`; it is available to the trusted linked App bridge but is not offered to the model as a conversational tool.
 
+The private expanded `src/demo-embedded-server.ts` profile reuses those flight
+capabilities and adds five model-visible read-only tools—`search_hotels`,
+`open_loyalty`, `compare_reward_flights`, `compare_travel_insurance`, and
+`review_trip`—plus App-only `select_hotel`. Its stays, rewards, reward flights,
+and travel-protection results are deterministic illustrative compute; they do
+not call a hotel, loyalty, reward-inventory, or insurer API. Only flight search
+and verification use the Nuitee connector.
+
 ## Repository surfaces
 
 | Surface | Entrypoint | Credentials resolved | Purpose |
 | --- | --- | --- | --- |
-| Primary website | `apps/web/` | Public embed ID and optional public service origin | Guest chat-first Search → Select → Verify experience |
+| Primary website | `apps/web/` | Public embed ID and optional public service origin | Guest chat-first core landing plus optional expanded illustrative views |
 | Public Assistant MCP | `src/embedded-server.ts` | Nuitee key plus operator-provided Assistant model settings in Noodle | Anonymous Assistant sessions over the exact public allowlist |
+| Private expanded Assistant | `src/demo-embedded-server.ts` | Same hosted boundaries as the public Assistant | Current flights plus illustrative stays, rewards, and travel protection |
 | External MCP baseline | `src/server.ts` | None | Credential-free home and explicit live-tool configuration errors |
 | External MCP live | `src/live-server.ts` | `NUITEE_API_KEY` in Noodle when executed | Provider-backed use from DevTools or external MCP hosts |
 | Migration reference | `examples/embedded-assistant-host/` | Local synthetic website session or backend Assistant client settings | Temporary authenticated parity oracle; not the primary app |

@@ -4,13 +4,66 @@ Generation date: 2026-08-29
 
 Generation mode: OpenAI built-in `image_gen`
 
-These checked-in JPEGs are native high-resolution web masters. They preserve the
-built-in generator's native `1672 x 941` landscape detail and were converted to
-JPEG without resizing. They are not true `3840 x 2160` sources and must not be
-described as literal 4K masters. Next.js negotiates responsive AVIF/WebP delivery
-from these local JPEG masters.
+These checked-in PNG and JPEG files are native high-resolution web masters. They
+preserve the built-in generator's native `1672 x 941` landscape detail. They are
+not true `3840 x 2160` sources and must not be described as literal 4K masters.
+Next.js negotiates responsive AVIF/WebP delivery from these local masters.
 
-## Wayfare hybrid hero
+## Active shared core hero masters
+
+The standard landing and the full-bleed `/experience` landing consume these
+exact paths through `apps/web/src/lib/travel-hero-content.ts`; they do not keep
+separate crops or duplicate hero images.
+
+### Explore — three-window cabin view
+
+- Final path: `apps/web/public/images/immersive/wayfare-explore-windows-v2.png`
+- Built-in mode: generate
+- Checked-in dimensions: `1672 x 941`
+- Format and bytes: PNG, `1902911`
+- SHA-256: `4f28eb6b9f00c101cb9a66d7731a07ae760d4cf61b436750a7e6172b0b98e41a`
+- Focal crop: `50% 50%`; three ivory aircraft windows span the usable width.
+
+Prompt summary: photoreal three-window ivory aircraft cabin looking over a
+Mediterranean coast, with no people, branding, text, watermark, or embedded UI.
+Original-detail review confirmed coherent window geometry, stable sea and cliff
+continuity, useful center space for live HTML, and no obvious private data or
+generated markings.
+
+### Flights — split-cockpit horizon
+
+- Final path: `apps/web/public/images/immersive/wayfare-cockpit-v2.png`
+- Built-in mode: generate
+- Checked-in dimensions: `1672 x 941`
+- Format and bytes: PNG, `1645364`
+- SHA-256: `cca500fbae39d3d593cc379f319ca64eae484ccbce5582a9620e571b66bac1a4`
+- Focal crop: `50% 50%`; two cockpit panes and the slim center pillar remain visible.
+
+Prompt summary: photoreal commercial cockpit with a clearly divided two-pane
+windscreen and coastal horizon, without pilots, brands, readable instruments,
+text, watermark, or embedded UI. Original-detail review confirmed that the
+cockpit reads as aviation rather than a car windscreen and preserves a clean
+live-composer zone.
+
+### Insurance — airport-lounge protection concept
+
+- Final path: `apps/web/public/images/immersive/wayfare-insurance-v1.png`
+- Built-in mode: generate
+- Checked-in dimensions: `1672 x 941`
+- Format and bytes: PNG, `1790904`
+- SHA-256: `0750cee8fea894960331b79502ea6de460a6d7b84e2ca20a1cacb94ccdf537b0`
+- Focal crop: `50% 50%`; travel essentials and airport context remain decorative.
+
+Prompt summary: premium photoreal airport lounge with carry-on travel
+essentials, an aircraft and coastal sky beyond glass, and a subtle shield-like
+reflection in the Wayfare navy/teal/ivory palette. Original-detail review found
+no people, logos, text, policy claims, or embedded UI. The image is decorative
+only and does not evidence coverage, eligibility, availability, or an insurer.
+
+The existing Stays and Flight + Stay masters retain their checked-in paths and
+are also reused exactly by both landing variants.
+
+## Retained legacy Wayfare hybrid hero
 
 - Final path: `apps/web/public/images/wayfare-hybrid-hero-v2.jpg`
 - Built-in mode: generate, followed by one built-in detail-preserving edit
@@ -178,6 +231,9 @@ Task 7's branch-level history audit:
 e6d793cc15a411fb0539dd5cec6dc0baf4002ab4 apps/web/public/images/destinations/rome-editorial-v2.jpg
 3e9370023af2f45d3846d642cbdb5c697c3b61db apps/web/public/images/destinations/london-editorial-v2.jpg
 4b79d0c20052bce11dd3e53d393341298acb620a apps/web/public/images/destinations/istanbul-editorial-v2.jpg
+060089d1f0fe41cbc89af3e2afe424dcb83a08a6 apps/web/public/images/immersive/wayfare-explore-windows-v2.png
+1940a8249a53ec3d774dbe76427cb70971321154 apps/web/public/images/immersive/wayfare-cockpit-v2.png
+b657e59195f697df14f6e7eda50c0b775deea053 apps/web/public/images/immersive/wayfare-insurance-v1.png
 ```
 
 These generated demo images are visual inspiration only. They do not evidence a

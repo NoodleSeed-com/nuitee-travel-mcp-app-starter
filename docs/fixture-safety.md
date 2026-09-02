@@ -31,12 +31,16 @@ NOTICE treatment, provenance/compatibility, and public redistribution.
 
 The tracked raster boundary is explicit:
 
-- `apps/web/public/images/wayfare-hybrid-hero-v2.jpg`;
+- the active core hero masters under `apps/web/public/images/immersive/` listed
+  in `docs/visual-assets/airline-editorial-homepage.md`;
+- the conversation-only Private Jets and Cars masters under their respective
+  `apps/web/public/images/immersive/` subdirectories;
+- the retained legacy `apps/web/public/images/wayfare-hybrid-hero-v2.jpg`;
 - `apps/web/public/images/destinations/rome-editorial-v2.jpg`;
 - `apps/web/public/images/destinations/london-editorial-v2.jpg`; and
 - `apps/web/public/images/destinations/istanbul-editorial-v2.jpg`.
 
-These four local generated masters are native `1672 × 941` high-resolution web
+These local generated masters are native `1672 × 941` high-resolution web
 images, not literal 4K sources. Their OpenAI `image_gen` prompts, dimensions,
 bytes, hashes, responsive delivery, conversion choices, and visual review are
 recorded in `docs/visual-assets/wayfare-premium-concierge.md`. The historical
