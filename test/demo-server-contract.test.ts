@@ -25,6 +25,7 @@ const demoTools = [
   'search_hotels',
   'open_loyalty',
   'compare_reward_flights',
+  'compare_travel_insurance',
   'review_trip',
   'select_hotel',
 ];
@@ -58,6 +59,7 @@ describe('Wayfare expanded travel profile', () => {
       'search_hotels',
       'open_loyalty',
       'compare_reward_flights',
+      'compare_travel_insurance',
       'review_trip',
     ]);
     for (const name of demoTools) {
@@ -70,6 +72,8 @@ describe('Wayfare expanded travel profile', () => {
     expect(wire).toContain('hotel-results');
     expect(wire).toContain('loyalty-overview');
     expect(wire).toContain('reward-flight-results');
+    expect(wire).toContain('insurance-results');
+    expect(wire).toContain('not an insurance quote, policy, or recommendation');
     expect(wire).toContain(
       'Do not refuse a “book with points” request solely because redemption is unavailable',
     );
@@ -160,5 +164,17 @@ describe('Wayfare expanded travel profile', () => {
     ]) {
       expect(names).not.toContain(forbidden);
     }
+
+    const insurance = manifest.tools.find((entry: any) =>
+      entry.name === 'compare_travel_insurance');
+    expect(insurance).toMatchObject({
+      annotations: { readOnlyHint: true },
+    });
+    expect(JSON.stringify({
+      inputSchema: insurance.inputSchema,
+      outputSchema: insurance.outputSchema,
+    })).not.toMatch(
+      /purchaseUrl|checkoutUrl|policyNumber|insurer|underwriter/iu,
+    );
   });
 });

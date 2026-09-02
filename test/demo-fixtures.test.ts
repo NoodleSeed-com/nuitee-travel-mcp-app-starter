@@ -6,6 +6,8 @@ import {
   demoHotelSearchInputSchema,
   demoHotelSearchOutputSchema,
   demoHotelSelectionStateSchema,
+  demoInsuranceComparisonInputSchema,
+  demoInsuranceComparisonOutputSchema,
   demoLoyaltyOverviewSchema,
   demoRewardFlightSearchOutputSchema,
   demoTripReviewSchema,
@@ -13,8 +15,10 @@ import {
 import {
   DEMO_DESTINATION_ALIASES,
   DEMO_HOTEL_CATALOG,
+  DEMO_INSURANCE_PLAN_CATALOG,
   DEMO_REWARD_FLIGHT_CATALOG,
   buildSyntheticTripReview,
+  compareSyntheticTravelInsurance,
   getSyntheticLoyaltyOverview,
   hotelSelectionRecords,
   searchSyntheticRewardFlights,
@@ -40,6 +44,22 @@ const rewardSearchInput = {
   pointsBudget: 42_500,
   currency: 'CAD' as const,
 };
+
+const insuranceComparisonInput = {
+  destination: 'Portugal',
+  departureDate: '2030-04-20',
+  returnDate: '2030-04-27',
+  adults: 2,
+  children: 0,
+  residenceCountry: 'CA',
+  currency: 'CAD' as const,
+};
+
+function objectKeys(value: unknown): string[] {
+  if (Array.isArray(value)) return value.flatMap(objectKeys);
+  if (value === null || typeof value !== 'object') return [];
+  return Object.entries(value).flatMap(([key, nested]) => [key, ...objectKeys(nested)]);
+}
 
 describe('synthetic Wayfare travel fixtures', () => {
   it('validates hotel dates, traveler bounds, room relationships, and supported currencies', () => {
@@ -171,6 +191,85 @@ describe('synthetic Wayfare travel fixtures', () => {
     expect(demoRewardFlightSearchOutputSchema.parse(first)).toEqual(first);
   });
 
+  it('validates a bounded, low-sensitivity travel-protection comparison request', () => {
+    expect(demoInsuranceComparisonInputSchema.parse(insuranceComparisonInput))
+      .toEqual(insuranceComparisonInput);
+    expect(demoInsuranceComparisonInputSchema.safeParse({
+      ...insuranceComparisonInput,
+      returnDate: insuranceComparisonInput.departureDate,
+    }).success).toBe(false);
+    expect(demoInsuranceComparisonInputSchema.safeParse({
+      ...insuranceComparisonInput,
+      returnDate: '2031-04-27',
+    }).success).toBe(false);
+    expect(demoInsuranceComparisonInputSchema.safeParse({
+      ...insuranceComparisonInput,
+      adults: 8,
+      children: 1,
+    }).success).toBe(false);
+    expect(demoInsuranceComparisonInputSchema.safeParse({
+      ...insuranceComparisonInput,
+      residenceCountry: 'Canada',
+    }).success).toBe(false);
+    expect(demoInsuranceComparisonInputSchema.parse({
+      ...insuranceComparisonInput,
+      currency: 'GBP',
+    }).currency).toBe('GBP');
+  });
+
+  it('keeps GBP travel-protection comparisons internally consistent', () => {
+    const result = compareSyntheticTravelInsurance({
+      ...insuranceComparisonInput,
+      currency: 'GBP',
+    });
+
+    expect(result.searchContext.currency).toBe('GBP');
+    expect(result.plans).toHaveLength(3);
+    for (const plan of result.plans) {
+      expect(plan.illustrativePrice.currency).toBe('GBP');
+      expect(plan.deductible.currency).toBe('GBP');
+      expect(plan.coverages.every(({ limit }) => limit.currency === 'GBP')).toBe(true);
+    }
+    expect(demoInsuranceComparisonOutputSchema.parse(result)).toEqual(result);
+  });
+
+  it('returns exactly three deterministic illustrative protection concepts without an insurer or purchase path', () => {
+    const first = compareSyntheticTravelInsurance(insuranceComparisonInput);
+    const second = compareSyntheticTravelInsurance(insuranceComparisonInput);
+
+    expect(first).toEqual(second);
+    expect(demoInsuranceComparisonOutputSchema.parse(first)).toEqual(first);
+    expect(first).toMatchObject({
+      status: 'success',
+      dataSource: 'illustrative',
+      searchContext: insuranceComparisonInput,
+    });
+    expect(first.comparisonId).toMatch(/^inscmp_[a-f0-9]{32}$/u);
+    expect(first.plans).toHaveLength(3);
+    expect(first.assumptions).toContain(
+      'Residence is treated as Canada for this illustrative comparison.',
+    );
+    for (const plan of first.plans) {
+      expect(plan.planId).toMatch(/^inplan_[a-f0-9]{32}$/u);
+      expect(plan.dataSource).toBe('illustrative');
+      expect(plan.coverages.length).toBeGreaterThanOrEqual(4);
+      expect(plan.coverages.length).toBeLessThanOrEqual(6);
+      expect(plan.highlights.length).toBeLessThanOrEqual(5);
+      expect(plan.exclusions.length).toBeLessThanOrEqual(5);
+    }
+    const keys = objectKeys(first);
+    expect(keys).not.toEqual(expect.arrayContaining([
+      'insurer',
+      'underwriter',
+      'policyNumber',
+      'customerId',
+      'accountId',
+    ]));
+    const wire = JSON.stringify(first);
+    expect(wire).not.toMatch(/dateOfBirth|medicalHistory|passport|payment/iu);
+    expect(wire).not.toMatch(/purchaseUrl|checkoutUrl|bookingUrl/iu);
+  });
+
   it('tailors illustrative reward-flight ideas to a supplied route and returns honest empty output', () => {
     const routed = searchSyntheticRewardFlights({
       ...rewardSearchInput,
@@ -249,6 +348,7 @@ describe('synthetic Wayfare travel fixtures', () => {
     const source = await readFile(new URL('../src/demo-fixtures.ts', import.meta.url), 'utf8');
     const wire = JSON.stringify({
       hotels: searchSyntheticHotels(searchInput),
+      insurance: compareSyntheticTravelInsurance(insuranceComparisonInput),
       loyalty: getSyntheticLoyaltyOverview(),
       rewardFlights: searchSyntheticRewardFlights(rewardSearchInput),
     });
@@ -296,6 +396,26 @@ describe('synthetic Wayfare travel fixtures', () => {
       pointsContext: { available: 42_500 },
     });
     expect(gateway.rewardResult?.options.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('maps illustrative travel protection inside the serialized compute boundary without ambient date access', () => {
+    const sandboxed = runInNewContext(
+      `(${runDemoGateway.toString()})`,
+      { Date: undefined },
+    ) as typeof runDemoGateway;
+    const gateway = demoGatewayOutputSchema.parse(sandboxed({
+      kind: 'insurance_compare',
+      insuranceComparison: insuranceComparisonInput,
+      insuranceCatalog: DEMO_INSURANCE_PLAN_CATALOG as unknown as readonly Readonly<Record<string, unknown>>[],
+    }));
+
+    expect(gateway.kind).toBe('insurance_compare');
+    expect(gateway.insuranceResult).toMatchObject({
+      status: 'success',
+      dataSource: 'illustrative',
+      searchContext: insuranceComparisonInput,
+    });
+    expect(gateway.insuranceResult?.plans).toHaveLength(3);
   });
 
   it('runs the serialized hotel search without a Date global', () => {

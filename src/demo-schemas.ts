@@ -7,7 +7,10 @@ export const demoHotelSelectionIdSchema = z.string().regex(/^hsel_[a-f0-9]{32}$/
 export const demoHotelSearchIdSchema = z.string().regex(/^hsearch_[a-f0-9]{32}$/);
 export const demoRewardFlightSearchIdSchema = z.string().regex(/^rsearch_[a-f0-9]{32}$/);
 export const demoRewardFlightOptionIdSchema = z.string().regex(/^rwd_[a-f0-9]{32}$/);
+export const demoInsuranceComparisonIdSchema = z.string().regex(/^inscmp_[a-f0-9]{32}$/);
+export const demoInsurancePlanIdSchema = z.string().regex(/^inplan_[a-f0-9]{32}$/);
 export const demoCurrencySchema = z.enum(['CAD', 'USD', 'EUR']);
+export const demoInsuranceCurrencySchema = z.enum(['CAD', 'USD', 'EUR', 'GBP']);
 
 export const demoHomeOutputSchema = z.object({
   status: z.literal('ready'),
@@ -205,6 +208,71 @@ export const demoRewardFlightSearchOutputSchema = z.object({
   { path: ['options'], message: 'Reward-flight options must fit the illustrative points budget.' },
 );
 
+export const demoInsuranceComparisonInputSchema = z.object({
+  destination: destinationSchema.describe('Destination country or region for the illustrative travel-protection comparison'),
+  departureDate: calendarDateSchema.describe('Trip departure date in YYYY-MM-DD format'),
+  returnDate: calendarDateSchema.describe('Trip return date in YYYY-MM-DD format'),
+  adults: z.number().int().min(1).max(8).default(1),
+  children: z.number().int().min(0).max(6).default(0),
+  residenceCountry: z.string()
+    .regex(/^[A-Z]{2}$/)
+    .default('CA')
+    .describe('Two-letter example residence country; defaults to CA and is always disclosed as an illustrative assumption'),
+  currency: demoInsuranceCurrencySchema.default('CAD'),
+  estimatedTripCost: z.number().nonnegative().max(1_000_000).optional(),
+}).refine(
+  ({ departureDate, returnDate }) => returnDate > departureDate,
+  { path: ['returnDate'], message: 'Return must be after departure.' },
+).refine(
+  ({ departureDate, returnDate }) =>
+    (calendarDay(returnDate) - calendarDay(departureDate)) / 86_400_000 <= 90,
+  { path: ['returnDate'], message: 'Illustrative travel-protection comparisons are limited to 90 days.' },
+).refine(
+  ({ adults, children }) => adults + children <= 8,
+  { path: ['children'], message: 'Illustrative comparisons are limited to eight travelers.' },
+);
+
+const demoInsuranceLimitMoneySchema = z.object({
+  amount: z.number().nonnegative().max(10_000_000),
+  currency: demoInsuranceCurrencySchema,
+});
+
+const demoInsuranceMoneySchema = z.object({
+  amount: z.number().nonnegative().max(1_000_000),
+  currency: demoInsuranceCurrencySchema,
+});
+
+export const demoInsuranceCoverageSchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  limit: demoInsuranceLimitMoneySchema,
+  basis: z.enum(['per_traveler', 'per_trip']),
+  summary: z.string().trim().min(20).max(180),
+});
+
+export const demoInsurancePlanSchema = z.object({
+  planId: demoInsurancePlanIdSchema,
+  dataSource: syntheticDataSourceSchema,
+  name: z.string().trim().min(2).max(80),
+  summary: z.string().trim().min(20).max(180),
+  illustrativePrice: demoInsuranceMoneySchema,
+  deductible: demoInsuranceMoneySchema,
+  coverages: z.array(demoInsuranceCoverageSchema).min(4).max(6),
+  highlights: z.array(z.string().trim().min(2).max(120)).min(1).max(5),
+  exclusions: z.array(z.string().trim().min(20).max(180)).min(1).max(5),
+});
+
+export const demoInsuranceComparisonOutputSchema = z.object({
+  status: z.literal('success'),
+  dataSource: syntheticDataSourceSchema,
+  disclosure: z.string().trim().min(40).max(420),
+  message: z.string().trim().min(2).max(320),
+  fallback: z.string().trim().min(40).max(700),
+  comparisonId: demoInsuranceComparisonIdSchema,
+  searchContext: demoInsuranceComparisonInputSchema,
+  assumptions: z.array(z.string().trim().min(20).max(180)).min(1).max(6),
+  plans: z.array(demoInsurancePlanSchema).length(3),
+});
+
 export const demoTripReviewFlightSchema = z.object({
   dataSource: z.literal('live_nuitee_selection'),
   selectionId: selectionIdSchema,
@@ -252,4 +320,8 @@ export type DemoLoyaltyOverview = z.infer<typeof demoLoyaltyOverviewSchema>;
 export type DemoRewardFlightSearchInput = z.infer<typeof demoRewardFlightSearchInputSchema>;
 export type DemoRewardFlightOption = z.infer<typeof demoRewardFlightOptionSchema>;
 export type DemoRewardFlightSearchOutput = z.infer<typeof demoRewardFlightSearchOutputSchema>;
+export type DemoInsuranceComparisonInput = z.infer<typeof demoInsuranceComparisonInputSchema>;
+export type DemoInsuranceCoverage = z.infer<typeof demoInsuranceCoverageSchema>;
+export type DemoInsurancePlan = z.infer<typeof demoInsurancePlanSchema>;
+export type DemoInsuranceComparisonOutput = z.infer<typeof demoInsuranceComparisonOutputSchema>;
 export type DemoTripReview = z.infer<typeof demoTripReviewSchema>;

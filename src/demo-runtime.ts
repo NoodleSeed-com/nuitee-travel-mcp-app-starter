@@ -17,6 +17,11 @@ export type DemoGatewayInput =
       readonly rewardCatalog?: readonly Readonly<Record<string, unknown>>[];
     }
   | {
+      readonly kind: 'insurance_compare';
+      readonly insuranceComparison: Readonly<Record<string, unknown>>;
+      readonly insuranceCatalog?: readonly Readonly<Record<string, unknown>>[];
+    }
+  | {
       readonly kind: 'select';
       readonly selectionId: string;
       readonly hotelState: unknown;
@@ -37,7 +42,10 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
   const array = (value: unknown): readonly unknown[] => Array.isArray(value) ? value : [];
   const string = (value: unknown): string | undefined => typeof value === 'string' ? value : undefined;
   const number = (value: unknown): number | undefined => typeof value === 'number' && Number.isFinite(value) ? value : undefined;
-  const opaque = (prefix: 'hsearch' | 'hsel' | 'rsearch' | 'rwd', value: string) => {
+  const opaque = (
+    prefix: 'hsearch' | 'hsel' | 'rsearch' | 'rwd' | 'inscmp' | 'inplan',
+    value: string,
+  ) => {
     let first = 2166136261;
     let second = 2246822519;
     let third = 3266489917;
@@ -223,6 +231,87 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
         searchContext: search,
         pointsContext: { available: pointsBudget, source: 'illustrative_profile' },
         options,
+      },
+    };
+  }
+
+  if (input.kind === 'insurance_compare') {
+    const search = record(input.insuranceComparison) ?? {};
+    const destination = string(search.destination) ?? 'Illustrative destination';
+    const departureDate = string(search.departureDate) ?? '';
+    const returnDate = string(search.returnDate) ?? '';
+    const adults = number(search.adults) ?? 1;
+    const children = number(search.children) ?? 0;
+    const residenceCountry = string(search.residenceCountry) ?? 'CA';
+    const currency = string(search.currency) ?? 'CAD';
+    const estimatedTripCost = number(search.estimatedTripCost);
+    const comparisonId = opaque('inscmp', JSON.stringify(search));
+    const tripDays = dayNumber(returnDate) - dayNumber(departureDate);
+    const travelerUnits = adults + (children * 0.5);
+    const currencyRates: Record<string, number> = {
+      CAD: 1,
+      USD: 0.74,
+      EUR: 0.68,
+      GBP: 0.58,
+    };
+    const currencyRate = currencyRates[currency] ?? 1;
+    const moneyFromCad = (amount: number) => ({
+      amount: Math.round(amount * currencyRate),
+      currency,
+    });
+    const plans = array(input.insuranceCatalog)
+      .map(record)
+      .filter((entry): entry is Record<string, unknown> => Boolean(entry))
+      .slice(0, 3)
+      .map((fixture) => {
+        const key = string(fixture.key) ?? 'demo_insurance_unknown';
+        return {
+          planId: opaque('inplan', `${comparisonId}:${key}`),
+          dataSource: 'illustrative',
+          name: string(fixture.name) ?? 'Illustrative protection concept',
+          summary: string(fixture.summary) ?? 'Illustrative travel protection comparison only.',
+          illustrativePrice: moneyFromCad(
+            ((number(fixture.basePriceCad) ?? 0) + ((number(fixture.dailyPriceCad) ?? 0) * tripDays))
+              * travelerUnits,
+          ),
+          deductible: moneyFromCad(number(fixture.deductibleCad) ?? 0),
+          coverages: array(fixture.coverages).map((coverageValue) => {
+            const coverage = record(coverageValue) ?? {};
+            return {
+              name: string(coverage.name) ?? 'Illustrative coverage category',
+              limit: moneyFromCad(number(coverage.limitCad) ?? 0),
+              basis: string(coverage.basis) ?? 'per_trip',
+              summary: string(coverage.summary) ?? 'Illustrative maximum only; actual terms were not checked.',
+            };
+          }).slice(0, 6),
+          highlights: array(fixture.highlights)
+            .filter((item): item is string => typeof item === 'string')
+            .slice(0, 5),
+          exclusions: array(fixture.exclusions)
+            .filter((item): item is string => typeof item === 'string')
+            .slice(0, 5),
+        };
+      });
+    const residenceLabel = residenceCountry === 'CA' ? 'Canada' : residenceCountry;
+    return {
+      kind: 'insurance_compare',
+      insuranceResult: {
+        status: 'success',
+        dataSource: 'illustrative',
+        disclosure: 'Illustrative travel protection only. This is not an insurance quote, policy, recommendation, or statement of coverage. No insurer, eligibility, availability, or policy wording was checked, and nothing can be purchased.',
+        message: 'Three illustrative travel protection concepts are ready to compare.',
+        fallback: `Three illustrative travel protection concepts for a ${tripDays}-day trip to ${destination} are ready to compare. No insurer, eligibility, availability, or policy wording was checked, and nothing can be purchased.`,
+        comparisonId,
+        searchContext: search,
+        assumptions: [
+          `Residence is treated as ${residenceLabel} for this illustrative comparison.`,
+          `The comparison uses ${adults} adult${adults === 1 ? '' : 's'} and ${children} child traveler${children === 1 ? '' : 's'}.`,
+          estimatedTripCost === undefined
+            ? 'Trip cost was not supplied; cancellation figures are fixed illustrative limits.'
+            : `Trip cost is treated as ${estimatedTripCost} ${currency} for context only.`,
+          'No traveler health, eligibility, or policy information was collected.',
+        ],
+        plans,
       },
     };
   }

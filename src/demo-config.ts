@@ -5,7 +5,7 @@ export const travelCompanionDemoConfig = {
     assistantName: 'Wayfare travel assistant',
     tagline: 'Travel, planned around you.',
     intro:
-      'Search current flights, compare illustrative stays, and preview rewards in one conversation.',
+      'Search current flights, compare illustrative stays and travel protection, and preview rewards in one conversation.',
     palette: {
       light: {
         ink: '#0B1F33',
@@ -51,11 +51,15 @@ export const travelCompanionDemoConfig = {
       mode: 'synthetic_fixture',
       label: 'Illustrative rewards',
     },
+    insurance: {
+      mode: 'synthetic_fixture',
+      label: 'Illustrative travel protection',
+    },
   },
   disclosure: {
     badge: 'Preview only',
     persistent:
-      'Flight results come from the connected flight provider. Stays and rewards are illustrative previews. Booking and redemption are unavailable.',
+      'Flight results come from the connected flight provider. Stays, rewards, and travel protection are illustrative previews. Booking, redemption, and policy purchase are unavailable.',
   },
   assets: {
     logo: {
@@ -66,10 +70,10 @@ export const travelCompanionDemoConfig = {
     },
     hero: {
       status: 'repository_owned_starter_asset',
-      sourcePath: 'apps/web/public/images/wayfare-hybrid-hero-v2.jpg',
+      sourcePath: 'apps/web/public/images/immersive/wayfare-explore-windows-v2.png',
       provenanceRecordPath: 'docs/visual-assets/wayfare-premium-concierge.md',
       sha256:
-        '5834743c2c7b9802bc903ee60e2da6770d2b23373014abd04e7e4d30e09be4eb',
+        '4f28eb6b9f00c101cb9a66d7731a07ae760d4cf61b436750a7e6172b0b98e41a',
       licenseConfirmed: true,
       reviewedBinaryBlob: true,
     },

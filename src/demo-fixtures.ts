@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 import {
   demoHotelSearchInputSchema,
   demoHotelSearchOutputSchema,
+  demoInsuranceComparisonInputSchema,
+  demoInsuranceComparisonOutputSchema,
   demoLoyaltyOverviewSchema,
   demoRewardFlightSearchInputSchema,
   demoRewardFlightSearchOutputSchema,
@@ -9,6 +11,8 @@ import {
   type DemoHotelSearchInput,
   type DemoHotelSearchOutput,
   type DemoHotelSelectionRecord,
+  type DemoInsuranceComparisonInput,
+  type DemoInsuranceComparisonOutput,
   type DemoLoyaltyOverview,
   type DemoRewardFlightSearchInput,
   type DemoRewardFlightSearchOutput,
@@ -23,8 +27,11 @@ const REWARD_FLIGHT_DISCLOSURE =
   'Illustrative reward-flight comparisons only. No live reward inventory was checked, and points cannot be applied or redeemed.';
 const TRIP_DISCLOSURE =
   'The flight remains a current provider selection. Stay and rewards values are illustrative; this is not a bookable package and no payment or points action is available.';
+const INSURANCE_DISCLOSURE =
+  'Illustrative travel protection only. This is not an insurance quote, policy, recommendation, or statement of coverage. No insurer, eligibility, availability, or policy wording was checked, and nothing can be purchased.';
 
 type DemoCurrency = DemoHotelSearchInput['currency'];
+type DemoInsuranceCurrency = DemoInsuranceComparisonInput['currency'];
 
 interface HotelFixture {
   readonly key: `demo_hotel_${string}`;
@@ -47,6 +54,23 @@ interface RewardFlightFixture {
   readonly estimatedTaxes: Readonly<Record<DemoCurrency, number>>;
   readonly stops: number;
   readonly durationMinutes: number;
+}
+
+interface InsurancePlanFixture {
+  readonly key: `demo_insurance_${string}`;
+  readonly name: string;
+  readonly summary: string;
+  readonly basePriceCad: number;
+  readonly dailyPriceCad: number;
+  readonly deductibleCad: number;
+  readonly coverages: readonly {
+    readonly name: string;
+    readonly limitCad: number;
+    readonly basis: 'per_traveler' | 'per_trip';
+    readonly summary: string;
+  }[];
+  readonly highlights: readonly string[];
+  readonly exclusions: readonly string[];
 }
 
 export const DEMO_HOTEL_CATALOG: Readonly<Record<string, readonly HotelFixture[]>> = {
@@ -194,6 +218,66 @@ export const DEMO_REWARD_FLIGHT_CATALOG: readonly RewardFlightFixture[] = [
   },
 ] as const;
 
+export const DEMO_INSURANCE_PLAN_CATALOG: readonly InsurancePlanFixture[] = [
+  {
+    key: 'demo_insurance_essential',
+    name: 'Essential concept',
+    summary: 'A compact concept for core emergency and interruption examples.',
+    basePriceCad: 24,
+    dailyPriceCad: 1.25,
+    deductibleCad: 250,
+    coverages: [
+      { name: 'Emergency medical', limitCad: 1_000_000, basis: 'per_traveler', summary: 'Illustrative maximum only; eligibility and actual terms were not checked.' },
+      { name: 'Trip cancellation', limitCad: 1_500, basis: 'per_trip', summary: 'Illustrative maximum only; covered reasons would depend on actual policy wording.' },
+      { name: 'Baggage', limitCad: 750, basis: 'per_traveler', summary: 'Illustrative maximum only; item and sub-limits are not represented.' },
+      { name: 'Travel delay', limitCad: 250, basis: 'per_trip', summary: 'Illustrative maximum only; waiting periods and eligible costs are not represented.' },
+    ],
+    highlights: ['Core concept comparison', 'Higher illustrative deductible'],
+    exclusions: [
+      'Pre-existing-condition rules would require review of actual policy wording.',
+      'Adventure activities and destination advisories may require separate review.',
+    ],
+  },
+  {
+    key: 'demo_insurance_balanced',
+    name: 'Balanced concept',
+    summary: 'A broader concept with higher illustrative limits across the trip.',
+    basePriceCad: 39,
+    dailyPriceCad: 2,
+    deductibleCad: 100,
+    coverages: [
+      { name: 'Emergency medical', limitCad: 2_000_000, basis: 'per_traveler', summary: 'Illustrative maximum only; eligibility and actual terms were not checked.' },
+      { name: 'Trip cancellation', limitCad: 3_000, basis: 'per_trip', summary: 'Illustrative maximum only; covered reasons would depend on actual policy wording.' },
+      { name: 'Baggage', limitCad: 1_500, basis: 'per_traveler', summary: 'Illustrative maximum only; item and sub-limits are not represented.' },
+      { name: 'Travel delay', limitCad: 500, basis: 'per_trip', summary: 'Illustrative maximum only; waiting periods and eligible costs are not represented.' },
+    ],
+    highlights: ['Broader concept comparison', 'Mid-range illustrative deductible'],
+    exclusions: [
+      'Pre-existing-condition rules would require review of actual policy wording.',
+      'Adventure activities and destination advisories may require separate review.',
+    ],
+  },
+  {
+    key: 'demo_insurance_extended',
+    name: 'Extended concept',
+    summary: 'The widest illustrative limits in this fictional comparison.',
+    basePriceCad: 57,
+    dailyPriceCad: 2.8,
+    deductibleCad: 0,
+    coverages: [
+      { name: 'Emergency medical', limitCad: 5_000_000, basis: 'per_traveler', summary: 'Illustrative maximum only; eligibility and actual terms were not checked.' },
+      { name: 'Trip cancellation', limitCad: 5_000, basis: 'per_trip', summary: 'Illustrative maximum only; covered reasons would depend on actual policy wording.' },
+      { name: 'Baggage', limitCad: 2_500, basis: 'per_traveler', summary: 'Illustrative maximum only; item and sub-limits are not represented.' },
+      { name: 'Travel delay', limitCad: 1_000, basis: 'per_trip', summary: 'Illustrative maximum only; waiting periods and eligible costs are not represented.' },
+    ],
+    highlights: ['Expanded concept comparison', 'Zero illustrative deductible'],
+    exclusions: [
+      'Pre-existing-condition rules would require review of actual policy wording.',
+      'Adventure activities and destination advisories may require separate review.',
+    ],
+  },
+] as const;
+
 const LOYALTY_FIXTURE = {
   status: 'success',
   dataSource: 'illustrative',
@@ -232,8 +316,76 @@ const LOYALTY_FIXTURE = {
   },
 } as const;
 
-function opaqueId(prefix: 'hsearch' | 'hsel' | 'rsearch' | 'rwd', value: string) {
+function opaqueId(
+  prefix: 'hsearch' | 'hsel' | 'rsearch' | 'rwd' | 'inscmp' | 'inplan',
+  value: string,
+) {
   return `${prefix}_${createHash('sha256').update(value).digest('hex').slice(0, 32)}`;
+}
+
+const insuranceCurrencyRate: Readonly<Record<DemoInsuranceCurrency, number>> = {
+  CAD: 1,
+  USD: 0.74,
+  EUR: 0.68,
+  GBP: 0.58,
+};
+
+function insuranceMoneyFromCad(amount: number, currency: DemoInsuranceCurrency) {
+  return {
+    amount: Math.round(amount * insuranceCurrencyRate[currency]),
+    currency,
+  };
+}
+
+export function compareSyntheticTravelInsurance(
+  input: DemoInsuranceComparisonInput,
+): DemoInsuranceComparisonOutput {
+  const searchContext = demoInsuranceComparisonInputSchema.parse(input);
+  const tripDays = nightsBetween(searchContext.departureDate, searchContext.returnDate);
+  const travelerUnits = searchContext.adults + (searchContext.children * 0.5);
+  const comparisonId = opaqueId('inscmp', JSON.stringify(searchContext));
+  const plans = DEMO_INSURANCE_PLAN_CATALOG.map((fixture) => ({
+    planId: opaqueId('inplan', `${comparisonId}:${fixture.key}`),
+    dataSource: 'illustrative' as const,
+    name: fixture.name,
+    summary: fixture.summary,
+    illustrativePrice: insuranceMoneyFromCad(
+      (fixture.basePriceCad + (fixture.dailyPriceCad * tripDays)) * travelerUnits,
+      searchContext.currency,
+    ),
+    deductible: insuranceMoneyFromCad(fixture.deductibleCad, searchContext.currency),
+    coverages: fixture.coverages.map((coverage) => ({
+      name: coverage.name,
+      limit: insuranceMoneyFromCad(coverage.limitCad, searchContext.currency),
+      basis: coverage.basis,
+      summary: coverage.summary,
+    })),
+    highlights: [...fixture.highlights],
+    exclusions: [...fixture.exclusions],
+  }));
+  const residenceLabel = searchContext.residenceCountry === 'CA'
+    ? 'Canada'
+    : searchContext.residenceCountry;
+
+  return demoInsuranceComparisonOutputSchema.parse({
+    status: 'success',
+    dataSource: 'illustrative',
+    disclosure: INSURANCE_DISCLOSURE,
+    message: 'Three illustrative travel protection concepts are ready to compare.',
+    fallback:
+      `Three illustrative travel protection concepts for a ${tripDays}-day trip to ${searchContext.destination} are ready to compare. No insurer, eligibility, availability, or policy wording was checked, and nothing can be purchased.`,
+    comparisonId,
+    searchContext,
+    assumptions: [
+      `Residence is treated as ${residenceLabel} for this illustrative comparison.`,
+      `The comparison uses ${searchContext.adults} adult${searchContext.adults === 1 ? '' : 's'} and ${searchContext.children} child traveler${searchContext.children === 1 ? '' : 's'}.`,
+      searchContext.estimatedTripCost === undefined
+        ? 'Trip cost was not supplied; cancellation figures are fixed illustrative limits.'
+        : `Trip cost is treated as ${searchContext.estimatedTripCost} ${searchContext.currency} for context only.`,
+      'No traveler health, eligibility, or policy information was collected.',
+    ],
+    plans,
+  });
 }
 
 function routedRewardFixtures(destination: string): readonly RewardFlightFixture[] {

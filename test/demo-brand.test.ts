@@ -38,11 +38,12 @@ describe('Wayfare expanded travel brand contract', () => {
       flights: { mode: 'live_sandbox', label: 'Current flight fares' },
       hotels: { mode: 'synthetic_fixture', label: 'Illustrative stays' },
       loyalty: { mode: 'synthetic_fixture', label: 'Illustrative rewards' },
+      insurance: { mode: 'synthetic_fixture', label: 'Illustrative travel protection' },
     });
     expect(travelCompanionDemoConfig.disclosure.badge).toBe('Preview only');
     expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/connected flight provider/u);
-    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Stays and rewards are illustrative/u);
-    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Booking and redemption are unavailable/u);
+    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Stays, rewards, and travel protection are illustrative/u);
+    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Booking, redemption, and policy purchase are unavailable/u);
     expect(travelCompanionDemoConfig.disclosure.persistent).not.toMatch(/\bdemo\b|\bsandbox\b/iu);
   });
 
@@ -68,7 +69,7 @@ describe('Wayfare expanded travel brand contract', () => {
     });
     expect(travelCompanionDemoConfig.assets.hero).toMatchObject({
       status: 'repository_owned_starter_asset',
-      sourcePath: 'apps/web/public/images/wayfare-hybrid-hero-v2.jpg',
+      sourcePath: 'apps/web/public/images/immersive/wayfare-explore-windows-v2.png',
       provenanceRecordPath: 'docs/visual-assets/wayfare-premium-concierge.md',
       reviewedBinaryBlob: true,
     });

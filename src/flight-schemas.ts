@@ -2,6 +2,7 @@ import { z } from '@noodleseed/one';
 import { starterConfig } from './starter-config.js';
 
 export const errorCodeSchema = z.enum([
+  'invalid_search',
   'invalid_request',
   'configuration_required',
   'authentication',
@@ -126,8 +127,9 @@ export const itinerarySchema = z.object({
 export const searchInputSchema = z.object({
   origin: z.string().regex(/^[A-Za-z]{3}$/).describe('Resolved actual-airport IATA code derived from an unambiguous user-supplied city or airport name; use YYZ for Toronto, not the YTO metro code'),
   destination: z.string().regex(/^[A-Za-z]{3}$/).describe('Resolved actual-airport IATA code derived from an unambiguous user-supplied city or airport name; use YYZ for Toronto, not the YTO metro code'),
+  tripType: z.enum(['ONE_WAY', 'ROUND_TRIP']).optional().describe('Always identify the requested trip type. Use ONE_WAY when the traveler does not request a return trip; use ROUND_TRIP only when a later return date is requested'),
   departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe('Outbound date in YYYY-MM-DD format; resolve relative language from the server-provided local date before calling'),
-  returnDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe('Optional return date in YYYY-MM-DD format'),
+  returnDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe('Round-trip return date in YYYY-MM-DD format. Omit returnDate entirely for ONE_WAY; for ROUND_TRIP it must be strictly later than departureDate and must never duplicate departureDate'),
   adults: z.number().int().min(1).max(9).default(1).describe('Adult traveler count; treat a generic passenger count as adults unless the user explicitly identifies children or infants'),
   children: z.number().int().min(0).max(8).default(0).describe('Children explicitly identified by the user; otherwise zero'),
   infants: z.number().int().min(0).max(9).default(0).describe('Infants explicitly identified by the user; otherwise zero'),
