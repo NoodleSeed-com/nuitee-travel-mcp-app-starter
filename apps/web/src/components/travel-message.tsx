@@ -240,13 +240,30 @@ function InputRequestPart({
     client,
     inputRequest.id,
   );
-  const fields = parseTravelInputSchema(inputRequest.requestedSchema);
   const [values, setValues] = useState<Record<string, string>>({});
   const [isInvalid, setIsInvalid] = useState(false);
   const message = boundedDisplayString(inputRequest.message, 120)
     ?? 'Complete your trip details.';
 
-  if (fields && inputRequest.status === 'pending') {
+  if (inputRequest.status !== 'pending') {
+    const statusMessage = inputRequest.status === 'accepted'
+      ? 'Trip details submitted.'
+      : inputRequest.status === 'cancelled'
+        ? 'Trip details request cancelled.'
+        : `Trip details request ${inputRequest.status}.`;
+
+    return (
+      <section
+        aria-label="Input request"
+        className="travel-input-request travel-interaction-card"
+      >
+        <p role="status">{statusMessage}</p>
+      </section>
+    );
+  }
+
+  const fields = parseTravelInputSchema(inputRequest.requestedSchema);
+  if (fields) {
     return (
       <section
         aria-busy={locked || undefined}
@@ -335,19 +352,15 @@ function InputRequestPart({
       className="travel-input-request travel-interaction-card"
     >
       <p>This travel template cannot collect the requested form.</p>
-      {inputRequest.status === 'pending' ? (
-        <button
-          disabled={locked}
-          onClick={() => {
-            submit({ action: 'cancel' });
-          }}
-          type="button"
-        >
-          Cancel request
-        </button>
-      ) : (
-        <p role="status">This input request is {inputRequest.status}.</p>
-      )}
+      <button
+        disabled={locked}
+        onClick={() => {
+          submit({ action: 'cancel' });
+        }}
+        type="button"
+      >
+        Cancel request
+      </button>
     </section>
   );
 }

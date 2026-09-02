@@ -468,6 +468,43 @@ describe('typed travel message parts', () => {
     expect(screen.queryByText(/cannot collect the requested form/i)).not.toBeInTheDocument();
   });
 
+  it.each([
+    ['accepted', 'Trip details submitted.'],
+    ['cancelled', 'Trip details request cancelled.'],
+  ] as const)('renders a completed %s input request without an unsupported-form error', (
+    status,
+    expectedStatus,
+  ) => {
+    renderMessage(client, {
+      id: `assistant-${status}-input`,
+      role: 'assistant',
+      parts: [{
+        type: 'data-input-request',
+        data: {
+          id: `input-${status}`,
+          message: 'When would you like to travel?',
+          requestedSchema: {
+            type: 'object',
+            properties: {
+              departureDate: {
+                type: 'string',
+                description: 'Travel date in YYYY-MM-DD format',
+                format: 'date',
+              },
+            },
+            required: ['departureDate'],
+          },
+          expiresAt: '2026-09-03T18:00:00.000Z',
+          status,
+        },
+      }],
+    });
+
+    expect(screen.getByRole('status')).toHaveTextContent(expectedStatus);
+    expect(screen.queryByText(/cannot collect the requested form/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cancel request' })).not.toBeInTheDocument();
+  });
+
   it('keeps input cancellation locked after a rejected response', async () => {
     client.respond.mockRejectedValue(new Error('raw service failure'));
     renderMessage(client, {
