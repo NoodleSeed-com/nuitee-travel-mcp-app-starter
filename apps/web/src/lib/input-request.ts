@@ -101,7 +101,9 @@ function parseField(
   value: unknown,
   required: boolean,
 ): TravelInputField | null {
-  if (!isRecord(value) || !hasOnlyKeys(value, ['type', 'format', 'title', 'enum'])) {
+  if (!isRecord(value)
+    || !hasOnlyKeys(value, ['type', 'format', 'title', 'description', 'enum'])
+    || (value.description !== undefined && typeof value.description !== 'string')) {
     return null;
   }
 
