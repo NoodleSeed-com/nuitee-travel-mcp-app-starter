@@ -22,6 +22,12 @@ Flights are the only operational travel domain.
 
 Version one has no multicity search, prebooking, booking, inventory hold, passenger collection, seat or baggage purchase, payment, cancellation, refund, amendment, loyalty earning/redemption, hotel search, car search, or arbitrary HTTP. It produces no checkout or handoff URL.
 
+### Website starting experience
+
+The guest website exposes one general travel composer. The assistant chooses
+only among tools registered in the active server profile; the interface does
+not require a capability choice or imply that future domains are operational.
+
 ## Consumption modes
 
 1. **External MCP host:** ChatGPT, Claude, or another host supplies the conversational model. No assistant-model key is required.

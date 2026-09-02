@@ -138,7 +138,9 @@ describe('public repository contracts', () => {
     ]);
     const activeGuidance = `${readme}\n${customization}`;
 
-    expect(customization).toContain('`heading`, `support`, `action`, and `prompt`');
+    expect(customization).toContain('passive editorial `heading` and `support`');
+    expect(customization).toContain('destination `prompt` remains available to `/experience`');
+    expect(customization).not.toContain('`heading`, `support`, `action`, and `prompt`');
     expect(customization).toContain('direct CSS custom properties');
     expect(activeGuidance).toContain('Verify current fare');
     expect(activeGuidance).not.toContain('Verify selected fare');
@@ -272,7 +274,7 @@ describe('public repository contracts', () => {
     expect(siteConfigSource).toContain('/images/immersive/wayfare-explore-windows-v2.png');
     expect(footerSource).toContain('Built on Noodle Seed · Powered by Nuitee');
     expect(webPackage.dependencies['@paper-design/shaders-react']).toBeUndefined();
-    expect(readme).toContain('shared multi-mode cinematic');
+    expect(readme).toContain('single-entry cinematic landing');
     expect(readme).toContain('Search → Select → Verify');
     expect(customization).toContain('## Wayfare image system');
     await expect(access(new URL(
@@ -283,6 +285,27 @@ describe('public repository contracts', () => {
       '../apps/web/src/components/workspace-atmosphere-canvas.tsx',
       import.meta.url,
     ))).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  it('documents the agent-led homepage without overstating available tools', async () => {
+    const [readme, spec, architecture, customization, companion] = await Promise.all([
+      repositoryFile('README.md'),
+      repositoryFile('SPEC.md'),
+      repositoryFile('docs/architecture.md'),
+      repositoryFile('docs/customization.md'),
+      repositoryFile('docs/WAYFARE_TRAVEL_COMPANION.md'),
+    ]);
+    const activeDocs = [readme, architecture, customization, companion].join('\n');
+
+    expect(readme).toContain('single-entry cinematic landing');
+    expect(spec).toContain('one general travel composer');
+    expect(architecture).toContain('capability choice stays inside the agent');
+    expect(customization).toContain('passive destination inspiration');
+    expect(companion).toContain('one natural-language starting composer');
+    expect(companion).toContain('Flights remain provider-backed');
+    expect(activeDocs).not.toMatch(/offers accessible entry points for each|choose a planning view/i);
+    expect(spec).toContain('Flights are the only operational travel domain.');
+    expect(spec).toContain('It produces no checkout or handoff URL.');
   });
 
   it('keeps active template guidance aligned with the Wayfare premium conversation', async () => {
