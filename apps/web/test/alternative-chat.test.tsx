@@ -16,12 +16,23 @@ const assistantMock = vi.hoisted(() => ({
   useNoodleAssistant: vi.fn(),
 }));
 
+const appViewMock = vi.hoisted(() => ({
+  mountedClient: undefined as undefined | {
+    requestApp(method: string, params: Readonly<Record<string, unknown>>): Promise<unknown>;
+  },
+}));
+
 vi.mock('@noodleseed/assistant/react/client', () => ({
   useNoodleAssistant: assistantMock.useNoodleAssistant,
 }));
 
 vi.mock('@noodleseed/assistant/react', () => ({
-  NoodleAppView: () => <div data-testid="noodle-app-view" />,
+  NoodleAppView: ({ client: mountedClient }: {
+    client: typeof appViewMock.mountedClient;
+  }) => {
+    appViewMock.mountedClient = mountedClient;
+    return <div data-testid="noodle-app-view" />;
+  },
 }));
 
 const readyRuntime = {
@@ -36,6 +47,14 @@ function createClient() {
     abort: vi.fn(),
     resetSession: vi.fn(),
     respond: vi.fn().mockResolvedValue(undefined),
+    requestApp: vi.fn().mockResolvedValue({
+      content: [{ type: 'text', text: 'Fare selected.' }],
+      isError: false,
+      structuredContent: {
+        status: 'selected',
+        selectionId: 'sel_0123456789abcdef0123456789abcdef',
+      },
+    }),
     sendMessage: vi.fn().mockResolvedValue(undefined),
     subscribe: vi.fn((listener: (event: AssistantClientEvent) => void) => {
       listeners.add(listener);
@@ -44,13 +63,82 @@ function createClient() {
   };
 }
 
+function verifiedFlightAppMessage(selectionId: string) {
+  return {
+    id: 'message-assistant-flight-app-verification',
+    role: 'assistant' as const,
+    parts: [
+      {
+        type: 'data-view',
+        data: {
+          id: 'flight-results-app-verification',
+          tool: 'search_flights',
+          resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget',
+          title: 'Flight results',
+          result: { status: 'success' },
+        },
+      },
+      {
+        type: 'data-tool-result',
+        data: {
+          tool: 'search_flights',
+          result: {
+            status: 'success',
+            searchContext: {
+              origin: 'YYZ', destination: 'LIS', departureDate: '2026-09-08',
+              adults: 2, children: 0, infants: 0, cabinClass: 'ECONOMY',
+              currency: 'CAD', country: 'CA',
+            },
+            itineraries: [{
+              selectionId,
+              route: { origin: 'YYZ', destination: 'LIS' },
+              carrier: { name: 'Air Transat', code: 'TS' },
+              departureTime: '2026-09-08T19:45:00-04:00',
+              price: { total: 607.45, currency: 'CAD' },
+            }],
+          },
+        },
+      },
+      {
+        type: 'data-tool-result',
+        data: {
+          tool: 'select_flight_offer',
+          result: { status: 'selected', selectionId },
+        },
+      },
+      {
+        type: 'data-tool-result',
+        data: {
+          tool: 'verify_flight_offer',
+          result: {
+            status: 'success',
+            verification: {
+              status: 'success',
+              availability: 'available',
+              selectionId,
+              currentPrice: { total: 612.25, currency: 'CAD' },
+            },
+          },
+        },
+      },
+    ],
+  };
+}
+
 let client = createClient();
 let assistantStatus: 'ready' | 'submitted' | 'streaming' = 'ready';
+let assistantMessages: readonly {
+  readonly id: string;
+  readonly role: 'user' | 'assistant';
+  readonly parts: readonly Record<string, unknown>[];
+}[] = [];
 
 beforeEach(() => {
   sessionStorage.clear();
   client = createClient();
   assistantStatus = 'ready';
+  assistantMessages = [];
+  appViewMock.mountedClient = undefined;
   assistantMock.useNoodleAssistant.mockReset();
   assistantMock.useNoodleAssistant.mockImplementation(() => {
     const activeClient = client;
@@ -60,7 +148,7 @@ beforeEach(() => {
     }, [activeClient]);
     return {
       client: activeClient,
-      messages: [],
+      messages: assistantMessages,
       status: assistantStatus,
       error: undefined,
     };
@@ -96,6 +184,72 @@ describe('alternative custom chat page', () => {
     );
   });
 
+  it('renders the immersive conversation hierarchy, trip context, and compact trip control', async () => {
+    assistantMessages = [
+      {
+        id: 'message-user',
+        role: 'user',
+        parts: [{
+          type: 'text',
+          text: 'Find me flights from Toronto to Lisbon next week for two.',
+        }],
+      },
+      {
+        id: 'message-assistant',
+        role: 'assistant',
+        parts: [
+          {
+            type: 'text',
+            text: 'Here are the current options for your trip.',
+          },
+          {
+            type: 'data-tool-result',
+            data: {
+              tool: 'search_flights',
+              result: {
+                status: 'success',
+                searchContext: {
+                  origin: 'YYZ',
+                  destination: 'LIS',
+                  tripType: 'ONE_WAY',
+                  departureDate: '2026-09-08',
+                  adults: 2,
+                  children: 0,
+                  infants: 0,
+                  childrenAges: [],
+                  infantAges: [],
+                  cabinClass: 'ECONOMY',
+                  currency: 'CAD',
+                  country: 'CA',
+                },
+              },
+            },
+          },
+        ],
+      },
+    ];
+    sessionStorage.setItem('wayfare:experience-prompt', 'Toronto to Lisbon');
+
+    render(<ImmersiveChatPage runtime={readyRuntime} />);
+
+    const routeSummary = await screen.findByRole('region', {
+      name: 'Trip route summary',
+    });
+    expect(routeSummary).toHaveTextContent('YYZ');
+    expect(routeSummary).toHaveTextContent('LIS');
+    expect(routeSummary).toHaveTextContent('8 Sep');
+    expect(routeSummary).toHaveTextContent('2 adults');
+    expect(routeSummary).toHaveTextContent('Economy');
+    expect(routeSummary).toHaveTextContent('CAD');
+
+    expect(screen.getByLabelText('Wayfare assistant')).toBeVisible();
+    expect(screen.getByLabelText('Traveler')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Change departure date' }))
+      .toBeVisible();
+    expect(screen.getByRole('button', { name: 'View trip · 0 selected' }))
+      .toHaveAttribute('aria-expanded', 'false');
+  });
+
   it('keeps stateless protection separate from the stateful trip review', () => {
     const onPrompt = vi.fn();
     render(
@@ -118,6 +272,256 @@ describe('alternative custom chat page', () => {
       'Review my current flight, stay, and illustrative rewards together.',
     );
     expect(screen.getByText(/Protection comparisons remain separate/)).toBeVisible();
+  });
+
+  it('shows validated selected flight and stay summaries without inventing a package total', () => {
+    render(
+      <ImmersiveTripRail
+        busy={false}
+        onPrompt={vi.fn()}
+        projection={{
+          phase: 'stay-selected',
+          hasFlightSelection: true,
+          hasStaySelection: true,
+          selectedFlight: {
+            dataSource: 'live_nuitee_selection',
+            sourceLabel: 'Nuitee search fare',
+            carrierName: 'Air Transat',
+            carrierCode: 'TS',
+            origin: 'YYZ',
+            destination: 'LIS',
+            departureDate: '2026-09-08',
+            departureTime: '2026-09-08T19:45:00-04:00',
+            travelers: '2 adults',
+            searchPrice: { total: 607.45, currency: 'CAD' },
+            status: 'selected',
+          },
+          selectedStay: {
+            dataSource: 'illustrative',
+            sourceLabel: 'Illustrative stay',
+            propertyName: 'Tagus Lantern Hotel',
+            destination: 'Lisbon',
+            checkInDate: '2026-09-08',
+            checkOutDate: '2026-09-15',
+            nights: 7,
+            subtotal: { total: 1_240, currency: 'CAD' },
+            status: 'selected',
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /Flight/ }))
+      .toHaveTextContent('Air Transat · YYZ → LIS');
+    expect(screen.getByRole('button', { name: /Flight/ }))
+      .toHaveTextContent('Nuitee search fare · CA$607.45 · 19:45 · Verify price');
+    expect(screen.getByRole('button', { name: /Flight/ }))
+      .toHaveTextContent('19:45');
+    expect(screen.getByRole('button', { name: /Stay/ }))
+      .toHaveTextContent('Tagus Lantern Hotel');
+    expect(screen.getByRole('button', { name: /Stay/ }))
+      .toHaveTextContent('Illustrative stay · CA$1,240.00');
+    expect(screen.queryByText(/estimated total/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Flight and stay prices remain separate/)).toBeVisible();
+  });
+
+  it('shows bounded insurance-first trip context without exposing quote data', () => {
+    render(
+      <ImmersiveTripRail
+        busy={false}
+        onPrompt={vi.fn()}
+        projection={{
+          phase: 'insurance',
+          focus: 'insurance',
+          hasInsuranceComparison: true,
+          protectionDestination: 'Portugal',
+          departureDate: '2026-10-12',
+          returnDate: '2026-10-18',
+          travelers: '2 adults',
+          currency: 'CAD',
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /Protection/ }))
+      .toHaveTextContent('Comparison available · Portugal');
+    expect(screen.queryByText(/quote|recommended|policy price/i)).not.toBeInTheDocument();
+  });
+
+  it('reveals the newest matching App when a selected trip item is opened', async () => {
+    const selectionId = 'sel_0123456789abcdef0123456789abcdef';
+    const view = {
+      tool: 'search_flights',
+      resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget',
+      title: 'Flight results',
+      result: { status: 'success' },
+    };
+    assistantMessages = [{
+      id: 'message-assistant-results',
+      role: 'assistant',
+      parts: [
+        { type: 'data-view', data: { ...view, id: 'older-flight-results' } },
+        { type: 'data-view', data: { ...view, id: 'newer-flight-results' } },
+        {
+          type: 'data-tool-result',
+          data: {
+            tool: 'search_flights',
+            result: {
+              status: 'success',
+              searchContext: {
+                origin: 'YYZ', destination: 'LIS', departureDate: '2026-09-08',
+                adults: 2, children: 0, infants: 0, cabinClass: 'ECONOMY',
+                currency: 'CAD', country: 'CA',
+              },
+              itineraries: [{
+                selectionId,
+                route: { origin: 'YYZ', destination: 'LIS' },
+                carrier: { name: 'Air Transat', code: 'TS' },
+                departureTime: '2026-09-08T19:45:00-04:00',
+                price: { total: 607.45, currency: 'CAD' },
+              }],
+            },
+          },
+        },
+        {
+          type: 'data-tool-result',
+          data: {
+            tool: 'select_flight_offer',
+            result: { status: 'selected', selectionId },
+          },
+        },
+      ],
+    }];
+    sessionStorage.setItem('wayfare:experience-prompt', 'Toronto to Lisbon');
+    const revealed: HTMLElement[] = [];
+    const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value(this: HTMLElement) { revealed.push(this); },
+    });
+
+    try {
+      render(<ImmersiveChatPage runtime={readyRuntime} />);
+      await waitFor(() => expect(client.sendMessage).toHaveBeenCalledOnce());
+      const surfaces = document.querySelectorAll<HTMLElement>('.travel-app-surface');
+      expect(surfaces).toHaveLength(2);
+
+      fireEvent.click(screen.getByRole('button', { name: /Flight/ }));
+
+      expect(revealed.at(-1)).toBe(surfaces.item(1));
+      expect(document.activeElement).toBe(surfaces.item(1));
+    } finally {
+      Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+        configurable: true,
+        value: originalScrollIntoView,
+      });
+    }
+  });
+
+  it('projects a successful selection made directly inside an embedded flight App', async () => {
+    const selectionId = 'sel_0123456789abcdef0123456789abcdef';
+    assistantMessages = [{
+      id: 'message-assistant-flight-app',
+      role: 'assistant',
+      parts: [
+        {
+          type: 'data-view',
+          data: {
+            id: 'flight-results-app',
+            tool: 'search_flights',
+            resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget',
+            title: 'Flight results',
+            result: { status: 'success' },
+          },
+        },
+        {
+          type: 'data-tool-result',
+          data: {
+            tool: 'search_flights',
+            result: {
+              status: 'success',
+              searchContext: {
+                origin: 'YYZ', destination: 'LIS', departureDate: '2026-09-08',
+                adults: 2, children: 0, infants: 0, cabinClass: 'ECONOMY',
+                currency: 'CAD', country: 'CA',
+              },
+              itineraries: [{
+                selectionId,
+                route: { origin: 'YYZ', destination: 'LIS' },
+                carrier: { name: 'Air Transat', code: 'TS' },
+                departureTime: '2026-09-08T19:45:00-04:00',
+                price: { total: 607.45, currency: 'CAD' },
+              }],
+            },
+          },
+        },
+      ],
+    }];
+    sessionStorage.setItem('wayfare:experience-prompt', 'Toronto to Lisbon');
+
+    render(<ImmersiveChatPage runtime={readyRuntime} />);
+    await waitFor(() => expect(appViewMock.mountedClient).toBeDefined());
+
+    await appViewMock.mountedClient!.requestApp('tools/call', {
+      name: 'select_flight_offer',
+      arguments: { selectionId },
+    });
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /Flight/ }))
+      .toHaveTextContent('Air Transat · YYZ → LIS'));
+    expect(client.requestApp).toHaveBeenCalledWith('tools/call', {
+      name: 'select_flight_offer',
+      arguments: { selectionId },
+    });
+    expect(screen.getByRole('button', { name: /Flight/ }))
+      .toHaveTextContent('Nuitee search fare · CA$607.45 · 19:45 · Verify price');
+  });
+
+  it('downgrades a verified rail fare when direct App re-verification fails', async () => {
+    const selectionId = 'sel_0123456789abcdef0123456789abcdef';
+    assistantMessages = [verifiedFlightAppMessage(selectionId)];
+    client.requestApp.mockResolvedValueOnce({
+      content: [{ type: 'text', text: 'Verification failed.' }],
+      isError: true,
+    });
+    sessionStorage.setItem('wayfare:experience-prompt', 'Toronto to Lisbon');
+
+    render(<ImmersiveChatPage runtime={readyRuntime} />);
+    await waitFor(() => expect(appViewMock.mountedClient).toBeDefined());
+    expect(screen.getByRole('button', { name: /Flight/ }))
+      .toHaveTextContent('Verified Nuitee fare · CA$612.25');
+
+    await appViewMock.mountedClient!.requestApp('tools/call', {
+      name: 'verify_flight_offer',
+      arguments: { selectionId },
+    });
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /Flight/ }))
+      .toHaveTextContent('Nuitee search fare · CA$607.45 · 19:45 · Verify price'));
+    expect(screen.getByRole('button', { name: /Flight/ }))
+      .not.toHaveTextContent('Verified Nuitee fare');
+  });
+
+  it('downgrades a verified rail fare when direct App transport fails', async () => {
+    const selectionId = 'sel_0123456789abcdef0123456789abcdef';
+    assistantMessages = [verifiedFlightAppMessage(selectionId)];
+    client.requestApp.mockRejectedValueOnce(new Error('session unavailable'));
+    sessionStorage.setItem('wayfare:experience-prompt', 'Toronto to Lisbon');
+
+    render(<ImmersiveChatPage runtime={readyRuntime} />);
+    await waitFor(() => expect(appViewMock.mountedClient).toBeDefined());
+    expect(screen.getByRole('button', { name: /Flight/ }))
+      .toHaveTextContent('Verified Nuitee fare · CA$612.25');
+
+    await expect(appViewMock.mountedClient!.requestApp('tools/call', {
+      name: 'verify_flight_offer',
+      arguments: { selectionId },
+    })).rejects.toThrow('session unavailable');
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /Flight/ }))
+      .toHaveTextContent('Nuitee search fare · CA$607.45 · 19:45 · Verify price'));
+    expect(screen.getByRole('button', { name: /Flight/ }))
+      .not.toHaveTextContent('Verified Nuitee fare');
   });
 
   it('shows an accessible empty state without opening an Assistant session', async () => {

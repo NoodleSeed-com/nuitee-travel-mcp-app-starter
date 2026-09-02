@@ -6,6 +6,7 @@ import type {
   AssistantInteractionResponse,
   AssistantUIMessage,
 } from '@noodleseed/assistant/client';
+import { UserRound } from 'lucide-react';
 import { useRef, useState } from 'react';
 import {
   parseTravelInputSchema,
@@ -13,12 +14,16 @@ import {
 } from '../lib/input-request';
 import { TravelMarkdown } from './travel-markdown';
 import { TravelViewRegistry } from './travel-view-registry';
+import { WayfareMark } from './wayfare-mark';
+import type { SupplementalToolResult } from '../lib/trip-projection';
 
 type MessagePart = AssistantUIMessage['parts'][number];
 
 interface TravelMessageProps {
+  readonly appearance?: 'standard' | 'immersive';
   readonly client: AssistantClient;
   readonly message: AssistantUIMessage;
+  readonly onAppToolResult?: (result: SupplementalToolResult) => void;
 }
 
 const MAX_VISIBLE_ARGUMENTS = 6;
@@ -365,16 +370,24 @@ function messagePartKey(
 
 function TravelMessagePart({
   client,
+  onAppToolResult,
   part,
 }: Readonly<{
   client: AssistantClient;
+  onAppToolResult?: (result: SupplementalToolResult) => void;
   part: MessagePart;
 }>) {
   switch (part.type) {
     case 'text':
       return <TravelMarkdown>{part.text}</TravelMarkdown>;
     case 'data-view':
-      return <TravelViewRegistry client={client} view={part.data} />;
+      return (
+        <TravelViewRegistry
+          client={client}
+          onAppToolResult={onAppToolResult}
+          view={part.data}
+        />
+      );
     case 'data-confirmation':
       return <ConfirmationPart client={client} confirmation={part.data} />;
     case 'data-input-request':
@@ -387,21 +400,45 @@ function TravelMessagePart({
 }
 
 export function TravelMessage({
+  appearance = 'standard',
   client,
   message,
+  onAppToolResult,
 }: Readonly<TravelMessageProps>) {
+  const parts = message.parts.map((part, index) => (
+    <TravelMessagePart
+      client={client}
+      key={messagePartKey(message.id, part, index)}
+      onAppToolResult={onAppToolResult}
+      part={part}
+    />
+  ));
+
+  if (appearance === 'immersive') {
+    const assistant = message.role === 'assistant';
+    return (
+      <article
+        aria-label={assistant ? 'Assistant message' : 'Traveler message'}
+        className={`travel-message travel-message--${message.role} travel-message--immersive`}
+      >
+        <span
+          aria-label={assistant ? 'Wayfare assistant' : 'Traveler'}
+          className="travel-message__avatar"
+          role="img"
+        >
+          {assistant ? <WayfareMark /> : <UserRound aria-hidden="true" />}
+        </span>
+        <div className="travel-message__body">{parts}</div>
+      </article>
+    );
+  }
+
   return (
     <article
       aria-label={message.role === 'user' ? 'Traveler message' : 'Assistant message'}
       className={`travel-message travel-message--${message.role}`}
     >
-      {message.parts.map((part, index) => (
-        <TravelMessagePart
-          client={client}
-          key={messagePartKey(message.id, part, index)}
-          part={part}
-        />
-      ))}
+      {parts}
     </article>
   );
 }

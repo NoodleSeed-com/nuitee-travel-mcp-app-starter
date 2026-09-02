@@ -2,6 +2,7 @@
 
 import { useNoodleAssistant } from '@noodleseed/assistant/react/client';
 import type { AssistantUIMessage } from '@noodleseed/assistant/client';
+import { PlaneTakeoff } from 'lucide-react';
 import {
   useEffect,
   useMemo,
@@ -16,7 +17,11 @@ import {
   toTravelPageContext,
   type TravelDefaults,
 } from '../lib/travel-defaults';
-import { projectTrip, type TripProjection } from '../lib/trip-projection';
+import {
+  projectTrip,
+  type SupplementalToolResult,
+  type TripProjection,
+} from '../lib/trip-projection';
 import {
   progressForEvent,
   type ToolActivity,
@@ -26,7 +31,9 @@ import { TravelMessage } from './travel-message';
 import { TripBrief } from './trip-brief';
 import {
   ImmersiveConversationSkeleton,
+  ImmersiveTripContext,
   ImmersiveTripRail,
+  type TripSurface,
 } from './experience/immersive-trip-rail';
 
 interface TravelConversationProps {
@@ -146,6 +153,16 @@ function currentTurnHasToolError(messages: readonly AssistantUIMessage[]) {
   return false;
 }
 
+function transcriptResultCount(messages: readonly AssistantUIMessage[]) {
+  let count = 0;
+  for (const message of messages) {
+    for (const part of message.parts) {
+      if (part.type === 'data-tool-result') count += 1;
+    }
+  }
+  return count;
+}
+
 export function TravelConversation({
   appearance = 'standard',
   className,
@@ -174,6 +191,7 @@ export function TravelConversation({
   const promptRequestIdRef = useRef<number | null>(null);
   const lastPromptRef = useRef(initialPrompt);
   const activeActivitiesRef = useRef(new Map<string, ToolActivity>());
+  const conversationRef = useRef<HTMLElement>(null);
   const transcriptContentRef = useRef<HTMLOListElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const followLatestRef = useRef(true);
@@ -182,6 +200,9 @@ export function TravelConversation({
     'pending' | 'sending' | 'failed' | 'sent'
   >(() => durableInitialPrompt ? 'pending' : 'sent');
   const [stopRequested, setStopRequested] = useState(false);
+  const [supplementalResults, setSupplementalResults] = useState<
+    readonly SupplementalToolResult[]
+  >([]);
   const stopRequestedRef = useRef(false);
   const busy = status === 'submitted' || status === 'streaming';
   const terminal = status === 'error' || Boolean(error);
@@ -211,26 +232,37 @@ export function TravelConversation({
       };
     }
 
+    let active = true;
     if (
-      status !== 'ready'
-      || initialPromptState !== 'pending'
-      || initialPromptSendingRef.current
-      || initialPromptAcceptedRef.current
-    ) return;
-
-    initialPromptSendingRef.current = true;
-    setInitialPromptState('sending');
-    lastPromptRef.current = initialPrompt;
-    followLatestRef.current = true;
-    void client.sendMessage(initialPrompt).then(() => {
-      initialPromptAcceptedRef.current = true;
-      initialPromptSendingRef.current = false;
-      setInitialPromptState('sent');
-      onInitialPromptAcceptedRef.current?.();
-    }).catch(() => {
-      initialPromptSendingRef.current = false;
-      setInitialPromptState('failed');
-    });
+      status === 'ready'
+      && initialPromptState === 'pending'
+      && !initialPromptSendingRef.current
+      && !initialPromptAcceptedRef.current
+    ) {
+      queueMicrotask(() => {
+        if (
+          !active
+          || initialPromptSendingRef.current
+          || initialPromptAcceptedRef.current
+        ) return;
+        initialPromptSendingRef.current = true;
+        setInitialPromptState('sending');
+        lastPromptRef.current = initialPrompt;
+        followLatestRef.current = true;
+        void client.sendMessage(initialPrompt).then(() => {
+          initialPromptAcceptedRef.current = true;
+          initialPromptSendingRef.current = false;
+          setInitialPromptState('sent');
+          onInitialPromptAcceptedRef.current?.();
+        }).catch(() => {
+          initialPromptSendingRef.current = false;
+          setInitialPromptState('failed');
+        });
+      });
+    }
+    return () => {
+      active = false;
+    };
   }, [client, durableInitialPrompt, initialPrompt, initialPromptState, status]);
 
   useEffect(() => {
@@ -281,6 +313,21 @@ export function TravelConversation({
     activeActivities.clear();
     setActivity(null);
     const unsubscribe = client.subscribe((event) => {
+      if (event.event === 'session_reset') {
+        setSupplementalResults([]);
+      }
+      if (event.event === 'tool_started') {
+        if (event.data.tool === 'search_flights') {
+          setSupplementalResults((current) => current.filter(({ tool }) => (
+            tool !== 'select_flight_offer' && tool !== 'verify_flight_offer'
+          )));
+        }
+        if (event.data.tool === 'search_hotels') {
+          setSupplementalResults((current) => current.filter(({ tool }) => (
+            tool !== 'select_hotel'
+          )));
+        }
+      }
       if (terminalRef.current || stopRequestedRef.current) {
         activeActivities.clear();
         return;
@@ -317,13 +364,18 @@ export function TravelConversation({
   const projection = useMemo(() => projectTrip(
     messages,
     terminal ? undefined : activity?.phase,
-  ), [activity?.phase, messages, terminal]);
+    supplementalResults,
+  ), [activity?.phase, messages, supplementalResults, terminal]);
   const visibleMessages = useMemo(
     () => visibleConversationMessages(messages),
     [messages],
   );
   const hasToolError = useMemo(
     () => currentTurnHasToolError(messages),
+    [messages],
+  );
+  const completedTranscriptResults = useMemo(
+    () => transcriptResultCount(messages),
     [messages],
   );
   const copy = conversationCopy(projection);
@@ -347,10 +399,38 @@ export function TravelConversation({
     client.abort();
   }
 
+  function rememberAppToolResult(result: SupplementalToolResult) {
+    setSupplementalResults((current) => {
+      const replaces = result.tool === 'select_flight_offer'
+        ? new Set(['select_flight_offer', 'verify_flight_offer'])
+        : new Set([result.tool]);
+      return [
+        ...current.filter(({ tool }) => !replaces.has(tool)),
+        { ...result, afterTranscriptResultCount: completedTranscriptResults },
+      ];
+    });
+  }
+
   function retryInitialPrompt() {
     if (initialPromptSendingRef.current) return;
     if (status === 'error') client.resetSession();
     setInitialPromptState('pending');
+  }
+
+  function revealSurface(surface: TripSurface) {
+    const matches = conversationRef.current?.querySelectorAll<HTMLElement>(
+      `.travel-app-surface[data-tool="${surface}"]`,
+    );
+    const node = matches?.item(matches.length - 1);
+    if (!node) return false;
+    const reduceMotion = typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    node.scrollIntoView({
+      behavior: reduceMotion ? 'auto' : 'smooth',
+      block: 'center',
+    });
+    node.focus({ preventScroll: true });
+    return true;
   }
 
   const initialPromptProgress = durableInitialPrompt
@@ -380,18 +460,35 @@ export function TravelConversation({
         className ?? '',
       ].filter(Boolean).join(' ')}
       data-scroll-owner="page"
+      ref={conversationRef}
     >
-      <header className="travel-conversation__header">
-        <p className="assistant-identity">
-          {siteConfig.brand.assistantName}
-        </p>
-        <h1>{copy.title}</h1>
-        {appearance === 'immersive' && onNewTrip ? (
-          <button onClick={onNewTrip} type="button">Start a new trip</button>
-        ) : null}
-      </header>
+      {appearance === 'immersive' ? (
+        <header className="travel-conversation__header travel-conversation__header--immersive">
+          <span className="travel-conversation__header-icon" aria-hidden="true">
+            <PlaneTakeoff />
+          </span>
+          <div>
+            <p className="assistant-identity">{siteConfig.brand.assistantName}</p>
+            <h1>{copy.title}</h1>
+          </div>
+          {onNewTrip ? (
+            <button onClick={onNewTrip} type="button">Start a new trip</button>
+          ) : null}
+        </header>
+      ) : (
+        <header className="travel-conversation__header">
+          <p className="assistant-identity">{siteConfig.brand.assistantName}</p>
+          <h1>{copy.title}</h1>
+        </header>
+      )}
       <div className="travel-conversation__context">
-        <TripBrief projection={projection} />
+        {appearance === 'immersive' ? (
+          <ImmersiveTripContext
+            busy={busy}
+            onPrompt={sendFollowUp}
+            projection={projection}
+          />
+        ) : <TripBrief projection={projection} />}
       </div>
       <div
         className="travel-transcript"
@@ -404,7 +501,12 @@ export function TravelConversation({
         >
           {visibleMessages.map((message) => (
             <li key={message.id}>
-              <TravelMessage client={client} message={message} />
+              <TravelMessage
+                appearance={appearance}
+                client={client}
+                message={message}
+                onAppToolResult={rememberAppToolResult}
+              />
             </li>
           ))}
         </ol>
@@ -415,6 +517,7 @@ export function TravelConversation({
         <ImmersiveTripRail
           busy={busy}
           onPrompt={sendFollowUp}
+          onReveal={revealSurface}
           projection={projection}
         />
       ) : null}

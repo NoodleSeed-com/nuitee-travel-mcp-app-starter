@@ -6,6 +6,7 @@ import {
   BedDouble,
   Home,
   Menu,
+  MessageCircleMore,
   PlaneTakeoff,
   ShieldCheck,
 } from 'lucide-react';
@@ -134,6 +135,16 @@ export function ImmersiveChatPage({
           type="button"
         >
           <Menu aria-hidden="true" />
+        </button>
+        <button
+          aria-label="Focus travel conversation"
+          className={styles.chatShortcut}
+          onClick={() => document.querySelector<HTMLTextAreaElement>(
+            'textarea[aria-label="Ask the travel assistant"]',
+          )?.focus()}
+          type="button"
+        >
+          <MessageCircleMore aria-hidden="true" />
         </button>
       </header>
 

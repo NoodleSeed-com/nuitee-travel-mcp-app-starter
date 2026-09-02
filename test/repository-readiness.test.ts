@@ -613,9 +613,13 @@ describe('public repository contracts', () => {
     ]);
 
     expect(conversation).toContain('aria-label="Travel conversation"');
-    expect(message).toContain('<TravelViewRegistry client={client} view={part.data} />');
+    expect(message).toContain('onAppToolResult={onAppToolResult}');
     expect(registry).toContain('isInlineTravelView(view)');
-    expect(registry).toContain('<NoodleAppView client={client} theme="light" view={view} />');
+    expect(registry).toContain('canProjectAppTool(view.tool, appTool)');
+    expect(registry).toContain("method === 'tools/call'");
+    expect(registry).toContain("envelope?.isError === true && appTool === 'verify_flight_offer'");
+    expect(registry).toContain('result: { status: \'error\' }');
+    expect(registry).toContain('<NoodleAppView client={bridgedClient} theme="light" view={view} />');
     expect(policy).toContain("search_flights: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget'");
     expect(policy).toContain("open_travel_starter: 'ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget'");
     expect(architecture).toContain('Every distinct view ID is a distinct chronological invocation');

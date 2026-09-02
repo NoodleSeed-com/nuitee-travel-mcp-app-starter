@@ -30,6 +30,23 @@ const readyRuntime = {
   serviceUrl: 'https://assistant.example.com',
 };
 
+const selectedFareId = 'sel_0123456789abcdef0123456789abcdef';
+
+function selectedFareOption(
+  origin: string,
+  destination: string,
+  departureTime: string,
+  currency = 'USD',
+) {
+  return {
+    selectionId: selectedFareId,
+    route: { origin, destination },
+    carrier: { name: 'Wayfare Test Air', code: 'WT' },
+    departureTime,
+    price: { total: 607.45, currency },
+  };
+}
+
 function createClient() {
   const eventListeners = new Set<(event: AssistantClientEvent) => void>();
   return {
@@ -366,11 +383,38 @@ describe('guest travel conversation lifecycle', () => {
           {
             type: 'data-tool-result',
             data: {
+              id: 'call-search-context',
+              tool: 'search_flights',
+              result: {
+                status: 'success',
+                searchContext: {
+                  origin: 'ISB',
+                  destination: 'FCO',
+                  departureDate: '2026-08-31',
+                  returnDate: '2026-09-07',
+                  adults: 2,
+                  children: 0,
+                  infants: 0,
+                  cabinClass: 'ECONOMY',
+                  currency: 'USD',
+                  country: 'US',
+                },
+                itineraries: [selectedFareOption(
+                  'ISB',
+                  'FCO',
+                  '2026-08-31T09:00:00+05:00',
+                )],
+              },
+            },
+          },
+          {
+            type: 'data-tool-result',
+            data: {
               id: 'call-select-context',
               tool: 'select_flight_offer',
               result: {
                 status: 'selected',
-                selectionId: 'sel_0123456789abcdef0123456789abcdef',
+                selectionId: selectedFareId,
               },
             },
           },
@@ -418,6 +462,11 @@ describe('guest travel conversation lifecycle', () => {
                   infants: 0,
                   cabinClass: 'ECONOMY',
                 },
+                itineraries: [selectedFareOption(
+                  'ISB',
+                  'FCO',
+                  '2026-08-31T09:00:00+05:00',
+                )],
               },
             },
           },
@@ -428,7 +477,7 @@ describe('guest travel conversation lifecycle', () => {
               tool: 'select_flight_offer',
               result: {
                 status: 'selected',
-                selectionId: 'sel_0123456789abcdef0123456789abcdef',
+                selectionId: selectedFareId,
               },
             },
           },
@@ -1292,6 +1341,11 @@ describe('guest travel conversation lifecycle', () => {
                     children: 0,
                     infants: 0,
                   },
+                  itineraries: [selectedFareOption(
+                    'JFK',
+                    'LIS',
+                    '2026-10-12T19:15:00-04:00',
+                  )],
                 },
               },
             },
@@ -1302,7 +1356,7 @@ describe('guest travel conversation lifecycle', () => {
                 tool: 'select_flight_offer',
                 result: {
                   status: 'selected',
-                  selectionId: 'sel_0123456789abcdef0123456789abcdef',
+                  selectionId: selectedFareId,
                 },
               },
             },
