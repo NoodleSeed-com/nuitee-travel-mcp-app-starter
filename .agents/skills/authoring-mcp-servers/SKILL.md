@@ -3,7 +3,7 @@ name: authoring-mcp-servers
 description: "Use when creating or extending a headless Noodle Seed MCP server, tool, resource, prompt, or typed model-facing capability."
 ---
 
-<!-- noodle-skill version:0.88.0 hash:11523cb33b9473c0 -->
+<!-- noodle-skill version:0.91.0 hash:11523cb33b9473c0 -->
 
 # authoring-mcp-servers
 

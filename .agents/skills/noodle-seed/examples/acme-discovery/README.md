@@ -35,9 +35,10 @@ access: [
 ```
 
 There is no second tool set and no second app — one `server.ts`, projected onto its front doors.
-The flagship selects `model: noodleManaged()`, so an enrolled hosted deployment needs no customer model
-endpoint, name, or key and its artifact remains provider-neutral. Sponsored beta enrollment is exact to the
-org/app/environment and fails closed outside that cohort; `openAICompatible(...)` remains the BYO alternative.
+The flagship selects `model: noodleManaged()`, so a billing-attributed hosted deployment needs no customer
+model endpoint, name, or key and its artifact remains provider-neutral. The sponsored beta is available by
+default with pooled billing-account and platform-wide daily limits; `openAICompatible(...)` remains the BYO
+alternative.
 The surface `instructions` add only the website-specific voice and goal; shared product truth stays in
 `server.instructions`. This public guidance is injected into that surface's assistant turns, never MCP
 `initialize` or another assistant surface.
@@ -152,5 +153,6 @@ noodle open
 ```
 
 This example has no connector or model secrets and does not include tokens, caller-key mechanisms, or
-`.env.noodle` values. Hosted `noodleManaged()` inference requires Noodle to enroll the exact target before
-serving; local validation and tool calls do not. All destinations, prices, and URLs are fictional.
+`.env.noodle` values. Hosted `noodleManaged()` inference is available by default to billing-attributed
+deployments and remains subject to sponsored daily limits; local validation and tool calls do not use the
+hosted model. All destinations, prices, and URLs are fictional.

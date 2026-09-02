@@ -7,20 +7,20 @@
     "skillSlug": "nuitee-travel-mcp-app-starter"
   },
   "packageSchemaVersion": "1",
-  "rendererVersion": "0.88.0",
-  "sourceManifestSha256": "40a1587ebebef3fe1b437dd078331c1f937e2a0945caeb27e92bd51b3ba2c73c",
-  "mcpSurfaceSha256": "b277f0619b3d97353af80b57e955e00608e34d1b0f11463d31b5a6ba27697a3a",
-  "bundleSha256": "6b80108afb4cb973a0a30220e5eb6e6d1080158371155d0d2514efc13f79fcbf",
+  "rendererVersion": "0.91.0",
+  "sourceManifestSha256": "3238e45ab1b892abe6e846236b61ed9dd3278293067e813b2f9c1579f4a23db9",
+  "mcpSurfaceSha256": "62377dfd1f0aac322d209e8aadda68eb1d0d177021010cdd31c69df6390d9dc0",
+  "bundleSha256": "c3bbd3e7bdf672d78f6da28d6b30bd27d31a5d98be369932c5cbe658a04c2240",
   "files": [
     {
       "path": ".claude/skills/nuitee-travel-mcp-app-starter/SKILL.md",
-      "sha256": "34cbc20be36fd3fec6b913f19a434f41f773f95e1e3d5d72162e45c08261160d",
-      "byteLength": 4753
+      "sha256": "ac0efcbb23082def14be30908920dfe9fd19e4212df0280610a06345c1e70e01",
+      "byteLength": 5175
     },
     {
       "path": ".claude/skills/nuitee-travel-mcp-app-starter/references/mcp-surface.md",
-      "sha256": "c32b62b2526c1cb86d707a8519c069555f533fe6b067e5e733f9fb425c99290f",
-      "byteLength": 1779
+      "sha256": "34278e57602508b70aa209bfbbf88117ac89840cdbba717e2ff89cd44c26803f",
+      "byteLength": 1760
     }
   ]
 }

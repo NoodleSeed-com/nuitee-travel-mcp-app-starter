@@ -3,7 +3,7 @@ name: building-mcp-apps
 description: "Use when a Noodle Seed MCP App, widget, interactive card, visual interaction, or host-visible UI is the primary requested outcome."
 ---
 
-<!-- noodle-skill version:0.88.0 hash:9fd67d4d24328e15 -->
+<!-- noodle-skill version:0.91.0 hash:9fd67d4d24328e15 -->
 
 # building-mcp-apps
 
