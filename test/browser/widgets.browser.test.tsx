@@ -287,7 +287,7 @@ describe('real-browser widget readiness', () => {
   it('bounds fare chips and swaps to an accessible fare-details face without changing card height', async () => {
     await page.viewport(720, 1_200);
     mount(<InteractiveResults />);
-    await expect.element(page.getByText('Lowest fare')).toBeVisible();
+    await expect.element(page.getByText('Best value')).toBeVisible();
 
     const card = document.querySelector<HTMLElement>('.cc-fare-card')!;
     const chip = document.querySelector<HTMLElement>('.cc-fare-highlight-badge')!;
@@ -301,11 +301,12 @@ describe('real-browser widget readiness', () => {
     await expect.element(toggle).toHaveAttribute('aria-expanded', 'false');
     const front = document.querySelector<HTMLElement>('.cc-fare-face-front')!;
     const back = document.querySelector<HTMLElement>('.cc-fare-face-back')!;
-    const frontContentLeft = document.querySelector<HTMLElement>('.cc-fare-header')!.getBoundingClientRect().left;
-    const summary = document.querySelector<HTMLElement>('.cc-fare-front-summary')!;
+    const frontContentLeft = document.querySelector<HTMLElement>('.cc-compact-fare-main')!.getBoundingClientRect().left;
+    const frontScroll = document.querySelector<HTMLElement>('.cc-fare-front-scroll')!;
     const footer = document.querySelector<HTMLElement>('.cc-fare-footer')!;
     const initialHeight = card.getBoundingClientRect().height;
-    expect(footer.getBoundingClientRect().top - summary.getBoundingClientRect().bottom).toBeLessThanOrEqual(120);
+    expect(getComputedStyle(frontScroll).overflowY).toBe('hidden');
+    expect(footer.getBoundingClientRect().bottom).toBeLessThanOrEqual(card.getBoundingClientRect().bottom);
     expect(front.getAttribute('aria-hidden')).toBe('false');
     expect(back.getAttribute('aria-hidden')).toBe('true');
     expect(getComputedStyle(back).transitionProperty).toContain('opacity');
@@ -365,7 +366,8 @@ describe('real-browser widget readiness', () => {
       />,
     );
 
-    await expect.element(page.getByText('Return')).toBeVisible();
+    await expect.element(page.getByRole('region', { name: 'Flight option 1 of 1' })).toBeVisible();
+    expect(document.querySelector('section[aria-label="Return QZY to QZX"]')).not.toBeNull();
     const card = document.querySelector<HTMLElement>('.cc-fare-card')!;
     const footer = document.querySelector<HTMLElement>('.cc-fare-footer')!;
     const cardBounds = card.getBoundingClientRect();
@@ -376,7 +378,7 @@ describe('real-browser widget readiness', () => {
     expect(hasHorizontalOverflow()).toBe(false);
   });
 
-  it('keeps a max-content multi-stop itinerary scrollable above an always-reachable fare action', async () => {
+  it('keeps a max-content multi-stop itinerary compact with overflow details on its back face', async () => {
     await page.viewport(720, 1_200);
     const crowdedItinerary: Itinerary = {
       ...itinerary,
@@ -452,20 +454,23 @@ describe('real-browser widget readiness', () => {
       />,
     );
 
-    await expect.element(page.getByText('North Cedar International Test Airport (QZA)').first()).toBeVisible();
+    await expect.element(page.getByRole('button', { name: 'Flight and fare details' })).toBeVisible();
     const card = document.querySelector<HTMLElement>('.cc-fare-card')!;
-    const scrollRegion = document.querySelector<HTMLElement>('.cc-fare-front-scroll')!;
+    const front = document.querySelector<HTMLElement>('.cc-fare-front-scroll')!;
     const footer = document.querySelector<HTMLElement>('.cc-fare-footer')!;
     const select = page.getByRole('button', { name: /Select fare from QZX to QZY/ });
     const cardBounds = card.getBoundingClientRect();
     const footerBounds = footer.getBoundingClientRect();
 
-    expect(scrollRegion.scrollHeight).toBeGreaterThan(scrollRegion.clientHeight);
-    expect(getComputedStyle(scrollRegion).overflowY).toBe('auto');
+    expect(getComputedStyle(front).overflowY).toBe('hidden');
     expect(footerBounds.top).toBeGreaterThanOrEqual(cardBounds.top);
     expect(footerBounds.bottom).toBeLessThanOrEqual(cardBounds.bottom);
     await expect.element(select).toBeVisible();
     expect((await select.element()).getBoundingClientRect().bottom).toBeLessThanOrEqual(cardBounds.bottom);
+    await page.getByRole('button', { name: 'Flight and fare details' }).click();
+    const back = document.querySelector<HTMLElement>('.cc-fare-face-back')!;
+    expect(back.textContent).toContain('North Cedar International Test Airport');
+    expect(getComputedStyle(back).overflowY).toBe('auto');
     expect(hasHorizontalOverflow()).toBe(false);
   });
 

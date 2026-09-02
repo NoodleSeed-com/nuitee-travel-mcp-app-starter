@@ -24,9 +24,7 @@ import type { Itinerary, SearchContext, SearchOutput, Verification } from '../fl
 import type { GatewayError } from '../flight-runtime.js';
 import {
   ArrowLeftIcon,
-  CarryOnIcon,
   CheckIcon,
-  CheckedBagIcon,
   PlaneIcon,
   TagIcon,
 } from './icons.js';
@@ -349,45 +347,29 @@ function FareCardSkeleton({ preview = false }: { readonly preview?: boolean }) {
   return (
     <div className={`cc-carousel-slide ${preview ? 'cc-carousel-peek-slide' : ''}`}>
       <article className="cc-fare-card cc-skeleton-fare">
-        <div className="cc-skeleton-row">
-          <span className="cc-skeleton-carrier-group">
-            <span className="cc-skeleton-block cc-shimmer cc-skeleton-logo" />
-            <span className="cc-skeleton-block cc-shimmer cc-skeleton-carrier" />
-          </span>
-          <span className="cc-skeleton-block cc-shimmer cc-skeleton-badge" />
-        </div>
-        <div className="cc-skeleton-route">
-          <span className="cc-skeleton-block cc-shimmer cc-skeleton-code" />
-          <span className="cc-skeleton-line" />
-          <span className="cc-skeleton-block cc-shimmer cc-skeleton-code" />
-        </div>
-        <div className="cc-leg-list">
+        <div className="cc-compact-fare-main">
+          <div className="cc-skeleton-carrier-stack">
+            <span className="cc-skeleton-carrier-group">
+              <span className="cc-skeleton-block cc-shimmer cc-skeleton-logo" />
+              <span className="cc-skeleton-block cc-shimmer cc-skeleton-carrier" />
+            </span>
+            <span className="cc-skeleton-block cc-shimmer cc-skeleton-badge" />
+          </div>
           <section className="cc-leg cc-skeleton-leg">
-            <div className="cc-skeleton-row">
-              <span className="cc-skeleton-block cc-shimmer cc-skeleton-leg-heading" />
-              <span className="cc-skeleton-block cc-shimmer cc-skeleton-stop" />
-            </div>
             <div className="cc-skeleton-times">
               <span className="cc-skeleton-block cc-shimmer" />
               <span className="cc-skeleton-block cc-shimmer" />
               <span className="cc-skeleton-block cc-shimmer" />
             </div>
           </section>
+          <div className="cc-skeleton-price-stack">
+            <span className="cc-skeleton-block cc-shimmer cc-skeleton-price" />
+            <span className="cc-skeleton-block cc-shimmer cc-skeleton-action" />
+          </div>
         </div>
-        <div className="cc-skeleton-chips">
-          {[0, 1, 2].map((index) => (
-            <span className="cc-skeleton-block cc-shimmer cc-skeleton-chip" key={index} />
-          ))}
-        </div>
-        <span className="cc-skeleton-block cc-shimmer cc-skeleton-details" />
-        <div className="cc-skeleton-summary">
-          {[0, 1, 2].map((index) => (
-            <span className="cc-skeleton-block cc-shimmer" key={index} />
-          ))}
-        </div>
-        <div className="cc-skeleton-row cc-skeleton-footer">
-          <span className="cc-skeleton-block cc-shimmer cc-skeleton-price" />
-          <span className="cc-skeleton-block cc-shimmer cc-skeleton-action" />
+        <div className="cc-skeleton-row cc-compact-fare-footer">
+          <span className="cc-skeleton-block cc-shimmer cc-skeleton-details" />
+          <span className="cc-skeleton-block cc-shimmer cc-skeleton-badge" />
         </div>
       </article>
     </div>
@@ -493,24 +475,6 @@ function RouteTimeline({ itinerary }: { readonly itinerary: Itinerary }) {
   );
 }
 
-function FareFrontSummary({ itinerary }: { readonly itinerary: Itinerary }) {
-  const items = [
-    itinerary.terms.refundable === undefined
-      ? undefined
-      : itinerary.terms.refundable
-        ? `Refundable${itinerary.terms.hasRefundFee ? '; fee may apply' : ''}`
-        : 'Non-refundable',
-    itinerary.terms.changeable === undefined
-      ? undefined
-      : itinerary.terms.changeable
-        ? `Changes allowed${itinerary.terms.hasChangeFee ? '; fee may apply' : ''}`
-        : 'Changes not allowed',
-    itinerary.expiresAt ? `Offer expires ${instantTime(itinerary.expiresAt)}` : 'Fare conditions are confirmed during verification',
-  ].filter((item): item is string => Boolean(item));
-
-  return <ul className="cc-fare-front-summary">{items.map((item) => <li key={item}>{item}</li>)}</ul>;
-}
-
 function FareDetailContent({ itinerary, compact = false }: { readonly itinerary: Itinerary; readonly compact?: boolean }) {
   return (
     <div className={`cc-fare-detail-content ${compact ? 'cc-fare-detail-content-compact' : ''}`}>
@@ -539,6 +503,9 @@ function FareDetailContent({ itinerary, compact = false }: { readonly itinerary:
             <li key={`${segment.direction}-${index}-${segment.origin}-${segment.destination}`}>
               <strong>{segment.origin} → {segment.destination}</strong>
               <span>{segment.carrier.code}{segment.flightNumber ? ` ${segment.flightNumber}` : ''} · {duration(segment.durationMinutes)}</span>
+              {segment.originName || segment.destinationName ? (
+                <small>{segment.originName ?? segment.origin} → {segment.destinationName ?? segment.destination}</small>
+              ) : null}
               {segment.operatingCarrier ? <small>Operated by {segment.operatingCarrier.name} ({segment.operatingCarrier.code})</small> : null}
             </li>
           ))}
@@ -549,9 +516,17 @@ function FareDetailContent({ itinerary, compact = false }: { readonly itinerary:
   );
 }
 
-function FareCard({ itinerary, pending = false, selected, onSelect }: {
+function itineraryFlightLabel(itinerary: Itinerary) {
+  const flights = itinerary.segments
+    .map((segment) => `${segment.carrier.code}${segment.flightNumber ? ` ${segment.flightNumber}` : ''}`)
+    .filter((flight, index, all) => all.indexOf(flight) === index);
+  return flights.length > 0 ? flights.join(' · ') : itinerary.carrier.code;
+}
+
+function FareCard({ itinerary, pending = false, searchContext, selected, onSelect }: {
   readonly itinerary: Itinerary;
   readonly pending?: boolean;
+  readonly searchContext?: SearchContext;
   readonly selected: boolean;
   readonly onSelect?: (selectionId: string) => void;
 }) {
@@ -583,54 +558,48 @@ function FareCard({ itinerary, pending = false, selected, onSelect }: {
           className={`cc-fare-face cc-fare-face-front ${detailsVisible ? 'cc-fare-face-is-hidden' : ''}`}
           inert={detailsVisible ? true : undefined}
         >
-          <div className="cc-fare-front-scroll">
-            <header className="cc-fare-header">
-              <div className="cc-fare-heading">
+          <div className="cc-fare-front-scroll cc-compact-fare-front">
+            <div className="cc-compact-fare-main">
+              <header className="cc-fare-header cc-compact-fare-carrier">
                 <CarrierIdentity carrier={itinerary.carrier} />
-              </div>
-              <div className="cc-fare-badges">
                 {selected ? <StatusBadge className="cc-fare-selected-badge" tone="success"><CheckIcon />Selected</StatusBadge> : null}
-                {itinerary.isCheapest ? <StatusBadge className="cc-fare-highlight-badge" tone="info">Lowest fare</StatusBadge> : null}
+              </header>
+              <RouteTimeline itinerary={itinerary} />
+              <div className="cc-compact-fare-price">
+                <strong>{money(itinerary.price.total, itinerary.price.currency)}</strong>
+                <span>Total for {searchContext ? travellerLabel(searchContext) : 'this trip'}</span>
+                {!selected ? (
+                  <Action
+                    variant="primary"
+                    aria-label={`Select fare from ${itinerary.route.origin} to ${itinerary.route.destination} with ${itinerary.carrier.name}`}
+                    disabled={pending}
+                    onClick={() => onSelect?.(itinerary.selectionId)}
+                    pending={pending}
+                    pendingLabel="Adding…"
+                  >
+                    Select fare
+                  </Action>
+                ) : null}
               </div>
-            </header>
-            <RouteTimeline itinerary={itinerary} />
-            <div className="cc-fare-meta">
-              <span><CarryOnIcon />{itinerary.baggage.carryOn ? 'Carry-on included' : 'Carry-on not confirmed'}</span>
-              <span><CheckedBagIcon />{itinerary.baggage.checked ? 'Checked bag included' : 'Checked bag not confirmed'}</span>
-              {itinerary.fare.family ? <span><TagIcon />{itinerary.fare.family}</span> : null}
             </div>
-            <div className="cc-details">
-              <button
-                aria-controls={backFaceId}
-                aria-expanded={detailsVisible}
-                className="cc-details-toggle"
-                onClick={showDetails}
-                ref={detailsButtonRef}
-                type="button"
-              >
-                <TagIcon />Flight and fare details<span aria-hidden="true" className="cc-details-chevron" />
-              </button>
-            </div>
-            <FareFrontSummary itinerary={itinerary} />
+            <footer className="cc-fare-footer cc-compact-fare-footer">
+              <span>{itinerary.carrier.name} · {itineraryFlightLabel(itinerary)}</span>
+              <div className="cc-compact-fare-actions">
+                {itinerary.isCheapest ? <StatusBadge className="cc-fare-highlight-badge" tone="success">Best value</StatusBadge> : null}
+                <button
+                  aria-controls={backFaceId}
+                  aria-expanded={detailsVisible}
+                  aria-label="Flight and fare details"
+                  className="cc-details-toggle"
+                  onClick={showDetails}
+                  ref={detailsButtonRef}
+                  type="button"
+                >
+                  <span aria-hidden="true">Details</span><span aria-hidden="true" className="cc-details-chevron" />
+                </button>
+              </div>
+            </footer>
           </div>
-          <footer className="cc-fare-footer">
-            <div>
-              <span>Trip total</span>
-              <strong>{money(itinerary.price.total, itinerary.price.currency)}</strong>
-              <small>Search price · must be verified</small>
-            </div>
-            <Action
-              variant={selected ? 'secondary' : 'primary'}
-              aria-pressed={selected}
-              aria-label={`${selected ? 'Selected fare' : 'Select fare'} from ${itinerary.route.origin} to ${itinerary.route.destination} with ${itinerary.carrier.name}`}
-              disabled={pending}
-              onClick={() => onSelect?.(itinerary.selectionId)}
-              pending={pending}
-              pendingLabel="Adding…"
-            >
-              {selected ? 'Selected' : 'Select fare'}
-            </Action>
-          </footer>
         </div>
         <div
           aria-hidden={!detailsVisible}
@@ -656,9 +625,10 @@ function FareCard({ itinerary, pending = false, selected, onSelect }: {
   );
 }
 
-function FareCarousel({ itineraries, pendingSelectionId, selectedSelectionId, onSelect }: {
+function FareCarousel({ itineraries, pendingSelectionId, searchContext, selectedSelectionId, onSelect }: {
   readonly itineraries: readonly Itinerary[];
   readonly pendingSelectionId?: string;
+  readonly searchContext?: SearchContext;
   readonly selectedSelectionId?: string;
   readonly onSelect?: (selectionId: string) => void;
 }) {
@@ -732,6 +702,7 @@ function FareCarousel({ itineraries, pendingSelectionId, selectedSelectionId, on
                   <FareCard
                     itinerary={previous}
                     onSelect={onSelect}
+                    searchContext={searchContext}
                     selected={false}
                   />
                 </div>
@@ -755,6 +726,7 @@ function FareCarousel({ itineraries, pendingSelectionId, selectedSelectionId, on
                 itinerary={active}
                 onSelect={onSelect}
                 pending={pendingSelectionId === active.selectionId}
+                searchContext={searchContext}
                 selected={selectedSelectionId === active.selectionId}
               />
             </div>
@@ -764,6 +736,7 @@ function FareCarousel({ itineraries, pendingSelectionId, selectedSelectionId, on
                   <FareCard
                     itinerary={next}
                     onSelect={onSelect}
+                    searchContext={searchContext}
                     selected={false}
                   />
                 </div>
@@ -987,6 +960,7 @@ export function FlightResultsView({
               key={itinerary.selectionId}
               itinerary={itinerary}
               pending={pendingFareSelectionId === itinerary.selectionId}
+              searchContext={result.searchContext}
               selected={selectedSelectionId === itinerary.selectionId}
               onSelect={onSelect}
             />)}
@@ -996,6 +970,7 @@ export function FlightResultsView({
             itineraries={shown}
             onSelect={onSelect}
             pendingSelectionId={pendingFareSelectionId}
+            searchContext={result.searchContext}
             selectedSelectionId={selectedSelectionId}
           />
         )}

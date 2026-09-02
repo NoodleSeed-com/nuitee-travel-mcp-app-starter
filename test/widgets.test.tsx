@@ -218,7 +218,7 @@ describe('FlightResults', () => {
     expect(html).toContain('Current flight options');
     expect(html).toContain('Select fare');
     expect(html).not.toMatch(/Book|Continue to payment|fare held/i);
-    expect(html).toContain('Lowest fare');
+    expect(html).toContain('Best value');
 
     const withoutCheapest = renderToStaticMarkup(
       <FlightResultsView result={{ ...result, itineraries: [{ ...itinerary, isCheapest: false }] }} displayMode="inline" onVerify={vi.fn()} />,
@@ -321,7 +321,7 @@ describe('FlightResults', () => {
     expect(html).toContain('cc-carousel-peek-slide');
     expect(html).toContain('cc-fare-card cc-skeleton-fare');
     expect(html).toContain('cc-skeleton-leg');
-    expect((html.match(/cc-skeleton-chip"/g) ?? [])).toHaveLength(6);
+    expect((html.match(/cc-skeleton-price-stack"/g) ?? [])).toHaveLength(2);
     expect(html).toContain('cc-skeleton-details');
     expect(html).toContain('cc-shimmer');
     expect(html).not.toContain('cc-route-scan');
@@ -343,7 +343,7 @@ describe('FlightResults', () => {
     expect(html).toContain('cc-fare-face-stack');
     expect(html).toContain('cc-fare-face-front');
     expect(html).toContain('cc-fare-face-back');
-    expect(html).toContain('cc-fare-front-summary');
+    expect(html).toContain('cc-compact-fare-front');
     expect(html).toContain('cc-leg-route-origin');
     expect(html).toContain('cc-leg-route-destination');
     expect(html).toContain('cc-flight-segment-row');
@@ -752,8 +752,8 @@ describe('FlightResults', () => {
     expect(css).toMatch(/\.cc-fare-face\s*\{[^}]*grid-area:\s*1\s*\/\s*1/s);
     expect(css).toMatch(/\.cc-fare-face\s*\{[^}]*transition:/s);
     expect(css).toMatch(/\.cc-fare-card-details\s*\{[^}]*background:/s);
-    expect(css).toMatch(/\.cc-carousel-slide\s*>\s*\.cc-fare-card\s*\{[^}]*min-block-size:\s*var\(--cc-fare-card-size,\s*24rem\)/s);
-    expect(css).toMatch(/\.cc-fare-card-round-trip\s*\{[^}]*--cc-fare-card-size:\s*32rem/s);
+    expect(css).toMatch(/\.cc-carousel-slide\s*>\s*\.cc-fare-card\s*\{[^}]*min-block-size:\s*var\(--cc-fare-card-size,\s*15\.5rem\)/s);
+    expect(css).toMatch(/\.cc-fare-card-round-trip\s*\{[^}]*--cc-fare-card-size:\s*19rem/s);
     expect(css).toContain('var(--cc-carrier-accent, var(--cc-accent))');
     expect(css).toMatch(/\.cc-fare-back-header\s*\{[^}]*grid-template-columns:/s);
     expect(css).toMatch(/\.cc-fare-back-button\s*\{[^}]*border:\s*0/s);

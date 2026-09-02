@@ -300,9 +300,10 @@ test('projects a fare selected inside the embedded App into the immersive deskto
     window.sessionStorage.getItem('wayfare:experience-prompt')
   ))).toBeNull();
 
+  const transcript = conversation.getByRole('log', { name: 'Conversation transcript' }).locator('..');
   const [conversationBounds, transcriptBounds, tripBounds] = await Promise.all([
     conversation.boundingBox(),
-    conversation.getByRole('log', { name: 'Conversation transcript' }).locator('..').boundingBox(),
+    transcript.boundingBox(),
     trip.boundingBox(),
   ]);
   expect(conversationBounds?.width ?? 0).toBeGreaterThan(1_100);
@@ -311,6 +312,13 @@ test('projects a fare selected inside the embedded App into the immersive deskto
     .toBeLessThanOrEqual((tripBounds?.x ?? 0) + 1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth))
     .toBe(await page.evaluate(() => document.documentElement.clientWidth));
+  expect(await page.evaluate(() => document.documentElement.scrollHeight))
+    .toBe(await page.evaluate(() => document.documentElement.clientHeight));
+  expect(await transcript.evaluate((element) => getComputedStyle(element).overflowY))
+    .toBe('auto');
+  const tripTop = tripBounds?.y;
+  await transcript.evaluate((element) => { element.scrollTop = element.scrollHeight; });
+  await expect.poll(async () => (await trip.boundingBox())?.y).toBe(tripTop);
   await page.screenshot({
     animations: 'disabled',
     path: testInfo.outputPath('immersive-selected-flight-desktop.png'),

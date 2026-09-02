@@ -350,13 +350,23 @@
 .cc-scan-header > div span { color: var(--cc-muted); font-size: 0.82rem; }
 
 .cc-skeleton-fare {
-  block-size: 24rem;
-  min-block-size: 24rem;
+  block-size: var(--cc-fare-card-size, 15.5rem);
+  min-block-size: var(--cc-fare-card-size, 15.5rem);
   display: grid;
   gap: 6px;
-  align-content: start;
+  align-content: stretch;
   overflow: hidden;
 }
+
+.cc-skeleton-carrier-stack,
+.cc-skeleton-price-stack {
+  align-content: center;
+  display: grid;
+  gap: 10px;
+}
+
+.cc-skeleton-carrier-stack .cc-skeleton-carrier-group { width: 100%; }
+.cc-skeleton-price-stack { justify-items: end; }
 
 .cc-skeleton-block {
   display: block;
@@ -453,11 +463,19 @@
   width: 100%;
 }
 
+.cc-result-list > .cc-fare-card {
+  block-size: var(--cc-fare-card-size, 15.5rem);
+  min-block-size: var(--cc-fare-card-size, 15.5rem);
+}
+
 .cc-carousel {
   display: grid;
   min-width: 0;
   gap: 8px;
 }
+
+.cc-carousel-stage { order: 1; }
+.cc-carousel-controls { order: 2; }
 
 .cc-carousel-controls {
   display: flex;
@@ -533,12 +551,12 @@
 }
 
 .cc-carousel-slide > .cc-fare-card {
-  block-size: var(--cc-fare-card-size, 24rem);
+  block-size: var(--cc-fare-card-size, 15.5rem);
   flex: 1;
-  min-block-size: var(--cc-fare-card-size, 24rem);
+  min-block-size: var(--cc-fare-card-size, 15.5rem);
 }
 
-.cc-fare-card-round-trip { --cc-fare-card-size: 32rem; }
+.cc-fare-card-round-trip { --cc-fare-card-size: 19rem; }
 
 .cc-carousel-peek-shell {
   position: relative;
@@ -597,7 +615,7 @@
 
 .cc-fare-card {
   width: 100%;
-  padding: clamp(14px, 3vw, 16px);
+  padding: clamp(14px, 2vw, 18px);
   border: 1px solid var(--cc-border);
   border-radius: 16px;
   background: var(--cc-surface);
@@ -652,21 +670,99 @@
   flex: 1 1 auto;
   min-block-size: 0;
   overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow-y: hidden;
 }
 
-.cc-fare-face-front .cc-fare-footer {
+.cc-compact-fare-front {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+.cc-compact-fare-main {
+  align-items: stretch;
+  display: grid;
+  flex: 1 1 auto;
+  gap: clamp(12px, 2vw, 22px);
+  grid-template-columns: minmax(7.5rem, 0.8fr) minmax(17rem, 2fr) minmax(7.5rem, 0.8fr);
+  min-height: 0;
+}
+
+.cc-fare-header.cc-compact-fare-carrier {
+  align-content: center;
+  display: grid;
+  flex-wrap: nowrap;
+  gap: 10px;
+  justify-items: start;
+}
+
+.cc-compact-fare-carrier .cc-carrier-identity { align-items: flex-start; }
+.cc-compact-fare-carrier .cc-carrier-copy strong { font-size: 0.95rem; }
+.cc-compact-fare-carrier .cc-carrier-mark {
+  border: 0;
+  background: transparent;
+}
+
+.cc-compact-fare-front .cc-leg-list {
+  align-content: center;
+  gap: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.cc-compact-fare-front .cc-leg {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 10px 0;
+}
+
+.cc-compact-fare-front .cc-leg + .cc-leg { border-top: 1px solid var(--cc-border); }
+.cc-compact-fare-front .cc-leg-heading { display: none; }
+.cc-compact-fare-front .cc-flight-segment-row { margin-top: 0; }
+.cc-compact-fare-front .cc-layover-summary { display: none; }
+
+.cc-compact-fare-price {
+  align-content: center;
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  min-width: 0;
+  text-align: right;
+}
+
+.cc-compact-fare-price > strong {
+  color: var(--cc-accent);
+  font-size: clamp(1.2rem, 2.6vw, 1.55rem);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.cc-compact-fare-price > span { color: var(--cc-muted); font-size: 0.72rem; }
+.cc-compact-fare-price > button { margin-top: 6px; min-height: 44px !important; padding: 7px 10px !important; }
+
+.cc-fare-footer.cc-compact-fare-footer {
+  align-items: center;
+  border-top: 1px solid var(--cc-border);
+  display: flex;
   flex: 0 0 auto;
-  margin-top: 6px;
+  gap: 12px;
+  justify-content: space-between;
+  margin: 0;
+  min-width: 0;
+  padding-top: 10px;
 }
 
-.cc-fare-card .cc-leg-list { gap: 7px; margin-top: 10px; }
-.cc-fare-card .cc-leg { padding: 8px 10px; }
-.cc-fare-card .cc-fare-meta,
-.cc-fare-card .cc-details,
-.cc-fare-card .cc-fare-front-summary { margin-top: 8px; }
-.cc-fare-card .cc-fare-footer { margin-top: 6px; padding-top: 8px; }
+.cc-compact-fare-footer > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-compact-fare-actions { align-items: center; display: flex; flex: 0 0 auto; gap: 8px; }
+.cc-compact-fare-actions .cc-details-toggle { min-height: 32px; padding: 0 2px; }
 
 .cc-fare-face-back {
   position: relative;
@@ -1760,6 +1856,39 @@
 @media (max-width: 720px) {
   .cc-review-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cc-fare-detail-content-compact .cc-details-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cc-carousel-slide > .cc-fare-card,
+  .cc-result-list > .cc-fare-card {
+    --cc-fare-card-size: 25rem;
+  }
+  .cc-carousel-slide > .cc-fare-card-round-trip,
+  .cc-result-list > .cc-fare-card-round-trip {
+    --cc-fare-card-size: 32rem;
+  }
+  .cc-compact-fare-main {
+    align-content: start;
+    gap: 8px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cc-fare-header.cc-compact-fare-carrier {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+  }
+  .cc-compact-fare-front .cc-leg-list { align-content: start; }
+  .cc-compact-fare-front .cc-leg { padding: 7px 0; }
+  .cc-compact-fare-price {
+    align-items: center;
+    grid-template-columns: minmax(0, 1fr) auto;
+    justify-items: start;
+    text-align: left;
+  }
+  .cc-compact-fare-price > span { grid-column: 1; }
+  .cc-compact-fare-price > button {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    justify-self: end;
+    margin-top: 0;
+  }
   .cc-carousel-track > .cc-carousel-slide,
   .cc-carousel-track > .cc-carousel-peek-shell { flex-basis: 86%; }
   .cc-carousel-track-is-last { transform: translateX(calc(-72% - 12px)); }
@@ -1802,7 +1931,6 @@
   .cc-carousel-arrow-next { right: -2px; }
   .cc-fare-card .cc-fare-meta,
   .cc-fare-card .cc-fare-front-summary { display: none; }
-  .cc-fare-card-round-trip { --cc-fare-card-size: 36rem; }
   .cc-fare-back-header { grid-template-columns: 1fr; }
   .cc-fare-back-button { justify-self: start; }
   .cc-fare-detail-content-compact .cc-segments { grid-template-columns: 1fr; }
