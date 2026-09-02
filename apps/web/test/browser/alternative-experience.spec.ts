@@ -30,10 +30,13 @@ test('renders the full-bleed Explore alternative without changing the current ho
   expect(dimensions.pageWidth).toBe(dimensions.clientWidth);
 
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Plan your whole trip' }))
+  await expect(page.getByRole('heading', {
+    name: 'Tell us the trip you have in mind',
+  }))
     .toBeVisible();
   await expect(page.getByRole('tablist', { name: 'Choose a planning view' }))
-    .toBeVisible();
+    .toHaveCount(0);
+  await expect(page.getByRole('form', { name: 'Plan a trip' })).toHaveCount(1);
 });
 
 test('keeps the alternative custom chat empty state useful and bounded', async ({ page }) => {
