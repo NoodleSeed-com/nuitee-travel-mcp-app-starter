@@ -2,7 +2,7 @@
 
 ## Status
 
-Product direction approved by the user on 2026-09-02. Written specification awaiting user review.
+Product direction approved by the user on 2026-09-02. Written specification approved by the user on 2026-09-03.
 
 This design is a reuse-first refinement of the existing Wayfare experience. It supersedes earlier homepage entry-point decisions where they expose flights, stays, packages, insurance, private jets, cars, destinations, or editorial calls to action as separate ways to begin. It preserves the approved single inline conversation architecture in `2026-08-29-wayfare-inline-conversation-design.md`, the guest-first session model, official linked MCP App rendering, typed trip projection, and provider-owned transaction boundary.
 
