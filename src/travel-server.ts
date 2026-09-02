@@ -142,9 +142,11 @@ const travelAgentGuide = {
 
 const travelCompanionDemoAgentGuide = {
   description:
-    'Guide one conversation across current flights, illustrative hotel and travel-protection comparisons, and illustrative rewards while keeping every source boundary visible.',
+    'Guide one agent-led conversation across current flights, illustrative hotel and travel-protection comparisons, and illustrative rewards while keeping every source boundary visible.',
   useWhen: [
     ...travelAgentGuide.useWhen,
+    'A traveler describes a broad trip goal without choosing a travel capability.',
+    'A traveler wants to continue a trip using route, dates, travelers, preferences, or selections already established in the conversation.',
     'A traveler wants to compare illustrative stays or view an illustrative rewards profile.',
     'A traveler asks what the displayed illustrative points could cover, asks for flights they could book with those points, or wants to compare reward-flight ideas.',
     'A traveler wants a non-transactional review of the flight and stay selected in the application.',
@@ -216,6 +218,11 @@ const travelCompanionDemoAgentGuide = {
   boundaries: [
     ...travelAgentGuide.boundaries.filter((boundary) =>
       boundary !== 'Do not imply booking, payment, ticketing, cancellation, loyalty, hotel, car, or transaction support.'),
+    'Treat capability choice as internal orchestration. Never ask the traveler to choose Flights, Stays, Rewards, or Travel Protection before describing the trip.',
+    'Keep a focused request focused. Do not turn a flight-only, stay-only, rewards-only, or protection-only request into a full-trip questionnaire.',
+    'Reuse route, dates, travelers, preferences, and selections already established by explicit traveler statements or structured tool results. An explicit traveler instruction always wins.',
+    'After a successful result or selection, offer at most one contextually relevant next step. Do not fan out into every available domain or call unrelated tools speculatively.',
+    'Call only capabilities registered in the active profile. If a requested capability is unavailable, say so directly and continue with supported parts of the trip.',
     'Flight results come from the connected provider; hotels, loyalty, and travel protection are illustrative. State this boundary compactly whenever presenting those domains.',
     'Never imply live hotel availability, reservation, booking, payment, ticketing, points earning, transfer, application, redemption, cancellation, or a real customer account.',
     'Do not refuse a “book with points” request solely because redemption is unavailable; route it to the illustrative reward-flight comparison and clearly separate comparison from booking.',
