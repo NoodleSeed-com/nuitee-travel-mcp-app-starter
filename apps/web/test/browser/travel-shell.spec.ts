@@ -802,7 +802,13 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
       currency: 'EUR',
       country: 'GB',
     },
-    itineraries: [],
+    itineraries: [{
+      selectionId: 'sel_0123456789abcdef0123456789abcdef',
+      route: { origin: 'ISB', destination: 'JFK' },
+      carrier: { name: 'Wayfare Browser Air', code: 'WB' },
+      departureTime: '2026-09-18T09:00:00+05:00',
+      price: { total: 607.45, currency: 'EUR' },
+    }],
   };
   const approvedAppHtml = (label: string, copy: string) => `<!doctype html>
 <html>
