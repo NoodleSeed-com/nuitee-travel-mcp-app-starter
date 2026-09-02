@@ -50,12 +50,10 @@ describe('airline editorial landing content', () => {
     ]);
   });
 
-  it('defines one honest unified demo-trip editorial prompt', () => {
+  it('defines one passive agent-led editorial statement', () => {
     expect(landingEditorialFeature).toEqual({
       heading: 'One conversation, every part of the trip.',
-      support: 'Refine current flights, compare illustrative stays, and preview rewards as you go.',
-      action: 'Build a trip',
-      prompt: 'Help me build a trip somewhere warm with flexible dates and a hotel.',
+      support: 'Tell Wayfare what you are planning. It will bring in the relevant parts of the journey as they become useful.',
     });
   });
 

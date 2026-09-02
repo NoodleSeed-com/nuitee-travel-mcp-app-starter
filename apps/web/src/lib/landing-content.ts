@@ -10,8 +10,6 @@ export interface LandingDestination {
 export interface LandingEditorialFeature {
   readonly heading: string;
   readonly support: string;
-  readonly action: string;
-  readonly prompt: string;
 }
 
 export const landingDestinations = [
@@ -59,7 +57,5 @@ export const landingDestinations = [
 
 export const landingEditorialFeature = {
   heading: 'One conversation, every part of the trip.',
-  support: 'Refine current flights, compare illustrative stays, and preview rewards as you go.',
-  action: 'Build a trip',
-  prompt: 'Help me build a trip somewhere warm with flexible dates and a hotel.',
+  support: 'Tell Wayfare what you are planning. It will bring in the relevant parts of the journey as they become useful.',
 } as const satisfies LandingEditorialFeature;

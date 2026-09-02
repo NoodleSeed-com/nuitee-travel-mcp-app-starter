@@ -669,18 +669,12 @@ describe('guest travel conversation lifecycle', () => {
   });
 
   it.each([
-    {
-      action: 'Plan a trip to Rome',
-      prompt: 'Help me plan a long-weekend flight to Rome for two.',
-    },
-    {
-      action: 'Build a trip',
-      prompt: 'Help me build a trip somewhere warm with flexible dates and a hotel.',
-    },
-  ])('starts $action as exactly one conversation', async ({ action, prompt }) => {
+    'Help me plan a long-weekend flight to Rome for two.',
+    'Help me build a trip somewhere warm with flexible dates and a hotel.',
+  ])('starts the typed request as exactly one conversation: %s', async (prompt) => {
     render(<TravelAssistantPage runtime={readyRuntime} />);
 
-    fireEvent.click(screen.getByRole('button', { name: action }));
+    submitPrompt(prompt);
 
     await waitFor(() => {
       expect(client.sendMessage).toHaveBeenCalledWith(prompt);
@@ -781,7 +775,7 @@ describe('guest travel conversation lifecycle', () => {
     submitPrompt('JFK to Lisbon next month');
 
     expect(screen.getByRole('heading', {
-      name: 'Plan your whole trip',
+      name: 'Tell us the trip you have in mind',
     })).toBeVisible();
     expect(screen.getAllByRole('alert')).toHaveLength(1);
     expect(screen.getByRole('alert')).toHaveTextContent('Add the public embed.');
@@ -1333,7 +1327,7 @@ describe('guest travel conversation lifecycle', () => {
     })).not.toBeInTheDocument();
     expect(screen.queryByText('No trip started')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', {
-      name: 'Plan your whole trip',
+      name: 'Tell us the trip you have in mind',
     })).toBeVisible();
   });
 

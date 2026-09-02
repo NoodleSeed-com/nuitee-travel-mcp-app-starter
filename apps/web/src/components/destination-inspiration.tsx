@@ -9,18 +9,11 @@ import {
 } from 'react';
 import { landingDestinations } from '../lib/landing-content';
 
-interface DestinationInspirationProps {
-  readonly onStart: (prompt: string) => void;
-}
-
 /**
  * The five-window destination state that visually continues the three-window
- * hero. The buttons submit through the same assistant boundary as every other
- * landing entry point.
+ * hero without competing with the single conversation starting point.
  */
-export function DestinationInspiration({
-  onStart,
-}: Readonly<DestinationInspirationProps>): JSX.Element {
+export function DestinationInspiration(): JSX.Element {
   const sectionRef = useRef<HTMLElement>(null);
   const [revealed, setRevealed] = useState(false);
   const [loadedImages, setLoadedImages] = useState<ReadonlySet<string>>(
@@ -49,18 +42,18 @@ export function DestinationInspiration({
 
   return (
     <section
-      aria-labelledby="places-to-start-title"
+      aria-labelledby="travel-inspiration-title"
       className="destination-inspiration travel-landing__section"
       data-revealed={revealed ? 'true' : 'false'}
       id="places-to-start"
       ref={sectionRef}
     >
       <header className="travel-section-heading">
-        <span>Five windows. One next step.</span>
-        <h2 id="places-to-start-title">Places to start</h2>
+        <span>Travel inspiration</span>
+        <h2 id="travel-inspiration-title">Where the journey could take you</h2>
       </header>
       <ul
-        aria-label="Five destination windows"
+        aria-label="Destination inspiration"
         className="destination-inspiration__grid"
       >
         {landingDestinations.map((destination, index) => {
@@ -69,12 +62,9 @@ export function DestinationInspiration({
             : loadedImages.has(destination.id) ? 'loaded' : 'loading';
           return (
             <li data-window-index={index} key={destination.id}>
-              <button
-                aria-label={`Plan a trip to ${destination.name}`}
+              <article
                 className="destination-card"
                 data-image-state={imageState}
-                onClick={() => onStart(destination.prompt)}
-                type="button"
               >
                 <span aria-hidden="true" className="destination-card__skeleton" />
                 <Image
@@ -101,7 +91,7 @@ export function DestinationInspiration({
                   <strong>{destination.name}</strong>
                   <span>{destination.descriptor}</span>
                 </span>
-              </button>
+              </article>
             </li>
           );
         })}
