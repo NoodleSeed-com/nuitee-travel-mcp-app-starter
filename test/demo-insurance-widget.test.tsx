@@ -119,14 +119,17 @@ const render = (props: Parameters<typeof InsuranceResultsView>[0]) =>
 const visibleText = (markup: string) => markup.replace(/<[^>]*>/gu, ' ');
 
 describe('Wayfare illustrative travel-protection widget', () => {
-  it('renders a geometry-matched loading skeleton for all three concepts', () => {
+  it('renders geometry-matched loading skeletons for both preference and comparison stages', () => {
     const markup = render({ state: 'loading', displayMode: 'inline', theme: 'light' });
+    const comparisonMarkup = render({ state: 'loading', displayMode: 'inline', theme: 'light', initialStage: 'comparison' });
 
     expect(markup).toContain('cc-insurance-skeleton');
     expect(markup).toContain('cc-insurance-skeleton-disclosure');
     expect(markup).toContain('cc-insurance-context');
-    expect(markup).toContain('cc-insurance-plan-grid');
-    expect((markup.match(/cc-insurance-skeleton-card/g) ?? [])).toHaveLength(3);
+    expect(markup).toContain('cc-insurance-preference-skeleton');
+    expect((markup.match(/cc-insurance-priority-card/g) ?? [])).toHaveLength(6);
+    expect(comparisonMarkup).toContain('cc-insurance-plan-grid');
+    expect((comparisonMarkup.match(/cc-insurance-skeleton-card/g) ?? [])).toHaveLength(3);
     expect(markup).toContain('cc-shimmer');
     expect(markup).toContain('aria-busy="true"');
     expect(markup).toContain('Preparing illustrative travel protection');
@@ -143,7 +146,7 @@ describe('Wayfare illustrative travel-protection widget', () => {
   });
 
   it('shows exactly three source-labelled concepts and no transactional action', () => {
-    const markup = render({ result, displayMode: 'inline', theme: 'light' });
+    const markup = render({ result, displayMode: 'inline', theme: 'light', initialStage: 'comparison' });
 
     expect(markup).toContain(result.disclosure);
     expect(markup).toContain('Illustrative travel protection');
@@ -152,9 +155,29 @@ describe('Wayfare illustrative travel-protection widget', () => {
     expect(markup).toContain('Balanced concept');
     expect(markup).toContain('Extended concept');
     expect((markup.match(/cc-insurance-plan-card/g) ?? [])).toHaveLength(3);
-    expect(markup).toContain('What to check before buying elsewhere');
+    expect(markup).toContain('What to check before considering a real policy');
     expect(visibleText(markup)).not.toMatch(/\bdemo\b|\bsandbox\b/iu);
     expect(markup).not.toMatch(/Buy now|Purchase now|Checkout|Add to trip|Recommended plan/iu);
+  });
+
+  it('starts with six bounded, multi-select planning priorities and a safe comparison action', () => {
+    const markup = render({ result, displayMode: 'inline', theme: 'light' });
+
+    expect(markup).toContain('What matters for this comparison?');
+    expect(markup).toContain('saved as comparison context');
+    expect(markup).not.toContain('Priorities organise this view');
+    expect(markup).toContain('Medical emergencies');
+    expect(markup).toContain('Cancellation');
+    expect(markup).toContain('Delays &amp; connections');
+    expect(markup).toContain('Baggage');
+    expect(markup).toContain('Rental car');
+    expect(markup).toContain('Schengen coverage');
+    expect((markup.match(/cc-insurance-priority-card/g) ?? [])).toHaveLength(6);
+    expect(markup).toContain('aria-pressed="false"');
+    expect(markup).toContain('Compare illustrative concepts');
+    expect(markup).toContain('disabled=""');
+    expect(markup).toContain(result.disclosure);
+    expect(markup).not.toMatch(/Find suitable coverage|Check eligibility|Get (?:a )?quote|Purchase now|Recommended for you/iu);
   });
 
   it('rejects malformed, over-bounded, and transactional-looking output', () => {
@@ -170,6 +193,37 @@ describe('Wayfare illustrative travel-protection widget', () => {
     })).toBe(false);
     expect(isDemoInsuranceComparisonOutput({ ...result, purchaseUrl: 'https://example.com' })).toBe(false);
     expect(isDemoInsuranceComparisonOutput({ ...result, medicalHistory: 'private value' })).toBe(false);
+  });
+
+  it('rejects mixed currencies anywhere inside a comparison', () => {
+    const firstPlan = result.plans[0];
+    expect(firstPlan).toBeDefined();
+    if (!firstPlan) return;
+
+    expect(isDemoInsuranceComparisonOutput({
+      ...result,
+      plans: [{
+        ...firstPlan,
+        illustrativePrice: { ...firstPlan.illustrativePrice, currency: 'USD' },
+      }, ...result.plans.slice(1)],
+    })).toBe(false);
+    expect(isDemoInsuranceComparisonOutput({
+      ...result,
+      plans: [{
+        ...firstPlan,
+        deductible: { ...firstPlan.deductible, currency: 'EUR' },
+      }, ...result.plans.slice(1)],
+    })).toBe(false);
+    expect(isDemoInsuranceComparisonOutput({
+      ...result,
+      plans: [{
+        ...firstPlan,
+        coverages: [{
+          ...firstPlan.coverages[0],
+          limit: { ...firstPlan.coverages[0]!.limit, currency: 'GBP' },
+        }, ...firstPlan.coverages.slice(1)],
+      }, ...result.plans.slice(1)],
+    })).toBe(false);
   });
 
   it('accepts a consistently GBP-denominated illustrative comparison', () => {
@@ -188,6 +242,6 @@ describe('Wayfare illustrative travel-protection widget', () => {
     };
 
     expect(isDemoInsuranceComparisonOutput(gbpResult)).toBe(true);
-    expect(render({ result: gbpResult, displayMode: 'inline' })).toContain('£68.00');
+    expect(render({ result: gbpResult, displayMode: 'inline', initialStage: 'comparison' })).toContain('£68.00');
   });
 });

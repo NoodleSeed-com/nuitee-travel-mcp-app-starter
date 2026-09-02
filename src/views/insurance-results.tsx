@@ -1,6 +1,6 @@
 import '@fontsource-variable/inter';
 import '@noodleseed/one/react/styles.css';
-import type { CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import type {
   DemoInsuranceComparisonOutput,
   DemoInsurancePlan,
@@ -20,6 +20,53 @@ import { CheckIcon } from './icons.js';
 import './travel.css';
 
 type InsuranceResultsState = 'loading' | 'error' | 'malformed';
+type InsuranceStage = 'preferences' | 'comparison';
+type InsurancePriorityId =
+  | 'medical'
+  | 'cancellation'
+  | 'delays'
+  | 'baggage'
+  | 'rental-car'
+  | 'schengen';
+
+type InsurancePriority = {
+  readonly id: InsurancePriorityId;
+  readonly label: string;
+  readonly explanation: string;
+};
+
+const insurancePriorities: readonly InsurancePriority[] = [
+  {
+    id: 'medical',
+    label: 'Medical emergencies',
+    explanation: 'Compare how the fictional concepts illustrate emergency-medical limits and deductibles.',
+  },
+  {
+    id: 'cancellation',
+    label: 'Cancellation',
+    explanation: 'Compare fictional trip-cancellation maximums and the exclusions that still require policy review.',
+  },
+  {
+    id: 'delays',
+    label: 'Delays & connections',
+    explanation: 'Keep illustrative travel-delay limits visible while comparing the three neutral concepts.',
+  },
+  {
+    id: 'baggage',
+    label: 'Baggage',
+    explanation: 'Compare the fictional baggage limits shown for planning context.',
+  },
+  {
+    id: 'rental-car',
+    label: 'Rental car',
+    explanation: 'Keep rental-car protection as a discussion point; the fictional concepts may not include it.',
+  },
+  {
+    id: 'schengen',
+    label: 'Schengen coverage',
+    explanation: 'Keep Schengen-area requirements in view while comparing; no compliance check is performed.',
+  },
+] as const;
 
 const record = (value: unknown): Record<string, unknown> | undefined =>
   value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -91,8 +138,10 @@ function isSearchContext(value: unknown) {
   );
 }
 
-function isPlan(value: unknown): value is DemoInsurancePlan {
+function isPlan(value: unknown, expectedCurrency: string): value is DemoInsurancePlan {
   const plan = record(value);
+  const illustrativePrice = record(plan?.illustrativePrice);
+  const deductible = record(plan?.deductible);
   if (
     !plan
     || typeof plan.planId !== 'string'
@@ -101,7 +150,9 @@ function isPlan(value: unknown): value is DemoInsurancePlan {
     || !boundedString(plan.name, 2, 80)
     || !boundedString(plan.summary, 20, 180)
     || !isMoney(plan.illustrativePrice, 1_000_000)
+    || illustrativePrice?.currency !== expectedCurrency
     || !isMoney(plan.deductible, 1_000_000)
+    || deductible?.currency !== expectedCurrency
     || !Array.isArray(plan.coverages)
     || plan.coverages.length < 4
     || plan.coverages.length > 6
@@ -121,6 +172,7 @@ function isPlan(value: unknown): value is DemoInsurancePlan {
       coverage
       && boundedString(coverage.name, 2, 80)
       && isMoney(coverage.limit, 10_000_000)
+      && record(coverage.limit)?.currency === expectedCurrency
       && (coverage.basis === 'per_traveler' || coverage.basis === 'per_trip')
       && boundedString(coverage.summary, 20, 180),
     );
@@ -131,6 +183,7 @@ export function isDemoInsuranceComparisonOutput(
   value: unknown,
 ): value is DemoInsuranceComparisonOutput {
   const result = record(value);
+  const searchContext = record(result?.searchContext);
   return Boolean(
     result
     && !hasForbiddenInsuranceKey(result)
@@ -141,14 +194,14 @@ export function isDemoInsuranceComparisonOutput(
     && boundedString(result.fallback, 40, 700)
     && typeof result.comparisonId === 'string'
     && /^inscmp_[a-f0-9]{32}$/u.test(result.comparisonId)
-    && isSearchContext(result.searchContext)
+    && isSearchContext(searchContext)
     && Array.isArray(result.assumptions)
     && result.assumptions.length >= 1
     && result.assumptions.length <= 6
     && result.assumptions.every((item) => boundedString(item, 20, 180))
     && Array.isArray(result.plans)
     && result.plans.length === 3
-    && result.plans.every(isPlan)
+    && result.plans.every((plan) => isPlan(plan, String(searchContext?.currency)))
   );
 }
 
@@ -175,9 +228,28 @@ function InsuranceSkeletonCard() {
   );
 }
 
-function InsuranceLoading({ theme, brandStyle }: {
+function InsurancePreferenceSkeleton() {
+  return (
+    <div className="cc-insurance-preference-skeleton" aria-hidden="true">
+      <div className="cc-insurance-preference-heading">
+        <span className="cc-skeleton-block cc-shimmer" />
+        <span className="cc-skeleton-block cc-shimmer" />
+      </div>
+      <div className="cc-insurance-priority-grid">
+        {insurancePriorities.map((priority) => (
+          <span className="cc-insurance-priority-card cc-shimmer" key={priority.id} />
+        ))}
+      </div>
+      <span className="cc-insurance-focus-panel cc-shimmer" />
+      <span className="cc-insurance-preference-action cc-shimmer" />
+    </div>
+  );
+}
+
+function InsuranceLoading({ theme, brandStyle, stage }: {
   readonly theme: 'light' | 'dark';
   readonly brandStyle?: CSSProperties;
+  readonly stage: InsuranceStage;
 }) {
   return (
     <Frame
@@ -197,13 +269,121 @@ function InsuranceLoading({ theme, brandStyle }: {
           <span className="cc-skeleton-block cc-shimmer" />
           <span className="cc-skeleton-block cc-shimmer" />
         </div>
-        <div className="cc-insurance-plan-grid" aria-hidden="true">
-          <InsuranceSkeletonCard />
-          <InsuranceSkeletonCard />
-          <InsuranceSkeletonCard />
-        </div>
+        {stage === 'preferences' ? <InsurancePreferenceSkeleton /> : (
+          <div className="cc-insurance-plan-grid" aria-hidden="true">
+            <InsuranceSkeletonCard />
+            <InsuranceSkeletonCard />
+            <InsuranceSkeletonCard />
+          </div>
+        )}
       </section>
     </Frame>
+  );
+}
+
+function PriorityIcon({ priority }: { readonly priority: InsurancePriorityId }) {
+  const paths: Record<InsurancePriorityId, readonly string[]> = {
+    medical: ['M12 21s-7-4.6-7-11a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 6.4-7 11-7 11Z', 'M8 12h2l1-2 2 5 1-3h2'],
+    cancellation: ['M5 7h14v12H5z', 'M8 4v6M16 4v6M5 10h14'],
+    delays: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z', 'M12 7v5l3 2'],
+    baggage: ['M6 7h12v13H6z', 'M9 7V5h6v2M9 12v4M15 12v4'],
+    'rental-car': ['m5 11 2-5h10l2 5', 'M4 11h16v7H4zM7 18v2m10-2v2'],
+    schengen: ['M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z', 'M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18'],
+  };
+
+  return (
+    <svg aria-hidden="true" className="cc-icon" fill="none" focusable="false" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 24 24">
+      {paths[priority].map((path) => <path d={path} key={path} />)}
+    </svg>
+  );
+}
+
+function PreferenceStage({
+  selected,
+  focused,
+  onToggle,
+  onFocus,
+  onCompare,
+}: {
+  readonly selected: readonly InsurancePriorityId[];
+  readonly focused: InsurancePriorityId;
+  readonly onToggle: (priority: InsurancePriorityId) => void;
+  readonly onFocus: (priority: InsurancePriorityId) => void;
+  readonly onCompare: () => void;
+}) {
+  const focusedPriority = insurancePriorities.find((priority) => priority.id === focused)
+    ?? insurancePriorities[0];
+  const selectedPriorities = insurancePriorities.filter((priority) => selected.includes(priority.id));
+
+  return (
+    <section className="cc-insurance-preferences" aria-labelledby="cc-insurance-preference-title">
+      <header className="cc-insurance-preference-heading">
+        <p className="cc-insurance-eyebrow">Your comparison brief</p>
+        <h2 id="cc-insurance-preference-title">What matters for this comparison?</h2>
+        <p>Choose any topics to save in your comparison brief. They are context only and do not filter, rank, or change the fictional concepts.</p>
+      </header>
+      <div aria-label="Travel protection comparison brief topics" className="cc-insurance-priority-grid" role="group">
+        {insurancePriorities.map((priority) => {
+          const isSelected = selected.includes(priority.id);
+          return (
+            <button
+              aria-pressed={isSelected}
+              className={`cc-insurance-priority-card${isSelected ? ' is-selected' : ''}`}
+              key={priority.id}
+              onClick={() => onToggle(priority.id)}
+              onFocus={() => onFocus(priority.id)}
+              type="button"
+            >
+              <span className="cc-insurance-priority-icon"><PriorityIcon priority={priority.id} /></span>
+              <span>{priority.label}</span>
+              <span aria-hidden="true" className="cc-insurance-priority-check"><CheckIcon /></span>
+            </button>
+          );
+        })}
+      </div>
+      <aside aria-live="polite" className="cc-insurance-focus-panel">
+        <span className="cc-insurance-priority-icon"><PriorityIcon priority={focusedPriority.id} /></span>
+        <div>
+          <strong>{focusedPriority.label}</strong>
+          <p>{focusedPriority.explanation}</p>
+        </div>
+      </aside>
+      <section aria-label="Selected comparison brief topics" className="cc-insurance-priority-summary">
+        <div className="cc-insurance-summary-heading">
+          <h3>Trip protection brief</h3>
+          <span>{selectedPriorities.length} selected</span>
+        </div>
+        {selectedPriorities.length > 0 ? (
+          <div className="cc-insurance-selected-priorities">
+            {selectedPriorities.map((priority) => (
+              <button
+                aria-label={`Remove ${priority.label}`}
+                className="cc-insurance-priority-chip"
+                key={priority.id}
+                onClick={() => onToggle(priority.id)}
+                type="button"
+              >
+                <PriorityIcon priority={priority.id} />
+                <span>{priority.label}</span>
+                <span aria-hidden="true" className="cc-insurance-chip-remove">×</span>
+              </button>
+            ))}
+          </div>
+        ) : <p className="cc-insurance-empty-summary">Select at least one topic to save in your brief before comparing the illustrative concepts.</p>}
+        <button
+          className="cc-insurance-compare-action"
+          disabled={selectedPriorities.length === 0}
+          onClick={onCompare}
+          type="button"
+        >
+          Compare illustrative concepts
+          <span aria-hidden="true">→</span>
+        </button>
+        <p className="cc-insurance-summary-disclosure">
+          Illustrative planning only. Selections are saved as comparison context; they do not filter, rank, or change the concepts or verify any real product.
+        </p>
+      </section>
+    </section>
   );
 }
 
@@ -279,6 +459,7 @@ export function InsuranceResultsView({
   theme = 'light',
   locale = 'en-CA',
   brandStyle,
+  initialStage = 'preferences',
 }: {
   readonly result?: DemoInsuranceComparisonOutput;
   readonly state?: InsuranceResultsState;
@@ -286,10 +467,28 @@ export function InsuranceResultsView({
   readonly theme?: 'light' | 'dark';
   readonly locale?: string;
   readonly brandStyle?: CSSProperties;
+  readonly initialStage?: InsuranceStage;
 }) {
-  if (state === 'loading') return <InsuranceLoading theme={theme} brandStyle={brandStyle} />;
+  const [stage, setStage] = useState<InsuranceStage>(initialStage);
+  const [selectedPriorities, setSelectedPriorities] = useState<readonly InsurancePriorityId[]>([]);
+  const [focusedPriority, setFocusedPriority] = useState<InsurancePriorityId>('medical');
+
+  useEffect(() => {
+    setStage(initialStage);
+    setSelectedPriorities([]);
+    setFocusedPriority('medical');
+  }, [initialStage, result?.comparisonId]);
+
+  if (state === 'loading') return <InsuranceLoading theme={theme} brandStyle={brandStyle} stage={initialStage} />;
   if (state) return statusView(state, theme, brandStyle);
   if (!result) return statusView('malformed', theme, brandStyle);
+
+  const togglePriority = (priority: InsurancePriorityId) => {
+    setFocusedPriority(priority);
+    setSelectedPriorities((current) => current.includes(priority)
+      ? current.filter((candidate) => candidate !== priority)
+      : [...current, priority]);
+  };
 
   return (
     <Frame
@@ -297,7 +496,7 @@ export function InsuranceResultsView({
       style={brandStyle}
       displayMode="auto"
       title="Travel protection"
-      subtitle="Three fictional concepts · no live policy check"
+      subtitle={stage === 'preferences' ? 'Build a comparison brief' : 'Three fictional concepts · no live policy check'}
       data-display-mode={displayMode}
       data-llm={result.fallback}
     >
@@ -320,20 +519,51 @@ export function InsuranceResultsView({
             <strong>{result.searchContext.adults} adult{result.searchContext.adults === 1 ? '' : 's'} · {result.searchContext.children} child traveler{result.searchContext.children === 1 ? '' : 's'}</strong>
           </div>
         </section>
-        <section aria-label="Illustrative travel protection concepts" className="cc-insurance-plan-grid">
-          {result.plans.map((plan) => <PlanCard key={plan.planId} locale={locale} plan={plan} />)}
-        </section>
-        <Region
-          title="What to check before buying elsewhere"
-          description="These concepts cannot establish whether any real product is suitable or available."
-        >
-          <ul className="cc-insurance-assumptions">
-            {result.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}
-          </ul>
-          <p className="cc-insurance-boundary">
-            Review actual policy wording, eligibility, limits, deductibles, and exclusions with a licensed provider before relying on any real product.
-          </p>
-        </Region>
+        {stage === 'preferences' ? (
+          <PreferenceStage
+            focused={focusedPriority}
+            onCompare={() => setStage('comparison')}
+            onFocus={setFocusedPriority}
+            onToggle={togglePriority}
+            selected={selectedPriorities}
+          />
+        ) : (
+          <>
+            <section className="cc-insurance-comparison-heading">
+              <div>
+                <p className="cc-insurance-eyebrow">Illustrative comparison</p>
+                <h2>Compare travel protection concepts</h2>
+                <p>{selectedPriorities.length > 0
+                  ? `Your brief includes ${selectedPriorities.length} selected ${selectedPriorities.length === 1 ? 'topic' : 'topics'}; all three concepts remain neutral and unchanged.`
+                  : 'Three neutral fictional concepts for planning context.'}</p>
+              </div>
+              <button className="cc-insurance-change-priorities" onClick={() => setStage('preferences')} type="button">
+                Change comparison brief
+              </button>
+            </section>
+            {selectedPriorities.length > 0 ? (
+              <div aria-label="Saved comparison topics" className="cc-insurance-comparison-priorities">
+                {insurancePriorities.filter((priority) => selectedPriorities.includes(priority.id)).map((priority) => (
+                  <span key={priority.id}><PriorityIcon priority={priority.id} />{priority.label}</span>
+                ))}
+              </div>
+            ) : null}
+            <section aria-label="Illustrative travel protection concepts" className="cc-insurance-plan-grid">
+              {result.plans.map((plan) => <PlanCard key={plan.planId} locale={locale} plan={plan} />)}
+            </section>
+            <Region
+              title="What to check before considering a real policy"
+              description="These concepts cannot establish whether any real product is available or appropriate for a traveler."
+            >
+              <ul className="cc-insurance-assumptions">
+                {result.assumptions.map((assumption) => <li key={assumption}>{assumption}</li>)}
+              </ul>
+              <p className="cc-insurance-boundary">
+                Review actual policy wording, eligibility, limits, deductibles, and exclusions with a licensed provider before relying on any real product.
+              </p>
+            </Region>
+          </>
+        )}
       </Flow>
     </Frame>
   );

@@ -298,6 +298,137 @@ describe('real-browser widget readiness', () => {
     expect(hasHorizontalOverflow()).toBe(false);
   });
 
+  it('keeps a two-leg fare footer visible inside its aligned card at mobile width', async () => {
+    await page.viewport(320, 1_200);
+    const returnLeg = {
+      direction: 'INBOUND' as const,
+      route: { origin: 'QZY', destination: 'QZX' },
+      departureTime: '2030-04-27T16:00:00+02:00',
+      arrivalTime: '2030-04-27T19:30:00+02:00',
+      durationMinutes: 210,
+      stops: 0,
+    };
+    mount(
+      <FlightResultsView
+        displayMode="inline"
+        onSelect={vi.fn()}
+        onVerify={vi.fn()}
+        result={{
+          ...search,
+          searchContext: {
+            ...search.searchContext!,
+            returnDate: '2030-04-27',
+            tripType: 'ROUND_TRIP',
+          },
+          itineraries: [{ ...itinerary, legs: [itinerary.legs[0]!, returnLeg] }],
+        }}
+      />,
+    );
+
+    await expect.element(page.getByText('Return')).toBeVisible();
+    const card = document.querySelector<HTMLElement>('.cc-fare-card')!;
+    const footer = document.querySelector<HTMLElement>('.cc-fare-footer')!;
+    const cardBounds = card.getBoundingClientRect();
+    const footerBounds = footer.getBoundingClientRect();
+    expect(card.classList.contains('cc-fare-card-round-trip')).toBe(true);
+    expect(footerBounds.bottom).toBeLessThanOrEqual(cardBounds.bottom);
+    expect(footerBounds.top).toBeGreaterThanOrEqual(cardBounds.top);
+    expect(hasHorizontalOverflow()).toBe(false);
+  });
+
+  it('keeps a max-content multi-stop itinerary scrollable above an always-reachable fare action', async () => {
+    await page.viewport(720, 1_200);
+    const crowdedItinerary: Itinerary = {
+      ...itinerary,
+      arrivalTime: '2030-04-20T18:45:00Z',
+      durationMinutes: 585,
+      stops: 2,
+      legs: [
+        {
+          direction: 'OUTBOUND',
+          route: { origin: 'QZX', destination: 'QZY' },
+          departureTime: '2030-04-20T09:00:00Z',
+          arrivalTime: '2030-04-20T18:45:00Z',
+          durationMinutes: 585,
+          stops: 2,
+        },
+        {
+          direction: 'INBOUND',
+          route: { origin: 'QZY', destination: 'QZX' },
+          departureTime: '2030-04-27T08:00:00Z',
+          arrivalTime: '2030-04-27T18:30:00Z',
+          durationMinutes: 630,
+          stops: 2,
+        },
+      ],
+      segments: [
+        {
+          origin: 'QZX', destination: 'QZA', direction: 'OUTBOUND',
+          departureTime: '2030-04-20T09:00:00Z', arrivalTime: '2030-04-20T11:00:00Z',
+          durationMinutes: 120, carrier: itinerary.carrier, flightNumber: '101',
+        },
+        {
+          origin: 'QZA', originName: 'North Cedar International Test Airport', destination: 'QZB', direction: 'OUTBOUND',
+          departureTime: '2030-04-20T12:10:00Z', arrivalTime: '2030-04-20T14:40:00Z',
+          durationMinutes: 150, carrier: itinerary.carrier, flightNumber: '202',
+        },
+        {
+          origin: 'QZB', originName: 'South Cloud Harbour Test Airport', destination: 'QZY', direction: 'OUTBOUND',
+          departureTime: '2030-04-20T15:55:00Z', arrivalTime: '2030-04-20T18:45:00Z',
+          durationMinutes: 170, carrier: itinerary.carrier, flightNumber: '303',
+        },
+        {
+          origin: 'QZY', destination: 'QZB', direction: 'INBOUND',
+          departureTime: '2030-04-27T08:00:00Z', arrivalTime: '2030-04-27T10:50:00Z',
+          durationMinutes: 170, carrier: itinerary.carrier, flightNumber: '404',
+        },
+        {
+          origin: 'QZB', originName: 'South Cloud Harbour Test Airport', destination: 'QZA', direction: 'INBOUND',
+          departureTime: '2030-04-27T12:05:00Z', arrivalTime: '2030-04-27T14:35:00Z',
+          durationMinutes: 150, carrier: itinerary.carrier, flightNumber: '505',
+        },
+        {
+          origin: 'QZA', originName: 'North Cedar International Test Airport', destination: 'QZX', direction: 'INBOUND',
+          departureTime: '2030-04-27T16:30:00Z', arrivalTime: '2030-04-27T18:30:00Z',
+          durationMinutes: 120, carrier: itinerary.carrier, flightNumber: '606',
+        },
+      ],
+    };
+
+    mount(
+      <FlightResultsView
+        displayMode="inline"
+        onSelect={vi.fn()}
+        onVerify={vi.fn()}
+        result={{
+          ...search,
+          searchContext: {
+            ...search.searchContext!,
+            returnDate: '2030-04-27',
+            tripType: 'ROUND_TRIP',
+          },
+          itineraries: [crowdedItinerary],
+        }}
+      />,
+    );
+
+    await expect.element(page.getByText('North Cedar International Test Airport (QZA)').first()).toBeVisible();
+    const card = document.querySelector<HTMLElement>('.cc-fare-card')!;
+    const scrollRegion = document.querySelector<HTMLElement>('.cc-fare-front-scroll')!;
+    const footer = document.querySelector<HTMLElement>('.cc-fare-footer')!;
+    const select = page.getByRole('button', { name: /Select fare from QZX to QZY/ });
+    const cardBounds = card.getBoundingClientRect();
+    const footerBounds = footer.getBoundingClientRect();
+
+    expect(scrollRegion.scrollHeight).toBeGreaterThan(scrollRegion.clientHeight);
+    expect(getComputedStyle(scrollRegion).overflowY).toBe('auto');
+    expect(footerBounds.top).toBeGreaterThanOrEqual(cardBounds.top);
+    expect(footerBounds.bottom).toBeLessThanOrEqual(cardBounds.bottom);
+    await expect.element(select).toBeVisible();
+    expect((await select.element()).getBoundingClientRect().bottom).toBeLessThanOrEqual(cardBounds.bottom);
+    expect(hasHorizontalOverflow()).toBe(false);
+  });
+
   it('keeps the loading skeleton and result card on the same carousel geometry', async () => {
     await page.viewport(720, 1_200);
     mount(<FlightResultsView state="loading" displayMode="inline" onVerify={vi.fn()} />);

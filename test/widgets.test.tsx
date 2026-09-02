@@ -37,6 +37,8 @@ import {
   isGatewayError,
   isSearchOutput,
   isVerification,
+  selectionOutcome,
+  selectionTransition,
   selectedFareModelContext,
 } from '../src/views/flight-results.js';
 import { SearchEditor, searchPrompt } from '../src/views/search-editor.js';
@@ -344,6 +346,8 @@ describe('FlightResults', () => {
     expect(html).toContain('cc-fare-front-summary');
     expect(html).toContain('cc-leg-route-origin');
     expect(html).toContain('cc-leg-route-destination');
+    expect(html).toContain('cc-flight-segment-row');
+    expect(html).toContain('cc-flight-path-line');
     expect(html).toContain('cc-fare-detail-content-compact');
     expect(html).toContain('Back to flight');
     expect(html).not.toContain('cc-fare-watermark');
@@ -563,6 +567,81 @@ describe('FlightResults', () => {
     expect(isGatewayError({ code: 'made_up', message: 'No', retryable: true })).toBe(false);
   });
 
+  it('confirms a fare selection only when the tool explicitly returns the same bounded selection', () => {
+    const selectionId = itinerary.selectionId;
+
+    expect(selectionOutcome({
+      structuredContent: {
+        status: 'selected',
+        selectionId,
+        message: 'The fare was added to this trip.',
+      },
+    }, selectionId)).toEqual({
+      confirmed: true,
+      message: 'The fare was added to this trip.',
+    });
+
+    for (const unsafeResponse of [
+      undefined,
+      { structuredContent: { status: 'error', selectionId } },
+      { structuredContent: { status: 'selected', selectionId: 'sel_ffffffffffffffffffffffffffffffff' } },
+      { structuredContent: { status: 'selected' } },
+    ]) {
+      expect(selectionOutcome(unsafeResponse, selectionId)).toEqual({
+        confirmed: false,
+        message: 'The fare could not be added to this trip. Your previous selection is unchanged.',
+      });
+    }
+  });
+
+  it('retains a verified current fare when a replacement selection is rejected', () => {
+    const replacement = {
+      ...itinerary,
+      selectionId: 'sel_ffffffffffffffffffffffffffffffff',
+      price: { ...itinerary.price, total: 399.5 },
+    };
+    const verified = {
+      status: 'success' as const,
+      selectionId: itinerary.selectionId,
+      availability: 'available' as const,
+      priceChanged: true,
+      previousPrice: itinerary.price,
+      currentPrice: { total: 299.5, currency: 'CAD' },
+      messages: ['The current fare remains available.'],
+      verifiedAt: itinerary.retrievedAt,
+    };
+    const transition = selectionTransition(
+      { structuredContent: { status: 'error', selectionId: replacement.selectionId } },
+      replacement.selectionId,
+      itinerary.selectionId,
+    );
+
+    expect(transition).toMatchObject({
+      confirmed: false,
+      nextSelectionId: itinerary.selectionId,
+      resetVerification: false,
+    });
+    const review = renderToStaticMarkup(
+      <FlightResultsView
+        displayMode="inline"
+        onVerify={vi.fn()}
+        result={{
+          status: 'success',
+          itineraries: [itinerary, replacement],
+          fallback: 'Two flights',
+          message: 'Two flights',
+          retrievedAt: itinerary.retrievedAt,
+        }}
+        selectedSelectionId={transition.nextSelectionId}
+        verification={verified}
+        view="review"
+      />,
+    );
+    expect(review).toContain('Verified fare review');
+    expect(review).toContain('CA$299.50');
+    expect(review).toContain('The current fare remains available.');
+  });
+
   it('renders price freshness, verification messages, and distinct accessible actions', () => {
     const result = { status: 'success' as const, itineraries: [itinerary], fallback: 'One flight', message: 'One flight', retrievedAt: itinerary.retrievedAt };
     const actionHtml = renderToStaticMarkup(<FlightResultsView
@@ -673,7 +752,8 @@ describe('FlightResults', () => {
     expect(css).toMatch(/\.cc-fare-face\s*\{[^}]*grid-area:\s*1\s*\/\s*1/s);
     expect(css).toMatch(/\.cc-fare-face\s*\{[^}]*transition:/s);
     expect(css).toMatch(/\.cc-fare-card-details\s*\{[^}]*background:/s);
-    expect(css).toMatch(/\.cc-carousel-slide\s*>\s*\.cc-fare-card\s*\{[^}]*min-block-size:\s*(?:30|31|32)rem/s);
+    expect(css).toMatch(/\.cc-carousel-slide\s*>\s*\.cc-fare-card\s*\{[^}]*min-block-size:\s*var\(--cc-fare-card-size,\s*24rem\)/s);
+    expect(css).toMatch(/\.cc-fare-card-round-trip\s*\{[^}]*--cc-fare-card-size:\s*32rem/s);
     expect(css).toContain('var(--cc-carrier-accent, var(--cc-accent))');
     expect(css).toMatch(/\.cc-fare-back-header\s*\{[^}]*grid-template-columns:/s);
     expect(css).toMatch(/\.cc-fare-back-button\s*\{[^}]*border:\s*0/s);

@@ -12,7 +12,7 @@ const host = vi.hoisted(() => ({
 
 vi.mock('../../../src/helpers.js', async () => {
   const ReactModule = await import('react');
-  const passthrough = ({ children, title, subtitle, ...props }: any) => ReactModule.createElement(
+  const passthrough = ({ children, title, subtitle, displayMode: _displayMode, ...props }: any) => ReactModule.createElement(
     'section',
     props,
     title ? ReactModule.createElement('h1', null, title) : null,
@@ -104,20 +104,29 @@ describe('flight-results selection recovery', () => {
   it('retries a rejected selection write before explicit verification', async () => {
     host.select
       .mockRejectedValueOnce(new Error('selection write rejected'))
-      .mockResolvedValueOnce({ structuredContent: { status: 'selected', selectionId } });
+      .mockResolvedValue({ structuredContent: { status: 'selected', selectionId } });
     host.verify.mockResolvedValue({ structuredContent: {} });
 
     render(<FlightResults />);
     fireEvent.click(screen.getByRole('button', { name: /^Select fare from/ }));
     await waitFor(() => expect(host.select).toHaveBeenCalledTimes(1));
 
+    expect(screen.queryByRole('button', { name: /Verify current fare/ }))
+      .not.toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'The fare could not be added to this trip. Your previous selection is unchanged.',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /^Select fare from/ }));
+    await waitFor(() => expect(host.select).toHaveBeenCalledTimes(2));
+
     fireEvent.click(screen.getByRole('button', { name: /Verify current fare/ }));
 
-    await waitFor(() => expect(host.select).toHaveBeenCalledTimes(2));
-    expect(host.select).toHaveBeenNthCalledWith(2, { selectionId });
-    expect(host.verify).toHaveBeenCalledWith({
-      selectionId,
-      selectionMode: 'explicit',
-    });
+    await waitFor(() => expect(host.select).toHaveBeenCalledTimes(3));
+    expect(host.select).toHaveBeenNthCalledWith(3, { selectionId });
+    await waitFor(() => expect(host.verify).toHaveBeenCalledWith({
+        selectionId,
+        selectionMode: 'explicit',
+      }));
   });
 });
