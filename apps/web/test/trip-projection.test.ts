@@ -262,6 +262,40 @@ describe('structured trip projection', () => {
     });
   });
 
+  it('rejects hotel cards whose destination or currency disagrees with the search', () => {
+    const searchContext = {
+      destination: 'Lisbon',
+      checkInDate: '2026-10-12',
+      checkOutDate: '2026-10-18',
+      currency: 'CAD',
+    };
+    const select = messageWithToolResult('select_hotel', {
+      status: 'selected',
+      selectionId: staySelectionA,
+    });
+
+    for (const hotel of [
+      { ...hotelOption(staySelectionA), city: 'Tokyo' },
+      {
+        ...hotelOption(staySelectionA),
+        staySubtotal: { amount: 1_800, currency: 'USD' },
+      },
+    ]) {
+      const projected = projectTrip([
+        messageWithToolResult('search_hotels', {
+          status: 'success',
+          dataSource: 'illustrative',
+          searchContext,
+          hotels: [hotel],
+        }),
+        select,
+      ]);
+
+      expect(projected).not.toHaveProperty('hasStaySelection');
+      expect(projected).not.toHaveProperty('selectedStay');
+    }
+  });
+
   it('updates the matching selected fare with a bounded verified current price', () => {
     expect(projectTrip([
       messageWithToolResult('search_flights', {

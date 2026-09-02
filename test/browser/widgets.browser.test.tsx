@@ -244,6 +244,46 @@ describe('real-browser widget readiness', () => {
     expect(hasHorizontalOverflow()).toBe(false);
   });
 
+  it('keeps a visible next and previous fare preview on mobile', async () => {
+    await page.viewport(390, 1_200);
+    const itineraries = Array.from({ length: 3 }, (_, index) => ({
+      ...itinerary,
+      selectionId: `sel_${String(index).padStart(32, '0')}`,
+      price: { ...itinerary.price, total: itinerary.price.total + index * 25 },
+    }));
+    mount(<FlightResultsView
+      result={{ ...search, itineraries }}
+      displayMode="inline"
+      onVerify={vi.fn()}
+    />);
+
+    await expect.element(page.getByRole('region', { name: 'Flight option 1 of 3' }))
+      .toBeVisible();
+    const carouselWindow = document.querySelector<HTMLElement>('.cc-carousel-window')!;
+    const visibleShare = (card: HTMLElement) => {
+      const windowBounds = carouselWindow.getBoundingClientRect();
+      const cardBounds = card.getBoundingClientRect();
+      return Math.max(
+        0,
+        Math.min(windowBounds.right, cardBounds.right)
+          - Math.max(windowBounds.left, cardBounds.left),
+      ) / windowBounds.width;
+    };
+    const nextPeek = document.querySelector<HTMLElement>('.cc-carousel-peek-slide .cc-fare-card')!;
+    expect(visibleShare(nextPeek)).toBeGreaterThan(0.1);
+    expect(visibleShare(nextPeek)).toBeLessThan(0.2);
+
+    await page.getByRole('button', { name: 'Next flight option' }).click();
+    await page.getByRole('button', { name: 'Next flight option' }).click();
+    await expect.element(page.getByText('Option 3 of 3')).toBeVisible();
+    const previousPeek = document.querySelector<HTMLElement>(
+      '.cc-carousel-previous-peek-shell .cc-fare-card',
+    )!;
+    await expect.poll(() => visibleShare(previousPeek)).toBeLessThan(0.2);
+    expect(visibleShare(previousPeek)).toBeGreaterThan(0.1);
+    expect(hasHorizontalOverflow()).toBe(false);
+  });
+
   it('bounds fare chips and swaps to an accessible fare-details face without changing card height', async () => {
     await page.viewport(720, 1_200);
     mount(<InteractiveResults />);

@@ -1795,11 +1795,9 @@
   .cc-leg-heading { align-items: flex-start; }
   .cc-layover-summary p { display: grid; gap: 3px; }
   .cc-carousel-stage { padding-inline: 20px; }
-  .cc-carousel-track { gap: 0; }
   .cc-carousel-track > .cc-carousel-slide,
-  .cc-carousel-track > .cc-carousel-peek-shell { flex-basis: 100%; }
-  .cc-carousel-track-is-last { transform: translateX(-100%); }
-  .cc-carousel-peek-hit-target { display: none; }
+  .cc-carousel-track > .cc-carousel-peek-shell { flex-basis: 82%; }
+  .cc-carousel-track-is-last { transform: translateX(calc(-64% - 12px)); }
   .cc-carousel-arrow-previous { left: -2px; }
   .cc-carousel-arrow-next { right: -2px; }
   .cc-fare-card .cc-fare-meta,

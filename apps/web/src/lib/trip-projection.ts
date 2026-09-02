@@ -417,9 +417,11 @@ function hotelSearchBreaksTrip(
   destination: string,
   checkInDate: string,
   checkOutDate: string,
+  currency?: string,
 ) {
   return comparableDestinationConflict(current.stayDestination, destination)
     || comparableDestinationConflict(current.destination, destination)
+    || valuesConflict(current.currency, currency)
     || (
       current.origin && current.destination
         ? flightAndStayDatesConflict(
@@ -578,6 +580,8 @@ function stayOptionSummary(
     || !context.checkInDate
     || !context.checkOutDate
     || nights !== nightsBetween(context.checkInDate, context.checkOutDate)
+    || !destinationsMatch(context.stayDestination, destination)
+    || Boolean(context.currency && context.currency !== subtotal.currency)
   ) return undefined;
 
   return {
@@ -885,6 +889,7 @@ function projectResult(
       const destination = boundedText(rawResult.searchContext.destination, 2, 80);
       const checkInDate = isoDate(rawResult.searchContext, 'checkInDate');
       const checkOutDate = isoDate(rawResult.searchContext, 'checkOutDate');
+      const currency = stringField(rawResult.searchContext, 'currency', CURRENCY_PATTERN);
       if (
         !destination
         || !checkInDate
@@ -904,6 +909,7 @@ function projectResult(
         destination,
         checkInDate,
         checkOutDate,
+        currency,
       );
       const compatibleProjection = incompatible ? EMPTY_TRIP : cleared;
       const projection: TripProjection = {
@@ -913,6 +919,7 @@ function projectResult(
         stayDestination: destination,
         checkInDate,
         checkOutDate,
+        ...(currency ? { currency } : {}),
       };
       return {
         ...state,
