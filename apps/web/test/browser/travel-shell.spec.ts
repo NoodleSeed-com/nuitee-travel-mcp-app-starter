@@ -1993,6 +1993,59 @@ test('keeps the transcript as the sole flexible row before trip context exists',
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
 });
 
+test('anchors the composer to the bottom safe area for a short conversation', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium');
+  await page.route('**/v1/assistant/public-sessions', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        token: 'browser-fixture-token',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        endpoints: {
+          turns: 'http://127.0.0.1:3108/browser-fixture/short-turn',
+          toolConfirmations: 'http://127.0.0.1:3108/browser-fixture/confirmations',
+        },
+      }),
+    });
+  });
+  await page.route('**/browser-fixture/short-turn', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: [
+        `event: content\ndata: ${JSON.stringify({
+          delta: 'Where would you like to go?',
+        })}`,
+        'event: done\ndata: {}',
+        '',
+      ].join('\n\n'),
+    });
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/');
+  await page.getByRole('textbox', { name: 'Ask the travel assistant' })
+    .fill('Help me plan a trip');
+  await page.getByRole('button', { name: 'Submit trip request' }).click();
+
+  const conversation = page.getByRole('region', { name: 'Travel conversation' });
+  await expect(conversation.getByText('Where would you like to go?')).toBeVisible();
+  const composer = conversation.getByRole('form', { name: 'Continue trip' });
+  const layout = await composer.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    return {
+      bottomSafeArea: window.innerHeight - bounds.bottom,
+      position: getComputedStyle(element).position,
+    };
+  });
+
+  expect(layout.position).toBe('sticky');
+  expect(layout.bottomSafeArea).toBeGreaterThanOrEqual(0);
+  expect(layout.bottomSafeArea).toBeLessThanOrEqual(48);
+});
+
 test('keeps terminal errors bounded in the stable lower chrome row', async ({
   page,
 }, testInfo) => {
