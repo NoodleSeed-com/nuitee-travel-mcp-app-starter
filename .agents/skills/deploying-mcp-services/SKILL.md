@@ -3,7 +3,7 @@ name: deploying-mcp-services
 description: "Use when the user explicitly requests a Noodle Seed hosted link, configuration write, deployment, access change, rollback, or connection write."
 ---
 
-<!-- noodle-skill version:0.91.0 hash:93e735b7ffb45df1 -->
+<!-- noodle-skill version:0.98.0 hash:3a1e14ff9b98ddbd -->
 
 # deploying-mcp-services
 
@@ -27,8 +27,8 @@ Apply only the explicitly authorized hosted mutation to the explicit org, app, a
 
 ## Workflow
 
-Read and follow the canonical playbook `references/deploy-and-ops.md` at `../noodle-seed/references/deploy-and-ops.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
-Load `references/cli-commands.md` at `../noodle-seed/references/cli-commands.md` only when the playbook or observed evidence names that concern.
+Read and follow the canonical playbook at `references/deploy-and-ops.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
+Load the supporting reference at `references/cli-commands.md` only when the playbook or observed evidence names that concern.
 
 ## Verification evidence
 

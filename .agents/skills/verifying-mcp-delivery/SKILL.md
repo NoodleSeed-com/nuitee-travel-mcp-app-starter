@@ -3,7 +3,7 @@ name: verifying-mcp-delivery
 description: "Use when proving a Noodle Seed MCP project works at a named compile, local, connector, App, host, deployment, or production evidence level."
 ---
 
-<!-- noodle-skill version:0.91.0 hash:6ef6ef551e26b78e -->
+<!-- noodle-skill version:0.98.0 hash:292253cbaed9a3c5 -->
 
 # verifying-mcp-delivery
 
@@ -27,8 +27,8 @@ Report the highest evidence level actually rerun without upgrading weaker proof.
 
 ## Workflow
 
-Read and follow the canonical playbook `references/verify-and-recover.md` at `../noodle-seed/references/verify-and-recover.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
-Load `references/test-in-hosts.md` at `../noodle-seed/references/test-in-hosts.md` only when the playbook or observed evidence names that concern.
+Read and follow the canonical playbook at `references/verify-and-recover.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
+Load the supporting reference at `references/test-in-hosts.md` only when the playbook or observed evidence names that concern.
 
 ## Verification evidence
 

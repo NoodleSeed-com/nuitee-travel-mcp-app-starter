@@ -69,6 +69,24 @@ describe('acme-discovery example', () => {
     expect(manifest.server.assistant?.labels?.signUpAction).toBe('Create free account');
   });
 
+  it('opens the marketing surface to browser agents and leaves the account surface closed', async () => {
+    const manifest = await app.toManifest();
+    const surfaces = manifest.server.assistant?.surfaces ?? [];
+
+    // Both front doors, asserted by count first: without it the per-surface claims below read a
+    // missing surface as `undefined` and pass, so deleting a surface would silently satisfy them.
+    expect(surfaces).toHaveLength(2);
+    // ADR 0220: the opt-in governs *discovery* — whether the embed registers this session's already
+    // projected tools with `document.modelContext`. A browser agent on Acme's marketing page reaches
+    // exactly the six capabilities above, over the same authorization, confirmation, and budget path
+    // the panel's own calls take. `capture_lead` still stops for its confirmation card.
+    expect(surfaces[0]?.webmcp).toEqual({ enabled: true });
+    // Per-surface opt-in exists so the two front doors can answer differently, and here they do: the
+    // signed-in account surface carries a traveler's identity, so its tools are not advertised to
+    // whatever agent happens to be running in that browser.
+    expect(surfaces[1]?.webmcp).toBeUndefined();
+  });
+
   it('declares the grounded knowledge component and its live site scope', async () => {
     const manifest = (await app.toManifest()) as { server: { knowledge?: unknown[] } };
     // One declaration: controlled files plus the live public site, compiled later into the

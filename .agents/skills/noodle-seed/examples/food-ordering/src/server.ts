@@ -326,6 +326,7 @@ export default server(
           version: 'v1',
           scope: 'caller',
           ttlSeconds: 7200,
+          claimOnAuthentication: true,
           schema: cartStateSchema,
         },
       },

@@ -3,7 +3,7 @@ name: publishing-mcp-integrations
 description: "Use when preparing, reviewing, or submitting a Noodle Seed MCP integration to a host or app directory."
 ---
 
-<!-- noodle-skill version:0.91.0 hash:efffbf82007f935d -->
+<!-- noodle-skill version:0.98.0 hash:0ccafb222038f553 -->
 
 # publishing-mcp-integrations
 
@@ -27,8 +27,8 @@ Produce complete submission evidence with host-review uncertainty stated explici
 
 ## Workflow
 
-Read and follow the canonical playbook `references/publishing.md` at `../noodle-seed/references/publishing.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
-Load `references/app-directory-compliance.md` at `../noodle-seed/references/app-directory-compliance.md` only when the playbook or observed evidence names that concern.
+Read and follow the canonical playbook at `references/publishing.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
+Load the supporting reference at `references/app-directory-compliance.md` only when the playbook or observed evidence names that concern.
 
 ## Verification evidence
 

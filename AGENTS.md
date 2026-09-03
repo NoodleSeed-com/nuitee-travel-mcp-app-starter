@@ -1,5 +1,5 @@
 <!-- BEGIN NOODLE AGENT CONTEXT -->
-<!-- noodle-agent-kit:0.91.0 hash:cbb5c6a18b420ad3 -->
+<!-- noodle-agent-kit:0.98.0 hash:cbb5c6a18b420ad3 -->
 # Noodle Seed Project Context
 
 Agent target: Codex.

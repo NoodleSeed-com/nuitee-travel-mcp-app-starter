@@ -3,7 +3,7 @@ name: creating-product-agent-guides
 description: "Use when a Noodle Seed MCP server needs a new or revised product agent guide, App Package skill, or explicit product-skill regeneration."
 ---
 
-<!-- noodle-skill version:0.91.0 hash:0fa48a82fe836cf0 -->
+<!-- noodle-skill version:0.98.0 hash:0e06e11254563b6a -->
 
 # creating-product-agent-guides
 
@@ -27,7 +27,7 @@ Create or revise one grounded TypeScript product guide, prove it locally, and pr
 
 ## Workflow
 
-Read and follow the canonical playbook `references/product-agent-guides.md` at `../noodle-seed/references/product-agent-guides.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
+Read and follow the canonical playbook at `references/product-agent-guides.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
 
 ## Verification evidence
 

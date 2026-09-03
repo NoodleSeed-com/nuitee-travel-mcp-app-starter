@@ -26,7 +26,7 @@ Establish only the inputs needed for the requested stopping point. Follow `refer
 5. **Author in TypeScript.** Follow `references/authoring-workflow.md` for connector and flow patterns, `references/tool-design.md` for the model-facing tool surface, and `references/sdk-surface.md` for exact builders. These are this route’s complete canonical support set; use the router lookup catalog only when observed evidence names a different concern.
    MCP protocol versions are platform-owned and negotiated automatically at the serving endpoint. Do not add protocol-version settings to server options, `noodle.json`, app manifests, or deployment configuration.
 6. **Validate and repair.** Run `noodle validate --json`. Parse `error.errors[]`, repair the cited `path`, and rerun validation. Consult the lookup catalog only for the specific reported error code; do not open another reference speculatively.
-7. **Run the local smoke.** After validation succeeds, run `noodle test --json` and repair any failure at that evidence layer.
+7. **Run local behavior.** Start from the generated tests and run `npm test`: compile, tools/list, representative result and invalid-input rejection. `noodle test --json` without `--tool` is registration-only; repair failures before claiming a working capability.
 8. **Prove external behavior.** For connector-backed reads, set credentials through the effective local target and run a safe representative `noodle tools call`. Confirm populated mapped fields from real output, not merely successful registration.
 9. **Stop at the requested boundary.** Do not add an App, host test, hosted environment, publication work, or deployment unless the user requested that outcome. Deploy only when the selected route or the user explicitly requires it.
 
@@ -36,7 +36,7 @@ Report evidence as a ladder and claim only levels actually exercised:
 
 - **Authoring:** the requested TypeScript behavior exists with typed inputs and outputs, and the product-guide decision and reason are recorded.
 - **Compilation:** `noodle validate --json` returned success.
-- **Local smoke:** `noodle test --json` returned success.
+- **Local behavior:** the generated/adapted suite passed a representative call and a negative case. Synthetic fixtures prove only their configured behavior.
 - **Connector reality:** a representative safe read via `noodle tools call` returned populated mapped fields. This is required for connector-backed work.
 - **Higher levels:** explicitly report host, deployment, and production checks as not run unless they were separately requested and evidenced.
 

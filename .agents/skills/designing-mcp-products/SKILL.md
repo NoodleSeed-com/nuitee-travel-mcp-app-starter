@@ -3,7 +3,7 @@ name: designing-mcp-products
 description: "Use when a Noodle Seed MCP product idea needs conversational fit, user benefit, scope, interaction, or evidence design before implementation."
 ---
 
-<!-- noodle-skill version:0.91.0 hash:78a6f181b61f92f1 -->
+<!-- noodle-skill version:0.98.0 hash:a21b2ed9997f9454 -->
 
 # designing-mcp-products
 
@@ -27,8 +27,8 @@ Produce the smallest decision-ready MCP product design before code or hosted mut
 
 ## Workflow
 
-Read and follow the canonical playbook `references/experience-design.md` at `../noodle-seed/references/experience-design.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
-Load `references/authoring-workflow.md` at `../noodle-seed/references/authoring-workflow.md` only when the playbook or observed evidence names that concern.
+Read and follow the canonical playbook at `references/experience-design.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
+Load the supporting reference at `references/authoring-workflow.md` only when the playbook or observed evidence names that concern.
 
 ## Verification evidence
 

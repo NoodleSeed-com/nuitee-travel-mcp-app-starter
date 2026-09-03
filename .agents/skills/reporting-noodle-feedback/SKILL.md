@@ -3,7 +3,7 @@ name: reporting-noodle-feedback
 description: "Use when a Noodle Seed bug, misleading instruction, missing capability, or concrete product improvement should be proposed to the user."
 ---
 
-<!-- noodle-skill version:0.91.0 hash:0f404109f4845683 -->
+<!-- noodle-skill version:0.98.0 hash:660cc6ad9469d90f -->
 
 # reporting-noodle-feedback
 
@@ -27,7 +27,7 @@ Preview one sanitized feedback proposal and submit it once only after informed e
 
 ## Workflow
 
-Read and follow the canonical playbook `references/feedback.md` at `../noodle-seed/references/feedback.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
+Read and follow the canonical playbook at `references/feedback.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
 
 ## Verification evidence
 

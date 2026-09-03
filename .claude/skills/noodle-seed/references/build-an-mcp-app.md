@@ -25,14 +25,14 @@ Before implementation, capture a short design spec: target user, conversational 
 4. **Preserve fallback.** Every tool that launches a widget must still return useful text without the widget, so unsupported hosts and failed rendering remain usable.
 5. **Decide product-guide coverage.** Record the required product-guide decision and its reason, then use `references/product-agent-guides.md` as the canonical selection and authoring guidance.
 6. **Author and wire the App contract.** Follow `references/widgets-and-apps.md` for the canonical component guidance, view registration, hooks, state, CSP, tool visibility, and output shaping. Keep tool effects and confirmation semantics correct independently of the UI.
-7. **Validate the local artifact.** Run `noodle validate --json`, `noodle test --json`, and `noodle check --json`. Repair failures at the layer that produced them.
+7. **Validate the local artifact.** Run the generated/adapted `npm test`, `noodle validate --json` and `noodle check --json`. Prove a representative result and negative case, not just registration. Synthetic preference previews do not save; replace their backend seam and verify the authorized effect before showing success.
 8. **Inspect the experience.** Run `noodle devtools` and verify loading, empty, error, success, responsive layout, focus/keyboard behavior, and the text fallback.
 9. **Escalate evidence only on request.** Run a host test only when the user requested host verification. Run host-specific compliance only when preparing that host submission; select the exact host-testing or compliance entry from the router lookup catalog only after that evidence level is explicitly requested.
 
 ## Verification evidence
 
 - **Product:** the design spec states the user benefit, UI fit decision, and product-guide decision with its reason.
-- **Server:** `noodle validate --json` and `noodle test --json` succeeded.
+- **Server:** compilation, a representative call and negative input/authorization cases passed; report whether fixtures or a real authorized backend were used.
 - **App contract:** `noodle check --json` succeeded.
 - **Local UX:** `noodle devtools` exercised the relevant states and the useful text fallback without the widget.
 - **Host/compliance:** report each requested host or compliance check with its evidence; report every unperformed higher level as not run.

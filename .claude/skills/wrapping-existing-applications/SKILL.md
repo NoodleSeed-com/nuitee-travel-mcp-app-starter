@@ -3,7 +3,7 @@ name: wrapping-existing-applications
 description: "Use when an existing application has no stable usable API and needs a read-only, identity-first Noodle Seed integration plan before implementation."
 ---
 
-<!-- noodle-skill version:0.91.0 hash:eccc3c158dcafba8 -->
+<!-- noodle-skill version:0.98.0 hash:379ab9f64878f1fe -->
 
 # wrapping-existing-applications
 
@@ -28,9 +28,9 @@ Produce the smallest safe, repository-grounded existing-application integration 
 
 ## Workflow
 
-Read and follow the canonical playbook `references/wrap-existing-app.md` at `../noodle-seed/references/wrap-existing-app.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
-Load `references/authoring-workflow.md` at `../noodle-seed/references/authoring-workflow.md` only when the playbook or observed evidence names that concern.
-Load `references/tool-design.md` at `../noodle-seed/references/tool-design.md` only when the playbook or observed evidence names that concern.
+Read and follow the canonical playbook at `references/wrap-existing-app.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
+Load the supporting reference at `references/authoring-workflow.md` only when the playbook or observed evidence names that concern.
+Load the supporting reference at `references/tool-design.md` only when the playbook or observed evidence names that concern.
 
 ## Verification evidence
 

@@ -7,6 +7,11 @@ Capability slots: HTTP connector authoring, ordered fulfilment flows, query/resp
 **list-returning connector output** (a connector that returns a live, variable-length array), and
 sandboxed compute, including an explicit least-privilege per-operation response-size bound.
 
+For a different API with an OpenAPI document, start with `noodle import openapi <file>` in a separate
+directory. It preserves supported typed JSON bodies and scalar parameters; unsupported input encodings
+stop import instead of dropping fields. Its offline test establishes the contract, not live behavior; follow the
+[connector guide](https://docs.noodleseed.dev/docs/guides/connectors) before replacing this curated flow.
+
 1. **`geo.search`** → geocode the city to coordinates (Open-Meteo Geocoding API)
 2. **`forecast.current`** → fetch current weather for those coordinates (Open-Meteo Forecast API)
 3. **`brief.summarize`** → derive a human-readable briefing in a **WASM/QuickJS compute sandbox**
@@ -65,6 +70,12 @@ each array or nested object is JSON-stringified into its individual form field. 
 or set `Content-Type` manually; the connector owns both.
 
 ## Run it locally
+
+Before an authorized hosted deployment, inspect this project's inputs with your project-local CLI:
+`noodle deploy preflight --org <org> --app weather --env staging --version 1 --json`.
+This requires existing hosted access but does not publish or call the weather backend. Its readiness result
+does not replace the local and hosted representative-call checks below. Review independent missing bindings,
+origin and target-capability findings together before an authorized repair and recheck.
 
 From the repo root, with the workspace built (`pnpm build`):
 

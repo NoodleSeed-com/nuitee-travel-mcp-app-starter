@@ -198,7 +198,7 @@ model" section of `references/authoring-workflow.md`.
 
 ### Set the secret for local runs
 
-Local `dev`, smoke commands, secrets, and variables resolve one effective target: explicit flags, then the project link, then the saved CLI target, then local defaults. Set the secret through that same target:
+Local authoring resolves explicit coordinates, then the complete project link, then deterministic local defaults; saved global coordinates do not redirect an unlinked project. Follow the diagnostic’s exact-target commands from the project directory for every missing secret and variable:
 
 ```sh
 # Canonical: writes to the effective local environment used by dev/test/devtools:
@@ -215,7 +215,7 @@ Scoped local values live in `./.env.noodle`; the exact project-root `.env` is a 
 
 ### Prove real output
 
-`noodle validate` / `noodle test` prove a connector tool *compiles and registers* — not that its
+`noodle validate` / `noodle test` without `--tool` prove a connector tool *compiles and registers* — not that its
 mapping returns data. With the secret set, run a live read: `noodle tools call <read_tool> --args
 '{…}'` executes the connector against the real API in-process. Confirm the mapped fields are populated,
 not `undefined`; if they are empty, distinguish a legitimate empty result from a missing or incorrect mapping, fix `${response…}` paths against the real payload when needed, and re-run.

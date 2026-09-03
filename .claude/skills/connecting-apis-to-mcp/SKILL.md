@@ -3,7 +3,7 @@ name: connecting-apis-to-mcp
 description: "Use when all four API-evidence inputs exist—and only then: API base URL, authentication scheme, representative safe read, and observed response."
 ---
 
-<!-- noodle-skill version:0.91.0 hash:21bbd3ec441ffd30 -->
+<!-- noodle-skill version:0.98.0 hash:8020811f1769c538 -->
 
 # connecting-apis-to-mcp
 
@@ -26,8 +26,8 @@ Connect a real API using managed credentials and mappings proven against observe
 
 ## Workflow
 
-Read and follow the canonical playbook `references/connect-an-api.md` at `../noodle-seed/references/connect-an-api.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
-Load `references/authoring-workflow.md` at `../noodle-seed/references/authoring-workflow.md` only when the playbook or observed evidence names that concern.
+Read and follow the canonical playbook at `references/connect-an-api.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
+Load the supporting reference at `references/authoring-workflow.md` only when the playbook or observed evidence names that concern.
 
 ## Verification evidence
 

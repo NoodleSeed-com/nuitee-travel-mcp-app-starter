@@ -3,7 +3,7 @@ name: debugging-mcp-delivery
 description: "Use when an existing Noodle Seed MCP project has a concrete validation, runtime, connector, App, host, deployment, or production failure."
 ---
 
-<!-- noodle-skill version:0.91.0 hash:aa715bae12041d7c -->
+<!-- noodle-skill version:0.98.0 hash:8d75ad13f4b3120a -->
 
 # debugging-mcp-delivery
 
@@ -27,9 +27,9 @@ Repair or isolate the first failing evidence layer while preserving everything a
 
 ## Workflow
 
-Read and follow the canonical playbook `references/verify-and-recover.md` at `../noodle-seed/references/verify-and-recover.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
-Load `references/troubleshooting.md` at `../noodle-seed/references/troubleshooting.md` only when the playbook or observed evidence names that concern.
-Load `references/inspect-hosted.md` at `../noodle-seed/references/inspect-hosted.md` only when the playbook or observed evidence names that concern.
+Read and follow the canonical playbook at `references/verify-and-recover.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
+Load the supporting reference at `references/troubleshooting.md` only when the playbook or observed evidence names that concern.
+Load the supporting reference at `references/inspect-hosted.md` only when the playbook or observed evidence names that concern.
 
 ## Verification evidence
 

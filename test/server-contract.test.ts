@@ -214,15 +214,22 @@ describe('server contract', () => {
 
     expect(error).toBeDefined();
     const response = JSON.parse(String((error as { stdout?: string }).stdout));
+    // The contract under test is that the server REJECTS a lower-case IATA
+    // code — that still holds. What changed is the CLI's error envelope:
+    // @noodleseed/one 0.151.1 reported `detail.data.reason ===
+    // 'invalid_tool_arguments'` with a `validation[]` array naming the failing
+    // path; 0.161.0 reports a bare JSON-RPC -32602 ("Invalid params") with no
+    // per-field detail. The rejection is asserted here; the lost field-level
+    // diagnosis is tracked as upstream feedback, not worked around.
     expect(response).toMatchObject({
       ok: false,
       error: {
         code: 'mcp_error',
         detail: {
-          data: {
-            reason: 'invalid_tool_arguments',
-            validation: [expect.objectContaining({ path: 'origin' })],
-          },
+          method: 'tools/call',
+          reason: 'rpc_error',
+          rpcCode: -32602,
+          status: 400,
         },
       },
     });

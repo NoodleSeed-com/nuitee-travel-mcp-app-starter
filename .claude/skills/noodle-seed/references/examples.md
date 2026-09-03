@@ -15,6 +15,7 @@ Paths are relative to this skill directory. Assets (images/fonts) are omitted fr
 | `acme-tasks` | A two-way productivity app designed around its top-3 prioritized flows (capture/prioritize/complete), with a design-first flow spec + wireframe. | `examples/acme-tasks/src/server.ts` + `design/` |
 | `acme-bistro` | End-to-end ordering with a payment-only handoff; ships a gold-standard `design/` set (UX doc, wireframe with compliance audit, API contract). | `examples/acme-bistro/src/server.ts` + `design/` |
 | `customer-auth` | End-user OIDC, private customer API routing, route-bound confirmed actions, roles/scopes, and delegated credentials. | `examples/customer-auth/src/server.ts` |
+| `stateful-draft` | Review and save a brief before signup; carry caller-scoped state into an account. | `examples/stateful-draft/src/server.ts` |
 | `gmail-multi-account` | One curated Gmail connector reused by two account bindings, canonical account arrays, exact mutation confirmation, and an accompanying personal-automation skill. | `examples/gmail-multi-account/src/server.ts` |
 | `google-bigquery` | Keyless Google Workload Identity Federation with optional service-account impersonation, a BigQuery REST connector, and complete developer/operator setup. | `examples/google-bigquery/src/server.ts` |
 
@@ -22,7 +23,6 @@ Paths are relative to this skill directory. Assets (images/fonts) are omitted fr
 
 | Example | Use when |
 | :-- | :-- |
-| `stateful-draft` | Durable, caller-scoped widget state handles with optimistic revisions. |
 | `perplexity` | A real SaaS API with bearer auth and a managed `secret`. |
 | `bitcoin` | API-key HTTP connector, custom auth header, and compute normalization. |
 | `sharepoint` | Microsoft SharePoint delegated Microsoft Entra auth and Graph tools. |

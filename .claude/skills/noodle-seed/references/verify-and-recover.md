@@ -23,6 +23,7 @@ Use this ordered evidence ladder. Start at the last known passing layer or the l
 1. **Compile** — the TypeScript build and authoring import surface are valid.
 2. **Validate** — `noodle validate --json` accepts the Noodle contract.
 3. **Local smoke** — `noodle test --json` starts the local runtime. Open apps exercise MCP registration; customer-auth apps must instead pass the anonymous 401 plus exact protected-resource metadata boundary and report `interactiveRequired: true`.
+   To prove a safe read, explicitly supply `--tool <read_tool> --args <json>` or use `noodle tools call <read_tool> --args <json> --json`. These commands fail on protocol/tool errors, missing or incomplete results, and a declared output-schema mismatch. `input_required` is not completion: use Devtools for interactive input, never fabricate approval or retry an uncertain write.
 4. **Customer auth** — when customer auth is declared, run `noodle auth doctor src/server.ts --json` for metadata and JWKS readiness, then run `noodle devtools src/server.ts`, complete sign-in, and make one authenticated `tools/list` request or representative safe read. The doctor does not prove that registration or token issuance succeeds; the authenticated request proves issuer, signature, stable audience, and exact-resource binding together.
 5. **Real API** — a representative safe `noodle tools call` proves connector credentials, transport, observed mapping, and populated data.
 6. **App compliance** — `noodle check --json` and local devtools prove the App contract and intended states.
@@ -53,10 +54,11 @@ Report a compact ledger for every exercised layer: command/action, target, resul
 ## Recovery paths
 
 - Compile/validation: repair the exact import, schema, or reported path, then rerun that command without freeform changes.
-- Local boot/smoke: use the structured startup error to correct the effective target, config, or entrypoint before retrying.
+- Local boot/smoke: use all reported missing variable and secret names and the exact-target recovery commands together. Values stay outside the diagnostic. `error.detail.reason` identifies incomplete/failed operation evidence; RPC message/data and continuation state are deliberately not copied. A failed response does not prove a write was rolled back.
 - Real API: distinguish authentication, reachability, legitimate empty results, and broken response mappings before changing code.
 - App: repair the cited contract or state in `noodle check --json`, then confirm it in devtools before attempting a host.
 - Host/deployment/production: confirm revision, target, identity, and configuration independently; do not infer one from another.
+- Authored deploy readiness: with existing access and the intended target, inspect `noodle deploy preflight --json` through the installed execution transport (`noodle-readiness.preflight_build` for plugin users). It never configures or publishes. Review independent config, origin, capability, auth and rendering blockers together; denied or invalid inputs can prevent dependent checks. Proposed configuration commands require separate authorization. Readiness is not a backend call or hosted journey.
 - Repeated external failure: preserve passing evidence and report the sanitized failure, required authority or external state, owner, and exact next action.
 
 ## Stop conditions

@@ -3,7 +3,7 @@ name: authoring-mcp-servers
 description: "Use when creating or extending a headless Noodle Seed MCP server, tool, resource, prompt, or typed model-facing capability."
 ---
 
-<!-- noodle-skill version:0.91.0 hash:11523cb33b9473c0 -->
+<!-- noodle-skill version:0.98.0 hash:dd57a15df15d10b2 -->
 
 # authoring-mcp-servers
 
@@ -27,9 +27,9 @@ Deliver focused model-facing MCP behavior through the configured TypeScript entr
 
 ## Workflow
 
-Read and follow the canonical playbook `references/build-an-mcp-server.md` at `../noodle-seed/references/build-an-mcp-server.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
-Load `references/authoring-workflow.md` at `../noodle-seed/references/authoring-workflow.md` only when the playbook or observed evidence names that concern.
-Load `references/sdk-surface.md` at `../noodle-seed/references/sdk-surface.md` only when the playbook or observed evidence names that concern.
+Read and follow the canonical playbook at `references/build-an-mcp-server.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
+Load the supporting reference at `references/authoring-workflow.md` only when the playbook or observed evidence names that concern.
+Load the supporting reference at `references/sdk-surface.md` only when the playbook or observed evidence names that concern.
 
 ## Verification evidence
 

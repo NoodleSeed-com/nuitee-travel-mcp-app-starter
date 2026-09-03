@@ -1,5 +1,8 @@
 # Customer Auth - OIDC identity and customer-routed APIs
 
+For a visitor who starts before signup, use the [Stateful Draft reference](../stateful-draft/README.md)
+alongside this authenticated backend integration.
+
 This curated example owns the customer/end-user authentication capability slot. It proves that a SaaS app
 can protect an MCP endpoint with direct OIDC, retain role/scope-based tool authorization, and route ordinary
 reads and confirmed actions to the API origin selected by the verified customer's identity provider.
@@ -367,6 +370,13 @@ and passes `routing: { endpoints: { customer_api: cluster.apiBaseUrl } }` to
 `createAssistantSession`. Noodle validates and privately stores that route; it is not returned to the
 browser. Do not copy the route into page context, session claims, tool input, or model instructions.
 
+The authenticated assistant surface also declares `accountTier` as a model-visible session claim. Pass it
+from the same backend-owned account record as `claims: { accountTier: account.tier }`; undeclared claims are
+dropped. This is personalization context, not authorization: the verified roles/scopes beside each tool and
+the server-owned customer route remain the enforcement boundaries. The public
+[runtime guide](https://docs.noodleseed.dev/docs/guides/product-agent-guides#use-the-guide-at-runtime)
+explains how verified session claims constrain the guide content available to the model.
+
 ```bash
 noodle variables set ASSISTANT_ORIGIN https://app.example.com --scope env
 noodle variables set ASSISTANT_MODEL_BASE_URL https://model.example.com/v1 --scope env
@@ -391,7 +401,7 @@ set the bounded surface to `glass` only when translucency is intentional.
 These TypeScript values remain the reusable developer defaults. After deployment, an environment operator
 can adjust theme, logo, launcher style, position, and the bounded color palette from the Console's
 **Assistant** tab or `noodle assistant appearance` without changing the customer's embed code. See the
-[embedded assistant guide](https://docs.noodleseed.dev/guides/embedded-assistant) for precedence and reset
+[embedded assistant guide](https://docs.noodleseed.dev/docs/guides/embedded-assistant) for precedence and reset
 behavior.
 
 Create the backend credential after deployment. The CLI writes it to a mode-0600 file and never prints the
@@ -425,8 +435,12 @@ import { NoodleAssistant } from '@noodleseed/assistant/react';
 `resolvedTheme` is the application's current `'light' | 'dark'` value. Use `theme="auto"` only when the
 browser operating-system preference is intentionally authoritative.
 
-For an entirely application-owned React renderer, use the renderer-free hook. It creates no custom element
-and returns the AI SDK transcript plus the canonical client commands:
+### Minimal fail-closed custom renderer skeleton
+
+Use the renderer-free hook only when the product has a concrete reason to own the conversation UI. This
+minimal skeleton keeps the canonical client and App host, but intentionally refuses confirmation and input
+acceptance until the application implements their complete schema-aware presentation. Start with the managed
+renderer unless the application accepts every obligation below.
 
 ```tsx
 'use client';
@@ -438,12 +452,20 @@ import { useNoodleAssistant } from '@noodleseed/assistant/react/client';
 export function CustomerAssistant({
   principalKey,
   resolvedTheme,
+  onSignInRequested,
 }: {
   principalKey: string;
   resolvedTheme: 'light' | 'dark';
+  onSignInRequested: (request: {
+    signInTicket: string;
+    expiresAt: string;
+  }) => Promise<'started' | 'cancelled'>;
 }) {
   const [draft, setDraft] = useState('');
-  const { client, messages, status, error } = useNoodleAssistant({
+  const [sessionNotice, setSessionNotice] = useState('');
+  const [turnNotice, setTurnNotice] = useState('');
+  const [pendingSignInTicket, setPendingSignInTicket] = useState<string>();
+  const { client, messages, suggestions, status, error } = useNoodleAssistant({
     sessionEndpoint: '/api/noodle-assistant/session',
     principalKey,
   });
@@ -453,6 +475,16 @@ export function CustomerAssistant({
       // The hook exposes this same structured failure through `error`.
     });
   };
+  useEffect(
+    () =>
+      client.subscribe((event) => {
+        if (event.event === 'session_expired') setSessionNotice('Session expired.');
+        if (event.event === 'session_started' || event.event === 'session_reset') {
+          setSessionNotice('');
+        }
+      }),
+    [client],
+  );
 
   return (
     <section aria-label="Assistant" aria-busy={busy}>
@@ -466,20 +498,18 @@ export function CustomerAssistant({
                 <section key={review.id} aria-label="Review proposed action">
                   <h3>{review.title ?? 'Review proposed action'}</h3>
                   {review.description ? <p>{review.description}</p> : null}
-                  <pre aria-label="Proposed action arguments">
-                    {JSON.stringify(review.arguments ?? {}, null, 2)}
-                  </pre>
-                  <button
-                    disabled={busy || review.status !== 'pending'}
-                    onClick={() => settle(client.respond(review.id, { action: 'accept' }))}
-                  >
-                    Confirm
-                  </button>
+                  <p>This custom renderer has not implemented a complete schema-aware review.</p>
                   <button
                     disabled={busy || review.status !== 'pending'}
                     onClick={() => settle(client.respond(review.id, { action: 'decline' }))}
                   >
                     Don't proceed
+                  </button>
+                  <button
+                    disabled={busy || review.status !== 'pending'}
+                    onClick={() => settle(client.respond(review.id, { action: 'cancel' }))}
+                  >
+                    Cancel
                   </button>
                 </section>
               );
@@ -489,21 +519,28 @@ export function CustomerAssistant({
               return (
                 <section key={request.id} aria-label="Assistant needs input">
                   <p>{request.message}</p>
-                  <p>This renderer has not implemented the requested form.</p>
+                  {/* request.requestedSchema is the sole input-form contract. */}
+                  <p>This custom renderer has not implemented the requested schema form.</p>
                   <button
                     disabled={busy || request.status !== 'pending'}
                     onClick={() => settle(client.respond(request.id, { action: 'decline' }))}
                   >
-                    Cancel request
+                    Don't proceed
+                  </button>
+                  <button
+                    disabled={busy || request.status !== 'pending'}
+                    onClick={() => settle(client.respond(request.id, { action: 'cancel' }))}
+                  >
+                    Cancel
                   </button>
                 </section>
               );
             }
             if (part.type === 'data-tool-result') {
               return (
-                <pre key={part.data.id} aria-label={`${part.data.tool} result`}>
-                  {JSON.stringify(part.data.result, null, 2)}
-                </pre>
+                <p key={part.data.id} role="status">
+                  A result is available, but this renderer has no trusted presentation for it.
+                </p>
               );
             }
             if (part.type === 'data-view') {
@@ -516,17 +553,67 @@ export function CustomerAssistant({
                 />
               );
             }
+            if (part.type === 'data-sign-in') {
+              const request = part.data;
+              return (
+                <section key={request.id} aria-label="Sign in required">
+                  <p>Continue with your account to use this capability.</p>
+                  <button
+                    disabled={busy || pendingSignInTicket !== undefined}
+                    onClick={() => {
+                      setPendingSignInTicket(request.signInTicket);
+                      void Promise.resolve()
+                        .then(() =>
+                          onSignInRequested({
+                            signInTicket: request.signInTicket,
+                            expiresAt: request.expiresAt,
+                          }),
+                        )
+                        .then(
+                          (result) => {
+                            if (result === 'cancelled') setPendingSignInTicket(undefined);
+                          },
+                          () => setPendingSignInTicket(undefined),
+                        );
+                    }}
+                  >
+                    Sign in
+                  </button>
+                </section>
+              );
+            }
             return <p key={index}>Unsupported assistant content.</p>;
           })}
         </article>
       ))}
-      {error ? <p role="alert">{error.message}</p> : null}
+      <p role="status" aria-live="polite">
+        {sessionNotice || turnNotice || (busy ? 'Assistant is working' : '')}
+      </p>
+      {suggestions?.prompts.length ? (
+        <nav aria-label="Suggested messages">
+          {suggestions.prompts.map((prompt) => (
+            <button
+              key={prompt}
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setTurnNotice('');
+                settle(client.sendMessage(prompt));
+              }}
+            >
+              {prompt}
+            </button>
+          ))}
+        </nav>
+      ) : null}
+      {error ? <p role="alert">The assistant could not complete that request.</p> : null}
       <form
         onSubmit={(event) => {
           event.preventDefault();
           const message = draft.trim();
           if (!message) return;
           setDraft('');
+          setTurnNotice('');
           settle(client.sendMessage(message));
         }}
       >
@@ -536,7 +623,13 @@ export function CustomerAssistant({
           onChange={(event) => setDraft(event.currentTarget.value)}
         />
         {busy ? (
-          <button type="button" onClick={() => client.abort()}>
+          <button
+            type="button"
+            onClick={() => {
+              client.abort();
+              setTurnNotice('Response stopped. This does not undo a started action.');
+            }}
+          >
             Stop
           </button>
         ) : (
@@ -549,14 +642,26 @@ export function CustomerAssistant({
 ```
 
 `principalKey` stays in the browser. Change it whenever the authenticated user or tenant changes; the hook
-then aborts and clears the prior session and transcript. The sample fails closed on input requests until its
-fallback is replaced with a form generated from `requestedSchema`. A production renderer must show the
-complete confirmation review and both decisions. For `data-view`, map `resourceUri` or `tool` and the
-bounded/redacted result to a component already trusted by this application only when intentionally replacing
-the linked App with a native UI. Otherwise use `<noodle-app-view>` or its React `NoodleAppView` adapter;
-JSON result data is not the App UI. The element's semantic lifecycle identity is the client plus `view.id`
-plus `view.resourceUri`, so parent payload/callback rerenders keep the iframe and only a different view,
-disconnect, or App teardown request retires the bridge.
+then aborts and clears the prior session and transcript. The sample does not render Confirm until the host
+implements a complete schema-aware review, and it does not accept elicitation until a portable form covers
+`requestedSchema`; use the managed renderer instead of shipping either unsupported branch. Suggestions are
+hook-owned and submit ordinary messages through `client.sendMessage`.
+
+`data-sign-in` has no status and is never passed to `client.respond`. Bind `signInTicket` to the host's
+short-lived login transaction without putting it in URLs, logs, analytics, or durable browser storage. Resolve
+the callback as `started` only after the host owns one active transaction; return `cancelled` or reject when no
+transaction started so the renderer restores the sign-in affordance. A
+mixed renderer uses separate public and authenticated clients: the public shell uses `embedId`, `serviceUrl`,
+and a visitor principal key; after login, the destination mounts a new client against the same-origin session
+endpoint under the user/tenant principal key. Never pass both source options or mutate the public client's
+source in place. `session_expired` is observational: the client owns its single safe pre-execution re-exchange.
+Never add a generic Retry button or replay an interaction decision automatically.
+
+For `data-tool-result`, do not expose technical tool names or raw JSON. Prefer the linked `data-view`;
+otherwise map a known bounded result to application-trusted UI or keep the explicit unsupported state. For
+`data-view`, use `<noodle-app-view>` or its React `NoodleAppView` adapter. The element's semantic lifecycle
+identity is the client plus `view.id` plus `view.resourceUri`, so payload/callback rerenders keep the iframe
+and only a different view, disconnect, or App teardown request retires the bridge.
 App views remain inline by default: the host advertises only inline presentation and rejects a widget's
 fullscreen request. A customer-owned renderer may opt in explicitly with `allowFullscreen` on
 `NoodleAppView` or `allow-fullscreen` on `<noodle-app-view>` only when fullscreen is part of its intended
@@ -578,6 +683,13 @@ secret allowlist; regenerate existing framework-owned environment binding types 
 Devtools/model exercises to synthetic data, and obtain approval before sending real connector data to an
 external model.
 
+Read `evidence.levels` in order: static host, local contract, hosted session, production browser, then
+operations. Stop at `evidence.firstUnproven`. A static result may be `passed`, `partial`, or `failed`; even
+top-level `ready: true` means only that no static blocker was detected. It never proves the local session
+contract or a production-browser flow. Value-free diagnostics call out an MCP endpoint used as the service
+URL, an HTML redirect risk, an SSR mount risk, and a cross-origin session endpoint. The command has no live
+or browser flag; its `postDeployProbes` are next actions, not executed evidence.
+
 After deployment, use the assistant doctor to verify the embed client, exact model transport, and static
 session boundary:
 
@@ -591,21 +703,10 @@ application-specific customer route. Prove routed assistant tools by
 having the authenticated embedding backend pass the user's server-verified endpoint during session
 exchange, then invoke one representative safe read.
 
-If the application deliberately sends a first turn on mount, do not combine a persistent "sent" ref with a
-mount effect. React Strict Mode can abort that provisional request and then suppress the stable remount.
-Schedule the send after the provisional cleanup and settle its promise:
-
-```tsx
-useEffect(() => {
-  let active = true;
-  queueMicrotask(() => {
-    if (active) settle(client.sendMessage(initialMessage));
-  });
-  return () => {
-    active = false;
-  };
-}, [client, initialMessage]);
-```
+Do not send a first turn on mount by default. React effect cleanup can suppress one provisional Strict Mode
+effect, but it cannot make a remount, dependency change, or client replacement idempotent. Require an
+explicit user action unless the host owns durable one-shot state and an application idempotency key that
+makes repeated sends safe.
 
 For a chat-first custom host, raw `tool_started` supplies the direct call `id` and technical tool name. Map
 known tools to concise application copy and use a neutral fallback. Reserve a stable `role="status"` region
@@ -617,38 +718,80 @@ Use `${view.id}:${view.resourceUri}` as transport identity. Different call IDs a
 must not be deduplicated generically. If this application intentionally owns one current panel for a known
 resource, declare an application-owned slot for that resource and replace only that slot.
 
-Outside React, subscribe to the DOM-free client directly and use the isolated framework-neutral App host.
+### Framework-neutral DOM client
+
+Subscribe to the DOM-free client directly without a component wrapper and use the isolated App host.
 It exposes the same conversation as headless AI SDK `UIMessage` state, including typed confirmation, input,
-tool-result, and linked-view parts, without installing React:
+tool-result, and linked-view parts:
 
 ```html
-<noodle-app-view id="assistant-app-view"></noodle-app-view>
+<div id="assistant-app-views"></div>
 ```
 
 ```ts
 import '@noodleseed/assistant/app-view';
+import {
+  type AssistantViewAvailableDetail,
+  type NoodleAppViewElement,
+} from '@noodleseed/assistant/app-view';
 import { createAssistantClient } from '@noodleseed/assistant/client';
 
 const assistant = createAssistantClient({
   sessionEndpoint: '/api/noodle-assistant/session',
 });
-const appView = document.querySelector('#assistant-app-view');
-if (!appView) throw new Error('Missing App view host');
-appView.client = assistant;
-appView.theme = resolvedTheme;
+const appViews = document.querySelector('#assistant-app-views');
+if (!appViews) throw new Error('Missing App views host');
+const mountedViews = new Map<string, NoodleAppViewElement>();
+const readResolvedTheme = (): 'light' | 'dark' =>
+  document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+let resolvedTheme: 'light' | 'dark' = readResolvedTheme();
+const syncResolvedTheme = () => {
+  resolvedTheme = readResolvedTheme();
+  for (const mountedView of mountedViews.values()) mountedView.theme = resolvedTheme;
+};
+new MutationObserver(syncResolvedTheme).observe(document.documentElement, {
+  attributes: true,
+  attributeFilter: ['class'],
+});
+const appViewFor = (view: AssistantViewAvailableDetail) => {
+  const key = `${view.id}:${view.resourceUri}`;
+  let appView = mountedViews.get(key);
+  if (!appView) {
+    appView = document.createElement('noodle-app-view') as NoodleAppViewElement;
+    appView.client = assistant;
+    mountedViews.set(key, appView);
+    appViews.append(appView);
+  }
+  appView.theme = resolvedTheme;
+  return appView;
+};
 
 assistant.subscribeChat((state) => {
-  renderUIMessageState(state);
+  renderUIMessageState(state, {
+    respond: (id, response) => assistant.respond(id, response),
+  });
+  const activeViewKeys = new Set<string>();
   for (const message of state.messages) {
     for (const part of message.parts) {
-      if (part.type === 'data-confirmation' && part.data.status === 'pending') {
-        renderConfirmation(part.data, (response) => assistant.respond(part.data.id, response));
+      if (part.type === 'data-view') {
+        const key = `${part.data.id}:${part.data.resourceUri}`;
+        activeViewKeys.add(key);
+        appViewFor(part.data).view = part.data;
       }
-      if (part.type === 'data-view') appView.view = part.data;
+    }
+  }
+  for (const [key, mountedView] of mountedViews) {
+    if (!activeViewKeys.has(key)) {
+      mountedView.remove();
+      mountedViews.delete(key);
     }
   }
 });
 ```
+
+`renderUIMessageState` is application code. It must present a complete schema-aware confirmation or input
+form and require an explicit user gesture before using `respond`; never call `respond` while scanning a
+transcript snapshot.
 
 `theme="auto"` follows the operating-system preference, not a SaaS-owned toggle. Pass the resolved
 `light`/`dark` theme to `NoodleAssistant` and `<noodle-app-view>`/`NoodleAppView`; updates reach mounted MCP Apps without a
@@ -665,6 +808,14 @@ deployment variables, and connector arguments do not select the tenant route.
 `CUSTOMER_API_CLIENT_ID` and `CUSTOMER_API_CLIENT_SECRET` authenticate only the broker to the fixed exchange
 endpoint. They are not customer API bearer tokens. The exchange endpoint verifies the platform-signed
 subject assertion and mints a short-lived token scoped to the signed-in user and route binding.
+
+## Launch and qualified-usage proof
+
+Use the [embedded assistant guide](https://docs.noodleseed.dev/docs/guides/embedded-assistant) for the complete
+pre-launch, browser-proof, qualified-usage, recovery, measurement, and operator procedure; do not copy those
+commands into this example. Keep deployed capability, production-browser proof, qualified usage, and measured
+outcome separate; raw turn volume is utilization rather than outcome. Platform-owned completion events still
+require a separate human-approved analytics and customer-data contract.
 
 ## Deploy customer-protected to Noodle Seed Cloud
 

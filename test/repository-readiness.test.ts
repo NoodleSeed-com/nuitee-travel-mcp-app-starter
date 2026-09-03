@@ -480,10 +480,12 @@ describe('public repository contracts', () => {
   });
 
   it('pins CI actions and covers application, embedded, and supply-chain gates', async () => {
-    const [workflow, dependabot, workspace] = await Promise.all([
+    const [workflow, dependabot, workspace, rootPackage, hostPackage] = await Promise.all([
       repositoryFile('.github/workflows/ci.yml'),
       repositoryFile('.github/dependabot.yml'),
       repositoryFile('pnpm-workspace.yaml'),
+      repositoryJson('package.json'),
+      repositoryJson('examples/embedded-assistant-host/package.json'),
     ]);
     expect(workflow).toContain('actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1');
     expect(workflow).toContain('pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86');
@@ -494,8 +496,17 @@ describe('public repository contracts', () => {
     expect(workflow).not.toMatch(/uses:\s+[^\s]+@v\d/);
     expect(dependabot).toContain('package-ecosystem: github-actions');
     expect(workspace).toContain('minimumReleaseAge: 1440');
-    expect(workspace).toContain("'@noodleseed/one@0.151.1'");
-    expect(workspace).toContain("'@noodleseed/assistant@1.27.0'");
+    // Derived from the manifests rather than hardcoded: the contract being
+    // guarded is that every pinned Noodle version is also excluded from the
+    // release-age hold, so an upgrade updates the pin and the exclusion
+    // together. Hardcoding the versions here made the test fail on the
+    // upgrade it was meant to police.
+    expect(workspace).toContain(
+      `'@noodleseed/one@${rootPackage.devDependencies['@noodleseed/one']}'`,
+    );
+    expect(workspace).toContain(
+      `'@noodleseed/assistant@${hostPackage.dependencies['@noodleseed/assistant']}'`,
+    );
   });
 
   it('gates Fly production deployment behind main-branch quality checks', async () => {

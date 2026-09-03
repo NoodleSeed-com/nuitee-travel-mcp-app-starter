@@ -17,7 +17,7 @@ private customer data.
 | Public entry tool | `open_ordering` returns structured fallback content and renders the React widget |
 | Product and distribution projections | `agentGuide` supplies grounded cross-capability guidance; `distribution` supplies listing, publisher, legal, image, and review facts separately from the runtime manifest |
 | App-only helper tools | `search_stores`, `load_menu`, `load_item`, `read_cart`, `sync_cart`, `prepare_checkout`; mutating widget-owned helpers use `confirm: false` (equivalent to omission) and execute directly because action hints alone never gate |
-| Durable cart state | `server(..., { state: { handles: { cart } }, use: { state } })` with caller scope and revision checks |
+| Durable cart state | `server(..., { state: { handles: { cart } }, use: { state } })` with caller scope, revision checks, and explicit ticket-bound adoption when an anonymous visitor authenticates |
 | React app runtime kit | `@noodleseed/one/react` supplies app flow, shell/nav/view, async state, form, quantity, choice, and handoff primitives |
 | Multi-step widget flow | One React shell navigates stores, menu, item customization, cart, review, and handoff views through `useAppFlow` |
 | Invocation context | `server.context` sets locale/time-zone defaults, derives an ambient service area/date, and exposes optional host-supplied coordinates to tools and the reserved `noodle_context` MCP adapter; location is an untrusted convenience hint, never an authorization signal or a substitute for explicit input |

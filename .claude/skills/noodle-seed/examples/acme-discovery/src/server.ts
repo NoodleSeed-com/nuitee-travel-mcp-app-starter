@@ -343,6 +343,18 @@ export default server(
       access: [
         publicWebsite({
           origins: ['https://getaways.acme.example'],
+          // A browser agent on Acme's marketing page (Gemini-in-Chrome, Claude-in-Chrome) discovers
+          // exactly the capabilities listed below and reaches them over the same authorization,
+          // confirmation, budget, and audit path the panel's own calls take: `capture_lead` still
+          // stops for its confirmation card. `site/index.html` is the page this runs on.
+          webmcp: { enabled: true },
+          // A visitor who asks about Coral Bay on one page and clicks through to another would
+          // otherwise arrive at an empty panel and have to start over. This carries the text they
+          // have already read onto the next page, on a fresh session — never the old session's
+          // authority, budget, or a half-answered confirmation (ADR 0223). Opt-in because anonymous
+          // conversation text is Acme's content on Acme's page; the defaults below are deliberately
+          // tighter than the platform ceiling.
+          continuity: { enabled: true, windowSeconds: 300, maxRestores: 3 },
           capabilities: [
             destinations,
             discoverGetaways,

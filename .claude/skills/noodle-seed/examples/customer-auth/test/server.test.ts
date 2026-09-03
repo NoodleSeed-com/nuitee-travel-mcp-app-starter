@@ -19,6 +19,9 @@ describe('customer-auth example', () => {
       'https://dev.noodleseed.com',
       'http://localhost:3000',
     ]);
+    expect(manifest.server.assistant?.sessionClaims).toEqual({
+      accountTier: { exposeToModel: true },
+    });
     expect(manifest.server.branding).toMatchObject({
       name: 'Noodle Seed Assistant',
       colorScheme: 'auto',
@@ -100,5 +103,8 @@ describe('customer-auth example', () => {
         confirm: true,
       },
     });
+    expect(
+      manifest.tools.find((tool) => tool.name === 'list_org_apps')?.annotations?.readOnlyHint,
+    ).toBe(true);
   });
 });

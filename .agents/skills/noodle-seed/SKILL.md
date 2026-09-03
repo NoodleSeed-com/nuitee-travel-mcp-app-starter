@@ -3,7 +3,7 @@ name: noodle-seed
 description: "Use when building, validating, testing, deploying, or operating a local or hosted Noodle Seed MCP server or app authored in TypeScript with the noodle CLI."
 ---
 
-<!-- noodle-skill version:0.91.0 hash:13ddce01769caae4 -->
+<!-- noodle-skill version:0.98.0 hash:d3ceb1902ef4bb72 -->
 
 # Noodle Seed
 
@@ -21,7 +21,7 @@ Choose exactly one primary route from the user outcome below, then load the sele
 
 Apply this precedence when wording overlaps: concrete failure evidence takes the debugging route; an explicit request to create, revise, regenerate, or recover an app product skill takes `creating-product-agent-guides`; an MCP App/UI outcome takes the App route; an existing application with no stable, usable API or specification takes `wrapping-existing-applications`; only when all four API-evidence inputs exist—an API base URL, authentication scheme, representative safe read, and observed response—use `connecting-apis-to-mcp`; missing, stale, inaccessible, undocumented-only, or otherwise unusable evidence remains in `wrapping-existing-applications`; both integration routes take precedence over generic server building; hosted inspection is debugging read-only; hosted mutation requires the explicitly requested deployment route.
 
-Negative routing examples: “Inspect hosted logs/status” → `inspect-hosted` (read-only). “Prepare for deployment” → the applicable build or verification route and stop with a handoff; preparation does not authorize `link`, hosted config, deployment, rollback, host writes, or submission. “Keep this local” → a build or verification route, never a hosted route.
+Negative routing examples: “Inspect hosted logs/status” → `inspect-hosted` (read-only). “Prepare for deployment” → the applicable build or verification route; with existing access it may inspect `deploy preflight`, then stop with a handoff. Preparation does not authorize `link`, hosted config, publication, rollback, host writes, or submission. “Keep this local” → a build or verification route, never a hosted route.
 
 | User outcome | Load sibling skill | Canonical playbook | Done when |
 | :--- | :--- | :--- | :--- |

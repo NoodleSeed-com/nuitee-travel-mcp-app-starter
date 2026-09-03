@@ -9,13 +9,14 @@ Read hosted evidence without changing target, credentials, configuration, access
 
 ## Authority boundary
 
-This route is read-only. It never authorizes `login`, `logout`, `link`, `target set`, hosted secret/variable/config/access changes, `deploy`, `rollback`, host configuration writes, or directory submission. If evidence shows one of those actions is needed, report the exact proposed action and target, then stop for a new explicit user request.
+This route is read-only. `deploy preflight` inspects authored deployment inputs with existing access; it is not `deploy` publication. This route never authorizes `login`, `logout`, `link`, `target set`, hosted secret/variable/config/access changes, publication, `rollback`, host configuration writes, or directory submission. If evidence shows one of those actions is needed, report the exact proposed action and target, then stop for a new explicit user request.
 
 ## Workflow
 
 1. Resolve the requested org, app, environment, and deployment from existing non-secret context. Do not change the effective target to make inspection easier.
 2. Choose the narrowest read-only command: `noodle target show`, `noodle status`, `noodle inspect`, `noodle smoke`, `noodle metrics --agent-output`, `noodle events --json`, `noodle logs`, or `noodle audit`.
 3. Prefer machine output when the selected command supports it. Record the target, revision/deployment ID, timestamp, result, and any request ID without exposing secrets or customer payloads.
+For authored deployment readiness, select `deploy preflight` from the generated CLI command reference and supply the intended target. It does not configure, import dotenv, upload assets, save a retry key or publish. Routine login refresh may renew credentials. Missing-config actions are suggestions requiring separate authorization. A ready report is not backend, host or deployment evidence; publication always checks again.
 4. When the installed Developer MCP is available, call `get_context` to read the signed-in user’s current organizations and roles. Resolve the intended organization from the request or project context, then pass that explicit `org` to every scoped inspection or diagnosis tool. Never infer a remote default, and never ask the user to preselect organizations during OAuth. Treat the connection as live evidence gathering, not mutation authority.
 5. If a command fails, distinguish missing authentication/access from unhealthy application behavior. Do not repair, relink, redeploy, rotate config, or roll back under this route.
 

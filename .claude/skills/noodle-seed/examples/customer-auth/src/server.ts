@@ -173,6 +173,9 @@ export default server(
       // Production origins are exact HTTPS; http://localhost:<port> is allowed for local development.
       access: authenticatedWebsite({
         origins: [assistantOrigin, 'https://dev.noodleseed.com', 'http://localhost:3000'],
+        sessionClaims: {
+          accountTier: { exposeToModel: true },
+        },
       }),
       theme: 'auto',
       layout: { mode: 'floating', position: 'bottom-center', panelWidth: 970 },

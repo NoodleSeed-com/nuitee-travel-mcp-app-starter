@@ -22,8 +22,9 @@
 ## Input paths
 
 1. **Website scrape** — if the user gives a URL, scrape it for surface hints (products, services, hours, contact, pricing). Stop there: the URL does not reveal CRM, booking systems, custom APIs, auth model, eligibility rules, quoting logic, or approval flows. Those live in the business systems and the owner’s head — ask.
-2. **OpenAPI import** — `noodle import openapi <file>` emits a starter `server.ts` from a spec. Use it when the user provides an OpenAPI document.
+2. **OpenAPI import** — `noodle import openapi <file>` writes a pinned project at `src/server.ts`, shared operation/tool schemas, managed auth references, and an offline contract test. Supported JSON bodies become typed `input.body`, sent unchanged; unsupported request constraints/encodings stop import before writes. It does not install dependencies or call the backend. Follow its README, run `agent:check`, and add a reviewed sandbox-operation test; compile success is not live integration proof. Review auth warnings before deployment. Modified files are preserved unless `--force` is explicit.
 3. **Upstream MCP import** — `noodle import mcp <url> --name <slug> --output <dir>` discovers `tools/list` once, validates and freezes tool schemas into TypeScript, and writes a secret-free drift snapshot. Upstream annotations are untrusted, so generated tools remain destructive confirmed actions until an author verifies and narrows them. Use `--header-env <header>=<ENV_NAME>` for import-only auth and `--check` for classified, non-mutating drift detection. Runtime never performs discovery.
+Both imports use `src/server.ts` as the declared entrypoint, include an offline compile test and `.env.example`, and write files only. Install the pinned dependencies, run the generated checks, then `noodle agents setup --apply`. Never treat generated contract tests as customer authentication or business-workflow evidence.
 4. **User interview** — Noodle does not interview; you do. Cover custom APIs/integrations, eligibility rules, quoting/approval logic, and private schemas (SQL DDL or JSON samples for custom `connector` declarations). Ask for concrete examples and sample payloads; do not guess a schema from a URL or invent endpoints.
 
 ## Fit check
@@ -393,20 +394,14 @@ Compute `run` functions are serialized and sandboxed: no imports, no closure cap
 
 ## Tests
 
-Use Vitest for app-local tests. The generated `npm test` command scans only the project-owned `test/` directory; skill-local example tests are reference material, not part of the app suite. Keep fixtures project-local; do not import from `examples/`. A minimum test suite imports the default server, checks the intended definitions compile, then lets `noodle test --json` perform the loopback MCP smoke.
+Start from the generated `test/server.test.ts`, not a blank test file. `npm test` runs `vitest run --dir test` over the project-owned `test/` directory; skill-local example tests are reference material. The generated suite compiles the actual source/view, lists tools, asserts a representative result and rejects invalid input. It copies source into temporary fixture storage and uses synthetic configuration, never customer secrets or saved hosted targets. The HTTP profile proves one local backend read and zero extra calls for invalid input.
 
-```ts
-import { describe, expect, it } from 'vitest';
-import app from '../src/server.js';
-
-describe('server', () => {
-  it('declares the expected tool surface', () => {
-    expect(app.name).toBe('support_assistant');
-  });
-});
+```sh
+npm test
+npm run agent:check
 ```
 
-After focused tests pass, run `noodle validate --json`, `noodle test --json`, and then `noodle dev` for interactive local verification.
+Adapt the representative arguments and assertions when business contracts change; keep invalid-input and authorization cases. A name/export assertion or `noodle test --json` without `--tool` proves no useful call. After fixture tests pass, bind the real local configuration, run an authorized representative read, and use `noodle dev` for interactive checks. Never use a production mutation or fixture success as customer-readiness evidence.
 
 ## Secrets and variables
 
@@ -415,6 +410,14 @@ Author managed config as `secret("NAME")` / `variable("NAME")` and operate it wi
 ## Embedded assistant
 
 To place the same server tools inside a SaaS web app, declare `assistant: embeddedAssistant(...)` alongside the one server-level brand kit. Read `embedded-assistant.md` before integrating: it owns the HTTPS-origin rule, managed model configuration, required deploy-before-client sequence, customer-backend exchange, browser mount, and verification checklist.
+
+## Managed capability reuse
+
+Before authoring an HTTP connector for public-web search, page extraction, places/local search, routing, weather, translation, or media discovery, inspect the generated SDK surface reference. If the matching Noodle capability is actually exported, use its one documented declaration and generated tools directly—never wrap it, rename it, or build an assistant-only provider call. That single declaration is available to both the embedded assistant and external MCP agents under the same authorization and policy.
+
+Use `provider: noodleManaged()` in reusable capability intent and let the app/environment operator bind a supported BYO provider through managed configuration. Keep provider names, endpoints, and credentials out of `server.ts`. Live fares, inventory, bookings, pricing, orders, accounts, and payments remain connectors to authoritative systems. Source order is not truth: preserve citations, freshness, and rights evidence returned by the capability.
+
+A roadmap is not an SDK. If the capability is absent from the generated export list, do not invent an import or generic platform helper. With explicit developer agreement, a bounded application connector may prove the immediate use case; keep it application-specific and do not claim it as the canonical Noodle primitive.
 
 ## Knowledge components
 

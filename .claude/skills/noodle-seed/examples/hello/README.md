@@ -2,8 +2,11 @@
 
 The smallest deployable Noodle app: a single `greet` tool authored in TypeScript with no
 connectors, secrets, flows, widgets, or handoff policy. It still uses the current server options form
-so new authors see where server-level branding belongs. Use it to smoke the author loop
-(`noodle validate` / `noodle dev`) or a first deploy.
+so new authors see where server-level branding belongs. Use it for a local read or first deploy.
+For a new project, `noodle init --template hello` also supplies isolated behavior tests: compilation,
+tool discovery, an expected greeting and invalid-input rejection. Init installs pinned local tooling and runs
+those checks; use `npm run agent:check` after edits. `--no-install` prepares files without verified readiness.
+If setup fails, repair its reported stage and repeat the safe resume command; do not overwrite your edits.
 
 Protocol negotiation deliberately does not appear in `src/server.ts` or `noodle.json`. MCP versions
 are platform-owned: the same deployed app automatically serves compatible legacy clients and modern
@@ -30,6 +33,7 @@ empty. One-shot commands write one envelope; streaming commands write NDJSON sna
 terminal-failure envelopes so agents can parse each line independently.
 
 ```sh
+noodle test examples/hello/src/server.ts --tool greet --args '{"name":"Ada"}' --json
 noodle dev examples/hello/src/server.ts --app hello
 noodle deploy examples/hello/src/server.ts --org acme --app hello
 ```

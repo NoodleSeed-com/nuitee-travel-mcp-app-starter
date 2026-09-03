@@ -7,7 +7,8 @@ deep link. It pairs a `tool` discovery carousel with a model-visible `create_han
 server-level `handoff.allowedDomains`.
 
 Capability slots: top-of-funnel funnel discipline, discovery carousel widget, `create_handoff` deep-link
-handoff with attribution, `handoff.allowedDomains`, the **public website assistant surface**, and a worked
+handoff with attribution, `handoff.allowedDomains`, the **public website assistant surface** with its
+**WebMCP browser-agent bridge** on a real demo page (`site/index.html`), and a worked
 **design-first** artifact (the UX spec + wireframe below). It shows the "design the experience, then build
 it" flow the `noodle-seed` skill's `references/experience-design.md` teaches.
 
@@ -63,6 +64,43 @@ on whichever origin the backend designates:
 
 The ticket spend after account creation is identical to the one after sign-in; the service never
 operates a login of its own.
+
+## Browser agents on Acme's page
+
+`site/index.html` is the marketing page itself: static markup, four listings, and the one line a
+customer pastes.
+
+```html
+<script src="https://cloud.noodleseed.dev/v1/assistant/embed.js" data-embed-id="pub_…"></script>
+```
+
+Because the marketing surface sets `webmcp: { enabled: true }`, that same line does a second job in a
+browser that supports WebMCP: the embed registers the session's projected tools with
+`document.modelContext`, so a browser agent — Gemini-in-Chrome, Claude-in-Chrome — can call
+`discover_getaways` or `create_handoff` without a human typing in the panel.
+
+What it does **not** do is widen anything. A bridged call carries exactly the embed session's
+authority: the surface's six-capability allowlist, the same policy and budgets, the same audit trail,
+and the same confirmation card on `capture_lead` — the visitor still approves the lead in the panel,
+because a browser agent's consent is not the visitor's. The switch governs *discovery*, not
+permission: it decides whether an agent learns the tools are there. The signed-in account surface
+below leaves it off, which is the point of setting it per surface.
+
+Browsers without `document.modelContext` are unaffected; the page and the panel behave exactly as
+they did before.
+
+To run it:
+
+```sh
+noodle dev                 # the server, in one terminal
+npx serve site             # the page, in another (any static server works)
+```
+
+`noodle dev` serves the MCP endpoint, not HTML, so the page needs its own server. For a real
+end-to-end run, `noodle deploy` this example, paste the minted `pub_…` id into `site/index.html`, and
+add the origin you serve the page from to the `publicWebsite` `origins` list — the session exchange
+refuses any origin that is not listed. WebMCP itself ships behind an origin trial in Chrome 149+, so
+a browser without the trial enabled shows the assistant panel and no bridge.
 
 ## The consultative sales gateway
 

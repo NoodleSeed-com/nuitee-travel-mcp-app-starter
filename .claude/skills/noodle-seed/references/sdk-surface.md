@@ -79,7 +79,7 @@ Platform helper connectors are explicit subpath imports from `@noodleseed/one/pl
 - `resource(name, { uri, description?, mimeType?, fulfil })` and `prompt(name, { description?, arguments?, fulfil })` expose MCP resources/prompts.
 - View metadata (`viewTitle`, `viewDescription`, `csp`, `domain`, `permissions`) belongs on the tool that renders it; `asset("./path")` packages local files.
 - `customerAuth.*(...)` belongs in `server` options when deployed customer callers need verified identity; inspect `examples/customer-auth` or `examples/sharepoint` before using it.
-- `state` defines durable widget state handles; handle schemas may use `.optional()`/`.default()` — defaulted fields are optional on write, so a save that omits them still validates. `handoff` declares allowed external domains for safe host handoff.
+- `state` defines durable widget state handles; handle schemas may use `.optional()`/`.default()` — defaulted fields are optional on write, so a save that omits them still validates. Add `claimOnAuthentication: true` only to an explicitly caller-scoped handle with a finite TTL when a mixed public assistant should atomically adopt that expiring draft on sign-in-ticket spend. `handoff` declares allowed external domains for safe host handoff.
 
 ## Recipes
 

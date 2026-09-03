@@ -3,7 +3,7 @@ name: building-mcp-apps
 description: "Use when a Noodle Seed MCP App, widget, interactive card, visual interaction, or host-visible UI is the primary requested outcome."
 ---
 
-<!-- noodle-skill version:0.91.0 hash:9fd67d4d24328e15 -->
+<!-- noodle-skill version:0.98.0 hash:98c7b07c82a7d7ce -->
 
 # building-mcp-apps
 
@@ -27,9 +27,9 @@ Deliver an MCP App whose visual interaction earns its place and preserves useful
 
 ## Workflow
 
-Read and follow the canonical playbook `references/build-an-mcp-app.md` at `../noodle-seed/references/build-an-mcp-app.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
-Load `references/experience-design.md` at `../noodle-seed/references/experience-design.md` only when the playbook or observed evidence names that concern.
-Load `references/widgets-and-apps.md` at `../noodle-seed/references/widgets-and-apps.md` only when the playbook or observed evidence names that concern.
+Read and follow the canonical playbook at `references/build-an-mcp-app.md`. It owns the workflow; do not recreate it here or load the command catalog speculatively.
+Load the supporting reference at `references/experience-design.md` only when the playbook or observed evidence names that concern.
+Load the supporting reference at `references/widgets-and-apps.md` only when the playbook or observed evidence names that concern.
 
 ## Verification evidence
 

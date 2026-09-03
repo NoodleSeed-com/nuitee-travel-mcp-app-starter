@@ -3,7 +3,8 @@
 ## Contents
 
 - Architecture
-- Choose the host experience
+- Select the architecture before code
+- Install into the existing application
 - Author and validate
 - Product workflow guidance
 - Customize the presentation
@@ -16,6 +17,7 @@
 - The session response
 - Choose a browser renderer
 - Host readiness and promotion
+- Launch and qualified-usage proof
 - Toolchain requirements
 - Verify the boundary
 - Troubleshooting: symptom to diagnosis
@@ -35,9 +37,46 @@ Keep every credential and identity layer separate:
 | SaaS backend | `NOODLE_SERVICE_URL`, `NOODLE_ASSISTANT_CLIENT_ID`, `NOODLE_ASSISTANT_CLIENT_SECRET`, `PUBLIC_APP_ORIGIN` | Backend-only environment or secret manager; never browser code or public-prefixed variables |
 | Browser | Short-lived assistant session only | In memory; never a client secret, model key, connector credential, or raw application session |
 
-## Choose the host experience
+## Select the architecture before code
 
-Before choosing code, ask the user which experience belongs in the existing product: the built-in floating, inline, or drawer assistant; a custom chat-first renderer; or a headless client feeding application-owned UI. Default to the built-in floating assistant only when the user has no preference. Preserve the host application until the user opens or submits into the assistant; do not copy one flagship layout into every product.
+Do not edit either codebase until one architecture brief is decision-complete. Name the external end user, the conversational job, one to three workflows, the exact access mode, renderer, existing host framework, identity/session boundary, server-owned routing authority, model owner, exact origin and mount point, and requested evidence level.
+
+If the external user, job, or workflow set is still vague, hand off to `designing-mcp-products` before code. Preserve its bounded product outcome and resume this workflow only when the value path and one representative success path are explicit.
+
+Treat the MCP application and embedding application as two code ownership roots, usually two repositories and sometimes two explicitly separate directories in one repository:
+
+| Code owner | Owns | Must not own |
+| --- | --- | --- |
+| MCP application | `server.ts`, tools, App views, access surfaces, portable branding defaults, model declaration, validation, and deployment | Host cookies, login UI, application middleware, or browser mounting |
+| Embedding application | Existing framework and package manager, user authentication, same-origin session route when required, browser mount, CSP, cookies/CSRF, and production build | MCP tool semantics, model keys, assistant client secrets in browser code, or caller-selected tenant routing |
+
+Develop locally as two local processes: `noodle dev` serves the MCP application, while the embedding application runs its existing development command at the exact authored loopback origin. Do not replace either process with a second scaffold, package manager, chat transport, or copied flagship shell.
+
+Select exactly one recommended topology; do not return an unranked menu:
+
+| User boundary | Recommended topology | Identity and routing consequence |
+| --- | --- | --- |
+| Anonymous public visitor | `publicWebsite(...)` plus the hosted embed ID and managed renderer | No backend session route, `${user}`, roles/scopes, delegated credentials, or customer routing. Require the explicit capability allowlist and confirmation for side effects. |
+| Signed-in application user | `authenticatedWebsite(...)` plus a same-origin backend session route and the managed renderer | The host backend authenticates the user, calls `createAssistantSession`, and supplies only verified identity, claims, preferences, and server-owned routing. |
+| Visitor who may sign in mid-conversation | `publicWebsite({ signIn: true })` plus the hosted embed ID, host application login, and ticket elevation | Anonymous capabilities remain bounded; the host backend spends the ticket after login and continues through a same-origin session endpoint on an allowed origin. |
+
+Use the existing host framework and its package manager. Recommend the managed renderer unless the product names a concrete UI or integration benefit that requires the headless client; a custom renderer accepts the complete transcript-part obligation described below. Recommend `noodleManaged()` when Noodle owns the managed-cloud model for the exact eligible target; recommend `openAICompatible(...)` only when the operator or self-hosted deployment owns that model endpoint and credentials. Never present both as unfinished choices.
+
+The architecture brief must state the selected topology, why it fits the named user and job, the two code owners and two local processes, credential and identity flow, routing authority, model owner, files expected to change, and the first requested evidence boundary. If identity/session ownership, exact origin, tenant-routing authority, model ownership, or evidence target is unavailable, return a blocked architecture brief naming the missing owner or decision and do not edit either codebase.
+
+## Install into the existing application
+
+Configure or reuse an existing capability before generating files. Public embedding uses the existing script or embed ID and needs no customer backend session/config route. Reuse application APIs and business functions; generate a thin handler only where the approved architecture identifies a missing stable boundary.
+
+For a supported host, first run `noodle assistant embed --framework nextjs --surface public --dry-run --json` in the customer application, substituting `authenticated` or `mixed` only for the selected surface. Read the returned recipe applicability, applicationSeams, generated contents/hashes, skipped conflicts and nextSteps. The output is an installation plan, not permission to change the repository.
+
+For the documented non-Node backend/static-frontend authenticated profile, discover the framework choice through `noodle commands --json` and follow the linked framework guide below. The installer supplies a session view, a fail-closed identity seam, real CSRF-enforced request tests, a browser wrapper and exact-destination CSRF transport tests. Keep the existing package managers, authentication middleware and same-origin proxy. Pass the existing CSRF token and user/tenant principalKey to the wrapper; the managed element supports injected fetch, so preserving CSRF does not require a custom renderer or Node production server. Unsupported combinations use the neutral contract, not a claimed qualified profile.
+
+Once local changes are authorized, rerun without `--dry-run`; never add `--force` to resolve a conflict automatically. Read the installed `NOODLE-INTEGRATION.md` and newly installed project skill before editing. Implement only the named session/business/mount seams and preserve the host framework, package manager, login and authorization. Mixed mode also requires an application-owned login transaction; the generated callback does not implement or verify that transaction.
+
+Use generated tests and independently maintained acceptance cases at the actual customer boundary. A static host check, a mock test or installed files cannot prove application authorization or production browser behavior. Missing identities, sandbox access, customer approval or a reachable service remain unverified. Record the exact application/Noodle revisions, package versions and environment for observed evidence; rerun affected checks after changes.
+
+Unsupported hosts use the framework-neutral integration contract below; do not claim they received a generated, qualified framework profile. Keep direct MCP and headless projections on the same TypeScript source, and preserve their separate identity requirements.
 
 ## Author and validate
 
@@ -117,11 +156,27 @@ labels: {
 
 The sign-in card renders on the same themed chrome as every proposal card and follows the server `branding`. Authoring `signUpAction` adds a second button; leaving it out renders none. Both buttons raise the same `assistant-sign-in-requested` event with the same single-use ticket — the detail adds `intent: "sign-in" | "sign-up"` so the page routes `sign-up` to its registration page instead of its login. The ticket spend after account creation is identical to the one after sign-in; the service does not care which path produced the session. Headless renderers receive the same moment as a `data-sign-in` transcript part from `subscribeChat` (it has no status and is not respondable through `client.respond` — resolution is the elevated session).
 
-Elevation runs through the **host application own login**, never a Noodle-operated one. The widget raises `assistant-sign-in-requested` with a single-use `signInTicket` in its detail; the page signs the visitor in as it already does, then its backend spends the ticket with `createAssistantSession({ ..., signInTicket })` from `@noodleseed/assistant/server` — the same session exchange, its own client credentials. A refused spend throws a typed `AssistantSessionExchangeError`: branch on `elevationRefusal` (`elevation_ticket_expired` re-prompt; `elevation_tenant_mismatch` alert, never retry). Possession of the ticket alone elevates nothing, and the service checks the client tenant owns that conversation. The ticket is not the server-held interaction continuation — that value never reaches browser code; this one exists to travel through the page.
+#### Complete mixed-mode handoff
 
-The conversation is kept server-side: same session, new token, the anonymous one dead. By default the pending request also completes itself: the service re-attempts the intercepted tool under the new principal and streams it as the elevated session first turn (one-shot; mooted if the visitor types first; confirm-gated tools stop at their confirmation card; pass `resume: false` beside the ticket to disable). On a backend-exchanged reattach the widget also repaints the bounded visible transcript (`endpoints.transcript`) before the resume runs — only rows the panel actually showed replay, never tool internals or a spent ticket. On an older service without the endpoint the panel starts visually fresh while the model still remembers, so keep copy honest either way: "the assistant remembers". Do not build a second identity provider or client-side resume scaffolding for this.
+For a small SaaS onboarding flow, first read the bundled [stateful-draft example](../examples/stateful-draft/README.md). Compose the existing capabilities; do not introduce an onboarding platform API, workflow engine, research pipeline, or second identity provider.
 
-When the login lives on a different origin (marketing site + app), the flow is: the visitor signs in via full-page redirect as the site already does; the backend spends the ticket presenting the **origin the conversation will continue on** (any origin in the deployment allowlist — elevation re-pins the session there, and CORS follows); the token reaches the widget through the customer own **same-origin** session endpoint on that origin. The redirect handoff is mandatory, not stylistic: the widget calls the session endpoint with `credentials: "same-origin"`, so pointing a marketing page at a cross-origin endpoint is a guaranteed cookie-less 401. Persist the ticket across the login redirect (single-use, expires in minutes); a refused origin does not burn it.
+Start from one useful result the visitor can see before signup. Ask only for missing information, one short question at a time. Show an editable preview, and offer an account only when it unlocks a meaningful next step. Keep the ordinary signup route available. Research and document parsing are optional enrichment, never required because the flow is conversational.
+
+Use a finite-TTL caller state handle only if the draft needs server persistence. Opt it into `claimOnAuthentication` when it should move to the verified account. An explicit typed read tool supplies the current revision; a typed patch tool sends that revision and the complete reviewed value. Widget state is a display cache, never proof of a save. A failed or missing result must not increment the revision, mark the draft saved, or silently retry a conflicting write.
+
+Keep the final business action in the customer API. Map the reviewed draft to its existing create/update operation after authentication, with confirmation and the backend’s existing authorization and idempotency. Ticket adoption transfers temporary state, not a CRM record or completed onboarding.
+
+Prove this journey before calling it ready: useful anonymous preview; actual saved state; cancelled/expired signup; verified signup with the same draft; a destination conflict without an automatic merge; and no business write merely because login succeeded. A synthetic login demonstrates the integration shape but is not evidence that the customer identity system is connected.
+
+1. **Capture the ticket.** The widget raises `assistant-sign-in-requested` with a single-use `signInTicket`. POST it to the host application same-origin backend and bind it to the short-lived login transaction; keep it out of query strings, logs, analytics, and durable browser storage.
+2. **Use the existing login.** Send the visitor through the host application full-page redirect for sign-in or sign-up. Noodle never becomes the customer identity provider.
+3. **Elevate on the backend.** After authentication, recover the bound ticket and call `createAssistantSession({ ..., signInTicket })` with the verified user, server-owned routing, backend client credentials, and the exact **origin the conversation will continue on**. The allowed destination may differ from the anonymous marketing origin; successful elevation rebinds the session to it.
+4. **Reattach on the destination origin.** Forward the helper response unchanged through the customer-owned same-origin session endpoint. The widget uses `credentials: "same-origin"`; pointing it at a cross-origin endpoint guarantees a cookie-less `401`. The elevated token replaces the anonymous token, which is dead.
+5. **Resume and replay.** The widget repaints the bounded visible transcript from `endpoints.transcript`, emits one secure-continuation status, re-resolves the latest linked App view against the current surface, restores at most one live pending confirmation/input request, and then shows follow-up suggestions. Restoring an interaction suppresses auto-resume. Replay includes only rows the panel showed, never tool internals or a spent ticket, and never App HTML, a DOM snapshot, or exact scroll/focus. On an older service without that endpoint the panel starts visually fresh while the model still remembers, so promise only that "the assistant remembers". Pass `restoreConversation: false` when a privacy-sensitive application must suppress browser replay while retaining bounded server/model continuity.
+
+Possession of the ticket alone elevates nothing, and the service checks that the backend client tenant owns the conversation. A refused spend throws a typed `AssistantSessionExchangeError`: branch on `elevationRefusal` (`elevation_ticket_expired` re-prompt; `elevation_tenant_mismatch` alert and never retry; `elevation_state_conflict` means the ticket is spent, so open or restart the signed-in flow and never merge generic state). A refused origin does not burn the ticket. The ticket is not the server-held interaction continuation — that value never reaches browser code.
+
+By default the pending request completes itself: the service re-attempts the intercepted tool under the new principal and streams it as the elevated session first turn. This is one-shot, is mooted if the visitor types first, and stops at the confirmation card for a confirm-gated tool. Pass `resume: false` beside the ticket only when the application deliberately owns that affordance. Do not build client-side resume scaffolding or a second identity provider.
 
 A connector-backed side effect needs **two** independent declarations to be reachable from a public or mixed surface: inclusion in `capabilities` **and** `{ confirm: true }` on the operation. Signing in proves who the visitor is; it does not pre-authorize an effect, so confirmation still applies on a mixed surface. Confirmation is never authentication or business authorization — the customer backend still owns payload validation, abuse controls, and idempotency. Local or session-only widget state needs no confirmation.
 
@@ -166,6 +221,8 @@ The Atlas-style product treatment above is the maximum deployment-configurable p
 Omitted UI fields retain the complete managed baseline: a bottom-center frosted prompt pill, 970px outer desktop shell with 20px side padding, 85vh/1025px height bounds, 24px panel with built-in `#F8F8F8` light and `#0C0A09` dark surfaces, bottom prompt chips and pill composer, plain assistant messages, 85%-wide user bubbles, Noodle Seed attribution, and mobile fullscreen. The pill morphs into an input before opening; `launcher.style: "bubble"` opens directly, while `panel.surface: "glass"` remains an explicit translucent alternative. `theme: "auto"` follows the host page and `"invert"` selects its opposite. `suggestedPrompts` is the exact initial set only: pass `[]` for no initial chips, or omit it so the active model generates context-aware initial prompts. After the first message, follow-up prompts are always regenerated from the complete authorized conversation context and are never copied into transcript history. The only attribution is the Noodle Seed row, removed by `behavior.showPoweredBy: false`; the baseline carries no third-party promotion. For exact application-owned color roles, pass the typed React `appearance={{ light: { panel: { surface, text, border }, composer: {...}, confirmation: {...}, primaryButton: {...} }, dark: {...} }}` prop or assign the same object to `element.appearance`. CSS custom properties inherit through the assistant host, so those values may reuse existing application tokens such as `surface: "var(--app-surface)"` without copying literals. The appearance surface covers canvas, panel, header, messages, composer, suggestions, confirmation, buttons, launcher, code, and the MCP App frame; the package README publishes the complete role-to-`--ns-assistant-*` map. Exact parseable literal colors are preserved and low contrast emits `assistant-appearance-warning`; contrast for unresolved CSS references remains host-owned. Precedence is host appearance object, host slots/public variables, saved environment operator override, deployed semantic presentation, then defaults. Prefer reusable `server.ts` defaults; use the Console Assistant tab or `noodle assistant appearance show|apply|reset` for environment-owned changes that should reach existing embeds without a redeploy.
 
 Set `webmcp: { enabled: true }` on the assistant to let a browser agent reach this session's tools through the page's WebMCP API, and set it on an individual access surface to override that default in either direction — a marketing surface can opt in while a signed-in one opts out, or the reverse. Off unless set, and inert in browsers without `document.modelContext`. It governs discovery: whether the embed registers the tools this session already projects, narrowed to those that are both app-callable and model-visible. Every call executes over the same apps-bridge path the assistant's own calls take, so a browser agent gets the session's authority and nothing more, and a `confirm: true` tool still stops for a human in the panel rather than being accepted on the agent's behalf. It is not a second authorization boundary — the session is the only one. Bridge calls spend their own per-session and per-day budgets instead of model turns, and the surface's daily kill switch stops them too. Prefer this over hand-registering page-local tools that borrow the visitor's session: those carry no scoped authority, policy, or audit trail.
+
+Set `continuity: { enabled: true }` on a public or mixed access surface to let an anonymous visitor keep the conversation they can see when they navigate to another page of the same site. Off unless set, and refused on an authenticated surface, which reattaches through a backend-verified sign-in instead. It restores the visible text on a fresh session and never the old one: no tool authority, no share of a spent turn budget, and no pending confirmation carried across, so an unanswered confirmation stays unanswered. `windowSeconds` defaults to 300 with a 600 ceiling, `maxRestores` to 3 with a ceiling of 10, and 0 for either disables continuity outright; an operator may lower what you declare and can never raise it. The handle lives in `sessionStorage` so it dies with the tab, is single-use, and is valid only for the embed, origin, and visitor it was issued to. Declare it when a marketing site spreads one conversation across several pages; leave it off when anonymous conversation text should not survive a navigation at all.
 
 Give every business action a portable `tool(..., { title: "Complete task", description: "This will mark the task complete for everyone.", input: z.object({ task: z.string().meta({ title: "Task" }) }) })` title. The standard confirmation uses the tool title/description plus schema field `title`, `description`, and `format`; it shows Confirm and Don't proceed and keeps technical action details secondary. `behavior.showConfirmationDetails` defaults to `true`; set it to `false` to remove only the built-in card's Additional details disclosure and connector mechanics. The business review and decisions remain, `confirm: true` still suspends until acceptance, and headless/BYO `data-confirmation` stays unchanged. Do not put JSON or implementation names in business-facing copy.
 
@@ -214,34 +271,19 @@ The doctor reads `NOODLE_ASSISTANT_CLIENT_ID` / `NOODLE_ASSISTANT_CLIENT_SECRET`
 
 Read the customer repository lockfile or `packageManager` field and install `@noodleseed/assistant` with that existing package manager; never introduce a second lockfile.
 
-Create an authenticated same-origin backend route:
+Use the installed same-origin route and `createAssistantSessionHandler` from `@noodleseed/assistant/server`; do not regenerate guards, JSON parsing or token-exchange infrastructure. The only identity seam is `authenticateAssistantRequest` in `lib/noodle-assistant-auth.ts`.
 
-```ts
-import { createAssistantSession } from "@noodleseed/assistant/server";
+The route must return a JSON `401` for a signed-out caller rather than an HTML login redirect, require JSON, and compare the request against the exact configured Origin before exchange. The managed renderer sends same-origin cookies but does not invent an application CSRF token. Preserve the host token-based CSRF middleware: inject a same-origin-only token fetch into the managed element before mounting, as the Django/Vue profile does; a custom renderer is not required. Invalid CSRF may correctly fail before authentication. Resolve claims and connector routes from the authenticated user and server-owned membership only.
 
-export async function POST(request: Request) {
-  const user = await requireCurrentUser(request);
-  const { context } = await request.json();
-  const session = await createAssistantSession({
-    serviceUrl: process.env.NOODLE_SERVICE_URL!,
-    clientId: process.env.NOODLE_ASSISTANT_CLIENT_ID!,
-    clientSecret: process.env.NOODLE_ASSISTANT_CLIENT_SECRET!,
-    origin: process.env.PUBLIC_APP_ORIGIN!,
-    user: {
-      id: user.id,
-      email: user.email,
-      roles: user.roles,
-      scopes: user.scopes,
-    },
-    context,
-    // Saved, backend-verified user preferences outrank browser hints.
-    preferences: { locale: user.locale, timeZone: user.timeZone },
-  });
-  return Response.json(session);
-}
-```
+For the complete framework-neutral server-to-server HTTP exchange in a non-Node host, link to the [Django and Vue guide](https://docs.noodleseed.dev/docs/guides/embedded-assistant-django-vue); keep its framework-specific middleware and mounting mechanics there rather than copying them into agent instructions.
+
+Return `AssistantSessionIdentity | null` from the adapter. Null means signed out; service failure must throw rather than masquerade as signed out. Derive `user`, claims, preferences and routes from the existing verified session/membership. The maintained handler owns exact-Origin/JSON checks, bounded flat context, no-store JSON failures, a 15-second deadline, no redirects and no exchange retries. For mixed-mode continuation, return a `signInTicket` only from the backend-bound login transaction; never take it directly from browser JSON.
+
+For saved presentation preferences, return `preferences: { locale: user.locale, timeZone: user.timeZone }` beside the verified `user`. Omit unknown values; browser hints are not verified account preferences.
 
 Authenticate before exchange. Pass backend-verified `user.roles` and OAuth-style `user.scopes` separately; they govern the same per-tool authorization rules as verified MCP bearer claims. Source `origin` from trusted server configuration or strictly match the request origin against the same exact allowlist; never accept an arbitrary request header. Treat page context as untrusted model context, never authorization. Forward the helper response unchanged.
+
+Run the generated `test/noodle-assistant.test.ts` with the application's Vitest runner (add the dev dependency using its existing package manager if absent). It tests the real generated route with synthetic identities. Separately exercise the real session function with signed-out, tenant-A, tenant-B and authorized fixtures before claiming integration proof. A green mock suite does not prove customer authorization.
 
 `serviceUrl` is the Noodle Seed control-plane base URL: the value `noodle assistant clients create` prints, also stored as `serviceUrl` in `deployment.json`. It is NOT the deployment MCP endpoint (`url`, which ends in `/v1/mcp` and rejects session exchange). Never probe or guess endpoints with real credentials.
 
@@ -393,7 +435,9 @@ That custom element is the complete managed assistant in Vue, Angular, or plain 
 
 The component renders a custom element and must mount client-side. In a Next.js App Router tree, put the mount in a `"use client"` component; from a server component or the Pages Router, load it with `next/dynamic` and `ssr: false`.
 
-For a customer-owned React renderer, use the renderer-free hook. It owns client lifetime and React subscription while `client` remains the one command surface:
+### Minimal fail-closed custom renderer skeleton
+
+Use the renderer-free hook only when the product has a concrete reason to own the conversation UI. This is a minimal fail-closed skeleton, not a production-complete renderer: it keeps one client and App host, renders safe transcript content, and refuses interactions whose complete business presentation the host has not implemented. Start from the managed renderer unless the application accepts the full obligation checklist below.
 
 ```tsx
 "use client";
@@ -402,9 +446,22 @@ import { useEffect, useState } from "react";
 import { NoodleAppView } from "@noodleseed/assistant/react";
 import { useNoodleAssistant } from "@noodleseed/assistant/react/client";
 
-export function CustomAssistant({ principalKey, resolvedTheme }: { principalKey: string; resolvedTheme: "light" | "dark" }) {
+type SignInRequest = { readonly signInTicket: string; readonly expiresAt: string };
+
+export function CustomAssistant({
+  principalKey,
+  resolvedTheme,
+  onSignInRequested,
+}: {
+  principalKey: string;
+  resolvedTheme: "light" | "dark";
+  onSignInRequested: (request: SignInRequest) => Promise<"started" | "cancelled">;
+}) {
   const [draft, setDraft] = useState("");
-  const { client, messages, status, error } = useNoodleAssistant({
+  const [sessionNotice, setSessionNotice] = useState("");
+  const [turnNotice, setTurnNotice] = useState("");
+  const [pendingSignInTicket, setPendingSignInTicket] = useState<string>();
+  const { client, messages, suggestions, status, error } = useNoodleAssistant({
     sessionEndpoint: "/api/assistant/session",
     principalKey,
     clientContext: () => ({
@@ -418,6 +475,16 @@ export function CustomAssistant({ principalKey, resolvedTheme }: { principalKey:
       // The hook exposes this same structured failure through `error`.
     });
   };
+  useEffect(
+    () =>
+      client.subscribe((event) => {
+        if (event.event === "session_expired") setSessionNotice("Session expired.");
+        if (event.event === "session_started" || event.event === "session_reset") {
+          setSessionNotice("");
+        }
+      }),
+    [client],
+  );
 
   return (
     <section aria-label="Assistant" aria-busy={busy}>
@@ -431,20 +498,18 @@ export function CustomAssistant({ principalKey, resolvedTheme }: { principalKey:
                 <section key={review.id} aria-label="Review proposed action">
                   <h3>{review.title ?? "Review proposed action"}</h3>
                   {review.description ? <p>{review.description}</p> : null}
-                  <pre aria-label="Proposed action arguments">
-                    {JSON.stringify(review.arguments ?? {}, null, 2)}
-                  </pre>
-                  <button
-                    disabled={busy || review.status !== "pending"}
-                    onClick={() => settle(client.respond(review.id, { action: "accept" }))}
-                  >
-                    Confirm
-                  </button>
+                  <p>This custom renderer has not implemented a complete schema-aware review.</p>
                   <button
                     disabled={busy || review.status !== "pending"}
                     onClick={() => settle(client.respond(review.id, { action: "decline" }))}
                   >
                     Don't proceed
+                  </button>
+                  <button
+                    disabled={busy || review.status !== "pending"}
+                    onClick={() => settle(client.respond(review.id, { action: "cancel" }))}
+                  >
+                    Cancel
                   </button>
                 </section>
               );
@@ -454,21 +519,28 @@ export function CustomAssistant({ principalKey, resolvedTheme }: { principalKey:
               return (
                 <section key={request.id} aria-label="Assistant needs input">
                   <p>{request.message}</p>
-                  <p>This renderer has not implemented the requested form.</p>
+                  {/* request.requestedSchema is the sole input-form contract. */}
+                  <p>This custom renderer has not implemented the requested schema form.</p>
                   <button
                     disabled={busy || request.status !== "pending"}
                     onClick={() => settle(client.respond(request.id, { action: "decline" }))}
                   >
-                    Cancel request
+                    Don't proceed
+                  </button>
+                  <button
+                    disabled={busy || request.status !== "pending"}
+                    onClick={() => settle(client.respond(request.id, { action: "cancel" }))}
+                  >
+                    Cancel
                   </button>
                 </section>
               );
             }
             if (part.type === "data-tool-result") {
               return (
-                <pre key={part.data.id} aria-label={`${part.data.tool} result`}>
-                  {JSON.stringify(part.data.result, null, 2)}
-                </pre>
+                <p key={part.data.id} role="status">
+                  A result is available, but this renderer has no trusted presentation for it.
+                </p>
               );
             }
             if (part.type === "data-view") {
@@ -481,17 +553,67 @@ export function CustomAssistant({ principalKey, resolvedTheme }: { principalKey:
                 />
               );
             }
+            if (part.type === "data-sign-in") {
+              const request = part.data;
+              return (
+                <section key={request.id} aria-label="Sign in required">
+                  <p>Continue with your account to use this capability.</p>
+                  <button
+                    disabled={busy || pendingSignInTicket !== undefined}
+                    onClick={() => {
+                      setPendingSignInTicket(request.signInTicket);
+                      void Promise.resolve()
+                        .then(() =>
+                          onSignInRequested({
+                            signInTicket: request.signInTicket,
+                            expiresAt: request.expiresAt,
+                          }),
+                        )
+                        .then(
+                        (result) => {
+                          if (result === "cancelled") setPendingSignInTicket(undefined);
+                        },
+                        () => setPendingSignInTicket(undefined),
+                      );
+                    }}
+                  >
+                    Sign in
+                  </button>
+                </section>
+              );
+            }
             return <p key={index}>Unsupported assistant content.</p>;
           })}
         </article>
       ))}
-      {error ? <p role="alert">{error.message}</p> : null}
+      <p role="status" aria-live="polite">
+        {sessionNotice || turnNotice || (busy ? "Assistant is working" : "")}
+      </p>
+      {suggestions?.prompts.length ? (
+        <nav aria-label="Suggested messages">
+          {suggestions.prompts.map((prompt) => (
+            <button
+              key={prompt}
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setTurnNotice("");
+                settle(client.sendMessage(prompt));
+              }}
+            >
+              {prompt}
+            </button>
+          ))}
+        </nav>
+      ) : null}
+      {error ? <p role="alert">The assistant could not complete that request.</p> : null}
       <form
         onSubmit={(event) => {
           event.preventDefault();
           const message = draft.trim();
           if (!message) return;
           setDraft("");
+          setTurnNotice("");
           settle(client.sendMessage(message));
         }}
       >
@@ -501,7 +623,15 @@ export function CustomAssistant({ principalKey, resolvedTheme }: { principalKey:
           onChange={(event) => setDraft(event.currentTarget.value)}
         />
         {busy ? (
-          <button type="button" onClick={() => client.abort()}>Stop</button>
+          <button
+            type="button"
+            onClick={() => {
+              client.abort();
+              setTurnNotice("Response stopped. This does not undo a started action.");
+            }}
+          >
+            Stop
+          </button>
         ) : (
           <button type="submit">Send</button>
         )}
@@ -511,37 +641,37 @@ export function CustomAssistant({ principalKey, resolvedTheme }: { principalKey:
 }
 ```
 
-`principalKey` is a browser-local identity for the authenticated user/tenant and is never sent to Noodle. Change it whenever that principal changes; the hook then aborts and clears the previous session and transcript. The hook does not register `<noodle-assistant>` or render Noodle markup.
+`principalKey` is a browser-local identity for the authenticated user/tenant and is never sent to Noodle. Change it whenever that principal changes; the hook then aborts and clears the previous session and transcript. The hook does not register `<noodle-assistant>` or render Noodle markup. `suggestions` is hook-owned state: each prompt starts an ordinary message through the same guarded `client.sendMessage` path and disappears when the client clears it.
 
-If the product deliberately sends a first turn on mount, make the effect cleanup-aware. React Strict Mode discards the provisional effect, so a persistent "already sent" ref can suppress the stable remount:
-
-```tsx
-useEffect(() => {
-  let active = true;
-  queueMicrotask(() => {
-    if (active) settle(client.sendMessage(initialMessage));
-  });
-  return () => {
-    active = false;
-  };
-}, [client, initialMessage]);
-```
+Do not send a first turn on mount by default. React effect cleanup can suppress one provisional Strict Mode effect, but it cannot make a remount, dependency change, or client replacement idempotent. Require an explicit user action unless the host owns a durable one-shot state and an application idempotency key that makes repeated sends safe.
 
 `settle` must await or catch the command promise; the same structured failure also appears in the hook `error` state.
 
-The sample fails closed on input requests until you replace that branch with a form generated from `requestedSchema`. A custom renderer must show the complete confirmation review and both decisions, handle every part it supports, and surface an explicit unsupported state for the rest. For `data-view`, use the canonical `<noodle-app-view>` host (or its React `NoodleAppView` adapter) to render the linked App, or deliberately map `resourceUri`/tool plus the bounded redacted `result` to an application-trusted native component. JSON result data is not the linked App UI. Never inject `part.data.html`, assign it to `srcdoc`, fetch a `ui://` URI, or reproduce the bridge with a direct Ext Apps dependency. Do not wrap this client in another chat transport or invent user messages for interaction continuations.
+This sample deliberately does not render Confirm until the application supplies a complete schema-aware review of every non-sensitive business field. It also refuses accepted elicitation until a form covers the compiler-approved portable `requestedSchema` subset; decline and cancel remain available and distinct. Use the managed renderer instead of shipping either unsupported branch. A production custom renderer must handle text, suggestions, sign-in, confirmation, elicitation, tool results, linked views, streaming, cancellation, terminal interaction states, and unknown future parts without silently dropping content.
+
+`data-sign-in` is not an interaction and has no status: never pass its id to `client.respond`. Give `signInTicket` to an application callback that binds it to the host's existing short-lived login transaction; the authenticated backend spends it after login. Resolve the callback as `started` only after the host owns one active login transaction. Resolve it as `cancelled`, or reject it, when no transaction was started so the renderer can restore the sign-in affordance. A mixed custom renderer uses separate public and authenticated client mounts: the public shell starts with `embedId`, `serviceUrl`, and its visitor `principalKey`; after login, the authenticated destination mounts a new client against the same-origin `sessionEndpoint` with the user/tenant `principalKey`. Never pass both source options or mutate the public client source in place. The elevated session response owns bounded transcript repaint and optional resume. Never put the ticket in a query string, log, analytics event, or durable browser storage.
+
+The `session_expired` notice is observational. The client owns its one pre-execution `401` re-exchange and message retry; never rebuild tokens or replay an interaction in renderer code. A retryable transport detail is diagnostic, not proof that resending an ordinary message or business action is safe, so the skeleton never offers a generic Retry button. Reconcile a lost interaction response only by repeating the same id and the same decision through an explicit application recovery affordance. Budget exhaustion and tenant-mismatch elevation never retry.
+
+For `data-tool-result`, do not expose technical tool names or raw JSON as customer UI. Prefer the linked `data-view`; otherwise map a known bounded result to an application-trusted native component or keep the explicit unsupported-result state. For `data-view`, use the canonical `<noodle-app-view>` host (or its React `NoodleAppView` adapter). Never inject `part.data.html`, assign it to `srcdoc`, fetch a `ui://` URI, reproduce the bridge, wrap the client in another chat transport, or invent user messages for continuations.
 
 `<noodle-app-view>` owns one bridge for the semantic view identity: client + `view.id` + `view.resourceUri`; `NoodleAppView` delegates to it. The host retains the iframe across fresh payload/callback/theme rerenders, publishes later resolved-theme changes through MCP Apps host context, and sends standard App teardown when that semantic identity changes, the element disconnects, or the App requests teardown. App views remain inline by default; the host advertises only inline presentation and rejects widget fullscreen requests. Opt in with `allowFullscreen` on `NoodleAppView` or `allow-fullscreen` on `<noodle-app-view>` only when fullscreen is an intentional part of the customer-owned experience. When fullscreen is accepted, the shared host adds an accessible top-right exit control that returns the same mounted App to inline mode without losing its state. Pass the same resolved application theme used by the conversation shell. Do not key an ancestor by a view object or callback. If the embedding page sets Content-Security-Policy, include the Noodle service origin in both `connect-src` and `frame-src`.
 
-Outside React, use the same DOM-free client directly and import the isolated App-view entry only when rendering linked Apps. The client keeps the session token in memory, the transcript stays React-free, and the element owns only App presentation:
+### Framework-neutral DOM client
+
+Use the same DOM-free client directly without a component wrapper, and import the isolated App-view entry only when rendering linked Apps. The client keeps the session token in memory, and the element owns only App presentation:
 
 ```html
-<noodle-app-view id="assistant-app-view"></noodle-app-view>
+<div id="assistant-app-views"></div>
 ```
 
 ```ts
 import { createAssistantClient } from "@noodleseed/assistant/client";
 import "@noodleseed/assistant/app-view";
+import {
+  type AssistantViewAvailableDetail,
+  type NoodleAppViewElement,
+} from "@noodleseed/assistant/app-view";
 
 const assistant = createAssistantClient({
   sessionEndpoint: "/api/assistant/session",
@@ -551,47 +681,62 @@ const assistant = createAssistantClient({
   }),
 });
 
-const appView = document.querySelector("#assistant-app-view");
-if (!appView) throw new Error("Missing App view host");
-appView.client = assistant;
-appView.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+const appViews = document.querySelector("#assistant-app-views");
+if (!appViews) throw new Error("Missing App views host");
+const mountedViews = new Map<string, NoodleAppViewElement>();
+const readResolvedTheme = (): "light" | "dark" =>
+  document.documentElement.classList.contains("dark") ? "dark" : "light";
+let resolvedTheme: "light" | "dark" = readResolvedTheme();
+const syncResolvedTheme = () => {
+  resolvedTheme = readResolvedTheme();
+  for (const mountedView of mountedViews.values()) mountedView.theme = resolvedTheme;
+};
+new MutationObserver(syncResolvedTheme).observe(document.documentElement, {
+  attributes: true,
+  attributeFilter: ["class"],
+});
+const appViewFor = (view: AssistantViewAvailableDetail) => {
+  const key = `${view.id}:${view.resourceUri}`;
+  let appView = mountedViews.get(key);
+  if (!appView) {
+    appView = document.createElement("noodle-app-view") as NoodleAppViewElement;
+    appView.client = assistant;
+    mountedViews.set(key, appView);
+    appViews.append(appView);
+  }
+  appView.theme = resolvedTheme;
+  return appView;
+};
 
 assistant.updateModelContext({
   content: [{ type: 'text', text: 'The time-off form is mounted.' }],
   structuredContent: { widget: { name: 'time-off', lifecycle: 'mounted' } },
 });
 
-let pending: { id: string; requestedSchema?: Readonly<Record<string, unknown>> } | undefined;
 assistant.subscribeChat((state) => {
-  renderUIMessageState(state);
-  pending = undefined;
+  renderUIMessageState(state, {
+    respond: (id, response) => assistant.respond(id, response),
+  });
+  const activeViewKeys = new Set<string>();
   for (const message of state.messages) {
     for (const part of message.parts) {
-      if (part.type === 'data-confirmation' && part.data.status === 'pending') {
-        pending = { id: part.data.id };
-      }
-      if (part.type === 'data-input-request' && part.data.status === 'pending') {
-        pending = { id: part.data.id, requestedSchema: part.data.requestedSchema };
-      }
       if (part.type === 'data-view') {
-        appView.view = part.data;
+        const key = `${part.data.id}:${part.data.resourceUri}`;
+        activeViewKeys.add(key);
+        appViewFor(part.data).view = part.data;
       }
     }
   }
+  for (const [key, mountedView] of mountedViews) {
+    if (!activeViewKeys.has(key)) {
+      mountedView.remove();
+      mountedViews.delete(key);
+    }
+  }
 });
-
-await assistant.sendMessage("Book next Thursday and Friday off");
-if (pending) {
-  const requestedSchema = pending.requestedSchema;
-  const resolution = requestedSchema
-    ? { action: 'accept' as const, content: await renderPortableForm(requestedSchema) }
-    : { action: 'accept' as const };
-  await assistant.respond(pending.id, resolution);
-}
-// The same pending id also accepts { action: 'decline' } or { action: 'cancel' }.
 ```
 
-`subscribeChat` immediately emits a detached `{ messages, status, error? }` snapshot and then emits as `UIMessage.parts` change. Text uses `text`; Noodle confirmations, input requests, tool results, and linked views use `data-confirmation`, `data-input-request`, `data-tool-result`, and `data-view`. Interaction data moves through pending/submitting/accepted/declined/cancelled. Use raw `subscribe(...)` only for transport/session lifecycle events that are not transcript content.
+`subscribeChat` immediately emits a detached `{ messages, status, error? }` snapshot and then emits as `UIMessage.parts` change. Text uses `text`; Noodle confirmations, input requests, sign-in requests, tool results, and linked views use `data-confirmation`, `data-input-request`, `data-sign-in`, `data-tool-result`, and `data-view`. `renderUIMessageState` is application code: it must show a complete schema-aware review or requested form and require an explicit user gesture before calling the supplied `respond`. Never call `respond` while scanning a transcript snapshot. Interaction data moves through pending/submitting/accepted/declined/cancelled. Use raw `subscribe(...)` only for transport/session lifecycle events that are not transcript content.
 
 For a chat-first custom host, raw `tool_started` carries the direct invocation call `id` and technical `tool` name before execution. Map known tools through a finite application-owned label table and use a neutral fallback such as "Working"; never mechanically expose an internal identifier as customer copy. Reserve one stable region with `role="status"` and `aria-live="polite"` for thinking, the mapped activity label, and the linked-view skeleton. `view_available` makes the view ready; raw `error` or chat `error` replaces it with `role="alert"`. Mark decorative skeleton shapes `aria-hidden="true"` and disable shimmer/transitions under `@media (prefers-reduced-motion: reduce)`.
 
@@ -613,7 +758,7 @@ assistant.subscribe((event) => {
 });
 ```
 
-`data-view` means a completed tool has a linked MCP App view. Pass that typed part and the existing client to `<noodle-app-view>` in Vue, Angular, or plain DOM, or to its `NoodleAppView` React adapter. It retains one bridge for client + `view.id` + `view.resourceUri` and requests standard App teardown on semantic replacement, disconnect, or App request. That pair is transport identity: different call ids are distinct invocations and must not be deduplicated generically. If the product intentionally owns one current panel for a known resource, declare an application-owned slot map and replace only that slot. Deliberately map the bounded result to an application-trusted native component only when replacing the linked App UI.
+`data-view` means a completed tool has a linked MCP App view. Pass that typed part and the existing client to `<noodle-app-view>` in another component framework or plain DOM, or to its `NoodleAppView` React adapter. It retains one bridge for client + `view.id` + `view.resourceUri` and requests standard App teardown on semantic replacement, disconnect, or App request. That pair is transport identity: different call ids are distinct invocations and must not be deduplicated generically. If the product intentionally owns one current panel for a known resource, declare an application-owned slot map and replace only that slot. Deliberately map the bounded result to an application-trusted native component only when replacing the linked App UI.
 
 `clientContext` and typed `pageContext` are recomputed for each turn. `updateContext(...)` remains the legacy session-exchange context; `updatePageContext(...)` replaces the fresh per-turn application hint. `updateModelContext({ content, structuredContent })` publishes one cohesive renderer snapshot for later message turns without starting a turn; every call replaces the prior snapshot rather than merging fields. These are untrusted data, not conversation history or authorization input, and the boundaries reject credential-shaped or unbounded updates. A message may re-exchange once after a pre-execution `401`; the client never auto-retries interaction decisions. `tool_proposed.arguments` is a complete schema-aware review projection and, for connector-backed tools, names the sole exact connector version/operation/resolved arguments. Sensitive/write-only fields are redacted; truncating or omitting any non-sensitive action field fails closed. Accept is bound to the server-held action and claims at most one execution attempt—clients cannot replace it. Normal terminal outcomes scrub private arguments and continuations immediately; only an accepted action still executing retains them for the one-hour unknown-outcome recovery window, after which it records `interaction_outcome_unknown` and scrubs. Without downstream idempotency this is not an exactly-once business-effect guarantee. To reconcile a lost response, explicitly repeat the same id and decision: the service returns its durable stored outcome without re-execution.
 
@@ -626,13 +771,68 @@ noodle assistant embed --check --json
 noodle assistant embed --check --json --require-env EXAMPLE_DELEG_CLIENT_SECRET
 ```
 
-The check reports only required and missing environment names, never their values. Pass `--surface public|mixed|authenticated` to match the deployment: `public` drops the backend client id/secret requirement (a public embed has neither), and `public`/`mixed` additionally require `script-src` — the one directive whose failure runs no widget code at all, so nothing can report it from inside the page. CSP directives verify against the service origin exactly, via the env placeholder, or through a covering wildcard (`https://*.example.com`); a dynamic expression is marked unverified instead of guessed. Additional `--require-env` names are application-owned; `--env-alias NAME=HOST_NAME` follows a host repo that names an env var differently.
+The check reports required and missing environment names, never their values. Use the exact command in an installed NOODLE-INTEGRATION.md, including its aliases and additional names, with the host environment exported; the CLI does not load application dotenv files. Pass `--surface public|mixed|authenticated` to match the deployment: `public` needs no backend client credentials. Public script-tag mounts need the service in `script-src`; the generated bundled React mount needs only `connect-src` and `frame-src` for that service. Unknown public mounts retain the conservative script check. CSP verifies an exact service origin, an env placeholder or a covering wildcard; dynamic expressions stay unverified. `--require-env` adds application-owned names and `--env-alias NAME=HOST_NAME` follows existing host naming.
+
+Read `evidence.levels` in order and stop at `evidence.firstUnproven`:
+
+| Level | What can prove it |
+| --- | --- |
+| Static host | `assistant embed --check`: environment-name presence, control-plane URL shape, canonical session-route/mount risks, same-origin endpoint shape, and statically visible CSP |
+| Local contract | The host's existing local test/build: JSON signed-out `401`, signed-in session exchange, unchanged response, client-only mount, and cookie/CSRF behavior |
+| Hosted session | `assistant doctor` plus one representative routed safe read against the exact deployment |
+| Production browser | A real deployed browser completing keyboard submission, session exchange, one streamed turn, one interaction, and one linked App with console/network inspection |
+| Operations | The launch, rollback, rotation, budget, usage, and qualified-outcome checks below |
+
+`static-host` is `passed` only when every canonical static diagnostic is ready or not applicable. It is `partial` when a custom or missing source location is not detected, and `failed` for a known blocker. A top-level `ready: true` means only that the check found no static blocker; static success is never local-contract, hosted-session, or production-browser proof.
+
+The value-free diagnostics distinguish `mcp-endpoint` (a deployment MCP URL was supplied where the control-plane service URL belongs), `html-redirect-risk` (the canonical API route appears to redirect instead of returning JSON), `ssr-risk` (the canonical mount is not provably client-only), and `cross-origin-risk` (the browser session endpoint would omit same-origin cookies). `not-detected` and `unverified` are evidence gaps, not passes. The listed `postDeployProbes` are next actions; this command does not execute them.
+
+There is no live or browser flag. Do not add one without human approval of its network, identity, data, timeout, and redaction contract; use the host's own test and browser tooling for later evidence levels.
 
 Inspect the host repository for generated environment bindings after adding names. Run its existing generator, review the diff, commit generated types only when that repository requires them, then run the production-equivalent host build. Do not invent a framework command or add a second generator.
 
 Promotion checklist: provision each environment in the backend secret manager; map names through the CI environment and any secret allowlist or secrets file; run the presence-only host preflight; run the canonical deploy so its configuration preflight completes before asset upload; run the post-deploy probes from the JSON contract; rotate the assistant client and delegated credential independently, then rerun the same checks.
 
 Devtools privacy gate: default model and connector exercises to synthetic or mock data. Before Devtools Chat sends real connector data to an external model, disclose the data flow and obtain the user's approval. A local validation pass is not that approval.
+
+## Launch and qualified-usage proof
+
+Treat deployed capability, production-browser proof, actual qualified usage, and measured customer outcome as four separate claims. Passing one never proves the next.
+
+### Pre-launch checklist
+
+1. Run `noodle assistant embed --check --json` in the host repository and stop at `evidence.firstUnproven`; complete the host-owned local contract and production-browser checks described above.
+2. Run `noodle assistant doctor --user-id <real-test-user> --origin <exact-origin> --org <org> --app <app> --env <env> --json`, then exercise one representative routed safe read. Use an approved synthetic account unless real customer data use was explicitly approved.
+3. Run `noodle assistant appearance show --org <org> --app <app> --env <env> --json` and have the customer owner verify the rendered brand, keyboard path, reduced motion, narrow viewport, confirmation, input, and linked App view in the deployed browser.
+4. Run `noodle assistant clients list --org <org> --app <app> --env <env> --json`; name the active credential owner and rehearse the secret-manager update and verification sequence for `noodle assistant clients rotate <client-id> --org <org> --app <app> --env <env> --json`. Rotation returns a new secret once; never put it in the PR, shell history, logs, or analytics.
+5. For a public or mixed surface, inspect its live caps with `noodle assistant embeds list --org <org> --app <app> --env <env> --json`. Record the authorized kill switch, `noodle assistant budget set --surface <embed-id> --turns-per-day 0 --org <org> --app <app> --env <env> --json`, but do not execute it during a rehearsal.
+6. Record the current and previous deployment identifiers and the named rollback owner. The recovery command is `noodle rollback <previous-deployment-id> --org <org> --app <app> --env <env> --json`; do not run it merely to prove syntax.
+7. Have the customer workflow owner execute and sign off the behavioral acceptance fixture below against the production-equivalent environment.
+
+### Customer-owned behavioral acceptance fixture
+
+Use customer-recognizable inputs and expected business outcomes. Record only the minimum identifiers needed to reproduce a failure; do not paste raw conversations, secrets, or customer records into issue trackers.
+
+| Case | Customer-owned setup | Expected observable outcome |
+| --- | --- | --- |
+| normal | One common, authorized job with known data | Completes the named task and presents the business result or linked App clearly |
+| ambiguous | A request with two materially different interpretations | Asks the smallest useful clarifying question before action |
+| missing-data | Omit one required business field or make the read return no record | Requests only the missing input or states that no data exists; never invents it |
+| unauthorized | Use a real test role lacking the required scope | Refuses or withholds the capability without leaking its result, arguments, or internal tool name |
+| tenant-switch | Change the signed-in organization while the panel is open | Aborts and clears the prior principal session; no prior-tenant transcript, route, or result survives |
+| confirmation | Propose one consequential operation, then test decline, cancel, and accept separately | Shows the complete non-sensitive action review; only explicit accept executes, at most once |
+| recovery | Expire a session before execution and lose one interaction response after submission | Safe pre-execution re-exchange succeeds once; same-id/same-decision reconciliation returns the stored outcome without re-execution |
+
+### Post-launch checklist
+
+1. Run `noodle assistant usage --window 7d --org <org> --app <app> --env <env> --json` on an agreed cadence. It reports traffic, depth, engagement, latency, and tokens; it does not establish customer success.
+2. Re-run the customer-owned fixture with named external users after any tool, permission, model, identity, renderer, or routing change. Record results by case and deployment, not as a single green launch claim.
+3. Report task completion, refusal correctness, repeat usage, safety, latency, and abandonment separately: completed qualified attempts / qualified attempts; correct refusals / refusal cases; distinct returning qualified users; confirmed cross-tenant, duplicate-effect, or secret-exposure incidents; p50/p95 end-to-end time for the named job; and started qualified attempts with no completion or explicit refusal.
+4. Treat raw turn volume as utilization evidence, not an outcome. A user can generate many turns because the assistant is useful, confused, slow, or unsafe.
+5. Recheck caps and credential age. Run the rehearsed `noodle assistant clients rotate <client-id>` sequence only under the named owner, update the backend secret manager, rerun doctor and one browser turn, then revoke the superseded credential after the overlap window.
+6. When an agreed safety, cost, or correctness threshold is crossed, use the recorded public-surface budget kill switch or the recorded deployment rollback. Verify the restored state with doctor, the browser path, and the affected acceptance cases.
+
+Do not add a platform-owned completion event or infer completion from a final assistant message. Any such schema requires a separate human-approved analytics and customer-data decision covering event semantics, customer consent, retention, access, deletion, tenant isolation, and whether the customer application or Noodle is authoritative.
 
 ## Toolchain requirements
 

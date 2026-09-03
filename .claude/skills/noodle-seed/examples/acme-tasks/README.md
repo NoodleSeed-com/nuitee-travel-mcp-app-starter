@@ -116,7 +116,7 @@ assistant: embeddedAssistant({
     model: variable('ASSISTANT_MODEL'),
     apiKey: secret('ASSISTANT_MODEL_API_KEY'),
   }),
-  allowedOrigins: ['https://tasks.example.com'],
+  access: authenticatedWebsite({ origins: [variable('APP_ORIGIN')] }),
   layout: { mode: 'floating', position: 'bottom-right' },
   labels: { welcomeHeading: 'How can I help with Acme Tasks?' },
 }),
@@ -125,9 +125,19 @@ assistant: embeddedAssistant({
 The assistant automatically inherits this server's existing `branding` block, so its name, accent,
 light/dark surfaces, density, and radius match the `TaskList` widget without a second brand declaration.
 
-Every assistant origin is exact and HTTPS-only. If the customer web app needs local browser testing, it
-must serve itself over development HTTPS and add its `https://localhost:<port>` origin; `noodle dev` does
-not provide TLS for that separate SaaS app.
+Bind `APP_ORIGIN` to the exact website origin. Production uses HTTPS; local development may use an exact
+loopback HTTP origin. The customer application runs its own development server beside `noodle dev`.
+
+In the existing application, preview the adapter with
+`noodle assistant embed --framework nextjs --surface authenticated --dry-run --json`. Review the recipe,
+generated contents/hashes and conflicts before rerunning without `--dry-run`. Implement the named
+`authenticateAssistantRequest` seam with the application's existing login and server-owned membership.
+Follow the installed `NOODLE-INTEGRATION.md` for signed-out, wrong-origin, cross-tenant and browser checks.
+Installed files are not integration proof; missing sandbox identities or backend evidence remain unverified.
+The generated session route delegates guards, bounded parsing and exchange to
+`createAssistantSessionHandler` in `@noodleseed/assistant/server`. Implement the existing-session adapter;
+do not copy token-exchange infrastructure. Run the supplied `test/noodle-assistant.test.ts` with Vitest,
+then test the adapter against the host application's signed-out and cross-tenant membership fixtures.
 
 The customer backend exchanges its authenticated user through `@noodleseed/assistant/server`; the browser
 uses the Web Component or React wrapper and never receives the embed client or model secret. Validate with
