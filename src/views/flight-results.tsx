@@ -25,8 +25,8 @@ import type { GatewayError } from '../flight-runtime.js';
 import { Badge } from './card-primitives.js';
 import {
   ArrowLeftIcon,
+  CarryOnIcon,
   CheckIcon,
-  CheckedBagIcon,
   ClockIcon,
   PlaneIcon,
   RouteIcon,
@@ -535,11 +535,18 @@ function cabinLabel(cabinClass: string): string {
     .join(' ');
 }
 
-function fareBadgesFor(itinerary: Itinerary): string[] {
-  const badges: string[] = [];
-  if (itinerary.isCheapest) badges.push('Cheapest');
-  if (itinerary.baggage.checked) badges.push('Checked bag');
-  if (itinerary.fare.family) badges.push(itinerary.fare.family);
+interface FareBadge {
+  readonly label: string;
+  readonly tone: 'good' | 'muted';
+}
+
+function fareBadgesFor(itinerary: Itinerary): FareBadge[] {
+  const badges: FareBadge[] = [];
+  if (itinerary.isCheapest) badges.push({ label: 'Cheapest', tone: 'good' });
+  if (itinerary.baggage.checked) badges.push({ label: 'Checked bag', tone: 'good' });
+  // Fare family (e.g. "Basic Economy") is a name, not necessarily a perk —
+  // muted, not the same affirmative green as an actual advantage.
+  if (itinerary.fare.family) badges.push({ label: itinerary.fare.family, tone: 'muted' });
   return badges.slice(0, 3);
 }
 
@@ -605,11 +612,11 @@ function FareCard({ itinerary, searchContext, selected, onSelect }: {
             <div className="cc-fare-meta">
               <span><ClockIcon />{duration(itinerary.durationMinutes)}</span>
               <span><RouteIcon />{stopLabel(itinerary.stops)}</span>
-              {searchContext ? <span><CheckedBagIcon />{cabinLabel(searchContext.cabinClass)}</span> : null}
+              {searchContext ? <span><CarryOnIcon />{cabinLabel(searchContext.cabinClass)}</span> : null}
             </div>
             {fareBadges.length > 0 ? (
               <div className="cc-card-badges">
-                {fareBadges.map((badge) => <Badge key={badge} tone="good">{badge}</Badge>)}
+                {fareBadges.map((badge) => <Badge key={badge.label} tone={badge.tone}>{badge.label}</Badge>)}
               </div>
             ) : null}
           </div>

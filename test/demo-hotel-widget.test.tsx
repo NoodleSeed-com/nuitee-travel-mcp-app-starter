@@ -186,6 +186,36 @@ describe('Wayfare illustrative hotel widget', () => {
     expect(detailsPanel).toContain('hidden');
   });
 
+  it('shows a compact taxes-and-fees qualifier under the price without expanding anything', () => {
+    const markup = render({ result: { ...result, hotels: [hotel(0)] }, displayMode: 'inline', onAdd: vi.fn() });
+
+    expect(markup).toContain('cc-price-note');
+    expect(markup).toContain('Illustrative subtotal · taxes and fees not included');
+
+    // This is standing disclosure, not the fuller note behind the "Hotel
+    // and rate details" toggle — it must sit under the always-visible
+    // price, before that collapsed panel even starts.
+    const noteAt = markup.indexOf('cc-price-note');
+    const detailsPanelAt = markup.indexOf('cc-hotel-detail-content');
+    expect(noteAt).toBeGreaterThan(-1);
+    expect(detailsPanelAt).toBeGreaterThan(-1);
+    expect(noteAt).toBeLessThan(detailsPanelAt);
+  });
+
+  it('threads the widget locale through to the stay-match price and rating formatting', () => {
+    // <Price> already renders in the host locale; the match ring's detail
+    // panel must not fall back to a hardcoded en-CA/en, or the same
+    // currency and review count render two different ways one tap apart.
+    const rated = { ...hotel(0), reviewScore: 8.9, reviewCount: 1204 } as DemoHotel;
+    const defaultLocale = render({ result: { ...result, hotels: [rated] }, displayMode: 'inline', onAdd: vi.fn() });
+    const frCA = render({ result: { ...result, hotels: [rated] }, displayMode: 'inline', locale: 'fr-CA', onAdd: vi.fn() });
+
+    expect(defaultLocale).toContain('1,204');
+    // fr-CA groups thousands with a space, not the en-CA comma.
+    expect(frCA).not.toContain('1,204');
+    expect(frCA).toContain('204');
+  });
+
   it('restores the full hotel and rate details behind the second disclosure', () => {
     const sixAmenities = ['Breakfast preview', 'Rooftop concept', 'Wi-Fi', 'Spa access', 'Pet friendly', 'Parking included'];
     const markup = render({

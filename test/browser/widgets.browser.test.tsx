@@ -432,5 +432,10 @@ describe('real-browser widget readiness', () => {
     expect(after.borderColor).toBe('rgb(20, 33, 61)'); // --cc-accent: #14213d
     expect(after.boxShadow).toContain('inset');
     expect(after.boxShadow).toContain('rgb(20, 33, 61)');
+    // .cc-fare-selected must ADD its accent inset, not REPLACE .cc-card's
+    // own elevation — otherwise the selected card is the only flat one in
+    // the row. The unselected box-shadow's shadow layers must still be
+    // present verbatim, with the inset accent layered in front of them.
+    expect(after.boxShadow.endsWith(unselectedBoxShadow)).toBe(true);
   });
 });
