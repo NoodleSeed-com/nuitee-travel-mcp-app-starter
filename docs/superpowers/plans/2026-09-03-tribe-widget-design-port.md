@@ -676,7 +676,15 @@ In `src/views/flight-results.tsx`, add to the existing `./card-primitives.js` im
 import { Badge, Rail } from './card-primitives.js';
 ```
 
-Replace the body of `FareCard` so it renders this structure. Keep the existing `CarrierIdentity`, `carrierAccent`, `money`, `duration`, `stopLabel`, and `itineraryFlightLabel` helpers — they already exist in the file and must not be duplicated. `firstLeg` and `lastLeg` below come from `itinerary.legs`; use the same accessors the current implementation uses to read departure and arrival times and airport codes.
+Replace the body of `FareCard` so it renders this structure. Keep the existing `CarrierIdentity`, `carrierAccent`, `money`, `duration`, `stopLabel`, `flightMoment`, and `itineraryFlightLabel` helpers — they already exist in the file and must not be duplicated.
+
+**Field names are verified against `src/flight-schemas.ts:88-125`. Use exactly these:**
+
+- Times are **top-level on `Itinerary`**: `itinerary.departureTime` and `itinerary.arrivalTime`. There is no `firstLeg`/`lastLeg` accessor to write — `itinerary.legs` exists but the card shows the whole journey's endpoints.
+- Airports: `itinerary.route.origin`, `itinerary.route.destination`.
+- Duration and stops: `itinerary.durationMinutes`, `itinerary.stops`.
+- **Cabin lives on the search context, not the itinerary.** `Itinerary` has no `cabin` field. `FareCard` already receives `searchContext`; use `searchContext.cabinClass` and title-case it for display.
+- **There is no `itinerary.badges` array.** Build the badge row from fields that do exist: `itinerary.isCheapest` → "Cheapest", `itinerary.baggage.checked` → "Checked bag", `itinerary.fare.family` → the family name when present. Emit at most three.
 
 ```tsx
 <article
@@ -711,13 +719,11 @@ Replace the body of `FareCard` so it renders this structure. Keep the existing `
     <div className="cc-fare-meta">
       <span><ClockIcon />{duration(itinerary.durationMinutes)}</span>
       <span><RouteIcon />{stopLabel(itinerary.stops)}</span>
-      <span><CheckedBagIcon />{itinerary.cabin}</span>
+      <span><CheckedBagIcon />{cabinLabel(searchContext.cabinClass)}</span>
     </div>
-    {itinerary.badges?.length ? (
+    {fareBadges.length > 0 ? (
       <div className="cc-card-badges">
-        {itinerary.badges.slice(0, 3).map((badge) => (
-          <Badge key={badge} tone="good">{badge}</Badge>
-        ))}
+        {fareBadges.map((badge) => <Badge key={badge} tone="good">{badge}</Badge>)}
       </div>
     ) : null}
     {/* Keep the existing details disclosure and Action button exactly as they
@@ -726,7 +732,27 @@ Replace the body of `FareCard` so it renders this structure. Keep the existing `
 </article>
 ```
 
-Use the property names the file already uses for duration, stops, cabin, and badges; if `itinerary.badges` does not exist in this codebase's `Itinerary` type, omit the badges block entirely rather than inventing the field.
+Define the two helpers above `FareCard`:
+
+```tsx
+function cabinLabel(cabinClass: string): string {
+  return cabinClass
+    .toLowerCase()
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+function fareBadgesFor(itinerary: Itinerary): string[] {
+  const badges: string[] = [];
+  if (itinerary.isCheapest) badges.push('Cheapest');
+  if (itinerary.baggage.checked) badges.push('Checked bag');
+  if (itinerary.fare.family) badges.push(itinerary.fare.family);
+  return badges.slice(0, 3);
+}
+```
+
+and bind `const fareBadges = fareBadgesFor(itinerary);` at the top of `FareCard`.
 
 - [ ] **Step 3c: Swap the carousel for the shared rail**
 
@@ -825,13 +851,15 @@ describe('computeStayMatch', () => {
     expect(match.score).toBeLessThanOrEqual(100);
   });
 
-  it('renormalises so a hotel with no rating is not penalised for the missing field', () => {
+  it('renormalises rather than scoring a missing field as zero', () => {
     const unrated = hotel();
-    const rated = hotel({ reviewScore: 10, reviewCount: 10 } as Partial<DemoHotel>);
-    // Identical on every shared dimension, so the unrated hotel must not score
-    // lower merely because it has one fewer line.
+    const zeroRated = hotel({ reviewScore: 0, reviewCount: 4 } as Partial<DemoHotel>);
+    // The guarantee is NOT that an unrated hotel ties a rated one — an extra
+    // strong line legitimately raises the mean. It is that a hotel which
+    // returned no rating is scored across the lines it does have, rather than
+    // being dragged down by a zero it never earned.
     expect(computeStayMatch(unrated, [unrated]).score)
-      .toBe(computeStayMatch(rated, [rated]).score);
+      .toBeGreaterThan(computeStayMatch(zeroRated, [zeroRated]).score);
   });
 
   it('marks amenity overlap partial when a requested amenity is missing', () => {
@@ -1859,9 +1887,9 @@ Expected: FAIL — cannot resolve `../src/views/hotel-map-board.js`.
 Create `src/views/hotel-map-board.tsx`. This is the full file:
 
 ```tsx
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { DemoHotel } from '../demo-schemas.js';
-import { Badge, PhotoBand, Price, ScorePin } from './card-primitives.js';
+import { gradientForName } from './card-primitives.js';
 import {
   MAPBOX_TOKEN,
   loadMapboxFromCdn,
@@ -2094,7 +2122,7 @@ export function MapBoard({
   readonly theme: 'light' | 'dark';
   readonly selectedId?: string;
   readonly onSelect: (selectionId: string) => void;
-  readonly children?: (hotel: DemoHotel) => React.ReactNode;
+  readonly children?: (hotel: DemoHotel) => ReactNode;
 }) {
   const located = mappableHotels(hotels);
   const selected = located.find((hotel) => hotel.selectionId === selectedId);
@@ -2132,7 +2160,7 @@ export function MapBoard({
                 <span
                   aria-hidden="true"
                   className="cc-chip-thumb"
-                  style={{ background: gradientThumb(hotel.name) }}
+                  style={{ background: gradientForName(hotel.name) }}
                 />
                 <span className="cc-chip-text">
                   <strong>{hotel.name}</strong>
@@ -2153,13 +2181,9 @@ export function MapBoard({
   );
 }
 
-function gradientThumb(name: string): string {
-  // Reuses the card gradient so a stay looks identical in card, chip, and tray.
-  return gradientForName(name);
-}
 ```
 
-Add `gradientForName` to the import from `./card-primitives.js`, and re-export `PhotoBand`, `ScorePin`, `Badge`, `Price` usage as needed by the detail card the caller supplies through `children`.
+The chip thumbnail reuses `gradientForName` directly, so a stay looks identical in its card, its map chip, and the compare tray. Import only what this module uses — `gradientForName` plus the mapbox-loader symbols. The detail card is supplied by the caller through `children`, so this module never imports `PhotoBand`, `ScorePin`, `Badge`, or `Price`.
 
 - [ ] **Step 3b: Add the map CSS**
 
@@ -2921,9 +2945,11 @@ Then the board:
     {(hotel) => (
       <HotelCard
         allHotels={hotels}
+        comparing={compareIds.includes(hotel.selectionId)}
         hotel={hotel}
         locale={locale}
         onAdd={onAdd}
+        onToggleCompare={() => toggleCompare(hotel.selectionId)}
         pending={pendingSelectionId === hotel.selectionId}
         selected={selectedSelectionId === hotel.selectionId}
       />
