@@ -2041,3 +2041,101 @@
     padding: 13px;
   }
 }
+
+/* ── Ported card design language ───────────────────────────────────────────
+   Card, rail, and elevation primitives shared by the flight and hotel
+   widgets. Every accent derives from --cc-accent; no new brand colour. */
+
+.cc-app {
+  --cc-radius-card: 16px;
+  --cc-shadow-card: 0 1px 2px rgb(25 32 43 / 0.04), 0 1px 3px rgb(25 32 43 / 0.06);
+  --cc-shadow-card-hover:
+    0 8px 24px -6px color-mix(in srgb, var(--cc-accent) 18%, transparent),
+    0 2px 6px rgb(25 32 43 / 0.06);
+  --cc-good: #1a7f37;
+  --cc-rail-gap: 14px;
+}
+
+/* Deepened from the reference's #10961d: our canvas is warm cream, where
+   that green falls below 4.5:1 for the score pin's small bold numerals. */
+.cc-theme-dark {
+  --cc-good: #5fc47c;
+  --cc-shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 1px 3px rgb(0 0 0 / 0.36);
+  --cc-shadow-card-hover:
+    0 8px 24px -6px color-mix(in srgb, var(--cc-accent) 34%, transparent),
+    0 2px 6px rgb(0 0 0 / 0.36);
+}
+
+.cc-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--cc-border) 60%, transparent);
+  border-radius: var(--cc-radius-card);
+  background: var(--cc-surface);
+  box-shadow: var(--cc-shadow-card);
+}
+
+.cc-rail-outer {
+  position: relative;
+}
+
+.cc-rail {
+  display: flex;
+  gap: var(--cc-rail-gap);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding-bottom: 8px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.cc-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.cc-rail > * {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+/* Overrides the global `.cc-app button { min-height: 44px; min-width: 44px }`
+   rule down to 36px: at 44px the overlay arrows would be too large for the
+   card gutter. This is the one deliberate exception — the arrows duplicate
+   scroll behaviour that is already reachable by keyboard and touch, so they
+   are not the sole path to any content. */
+.cc-rail-arrow {
+  position: absolute;
+  top: 80px;
+  z-index: 10;
+  display: none;
+  place-items: center;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cc-surface) 92%, transparent);
+  color: var(--cc-text);
+  box-shadow: 0 2px 8px rgb(25 32 43 / 0.18);
+  backdrop-filter: blur(6px);
+  transform: translateY(-50%);
+}
+
+@media (min-width: 640px) {
+  .cc-rail-arrow {
+    display: grid;
+  }
+}
+
+.cc-rail-arrow-prev { left: -6px; }
+.cc-rail-arrow-next { right: -6px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cc-rail {
+    scroll-behavior: auto;
+  }
+}
