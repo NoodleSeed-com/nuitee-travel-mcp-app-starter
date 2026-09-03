@@ -1238,14 +1238,24 @@
 .cc-hotel-carousel-arrow-next { right: 8px; }
 .cc-hotel-carousel-arrow-next .cc-icon { transform: rotate(180deg); }
 
-.cc-hotel-card {
+/* Qualified with .cc-app (0,2,0) rather than left bare (0,1,0): .cc-card
+   (Task 1/2's shared shell, appended later in this file) sets the same
+   border/border-radius/background at equal specificity, and without this
+   qualification its later source position would silently win — the same
+   defect Task 3 fixed for .cc-fare-card. Task 5 adds .cc-card to this
+   element's class list, so the collision is live from that commit on. */
+.cc-app .cc-hotel-card {
   height: 100%;
   overflow: hidden;
   border: 1px solid var(--cc-border);
   border-radius: 18px;
   background: var(--cc-surface);
 }
-.cc-hotel-card-selected { border-color: color-mix(in srgb, var(--cc-accent) 70%, var(--cc-border)); }
+
+/* Qualified for the same reason: border-color here is the selected-stay
+   state cue, and at equal specificity .cc-card's later border shorthand
+   would otherwise blank it out silently. */
+.cc-app .cc-hotel-card-selected { border-color: color-mix(in srgb, var(--cc-accent) 70%, var(--cc-border)); }
 .cc-hotel-visual {
   position: relative;
   display: flex;
@@ -2282,3 +2292,78 @@
 .cc-fare-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.72rem; color: var(--cc-muted); }
 .cc-fare-meta span { display: inline-flex; align-items: center; gap: 5px; }
 .cc-card-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ── Stay match ring ──────────────────────────────────────────────────────── */
+.cc-ring-wrap { display: inline-block; flex: 0 0 auto; text-align: center; }
+.cc-ring { display: block; }
+.cc-ring-track { stroke: color-mix(in srgb, var(--cc-text) 11%, transparent); }
+.cc-ring-fill { stroke: var(--cc-accent); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; }
+.cc-ring-num { fill: var(--cc-text); font-size: 0.8rem; font-weight: 700; }
+.cc-ring-cap { display: block; margin-top: 1px; font-size: 0.53rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--cc-muted); }
+
+/* Specificity note: same as .cc-app .cc-rail-arrow above — `.cc-app button`
+   is (0,1,1), so a bare `.cc-ring-btn` (0,1,0) would lose the 44px tap
+   target override no matter the source order. The ring itself is the
+   visible hit target; the button only wraps it to stay keyboard-operable
+   and to expose aria-expanded for the match detail panel it discloses. */
+.cc-app .cc-ring-btn { border: 0; background: none; padding: 0; min-height: 0; min-width: 0; line-height: 0; }
+
+.cc-match-detail {
+  display: grid;
+  gap: 7px;
+  padding: 11px 13px 13px;
+  border-top: 1px solid var(--cc-border);
+  background: color-mix(in srgb, var(--cc-text) 3%, var(--cc-surface));
+}
+
+.cc-match-head { font-size: 0.75rem; font-weight: 700; }
+.cc-match-line { display: grid; grid-template-columns: 15px 70px 1fr; gap: 8px; align-items: baseline; font-size: 0.72rem; }
+.cc-match-status { font-weight: 700; }
+.cc-match-status-ok { color: var(--cc-good); }
+.cc-match-status-partial { color: #a8730f; }
+.cc-theme-dark .cc-match-status-partial { color: #e0b06a; }
+.cc-match-label { font-weight: 600; color: var(--cc-muted); }
+.cc-match-value { color: var(--cc-text); }
+.cc-match-foot { padding-top: 7px; border-top: 1px dashed var(--cc-border); font-size: 0.66rem; color: var(--cc-muted); }
+
+/* ── Hotel card: photo-led ────────────────────────────────────────────────── */
+/* Width only — no property overlap with the qualified base .cc-app
+   .cc-hotel-card rule above (which sets height/overflow/border/background,
+   never width), so this can stay bare without becoming unreachable. */
+.cc-hotel-card { width: 268px; }
+.cc-hotel-body { display: flex; flex: 1; flex-direction: column; gap: 7px; padding: 12px 13px 14px; }
+.cc-hotel-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.cc-hotel-hood { font-size: 0.75rem; color: var(--cc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cc-hotel-amenity-line { font-size: 0.72rem; color: var(--cc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cc-hotel-actions { display: flex; gap: 8px; padding-top: 3px; }
+.cc-hotel-actions > * { flex: 1; }
+
+/* Not yet consumed: HotelCard does not render a compare toggle until Task
+   10. Added now, alongside the rest of the photo-led card CSS, so Task 10
+   only has to add the button. Overrides the global 44px button minimum for
+   the same reason as the rail arrows: it is an overlay affordance on a
+   photo band, and the same compare toggle is reachable at full size from
+   the compare tray in Task 9. */
+.cc-app .cc-compare-chip {
+  position: absolute;
+  left: 9px;
+  top: 9px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  min-width: 0;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, #fff 90%, transparent);
+  color: #14213d;
+  font-size: 0.68rem;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
+  backdrop-filter: blur(4px);
+}
+
+.cc-app .cc-compare-chip[aria-pressed='true'] { background: var(--cc-accent); color: #fff; }
+.cc-theme-dark .cc-compare-chip[aria-pressed='true'] { color: #04141b; }

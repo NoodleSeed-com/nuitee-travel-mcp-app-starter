@@ -84,6 +84,9 @@ const result: DemoHotelSearchOutput = {
   hotels: Array.from({ length: 4 }, (_, index) => hotel(index)),
 };
 
+// Alias for the photo-led card tests below, which name the fixture this way.
+const sampleHotelResult = result;
+
 const render = (props: Parameters<typeof HotelResultsView>[0]) =>
   renderToStaticMarkup(createElement(HotelResultsView, props));
 
@@ -121,50 +124,41 @@ describe('Wayfare illustrative hotel widget', () => {
     expect(malformed).toContain('No hotel, rate, or availability was inferred');
     expect(empty).toContain('No illustrative stays matched');
     expect(empty).toContain('No synthetic stay fixtures are available for Banff');
-    expect(empty).not.toContain('Add to trip');
+    expect(empty).not.toContain('Select');
   });
 
-  it('shows three bounded inline options through a non-circular carousel', () => {
+  it('shows three bounded inline stays in a scrollable rail', () => {
     const markup = render({ result, displayMode: 'inline', onAdd: vi.fn() });
 
     expect(markup).toContain(result.disclosure);
     expect(markup).toContain('Illustrative stays');
     expect(markup).toContain('Illustrative prices');
-    expect(markup).toContain('aria-label="Hotel options carousel"');
-    expect(markup).toContain('Hotel 1 of 3');
-    const previous = markup.match(/<button[^>]*aria-label="Previous hotel"[^>]*>/u)?.[0] ?? '';
-    const next = markup.match(/<button[^>]*aria-label="Next hotel"[^>]*>/u)?.[0] ?? '';
-    expect(previous).toContain('disabled');
-    expect(next).not.toContain('disabled');
-    expect((markup.match(/>Add to trip<\/button>/gu) ?? [])).toHaveLength(2);
+    expect(markup).toContain('aria-label="Stays"');
+    expect(markup).toContain('cc-rail-arrow-prev');
+    expect(markup).toContain('cc-rail-arrow-next');
+    expect((markup.match(/>Select<\/button>/gu) ?? [])).toHaveLength(3);
     expect(markup).toContain('Open the App in expanded view to compare all 4 hotels');
     expect(markup).not.toContain('<img');
     expect(visibleText(markup)).not.toMatch(/\bdemo\b|\bsandbox\b/iu);
     expect(markup).not.toMatch(/Book now|Reserve now|Pay now|Checkout/iu);
   });
 
-  it('uses a 1.3-card expanded-carousel hook while retaining all bounded results', () => {
+  it('shows all bounded results directly in the rail when expanded', () => {
     const markup = render({ result, displayMode: 'fullscreen', onAdd: vi.fn() });
 
-    expect(markup).toContain('cc-hotel-carousel-expanded');
-    expect(markup).toContain('Hotel 1 of 4');
-    expect(markup).toContain('cc-hotel-carousel-peek-slide');
+    expect(markup).toContain('aria-label="Stays"');
+    expect((markup.match(/>Select<\/button>/gu) ?? [])).toHaveLength(4);
     expect(markup).not.toContain('Open the App in expanded view');
-    expect(markup).not.toContain('Hotel 1 of 5');
   });
 
-  it('provides fixed-face detail hooks without exposing a transactional action', () => {
+  it('provides a disclosable stay-match panel without exposing a transactional action', () => {
     const markup = render({ result: { ...result, hotels: [hotel(0)] }, displayMode: 'inline', onAdd: vi.fn() });
 
-    expect(markup).toContain('cc-hotel-face-stack');
-    expect(markup).toContain('cc-hotel-face-front');
-    expect(markup).toContain('cc-hotel-face-back');
-    expect(markup).toContain('cc-hotel-face-is-hidden');
+    expect(markup).toContain('cc-ring-btn');
     expect(markup).toContain('aria-expanded="false"');
-    expect(markup).toContain('Hotel and rate details');
-    expect(markup).toContain('Back to hotel');
-    expect(markup).toContain('Not included in subtotal');
-    expect(markup).toContain('Add to trip');
+    expect(markup).toMatch(/<button[^>]*disabled[^>]*>Details<\/button>/u);
+    expect(markup).not.toContain('cc-match-detail');
+    expect(markup).toContain('Select');
     expect(markup).not.toMatch(/Book now|Reserve now|Pay now|Redeem now|Checkout/iu);
   });
 
@@ -179,7 +173,7 @@ describe('Wayfare illustrative hotel widget', () => {
       onAdd: vi.fn(),
     });
 
-    expect(selected).toContain('Added to trip');
+    expect(selected).toMatch(/>Added<\/button>/u);
     expect(selected).toContain('Nothing was booked, held, or paid');
     expect(selected).toContain('could not be added to this trip');
   });
@@ -190,5 +184,29 @@ describe('Wayfare illustrative hotel widget', () => {
     expect(isDemoHotelSearchOutput({ ...result, hotels: [{ ...hotel(0), selectionId: 'provider-rate-id' }] })).toBe(false);
     expect(isDemoHotelSearchOutput({ ...result, status: 'empty' })).toBe(false);
     expect(isDemoHotelSearchOutput({ ...result, hotels: [{ ...hotel(0), amenities: Array(7).fill('Too many') }] })).toBe(false);
+  });
+});
+
+describe('photo-led hotel card', () => {
+  it('paints a deterministic band when the hotel has no image', () => {
+    const html = renderToStaticMarkup(
+      createElement(HotelResultsView, { displayMode: 'inline', result: sampleHotelResult }),
+    );
+    expect(html).toContain('cc-photo-band');
+    expect(html).toContain('linear-gradient(');
+  });
+
+  it('omits the score pin when no review score is returned', () => {
+    const html = renderToStaticMarkup(
+      createElement(HotelResultsView, { displayMode: 'inline', result: sampleHotelResult }),
+    );
+    expect(html).not.toContain('cc-score-pin');
+  });
+
+  it('renders a stay match ring per hotel', () => {
+    const html = renderToStaticMarkup(
+      createElement(HotelResultsView, { displayMode: 'inline', result: sampleHotelResult }),
+    );
+    expect(html).toContain('Stay match');
   });
 });
