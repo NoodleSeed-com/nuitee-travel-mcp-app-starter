@@ -215,7 +215,7 @@ describe('FlightResults', () => {
       <FlightResultsView result={result} displayMode="inline" onVerify={vi.fn()} />,
     );
 
-    expect(html).toContain('Current flight options');
+    expect(html).toContain('Flight options');
     expect(html).toContain('Select fare');
     expect(html).not.toMatch(/Book|Continue to payment|fare held/i);
     expect(html).toContain('Best value');
@@ -265,14 +265,17 @@ describe('FlightResults', () => {
         onVerify={vi.fn()}
       />,
     );
-    expect((inline.match(/>Select fare<\/button>/g) ?? [])).toHaveLength(2);
+    expect((inline.match(/>Select fare<\/button>/g) ?? [])).toHaveLength(3);
     expect(inline).toContain('aria-label="Flight options carousel"');
     expect(inline).toContain('cc-carousel-stage');
     expect(inline).toContain('cc-carousel-window');
     expect(inline).toContain('cc-carousel-track');
     expect(inline).toContain('cc-carousel-slide');
-    expect(inline).toContain('cc-carousel-peek-slide');
+    expect(inline).toContain('data-active-index="0"');
+    expect(inline).toContain('data-slide-index="2"');
     expect(inline).toContain('aria-hidden="true"');
+    expect(inline).toContain('cc-results-toolbar');
+    expect((inline.match(/>Flight options</g) ?? [])).toHaveLength(1);
     expect(inline).not.toContain('cc-result-carousel');
     expect(inline).toContain('aria-label="Previous flight option"');
     expect(inline).toContain('aria-label="Next flight option"');
@@ -281,6 +284,8 @@ describe('FlightResults', () => {
     expect(previousButton).toContain('disabled');
     expect(nextButton).not.toContain('disabled');
     expect(inline).toContain('Option 1 of 3');
+    expect(inline).not.toContain('Open the App in expanded view');
+    expect(inline).not.toContain('Select one fare to verify');
     expect((fullscreen.match(/>Select fare<\/button>/g) ?? [])).toHaveLength(10);
     expect(fullscreen).not.toContain('aria-label="Flight options carousel"');
     expect(inline).not.toContain('Verify current fare');
@@ -294,7 +299,7 @@ describe('FlightResults', () => {
       />,
     );
     expect((selected.match(/>Verify current fare<\/button>/g) ?? [])).toHaveLength(1);
-    expect(selected).toContain('cc-carousel-peek-slide');
+    expect(selected).toContain('data-active-index="1"');
     const selectedNextButton = selected.match(/<button[^>]*aria-label="Next flight option"[^>]*>/)?.[0] ?? '';
     expect(selectedNextButton).not.toContain('disabled');
     for (const forbidden of ['Book', 'Checkout', 'Reserve', 'Pay', 'Redeem']) expect(inline).not.toContain(forbidden);
@@ -309,16 +314,15 @@ describe('FlightResults', () => {
     expect(renderToStaticMarkup(<FlightResultsView displayMode="inline" onVerify={vi.fn()} {...props} />)).toContain(text);
   });
 
-  it('renders a geometry-matched carousel skeleton with a next-card peek and no route-scanning animation', () => {
+  it('renders a geometry-matched carousel skeleton with a next-card preview and no duplicate status shell', () => {
     const html = renderToStaticMarkup(<FlightResultsView state="loading" displayMode="inline" onVerify={vi.fn()} />);
     expect(html).toContain('aria-busy="true"');
-    expect(html).toContain('Searching current flights');
-    expect(html).toContain('Comparing routes, schedules, and fares');
+    expect(html).toContain('Searching current fares');
     expect((html.match(/cc-skeleton-fare/g) ?? [])).toHaveLength(2);
     expect(html).toContain('cc-carousel-stage');
     expect(html).toContain('cc-carousel-window');
     expect(html).toContain('cc-carousel-track');
-    expect(html).toContain('cc-carousel-peek-slide');
+    expect(html).not.toContain('cc-results-toolbar');
     expect(html).toContain('cc-fare-card cc-skeleton-fare');
     expect(html).toContain('cc-skeleton-leg');
     expect((html.match(/cc-skeleton-price-stack"/g) ?? [])).toHaveLength(2);
@@ -758,7 +762,8 @@ describe('FlightResults', () => {
     expect(css).toMatch(/\.cc-fare-back-header\s*\{[^}]*grid-template-columns:/s);
     expect(css).toMatch(/\.cc-fare-back-button\s*\{[^}]*border:\s*0/s);
     expect(css).toMatch(/\.cc-fare-back-button\s*\{[^}]*background:\s*transparent/s);
-    expect(css).toMatch(/\.cc-carousel-track-is-last\s*\{[^}]*transform:/s);
+    expect(css).toMatch(/\.cc-carousel-track\[data-active-index='1'\]\s*\{[^}]*transform:/s);
+    expect(css).toMatch(/\.cc-carousel-track\s*\{[^}]*transition:\s*transform/s);
   });
 
   it('uses the portable Noodle Form and gates bridge-backed controls on widget readiness', () => {

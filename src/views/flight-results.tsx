@@ -5,7 +5,6 @@ import {
   Action,
   ActionBar,
   Feedback,
-  Flow,
   Frame,
   Region,
   StatusBadge,
@@ -343,9 +342,9 @@ function CarrierIdentity({ carrier, compact = false }: { readonly carrier: Itine
   );
 }
 
-function FareCardSkeleton({ preview = false }: { readonly preview?: boolean }) {
+function FareCardSkeleton() {
   return (
-    <div className={`cc-carousel-slide ${preview ? 'cc-carousel-peek-slide' : ''}`}>
+    <div className="cc-carousel-slide">
       <article className="cc-fare-card cc-skeleton-fare">
         <div className="cc-compact-fare-main">
           <div className="cc-skeleton-carrier-stack">
@@ -379,12 +378,7 @@ function FareCardSkeleton({ preview = false }: { readonly preview?: boolean }) {
 function FlightSearchSkeleton() {
   return (
     <section className="cc-search-skeleton" role="status" aria-live="polite" aria-busy="true">
-      <header className="cc-results-toolbar cc-scan-header">
-        <div>
-          <strong>Searching current flights</strong>
-          <span>Comparing routes, schedules, and fares…</span>
-        </div>
-      </header>
+      <span className="cc-visually-hidden">Searching current fares…</span>
 
       <section className="cc-carousel cc-skeleton-carousel" aria-hidden="true">
         <div className="cc-carousel-controls">
@@ -395,7 +389,7 @@ function FlightSearchSkeleton() {
           <div className="cc-carousel-window">
             <div className="cc-carousel-track">
               <FareCardSkeleton />
-              <FareCardSkeleton preview />
+              <FareCardSkeleton />
             </div>
           </div>
           <span className="cc-skeleton-block cc-shimmer cc-skeleton-arrow cc-skeleton-arrow-next" />
@@ -416,7 +410,7 @@ function FlightSearchSkeleton() {
 function resultStatus(state: ResultsState, theme: 'light' | 'dark', brandStyle?: CSSProperties) {
   if (state === 'loading') {
     return (
-      <Frame className={`cc-app ${theme === 'dark' ? 'cc-theme-dark' : ''}`} style={brandStyle} displayMode="auto" title="Current flight options" subtitle="Searching current fares">
+      <Frame className={`cc-app cc-flight-results ${theme === 'dark' ? 'cc-theme-dark' : ''}`} style={brandStyle} displayMode="auto" title="Flight options" subtitle="Searching current fares">
         <FlightSearchSkeleton />
       </Frame>
     );
@@ -648,15 +642,8 @@ function FareCarousel({ itineraries, pendingSelectionId, searchContext, selected
     setActiveIndex(Math.max(0, Math.min(lastIndex, index)));
   }
 
-  const active = itineraries[activeIndex] ?? itineraries[0]!;
   const hasPrevious = activeIndex > 0;
   const hasNext = activeIndex < lastIndex;
-  const hasNextPeek = hasNext;
-  const hasPreviousPeek = !hasNext && hasPrevious;
-  const nextIndex = hasNext ? activeIndex + 1 : activeIndex;
-  const next = itineraries[nextIndex] ?? active;
-  const previousIndex = hasPrevious ? activeIndex - 1 : activeIndex;
-  const previous = itineraries[previousIndex] ?? active;
 
   return (
     <section
@@ -695,59 +682,36 @@ function FareCarousel({ itineraries, pendingSelectionId, searchContext, selected
           <ArrowLeftIcon />
         </Action>
         <div className="cc-carousel-window">
-          <div className={`cc-carousel-track ${hasPreviousPeek ? 'cc-carousel-track-is-last' : ''}`}>
-            {hasPreviousPeek ? (
-              <div className="cc-carousel-peek-shell cc-carousel-previous-peek-shell" key={`peek-${previous.selectionId}`}>
-                <div aria-hidden="true" className="cc-carousel-slide cc-carousel-peek-slide" inert>
+          <div
+            className="cc-carousel-track"
+            data-active-index={activeIndex}
+            data-last-index={lastIndex}
+          >
+            {itineraries.map((itinerary, index) => {
+              const active = index === activeIndex;
+              return (
+                <div
+                  aria-hidden={!active}
+                  aria-label={active ? `Flight option ${index + 1} of ${itineraries.length}` : undefined}
+                  aria-roledescription={active ? 'slide' : undefined}
+                  className="cc-carousel-slide"
+                  data-active={active ? 'true' : 'false'}
+                  data-slide-index={index}
+                  inert={active ? undefined : true}
+                  key={itinerary.selectionId}
+                  role={active ? 'region' : undefined}
+                  tabIndex={active ? 0 : undefined}
+                >
                   <FareCard
-                    itinerary={previous}
+                    itinerary={itinerary}
                     onSelect={onSelect}
+                    pending={pendingSelectionId === itinerary.selectionId}
                     searchContext={searchContext}
-                    selected={false}
+                    selected={selectedSelectionId === itinerary.selectionId}
                   />
                 </div>
-                <button
-                  aria-label={`Show flight option ${previousIndex + 1}`}
-                  className="cc-carousel-peek-hit-target"
-                  onClick={() => moveTo(previousIndex)}
-                  type="button"
-                />
-              </div>
-            ) : null}
-            <div
-              aria-label={`Flight option ${activeIndex + 1} of ${itineraries.length}`}
-              aria-roledescription="slide"
-              className="cc-carousel-slide"
-              key={active.selectionId}
-              role="region"
-              tabIndex={0}
-            >
-              <FareCard
-                itinerary={active}
-                onSelect={onSelect}
-                pending={pendingSelectionId === active.selectionId}
-                searchContext={searchContext}
-                selected={selectedSelectionId === active.selectionId}
-              />
-            </div>
-            {hasNextPeek ? (
-              <div className="cc-carousel-peek-shell" key={`peek-${next.selectionId}`}>
-                <div aria-hidden="true" className="cc-carousel-slide cc-carousel-peek-slide" inert>
-                  <FareCard
-                    itinerary={next}
-                    onSelect={onSelect}
-                    searchContext={searchContext}
-                    selected={false}
-                  />
-                </div>
-                <button
-                  aria-label={`Show flight option ${nextIndex + 1}`}
-                  className="cc-carousel-peek-hit-target"
-                  onClick={() => moveTo(nextIndex)}
-                  type="button"
-                />
-              </div>
-            ) : null}
+              );
+            })}
           </div>
         </div>
         <Action
@@ -935,25 +899,30 @@ export function FlightResultsView({
   const shown = result.itineraries.slice(0, limit);
   return (
     <Frame
-      className={`cc-app ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
+      className={`cc-app cc-flight-results ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
       style={brandStyle}
       displayMode="auto"
-      title="Current flight options"
-      subtitle={`${result.itineraries.length} option${result.itineraries.length === 1 ? '' : 's'} · prices require verification`}
       data-llm={result.fallback}
     >
-      <Flow variant="stack" density={displayMode === 'inline' ? 'compact' : 'comfortable'}>
+      <section className={`cc-flight-results-content ${displayMode === 'fullscreen' ? 'cc-flight-results-content-expanded' : ''}`}>
         <div className="cc-results-toolbar">
           <div className="cc-results-summary">
-            <strong>Current flight options</strong>
+            <h2>Flight options</h2>
             {result.searchContext ? (
-              <span>{result.searchContext.origin} → {result.searchContext.destination} · {result.searchContext.departureDate}{result.searchContext.returnDate ? ` – ${result.searchContext.returnDate}` : ' · One way'} · {travellerLabel(result.searchContext)} · {result.searchContext.cabinClass.replaceAll('_', ' ').toLowerCase()} · {result.searchContext.currency}</span>
-            ) : <span>Compare, select, then verify one fare.</span>}
-            {result.retrievedAt ? <small>Updated {instantTime(result.retrievedAt)}</small> : null}
+              <span>
+                {result.searchContext.origin} → {result.searchContext.destination} · {result.searchContext.departureDate}
+                {result.searchContext.returnDate ? ` – ${result.searchContext.returnDate}` : ' · One way'}
+                {' · '}{travellerLabel(result.searchContext)} · {result.searchContext.cabinClass.replaceAll('_', ' ').toLowerCase()} · {result.searchContext.currency}
+              </span>
+            ) : <span>{result.itineraries.length} options · prices require verification</span>}
+            <small role={result.status === 'partial' ? 'status' : undefined}>
+              {result.status === 'partial'
+                ? 'Some provider results were incomplete; only safely interpreted options are shown.'
+                : `${result.itineraries.length} option${result.itineraries.length === 1 ? '' : 's'} · prices require verification`}
+            </small>
           </div>
           {onEdit ? <Action variant="quiet" onClick={onEdit}>Edit search</Action> : null}
         </div>
-        {result.status === 'partial' ? <div className="cc-partial" role="status">Some provider results were incomplete. Showing only the options that could be interpreted safely.</div> : null}
         {displayMode === 'fullscreen' ? (
           <div className="cc-result-list">
             {shown.map((itinerary) => <FareCard
@@ -976,7 +945,7 @@ export function FlightResultsView({
         )}
         {displayMode !== 'fullscreen' && result.itineraries.length > 3 ? (
           onExpand ? <Action variant="quiet" onClick={onExpand}>Show all {Math.min(10, result.itineraries.length)} results</Action>
-            : <p className="cc-more-note">Open the App in expanded view to browse all {Math.min(10, result.itineraries.length)} options.</p>
+            : null
         ) : null}
         {selected ? (
           <div className="cc-action-dock" aria-label="Selected fare action">
@@ -993,7 +962,7 @@ export function FlightResultsView({
               </Action>
             </ActionBar>
           </div>
-        ) : <p className="cc-selection-hint">Select one fare to verify its current price and availability.</p>}
+        ) : null}
         {selectionError ? (
           <div className="cc-verification cc-verification-error" role="alert">
             <strong>Fare was not added</strong>
@@ -1008,10 +977,7 @@ export function FlightResultsView({
             {!verificationError.retryable && ['expired_offer', 'unavailable_offer', 'unknown_or_stale_selection'].includes(verificationError.code) ? <span>Return to the search form for current options.</span> : null}
           </div>
         ) : null}
-        <p className="cc-freshness">
-          Search prices are indicative and can change. Verification checks current availability and price; it does not create a reservation or payment.
-        </p>
-      </Flow>
+      </section>
     </Frame>
   );
 }

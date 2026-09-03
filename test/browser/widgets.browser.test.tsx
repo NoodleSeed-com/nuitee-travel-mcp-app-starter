@@ -187,21 +187,24 @@ describe('real-browser widget readiness', () => {
     }));
     const result = { ...search, itineraries };
     mount(<FlightResultsView result={result} displayMode="inline" onVerify={vi.fn()} />);
-    await expect.element(page.getByText('Open the App in expanded view to browse all 4 options.')).toBeVisible();
+    expect(document.body.textContent).not.toContain('Open the App in expanded view to browse all 4 options.');
     const carousel = page.getByRole('region', { name: 'Flight option 1 of 3' });
     await expect.element(carousel).toBeVisible();
     await expect.element(page.getByText('Option 1 of 3')).toBeVisible();
     await expect.element(page.getByRole('button', { name: 'Previous flight option' })).toBeDisabled();
     await expect.element(page.getByRole('button', { name: 'Next flight option' })).not.toBeDisabled();
-    expect(document.querySelectorAll('.cc-fare-card')).toHaveLength(2);
+    expect(document.querySelectorAll('.cc-fare-card')).toHaveLength(3);
     const carouselWindow = document.querySelector<HTMLElement>('.cc-carousel-window')!;
-    const firstCard = document.querySelector<HTMLElement>('.cc-carousel-slide:not(.cc-carousel-peek-slide) .cc-fare-card')!;
-    const peekCard = document.querySelector<HTMLElement>('.cc-carousel-peek-slide .cc-fare-card')!;
+    const editSearchCard = document.querySelector<HTMLElement>('.cc-results-toolbar')!;
+    const firstCard = document.querySelector<HTMLElement>('.cc-carousel-slide[data-slide-index="0"] .cc-fare-card')!;
+    const peekCard = document.querySelector<HTMLElement>('.cc-carousel-slide[data-slide-index="1"] .cc-fare-card')!;
     const windowBounds = carouselWindow.getBoundingClientRect();
+    const editSearchBounds = editSearchCard.getBoundingClientRect();
     const firstBounds = firstCard.getBoundingClientRect();
     const peekBounds = peekCard.getBoundingClientRect();
     const visiblePeek = Math.max(0, Math.min(windowBounds.right, peekBounds.right) - Math.max(windowBounds.left, peekBounds.left));
     expect(getComputedStyle(carouselWindow).overflowX).toBe('clip');
+    expect(Math.abs(windowBounds.left - editSearchBounds.left)).toBeLessThanOrEqual(1);
     expect(firstBounds.left).toBeGreaterThanOrEqual(windowBounds.left);
     expect(firstBounds.right).toBeLessThanOrEqual(windowBounds.right);
     expect(visiblePeek / windowBounds.width).toBeGreaterThanOrEqual(0.2);
@@ -212,17 +215,24 @@ describe('real-browser widget readiness', () => {
     expect(Math.abs(
       firstBounds.top + firstBounds.height / 2 - (nextBounds.top + nextBounds.height / 2),
     )).toBeLessThanOrEqual(2);
+    const oneCardStep = peekBounds.left - firstBounds.left;
     await page.getByRole('button', { name: 'Next flight option' }).click();
     await expect.element(page.getByText('Option 2 of 3')).toBeVisible();
     await expect.element(page.getByText('CA$309.50', { exact: true })).toBeVisible();
-    expect(document.querySelectorAll('.cc-fare-card')).toHaveLength(2);
+    expect(document.querySelectorAll('.cc-fare-card')).toHaveLength(3);
+    await expect.poll(() => Math.abs(
+      document.querySelector<HTMLElement>('.cc-carousel-slide[data-slide-index="1"] .cc-fare-card')!.getBoundingClientRect().left
+        - firstBounds.left,
+    )).toBeLessThanOrEqual(1);
+    expect(oneCardStep).toBeGreaterThan(firstBounds.width);
+    expect(oneCardStep - firstBounds.width).toBeLessThanOrEqual(13);
     await page.getByRole('button', { name: 'Next flight option' }).click();
     await expect.element(page.getByText('Option 3 of 3')).toBeVisible();
     await expect.element(page.getByRole('button', { name: 'Next flight option' })).toBeDisabled();
     await expect.element(page.getByRole('button', { name: 'Previous flight option' })).not.toBeDisabled();
-    expect(document.querySelectorAll('.cc-fare-card')).toHaveLength(2);
-    const previousPeek = document.querySelector<HTMLElement>('.cc-carousel-previous-peek-shell .cc-fare-card')!;
-    const finalCard = document.querySelector<HTMLElement>('.cc-carousel-slide:not(.cc-carousel-peek-slide) .cc-fare-card')!;
+    expect(document.querySelectorAll('.cc-fare-card')).toHaveLength(3);
+    const previousPeek = document.querySelector<HTMLElement>('.cc-carousel-slide[data-slide-index="1"] .cc-fare-card')!;
+    const finalCard = document.querySelector<HTMLElement>('.cc-carousel-slide[data-slide-index="2"] .cc-fare-card')!;
     await expect.poll(() => {
       const peek = previousPeek.getBoundingClientRect();
       const window = carouselWindow.getBoundingClientRect();
@@ -269,7 +279,7 @@ describe('real-browser widget readiness', () => {
           - Math.max(windowBounds.left, cardBounds.left),
       ) / windowBounds.width;
     };
-    const nextPeek = document.querySelector<HTMLElement>('.cc-carousel-peek-slide .cc-fare-card')!;
+    const nextPeek = document.querySelector<HTMLElement>('.cc-carousel-slide[data-slide-index="1"] .cc-fare-card')!;
     expect(visibleShare(nextPeek)).toBeGreaterThan(0.1);
     expect(visibleShare(nextPeek)).toBeLessThan(0.2);
 
@@ -277,7 +287,7 @@ describe('real-browser widget readiness', () => {
     await page.getByRole('button', { name: 'Next flight option' }).click();
     await expect.element(page.getByText('Option 3 of 3')).toBeVisible();
     const previousPeek = document.querySelector<HTMLElement>(
-      '.cc-carousel-previous-peek-shell .cc-fare-card',
+      '.cc-carousel-slide[data-slide-index="1"] .cc-fare-card',
     )!;
     await expect.poll(() => visibleShare(previousPeek)).toBeLessThan(0.2);
     expect(visibleShare(previousPeek)).toBeGreaterThan(0.1);
@@ -477,7 +487,7 @@ describe('real-browser widget readiness', () => {
   it('keeps the loading skeleton and result card on the same carousel geometry', async () => {
     await page.viewport(720, 1_200);
     mount(<FlightResultsView state="loading" displayMode="inline" onVerify={vi.fn()} />);
-    await expect.element(page.getByText('Searching current flights')).toBeVisible();
+    await expect.element(page.getByText('Searching current fares', { exact: true })).toBeVisible();
     const skeletonBounds = document.querySelector<HTMLElement>('.cc-skeleton-fare')!
       .getBoundingClientRect();
 
@@ -575,7 +585,7 @@ describe('real-browser widget readiness', () => {
     await page.viewport(320, 900);
     expect(matchMedia('(prefers-reduced-motion: reduce)').matches).toBe(true);
     mount(<FlightResultsView state="loading" displayMode="inline" onVerify={vi.fn()} />);
-    await expect.element(page.getByText('Searching current flights')).toBeVisible();
+    await expect.element(page.getByText('Searching current fares', { exact: true })).toBeVisible();
 
     const shimmer = document.querySelector<HTMLElement>('.cc-shimmer');
     expect(shimmer).not.toBeNull();
