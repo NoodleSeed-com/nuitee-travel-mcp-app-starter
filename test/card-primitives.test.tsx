@@ -55,6 +55,20 @@ describe('PhotoBand', () => {
   it('is decoration, so it is hidden from assistive technology', () => {
     expect(renderToStaticMarkup(<PhotoBand name="X" />)).toContain('aria-hidden="true"');
   });
+
+  it('keeps children out of the aria-hidden decorative layer', () => {
+    const html = renderToStaticMarkup(
+      <PhotoBand name="Tagus Lantern Hotel">
+        <button type="button">Compare</button>
+      </PhotoBand>,
+    );
+    // The decor layer is hidden; the button must NOT be inside it.
+    const decorStart = html.indexOf('cc-photo-decor');
+    const decorEnd = html.indexOf('</div>', decorStart);
+    const buttonAt = html.indexOf('<button');
+    expect(decorStart).toBeGreaterThan(-1);
+    expect(buttonAt).toBeGreaterThan(decorEnd);
+  });
 });
 
 describe('Price', () => {
