@@ -276,6 +276,8 @@ test('projects a fare selected inside the embedded App into the immersive deskto
   const conversation = page.getByRole('region', { name: 'Travel conversation' });
   const trip = page.getByRole('complementary', { name: 'Your trip' });
   await expect(conversation).toBeVisible();
+  await expect(conversation.locator('.travel-conversation__header--immersive'))
+    .toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Trip route summary' }))
     .toContainText('YYZ → LIS');
   await expect(page.getByLabel('Wayfare assistant')).toBeVisible();
@@ -310,15 +312,24 @@ test('projects a fare selected inside the embedded App into the immersive deskto
   expect(transcriptBounds?.x ?? 0).toBeLessThan(tripBounds?.x ?? 0);
   expect((transcriptBounds?.x ?? 0) + (transcriptBounds?.width ?? 0))
     .toBeLessThanOrEqual((tripBounds?.x ?? 0) + 1);
+  expect(Math.abs((transcriptBounds?.y ?? 0) - (tripBounds?.y ?? 0)))
+    .toBeLessThanOrEqual(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth))
     .toBe(await page.evaluate(() => document.documentElement.clientWidth));
-  expect(await page.evaluate(() => document.documentElement.scrollHeight))
-    .toBe(await page.evaluate(() => document.documentElement.clientHeight));
   expect(await transcript.evaluate((element) => getComputedStyle(element).overflowY))
-    .toBe('auto');
-  const tripTop = tripBounds?.y;
-  await transcript.evaluate((element) => { element.scrollTop = element.scrollHeight; });
-  await expect.poll(async () => (await trip.boundingBox())?.y).toBe(tripTop);
+    .toBe('visible');
+  expect(await trip.evaluate((element) => getComputedStyle(element).overflowY))
+    .toBe('visible');
+  expect(await trip.evaluate((element) => getComputedStyle(element).position))
+    .toBe('sticky');
+  expect(await page.getByTestId('immersive-chat-page')
+    .evaluate((element) => getComputedStyle(element).overflowY))
+    .toBe('visible');
+  expect(await page.evaluate(() => document.documentElement.scrollHeight))
+    .toBeGreaterThan(await page.evaluate(() => document.documentElement.clientHeight));
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  expect(await transcript.evaluate((element) => element.scrollTop)).toBe(0);
   await page.screenshot({
     animations: 'disabled',
     path: testInfo.outputPath('immersive-selected-flight-desktop.png'),

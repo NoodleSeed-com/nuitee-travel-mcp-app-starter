@@ -63,8 +63,8 @@ export interface SelectedFlightSummary {
 }
 
 export interface SelectedStaySummary {
-  readonly dataSource: 'illustrative';
-  readonly sourceLabel: 'Illustrative stay';
+  readonly dataSource: 'live_nuitee' | 'illustrative';
+  readonly sourceLabel: 'Current Nuitee hotel rate' | 'Illustrative stay';
   readonly propertyName: string;
   readonly destination: string;
   readonly checkInDate: string;
@@ -565,7 +565,7 @@ function stayOptionSummary(
   value: unknown,
   context: TripProjection,
 ): SelectedStaySummary | undefined {
-  if (!isRecord(value) || value.dataSource !== 'illustrative') return undefined;
+  if (!isRecord(value) || (value.dataSource !== 'illustrative' && value.dataSource !== 'live_nuitee')) return undefined;
   const selectionId = stringField(value, 'selectionId', STAY_SELECTION_PATTERN);
   const propertyName = boundedText(value.name, 2, 100);
   const destination = boundedText(value.city, 2, 80);
@@ -585,8 +585,8 @@ function stayOptionSummary(
   ) return undefined;
 
   return {
-    dataSource: 'illustrative',
-    sourceLabel: 'Illustrative stay',
+    dataSource: value.dataSource,
+    sourceLabel: value.dataSource === 'live_nuitee' ? 'Current Nuitee hotel rate' : 'Illustrative stay',
     propertyName,
     destination,
     checkInDate: context.checkInDate,
@@ -602,8 +602,8 @@ function stayOptions(
   context: TripProjection,
 ): ReadonlyMap<string, SelectedStaySummary> {
   if (
-    result.status !== 'success'
-    || result.dataSource !== 'illustrative'
+    (result.status !== 'success' && result.status !== 'partial')
+    || (result.dataSource !== 'illustrative' && result.dataSource !== 'live_nuitee')
     || !Array.isArray(result.hotels)
     || result.hotels.length > 10
   ) return new Map();
@@ -726,6 +726,88 @@ interface ProjectionState {
   readonly stayOptions: ReadonlyMap<string, SelectedStaySummary>;
   readonly activeFlightSelectionId?: string;
   readonly activeStaySelectionId?: string;
+}
+
+interface CorrelatedFlightSelection {
+  readonly selectionId: string;
+  readonly summary: SelectedFlightSummary;
+}
+
+interface CorrelatedStaySelection {
+  readonly selectionId: string;
+  readonly summary: SelectedStaySummary;
+}
+
+function sameMoney(left: TripMoneySummary, right: TripMoneySummary) {
+  return left.total === right.total && left.currency === right.currency;
+}
+
+function correlatedReviewedFlight(
+  state: ProjectionState,
+  value: unknown,
+): CorrelatedFlightSelection | undefined {
+  if (!isRecord(value) || value.dataSource !== 'live_nuitee_selection') {
+    return undefined;
+  }
+  const selectionId = stringField(value, 'selectionId', FLIGHT_SELECTION_PATTERN);
+  const searchPrice = moneySummary(value.searchPrice);
+  const option = selectionId ? state.flightOptions.get(selectionId) : undefined;
+  if (!selectionId || !searchPrice || !option || !sameMoney(searchPrice, option.searchPrice)) {
+    return undefined;
+  }
+
+  const current = state.projection.selectedFlight;
+  return {
+    selectionId,
+    summary: state.activeFlightSelectionId === selectionId
+      && current
+      && sameMoney(current.searchPrice, searchPrice)
+      ? current
+      : option,
+  };
+}
+
+function correlatedReviewedStay(
+  state: ProjectionState,
+  value: unknown,
+): CorrelatedStaySelection | undefined {
+  if (
+    !isRecord(value)
+    || (value.dataSource !== 'illustrative' && value.dataSource !== 'live_nuitee')
+  ) return undefined;
+  const selectionId = stringField(value, 'selectionId', STAY_SELECTION_PATTERN);
+  const option = selectionId ? state.stayOptions.get(selectionId) : undefined;
+  const propertyName = boundedText(value.propertyName, 2, 100);
+  const destination = boundedText(value.city, 2, 80);
+  const checkInDate = isoDate(value, 'checkInDate');
+  const checkOutDate = isoDate(value, 'checkOutDate');
+  const nights = integerField(value, 'nights', 1, 30);
+  const subtotal = illustrativeMoneySummary(value.staySubtotal);
+  if (
+    !selectionId
+    || !option
+    || !propertyName
+    || !destination
+    || !checkInDate
+    || !checkOutDate
+    || nights === undefined
+    || !subtotal
+    || option.dataSource !== value.dataSource
+    || option.propertyName !== propertyName
+    || !destinationsMatch(option.destination, destination)
+    || option.checkInDate !== checkInDate
+    || option.checkOutDate !== checkOutDate
+    || option.nights !== nights
+    || !sameMoney(option.subtotal, subtotal)
+  ) return undefined;
+
+  const current = state.projection.selectedStay;
+  return {
+    selectionId,
+    summary: state.activeStaySelectionId === selectionId && current
+      ? current
+      : option,
+  };
 }
 
 function projectResult(
@@ -875,8 +957,8 @@ function projectResult(
         };
       }
       if (
-        (rawResult.status !== 'success' && rawResult.status !== 'empty')
-        || rawResult.dataSource !== 'illustrative'
+        (rawResult.status !== 'success' && rawResult.status !== 'partial' && rawResult.status !== 'empty')
+        || (rawResult.dataSource !== 'illustrative' && rawResult.dataSource !== 'live_nuitee')
         || !isRecord(rawResult.searchContext)
       ) {
         return {
@@ -1056,14 +1138,42 @@ function projectResult(
         };
       }
     case 'review_trip':
-      return isRecord(rawResult)
-        && (rawResult.status === 'ready' || rawResult.status === 'incomplete')
-        && rawResult.dataSource === 'illustrative'
-        ? {
+      if (
+        !isRecord(rawResult)
+        || (rawResult.status !== 'ready' && rawResult.status !== 'incomplete')
+        || rawResult.dataSource !== 'illustrative'
+      ) return state;
+      {
+        const reviewedFlight = correlatedReviewedFlight(state, rawResult.flight);
+        const reviewedStay = correlatedReviewedStay(state, rawResult.stay);
+        return {
           ...state,
-          projection: { ...current, phase: 'trip-review', focus: 'trip' },
-        }
-        : state;
+          projection: {
+            ...current,
+            phase: 'trip-review',
+            focus: 'trip',
+            hasRewardsReview: true,
+            ...(reviewedFlight
+              ? {
+                hasFlightSelection: true,
+                selectedFlight: reviewedFlight.summary,
+              }
+              : {}),
+            ...(reviewedStay
+              ? {
+                hasStaySelection: true,
+                selectedStay: reviewedStay.summary,
+              }
+              : {}),
+          },
+          ...(reviewedFlight
+            ? { activeFlightSelectionId: reviewedFlight.selectionId }
+            : {}),
+          ...(reviewedStay
+            ? { activeStaySelectionId: reviewedStay.selectionId }
+            : {}),
+        };
+      }
     default:
       return state;
   }

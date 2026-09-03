@@ -53,7 +53,7 @@ describe('airline editorial landing content', () => {
   it('defines one honest unified demo-trip editorial prompt', () => {
     expect(landingEditorialFeature).toEqual({
       heading: 'One conversation, every part of the trip.',
-      support: 'Refine current flights, compare illustrative stays, and preview rewards as you go.',
+      support: 'Refine current flights and stays, then preview rewards as you go.',
       action: 'Build a trip',
       prompt: 'Help me build a trip somewhere warm with flexible dates and a hotel.',
     });

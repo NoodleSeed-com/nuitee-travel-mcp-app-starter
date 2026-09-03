@@ -1,18 +1,14 @@
 'use client';
 
 import {
-  Armchair,
   BadgeCheck,
   BedDouble,
-  CalendarDays,
   ChevronRight,
-  CircleDollarSign,
   MapPin,
   Pencil,
   PlaneTakeoff,
   ShieldCheck,
   Luggage,
-  UsersRound,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { TripProjection } from '../../lib/trip-projection';
@@ -78,31 +74,15 @@ export function ImmersiveTripContext({
         ? `Protection for ${projection.protectionDestination}`
       : 'Planning your trip';
   const facts = [
-    projection.departureDate ? {
-      icon: CalendarDays,
-      label: shortDate(projection.departureDate) ?? projection.departureDate,
-      prompt: 'Change my departure date.',
-      editLabel: 'Change departure date',
-    } : undefined,
-    projection.travelers ? {
-      icon: UsersRound,
-      label: projection.travelers,
-      prompt: 'Change the travelers for this trip.',
-      editLabel: 'Change travelers',
-    } : undefined,
-    projection.cabinClass ? {
-      icon: Armchair,
-      label: projection.cabinClass,
-      prompt: 'Change the cabin for this trip.',
-      editLabel: 'Change cabin',
-    } : undefined,
-    projection.currency ? {
-      icon: CircleDollarSign,
-      label: projection.currency,
-      prompt: 'Change the display currency for this trip.',
-      editLabel: 'Change currency',
-    } : undefined,
-  ].filter((fact): fact is NonNullable<typeof fact> => Boolean(fact));
+    projection.departureDate
+      ? `${shortDate(projection.departureDate) ?? projection.departureDate}${projection.returnDate
+        ? ` – ${shortDate(projection.returnDate)}`
+        : ''}`
+      : undefined,
+    projection.travelers,
+    projection.cabinClass,
+    projection.currency,
+  ].filter((fact): fact is string => Boolean(fact));
 
   if (projection.phase === 'idle') return null;
 
@@ -112,30 +92,19 @@ export function ImmersiveTripContext({
         <span><MapPin aria-hidden="true" /></span>
         <div>
           <strong>{route}</strong>
-          <small>
-            {projection.departureDate ? shortDate(projection.departureDate) : 'Add dates'}
-            {projection.returnDate ? ` – ${shortDate(projection.returnDate)}` : ''}
-            {projection.travelers ? ` · ${projection.travelers}` : ''}
-          </small>
+          <small>{facts.length > 0 ? facts.join(' · ') : 'Add trip details'}</small>
         </div>
       </div>
-      {facts.length > 0 ? (
-        <div aria-label="Trip assumptions" className={styles.tripContextFacts} role="group">
-          {facts.map(({ editLabel, icon: Icon, label, prompt }) => (
-            <button
-              aria-label={editLabel}
-              disabled={busy}
-              key={editLabel}
-              onClick={() => onPrompt(prompt)}
-              type="button"
-            >
-              <Icon aria-hidden="true" />
-              <span>{label}</span>
-              <Pencil aria-hidden="true" />
-            </button>
-          ))}
-        </div>
-      ) : null}
+      <button
+        aria-label="Change trip details"
+        className={styles.tripContextChange}
+        disabled={busy}
+        onClick={() => onPrompt('Change the details for this trip.')}
+        type="button"
+      >
+        <span>Change</span>
+        <Pencil aria-hidden="true" />
+      </button>
     </section>
   );
 }

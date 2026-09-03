@@ -21,7 +21,6 @@ import { siteConfig } from '../../lib/site-config';
 import { useTravelDefaults } from '../../hooks/use-travel-defaults';
 import { TravelComposer } from '../travel-composer';
 import { TravelConversation } from '../travel-conversation';
-import { WayfareMark } from '../wayfare-mark';
 import styles from './immersive-chat-page.module.css';
 
 interface ImmersiveChatPageProps {
@@ -107,7 +106,6 @@ export function ImmersiveChatPage({
       <a className="skip-link" href="#immersive-chat-main">Skip to content</a>
       <header className={styles.header}>
         <Link className={styles.wordmark} href="/experience">
-          <WayfareMark />
           <span>Wayfare</span>
         </Link>
         <nav

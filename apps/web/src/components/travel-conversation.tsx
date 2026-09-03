@@ -2,7 +2,6 @@
 
 import { useNoodleAssistant } from '@noodleseed/assistant/react/client';
 import type { AssistantUIMessage } from '@noodleseed/assistant/client';
-import { PlaneTakeoff } from 'lucide-react';
 import {
   useEffect,
   useMemo,
@@ -462,25 +461,12 @@ export function TravelConversation({
       data-scroll-owner="page"
       ref={conversationRef}
     >
-      {appearance === 'immersive' ? (
-        <header className="travel-conversation__header travel-conversation__header--immersive">
-          <span className="travel-conversation__header-icon" aria-hidden="true">
-            <PlaneTakeoff />
-          </span>
-          <div>
-            <p className="assistant-identity">{siteConfig.brand.assistantName}</p>
-            <h1>{copy.title}</h1>
-          </div>
-          {onNewTrip ? (
-            <button onClick={onNewTrip} type="button">Start a new trip</button>
-          ) : null}
-        </header>
-      ) : (
+      {appearance !== 'immersive' ? (
         <header className="travel-conversation__header">
           <p className="assistant-identity">{siteConfig.brand.assistantName}</p>
           <h1>{copy.title}</h1>
         </header>
-      )}
+      ) : null}
       <div className="travel-conversation__context">
         {appearance === 'immersive' ? (
           <ImmersiveTripContext

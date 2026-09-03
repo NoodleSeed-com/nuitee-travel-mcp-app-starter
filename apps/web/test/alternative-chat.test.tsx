@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -244,8 +245,23 @@ describe('alternative custom chat page', () => {
 
     expect(screen.getByLabelText('Wayfare assistant')).toBeVisible();
     expect(screen.getByLabelText('Traveler')).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Change departure date' }))
+    expect(screen.getByRole('button', { name: 'Change trip details' }))
       .toBeVisible();
+    expect(document.querySelector('.travel-conversation__header--immersive'))
+      .not.toBeInTheDocument();
+    const conversation = screen.getByRole('region', { name: 'Travel conversation' });
+    const transcript = within(conversation).getByRole('log', {
+      name: 'Conversation transcript',
+    }).parentElement!;
+    const tripRail = within(conversation).getByRole('complementary', {
+      name: 'Your trip',
+    });
+    expect(
+      routeSummary.compareDocumentPosition(transcript) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      transcript.compareDocumentPosition(tripRail) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'View trip · 0 selected' }))
       .toHaveAttribute('aria-expanded', 'false');
   });
@@ -475,6 +491,75 @@ describe('alternative custom chat page', () => {
     });
     expect(screen.getByRole('button', { name: /Flight/ }))
       .toHaveTextContent('Nuitee search fare · CA$607.45 · 19:45 · Verify price');
+  });
+
+  it('projects a successful selection made directly inside an embedded hotel App', async () => {
+    const selectionId = 'hsel_0123456789abcdef0123456789abcdef';
+    client.requestApp.mockResolvedValueOnce({
+      content: [{ type: 'text', text: 'Stay selected.' }],
+      isError: false,
+      structuredContent: { status: 'selected', selectionId },
+    });
+    assistantMessages = [{
+      id: 'message-assistant-hotel-app',
+      role: 'assistant',
+      parts: [
+        {
+          type: 'data-view',
+          data: {
+            id: 'hotel-results-app',
+            tool: 'search_hotels',
+            resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_hotels_widget',
+            title: 'Hotel results',
+            result: { status: 'success' },
+          },
+        },
+        {
+          type: 'data-tool-result',
+          data: {
+            tool: 'search_hotels',
+            result: {
+              status: 'success',
+              dataSource: 'live_nuitee',
+              searchContext: {
+                destination: 'Lisbon',
+                checkInDate: '2026-09-08',
+                checkOutDate: '2026-09-11',
+                currency: 'CAD',
+              },
+              hotels: [{
+                selectionId,
+                dataSource: 'live_nuitee',
+                name: 'Lisbon Riverside Hotel',
+                city: 'Lisbon',
+                nights: 3,
+                staySubtotal: { amount: 825, currency: 'CAD' },
+              }],
+            },
+          },
+        },
+      ],
+    }];
+    sessionStorage.setItem('wayfare:experience-prompt', 'Hotels in Lisbon');
+
+    render(<ImmersiveChatPage runtime={readyRuntime} />);
+    await waitFor(() => expect(appViewMock.mountedClient).toBeDefined());
+
+    await appViewMock.mountedClient!.requestApp('tools/call', {
+      name: 'select_hotel',
+      arguments: { selectionId },
+    });
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /Stay/ }))
+      .toHaveTextContent('Lisbon Riverside Hotel'));
+    expect(screen.getByRole('button', { name: /Stay/ }))
+      .toHaveTextContent('Lisbon · 3 nights');
+    expect(screen.getByRole('button', { name: /Stay/ }))
+      .toHaveTextContent('Current Nuitee hotel rate · CA$825.00');
+    expect(client.requestApp).toHaveBeenCalledWith('tools/call', {
+      name: 'select_hotel',
+      arguments: { selectionId },
+    });
   });
 
   it('downgrades a verified rail fare when direct App re-verification fails', async () => {

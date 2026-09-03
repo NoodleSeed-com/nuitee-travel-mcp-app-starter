@@ -1464,6 +1464,136 @@ describe('structured trip projection', () => {
     expect(JSON.stringify(projected)).not.toContain('999');
   });
 
+  it('hydrates the trip summary from server-reviewed opaque flight and stay selections', () => {
+    const projected = projectTrip([
+      messageWithToolResult('search_flights', {
+        status: 'success',
+        searchContext: validSearchContext,
+        itineraries: [flightOption(flightSelectionA)],
+      }),
+      messageWithToolResult('search_hotels', {
+        status: 'success',
+        dataSource: 'illustrative',
+        searchContext: {
+          destination: 'Lisbon',
+          checkInDate: '2026-10-12',
+          checkOutDate: '2026-10-18',
+          currency: 'CAD',
+        },
+        hotels: [hotelOption(staySelectionA)],
+      }),
+      messageWithToolResult('review_trip', {
+        status: 'ready',
+        dataSource: 'illustrative',
+        flight: {
+          dataSource: 'live_nuitee_selection',
+          selectionId: flightSelectionA,
+          searchPrice: { total: 284.5, currency: 'CAD' },
+        },
+        stay: {
+          dataSource: 'illustrative',
+          selectionId: staySelectionA,
+          propertyName: 'Tagus Lantern Hotel',
+          city: 'Lisbon',
+          checkInDate: '2026-10-12',
+          checkOutDate: '2026-10-18',
+          nights: 6,
+          rooms: 1,
+          staySubtotal: { amount: 1_800, currency: 'CAD' },
+        },
+        missing: [],
+      }),
+    ]);
+
+    expect(projected).toMatchObject({
+      phase: 'trip-review',
+      focus: 'trip',
+      hasFlightSelection: true,
+      hasStaySelection: true,
+      hasRewardsReview: true,
+      selectedFlight: {
+        carrierName: 'Cedar Skies',
+        searchPrice: { total: 284.5, currency: 'CAD' },
+      },
+      selectedStay: {
+        propertyName: 'Tagus Lantern Hotel',
+        subtotal: { total: 1_800, currency: 'CAD' },
+      },
+    });
+    expect(JSON.stringify(projected)).not.toContain(flightSelectionA);
+    expect(JSON.stringify(projected)).not.toContain(staySelectionA);
+  });
+
+  it('does not let an unrelated trip review replace valid selected summaries', () => {
+    const unknownFlightSelection = 'sel_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    const unknownStaySelection = 'hsel_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    const projected = projectTrip([
+      messageWithToolResult('search_flights', {
+        status: 'success',
+        searchContext: validSearchContext,
+        itineraries: [flightOption(flightSelectionA)],
+      }),
+      messageWithToolResult('select_flight_offer', {
+        status: 'selected',
+        selectionId: flightSelectionA,
+      }),
+      messageWithToolResult('search_hotels', {
+        status: 'success',
+        dataSource: 'illustrative',
+        searchContext: {
+          destination: 'Lisbon',
+          checkInDate: '2026-10-12',
+          checkOutDate: '2026-10-18',
+          currency: 'CAD',
+        },
+        hotels: [hotelOption(staySelectionA)],
+      }),
+      messageWithToolResult('select_hotel', {
+        status: 'selected',
+        selectionId: staySelectionA,
+      }),
+      messageWithToolResult('review_trip', {
+        status: 'ready',
+        dataSource: 'illustrative',
+        flight: {
+          dataSource: 'live_nuitee_selection',
+          selectionId: unknownFlightSelection,
+          searchPrice: { total: 9_999, currency: 'USD' },
+        },
+        stay: {
+          dataSource: 'illustrative',
+          selectionId: unknownStaySelection,
+          propertyName: 'Unrelated Stay',
+          city: 'Tokyo',
+          checkInDate: '2026-12-01',
+          checkOutDate: '2026-12-08',
+          nights: 7,
+          rooms: 1,
+          staySubtotal: { amount: 9_999, currency: 'USD' },
+        },
+        missing: [],
+      }),
+    ]);
+
+    expect(projected).toMatchObject({
+      phase: 'trip-review',
+      focus: 'trip',
+      hasRewardsReview: true,
+      selectedFlight: {
+        carrierName: 'Cedar Skies',
+        searchPrice: { total: 284.5, currency: 'CAD' },
+      },
+      selectedStay: {
+        propertyName: 'Tagus Lantern Hotel',
+        subtotal: { total: 1_800, currency: 'CAD' },
+      },
+    });
+    expect(JSON.stringify(projected)).not.toContain('Unrelated Stay');
+    expect(JSON.stringify(projected)).not.toContain('9999');
+    expect(JSON.stringify(projected)).not.toContain(unknownFlightSelection);
+    expect(JSON.stringify(projected)).not.toContain(unknownStaySelection);
+  });
+
   it('projects safe illustrative insurance context without opaque ids or plan prices', () => {
     const projected = projectTrip([messageWithToolResult('compare_travel_insurance', {
       status: 'success',
