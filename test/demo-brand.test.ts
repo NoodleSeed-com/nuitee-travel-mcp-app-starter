@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { travelCompanionDemoConfig } from '../src/demo-config.js';
 
@@ -73,5 +74,39 @@ describe('Wayfare expanded travel brand contract', () => {
       provenanceRecordPath: 'docs/visual-assets/wayfare-premium-concierge.md',
       reviewedBinaryBlob: true,
     });
+  });
+});
+
+describe('ported card design tokens', () => {
+  const css = readFileSync(new URL('../src/views/travel.css', import.meta.url), 'utf8');
+
+  it('defines the card token layer on .cc-app', () => {
+    for (const token of [
+      '--cc-radius-card:',
+      '--cc-shadow-card:',
+      '--cc-shadow-card-hover:',
+      '--cc-good:',
+      '--cc-rail-gap:',
+    ]) {
+      expect(css).toContain(token);
+    }
+  });
+
+  it('never introduces the Tribe brand blue', () => {
+    expect(css.toLowerCase()).not.toContain('#1570ef');
+  });
+
+  it('derives the card shadow hover tint from the accent token', () => {
+    expect(css).toMatch(/--cc-shadow-card-hover:[^;]*var\(--cc-accent\)/);
+  });
+
+  it('hides the rail scrollbar on all three engines', () => {
+    expect(css).toContain('scrollbar-width: none');
+    expect(css).toContain('-ms-overflow-style: none');
+    expect(css).toMatch(/\.cc-rail::-webkit-scrollbar\s*\{\s*display:\s*none/);
+  });
+
+  it('shows rail arrows only at 640px and up', () => {
+    expect(css).toMatch(/@media \(min-width: 640px\)\s*\{\s*\.cc-rail-arrow\s*\{\s*display:\s*grid/);
   });
 });
