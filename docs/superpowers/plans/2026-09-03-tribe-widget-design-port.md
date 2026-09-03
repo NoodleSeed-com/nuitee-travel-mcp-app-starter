@@ -162,7 +162,10 @@ Append to the end of `src/views/travel.css`:
   scroll-snap-align: start;
 }
 
-.cc-rail-arrow {
+/* Specificity note: `.cc-app button` is (0,1,1), so a bare `.cc-rail-arrow`
+   (0,1,0) would LOSE to the global 44px minimum no matter the source order.
+   `.cc-app .cc-rail-arrow` is (0,2,0) and actually wins. */
+.cc-app .cc-rail-arrow {
   position: absolute;
   top: 80px;
   z-index: 10;
@@ -183,13 +186,13 @@ Append to the end of `src/views/travel.css`:
 }
 
 @media (min-width: 640px) {
-  .cc-rail-arrow {
+  .cc-app .cc-rail-arrow {
     display: grid;
   }
 }
 
-.cc-rail-arrow-prev { left: -6px; }
-.cc-rail-arrow-next { right: -6px; }
+.cc-app .cc-rail-arrow-prev { left: -6px; }
+.cc-app .cc-rail-arrow-next { right: -6px; }
 
 @media (prefers-reduced-motion: reduce) {
   .cc-rail {
@@ -1213,7 +1216,7 @@ Append to `src/views/travel.css`:
 .cc-hotel-actions { display: flex; gap: 8px; padding-top: 3px; }
 .cc-hotel-actions > * { flex: 1; }
 
-.cc-compare-chip {
+.cc-app .cc-compare-chip {
   position: absolute;
   left: 9px;
   top: 9px;
@@ -1234,7 +1237,7 @@ Append to `src/views/travel.css`:
   backdrop-filter: blur(4px);
 }
 
-.cc-compare-chip[aria-pressed='true'] { background: var(--cc-accent); color: #fff; }
+.cc-app .cc-compare-chip[aria-pressed='true'] { background: var(--cc-accent); color: #fff; }
 .cc-theme-dark .cc-compare-chip[aria-pressed='true'] { color: #04141b; }
 ```
 
@@ -1338,7 +1341,7 @@ function HotelCard({ hotel, allHotels, locale, selected, pending, onAdd }: {
 
 Update the call site that maps hotels into cards to pass `allHotels={result.hotels}`, and wrap that mapping in `<Rail ariaLabel="Stays">`.
 
-Add `.cc-ring-btn { border: 0; background: none; padding: 0; min-height: 0; min-width: 0; line-height: 0; }` to `travel.css`.
+Add `.cc-app .cc-ring-btn { border: 0; background: none; padding: 0; min-height: 0; min-width: 0; line-height: 0; }` to `travel.css`. The `.cc-app` prefix is required: `.cc-app button` is specificity (0,1,1) and a bare class (0,1,0) would lose to it.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -2244,8 +2247,8 @@ Append to `src/views/travel.css`:
   background-size: 38px 38px;
 }
 
-.cc-map-pin,
-.cc-map-marker-inner {
+.cc-app .cc-map-pin,
+.cc-app .cc-map-marker-inner {
   min-height: 32px;
   min-width: 0;
   padding: 8px 12px;
@@ -2259,7 +2262,7 @@ Append to `src/views/travel.css`:
   box-shadow: 0 6px 14px rgb(16 24 40 / 0.24);
 }
 
-.cc-map-pin { position: absolute; transform: translate(-50%, -100%); }
+.cc-app .cc-map-pin { position: absolute; transform: translate(-50%, -100%); }
 
 .cc-map-pin[data-active='true'],
 .cc-map-marker[data-active='true'] .cc-map-marker-inner {
@@ -2666,7 +2669,7 @@ Append to `src/views/travel.css`:
 .cc-tray-thumbs { display: flex; }
 .cc-tray-thumbs > * + * { margin-left: -8px; }
 
-.cc-tray-thumb {
+.cc-app .cc-tray-thumb {
   position: relative;
   width: 36px;
   min-width: 36px;
@@ -2695,7 +2698,7 @@ Append to `src/views/travel.css`:
 
 .cc-tray-copy { flex: 1; font-size: 0.75rem; color: var(--cc-muted); }
 
-.cc-tray-cta {
+.cc-app .cc-tray-cta {
   flex: 0 0 auto;
   padding: 9px 18px;
   border: 0;
@@ -2707,7 +2710,7 @@ Append to `src/views/travel.css`:
 }
 
 .cc-theme-dark .cc-tray-cta { color: #04141b; }
-.cc-tray-cta:disabled { opacity: 0.5; cursor: not-allowed; }
+.cc-app .cc-tray-cta:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .cc-compare-scroll { overflow-x: auto; }
 .cc-matrix { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
@@ -2828,7 +2831,7 @@ Append to `src/views/travel.css`:
 /* ── Board view toggle ────────────────────────────────────────────────────── */
 .cc-viewtoggle { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--cc-border); border-radius: 999px; }
 
-.cc-viewtoggle button {
+.cc-app .cc-viewtoggle button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -2843,7 +2846,7 @@ Append to `src/views/travel.css`:
   font-weight: 600;
 }
 
-.cc-viewtoggle button[aria-checked='true'] { background: var(--cc-accent); color: #fff; }
+.cc-app .cc-viewtoggle button[aria-checked='true'] { background: var(--cc-accent); color: #fff; }
 .cc-theme-dark .cc-viewtoggle button[aria-checked='true'] { color: #04141b; }
 
 .cc-shortlist-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
