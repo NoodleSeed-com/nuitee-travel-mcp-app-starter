@@ -405,4 +405,32 @@ describe('real-browser widget readiness', () => {
     expect(shimmer).not.toBeNull();
     expect(getComputedStyle(shimmer!).animationName).toBe('none');
   });
+
+  it('actually renders the selected-fare accent, not just the shared card shell', async () => {
+    // .cc-card (the shared shell from Task 1/2) sets its own border and
+    // box-shadow at the same (0,1,0) specificity as .cc-fare-selected, and
+    // came later in the file — a regression here means the selected-state
+    // border-color and box-shadow computed styles stay identical to the
+    // unselected card even though the `cc-fare-selected` class is present.
+    await page.viewport(720, 1_200);
+    mount(<InteractiveResults />);
+    await expect.element(page.getByRole('button', { name: /Select fare from QZX to QZY/ })).toBeVisible();
+    const card = document.querySelector<HTMLElement>('.cc-fare-card')!;
+    const before = getComputedStyle(card);
+    const unselectedBorderColor = before.borderColor;
+    const unselectedBoxShadow = before.boxShadow;
+
+    await page.getByRole('button', { name: /Select fare from QZX to QZY/ }).click();
+    await expect.element(page.getByRole('button', { name: /Selected fare from QZX to QZY/ })).toBeVisible();
+    // .cc-fare-card also transitions border-color/background-color over
+    // 120ms; wait for it to settle before reading the final computed value.
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const after = getComputedStyle(card);
+
+    expect(after.borderColor).not.toBe(unselectedBorderColor);
+    expect(after.boxShadow).not.toBe(unselectedBoxShadow);
+    expect(after.borderColor).toBe('rgb(20, 33, 61)'); // --cc-accent: #14213d
+    expect(after.boxShadow).toContain('inset');
+    expect(after.boxShadow).toContain('rgb(20, 33, 61)');
+  });
 });

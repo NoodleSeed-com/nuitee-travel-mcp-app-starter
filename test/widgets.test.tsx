@@ -696,6 +696,16 @@ describe('FlightResults', () => {
     expect(css).toMatch(/\.cc-carousel-track-is-last\s*\{[^}]*transform:/s);
   });
 
+  it('keeps fare state rules outranking the shared card shell', () => {
+    const css = readFileSync(new URL('../src/views/travel.css', import.meta.url), 'utf8');
+    // `.cc-card` is (0,1,0) and declared late; equal-specificity state rules
+    // would lose to it on border/box-shadow. These must be (0,2,0).
+    expect(css).toContain('.cc-app .cc-fare-selected');
+    expect(css).toContain('.cc-app .cc-fare-card-details');
+    expect(css).not.toMatch(/^\.cc-fare-selected\s*\{/m);
+    expect(css).not.toMatch(/^\.cc-fare-card-details\s*\{/m);
+  });
+
   it('uses the portable Noodle Form and gates bridge-backed controls on widget readiness', () => {
     const editorSource = readFileSync(new URL('../src/views/search-editor.tsx', import.meta.url), 'utf8');
     const homeSource = readFileSync(new URL('../src/views/travel-home.tsx', import.meta.url), 'utf8');

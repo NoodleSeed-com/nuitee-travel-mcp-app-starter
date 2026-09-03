@@ -572,7 +572,13 @@
   to { opacity: 1; transform: translateX(0); }
 }
 
-.cc-fare-card {
+/* Qualified with .cc-app (0,2,0) rather than left bare (0,1,0): .cc-card
+   (Task 1/2's shared shell, appended later in this file) sets the same
+   border/border-radius/background properties at equal specificity, and
+   without this qualification its later source position would silently win
+   — most visibly as a border-color mismatch against FareCardSkeleton, which
+   carries .cc-fare-card alone, never .cc-card. */
+.cc-app .cc-fare-card {
   width: 100%;
   padding: clamp(14px, 3vw, 16px);
   border: 1px solid var(--cc-border);
@@ -582,7 +588,10 @@
   transition: border-color 120ms ease, background-color 120ms ease;
 }
 
-.cc-fare-card-details {
+/* Qualified for the same reason: border-color and background here are the
+   selected-details state cue, and at equal specificity .cc-card's later
+   position in the file would otherwise blank them out silently. */
+.cc-app .cc-fare-card-details {
   border-color: color-mix(in srgb, var(--cc-carrier-accent, var(--cc-accent)) 24%, var(--cc-border));
   background:
     linear-gradient(
@@ -718,7 +727,10 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.cc-fare-selected {
+/* Qualified for the same reason as .cc-app .cc-fare-card-details above:
+   this is the selected-fare state cue and must outrank .cc-card's later,
+   equal-specificity border/box-shadow. */
+.cc-app .cc-fare-selected {
   border-color: var(--cc-accent);
   box-shadow: inset 4px 0 0 var(--cc-accent);
 }
@@ -730,14 +742,6 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
-}
-
-.cc-fare-header h3 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 4px;
-  font-size: clamp(1.25rem, 5vw, 1.5rem);
 }
 
 .cc-fare-heading { min-width: 0; flex: 1 1 16rem; }
@@ -1758,8 +1762,10 @@
   .cc-home-intro,
   .cc-search-form,
   .cc-review-ticket { padding: 14px; }
-  .cc-fare-header { flex-direction: column; }
-  .cc-fare-card { padding: 12px; border-radius: 14px; }
+  /* .cc-fare-card carries border-radius here; qualified with .cc-app so it
+     still outranks .cc-card's equal-specificity, unconditional border-radius
+     at this viewport. */
+  .cc-app .cc-fare-card { padding: 12px; border-radius: 14px; }
   .cc-details-grid,
   .cc-review-facts { grid-template-columns: 1fr; }
   .cc-review-route strong { font-size: clamp(1.35rem, 11vw, 1.75rem); }
@@ -2215,7 +2221,12 @@
 .cc-price span { font-size: 0.72rem; color: var(--cc-muted); }
 
 /* ── Flight fare card: boarding pass ──────────────────────────────────────── */
-.cc-fare-card { width: 296px; }
+/* Qualified to (0,2,0): now that the base .cc-app .cc-fare-card rule above
+   is itself qualified (to outrank .cc-card), a bare .cc-fare-card here would
+   be unreachable — lower specificity always loses regardless of source
+   order. Same specificity as the base rule, so this still wins by simply
+   coming later in the file. */
+.cc-app .cc-fare-card { width: 296px; }
 
 /* The carousel and its skeleton size .cc-fare-card via `flex: 1` on
    `.cc-carousel-slide > .cc-fare-card`, which ignores `width` entirely, so
@@ -2271,18 +2282,3 @@
 .cc-fare-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.72rem; color: var(--cc-muted); }
 .cc-fare-meta span { display: inline-flex; align-items: center; gap: 5px; }
 .cc-card-badges { display: flex; flex-wrap: wrap; gap: 6px; }
-
-/* .cc-card (shared shell) sits later in the cascade than the pre-existing
-   .cc-fare-card-details gradient rule and, at equal specificity, its plain
-   `background` shorthand would otherwise win and blank out the gradient.
-   Re-assert it here, after .cc-card, so the selected-details treatment
-   still shows. */
-.cc-fare-card-details {
-  background:
-    linear-gradient(
-      145deg,
-      color-mix(in srgb, var(--cc-carrier-accent, var(--cc-accent)) 13%, var(--cc-surface)) 0%,
-      color-mix(in srgb, var(--cc-carrier-accent, var(--cc-accent)) 6%, var(--cc-surface)) 58%,
-      color-mix(in srgb, var(--cc-carrier-accent, var(--cc-accent)) 3%, var(--cc-surface)) 100%
-    );
-}
