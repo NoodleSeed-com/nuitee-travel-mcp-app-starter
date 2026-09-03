@@ -37,16 +37,17 @@ connectors, normalization, or widgets.
 ## Companion website
 
 The Wayfare website presents flights, stays, rewards, and travel protection as
-one planning conversation. Its neutral homepage offers accessible entry points
-for each illustrative or live domain, and each starts the same assistant
-experience.
+one planning conversation. Its neutral homepage offers one natural-language starting composer.
+The agent selects among tools registered in the active profile instead of asking
+the traveler to choose a capability first. Flights remain provider-backed, while
+stays, rewards, and travel protection remain illustrative.
 
 The established Wayfare route mark, palette, hero artwork, destination cards,
 and editorial layout remain the active brand system. The three-part Flight →
 Stay → Rewards review story explains the wider capability without introducing
 a second implementation.
 
-The compact trip summary is selection-driven. It appears only after an
+The existing compact trip summary is selection-driven. It appears only after an
 application-issued flight or hotel selection and may then combine those
 server-owned selections for review.
 

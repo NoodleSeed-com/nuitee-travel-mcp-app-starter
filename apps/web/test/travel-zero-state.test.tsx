@@ -3,10 +3,6 @@ import { createRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TravelAssistantPage } from '../src/components/travel-assistant-page';
 import { TravelZeroState } from '../src/components/travel-zero-state';
-import {
-  landingDestinations,
-  landingEditorialFeature,
-} from '../src/lib/landing-content';
 import { siteConfig } from '../src/lib/site-config';
 
 afterEach(() => {
@@ -21,7 +17,7 @@ describe('travel assistant zero state', () => {
     });
   });
 
-  it('renders the approved hero copy without mounting developer chrome', () => {
+  it('renders the agent-led hero without mounting developer chrome', () => {
     const { container } = render(
       <TravelAssistantPage
         runtime={{ status: 'setup-required', message: 'setup' }}
@@ -30,10 +26,10 @@ describe('travel assistant zero state', () => {
 
     expect(screen.getByRole('heading', {
       level: 1,
-      name: 'Plan your whole trip',
+      name: 'Tell us the trip you have in mind',
     })).toBeVisible();
     expect(screen.getByText(
-      'Flights, stays, and rewards—brought together in one conversation.',
+      'Describe the journey once. Wayfare will bring in the relevant travel options as they become useful.',
     )).toBeVisible();
     expect(screen.getAllByRole('form', { name: 'Plan a trip' })).toHaveLength(1);
     expect(screen.getAllByText(siteConfig.brand.name)).toHaveLength(2);
@@ -43,11 +39,10 @@ describe('travel assistant zero state', () => {
     for (const link of screen.getAllByRole('link', { name: 'For developers' })) {
       expect(link).toHaveAttribute('href', siteConfig.website.developerPath);
     }
-    expect(screen.queryByText('A new way to find your flight')).not.toBeInTheDocument();
-    expect(screen.getByText(
-      'Built on Noodle Seed · Powered by Nuitee',
-    )).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Submit trip request' })).toBeDisabled();
+    expect(screen.getByText('Built on Noodle Seed · Powered by Nuitee'))
+      .toBeVisible();
+    expect(screen.getByRole('button', { name: 'Submit trip request' }))
+      .toBeDisabled();
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute('id', 'travel-prompt');
     expect(screen.queryByText('No trip started')).not.toBeInTheDocument();
@@ -55,7 +50,7 @@ describe('travel assistant zero state', () => {
     expect(screen.getByRole('link', { name: 'Skip to content' }))
       .toHaveAttribute('href', '#travel-canvas');
     expect(screen.getByRole('region', {
-      name: 'Plan your whole trip',
+      name: 'Tell us the trip you have in mind',
     })).not.toHaveAttribute('id', 'travel-canvas');
     expect(container.querySelector('main#travel-canvas')).toHaveAttribute(
       'tabindex',
@@ -63,7 +58,34 @@ describe('travel assistant zero state', () => {
     );
   });
 
-  it('uses the Wayfare hero with only two starter prompts', () => {
+  it('renders one starting action with passive supporting content', () => {
+    const onStart = vi.fn();
+    const { container } = render(
+      <TravelZeroState inputRef={createRef()} onStart={onStart} />,
+    );
+
+    expect(screen.getAllByRole('form', { name: 'Plan a trip' })).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Submit trip request' }))
+      .toBeDisabled();
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Suggested trips' }))
+      .not.toBeInTheDocument();
+    expect(container.querySelector('.travel-capabilities')).not.toBeInTheDocument();
+
+    const inspiration = screen.getByRole('region', {
+      name: 'Where the journey could take you',
+    });
+    expect(within(inspiration).getAllByRole('listitem')).toHaveLength(5);
+    expect(within(inspiration).queryByRole('button')).not.toBeInTheDocument();
+
+    const editorial = screen.getByRole('region', {
+      name: 'One conversation, every part of the trip.',
+    });
+    expect(within(editorial).queryByRole('button')).not.toBeInTheDocument();
+    expect(onStart).not.toHaveBeenCalled();
+  });
+
+  it('keeps the existing Explore image master behind the single composer', () => {
     const { container } = render(
       <TravelZeroState inputRef={createRef()} onStart={vi.fn()} />,
     );
@@ -72,133 +94,19 @@ describe('travel assistant zero state', () => {
       'src',
       expect.stringContaining('wayfare-explore-windows-v2'),
     );
-    expect(within(screen.getByRole('list', { name: 'Suggested trips' }))
-      .getAllByRole('button')).toHaveLength(2);
   });
 
-  it('offers seven immersive planning modes without starting a conversation', () => {
-    const onStart = vi.fn();
-    render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
-
-    const modes = screen.getByRole('tablist', { name: 'Choose a planning view' });
-    expect(within(modes).getAllByRole('tab')).toHaveLength(7);
-    expect(within(modes).getByRole('tab', { name: 'Explore' }))
-      .toHaveAttribute('aria-selected', 'true');
-    expect(screen.queryByTestId('hero-window-deck')).not.toBeInTheDocument();
-
-    fireEvent.click(within(modes).getByRole('tab', { name: 'Flights' }));
-
-    expect(onStart).not.toHaveBeenCalled();
-    expect(screen.getByRole('heading', {
-      level: 1,
-      name: 'Choose your horizon',
-    })).toBeVisible();
-    expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
-      .toHaveAttribute('placeholder', 'Where do you want to fly?');
-
-    fireEvent.click(within(modes).getByRole('tab', { name: 'Insurance' }));
-
-    expect(onStart).not.toHaveBeenCalled();
-    expect(screen.getByRole('heading', {
-      level: 1,
-      name: 'Compare with confidence',
-    })).toBeVisible();
-    expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
-      .toHaveAttribute(
-        'placeholder',
-        'Compare illustrative travel protection for my trip…',
-      );
-    expect(document.querySelector('.travel-hero__experience img[alt=""]'))
-      .toHaveAttribute('src', expect.stringContaining('wayfare-insurance-v1'));
-    expect(within(screen.getByRole('list', { name: 'Suggested trips' }))
-      .getAllByRole('button')).toHaveLength(1);
-    expect(screen.getByRole('button', {
-      name: siteConfig.prompts[3],
-    })).toBeVisible();
-  });
-
-  it('shows all three private-jet scenes without starting a conversation', () => {
-    const onStart = vi.fn();
-    render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
-
-    const modes = screen.getByRole('tablist', { name: 'Choose a planning view' });
-    fireEvent.click(within(modes).getByRole('tab', { name: 'Private Jets' }));
-
-    expect(screen.getByRole('heading', {
-      level: 1,
-      name: 'Private aviation, made personal.',
-    })).toBeVisible();
-    const scenes = screen.getByRole('tablist', {
-      name: 'Choose a Private Jets atmosphere',
-    });
-    expect(within(scenes).getAllByRole('tab')).toHaveLength(3);
-    expect(within(scenes).getByRole('tab', { name: 'Daylight Lounge' }))
-      .toHaveAttribute('aria-selected', 'true');
-
-    fireEvent.click(within(scenes).getByRole('tab', { name: 'Cockpit Sunset' }));
-
-    expect(onStart).not.toHaveBeenCalled();
-    expect(screen.getByRole('heading', {
-      level: 1,
-      name: 'Describe the journey. We’ll handle the details.',
-    })).toBeVisible();
-    expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
-      .toHaveAttribute(
-        'placeholder',
-        'I need a private jet from London to Nice next Friday for six, returning Sunday evening.',
-      );
-  });
-
-  it('keeps car suggestions conversational until the user submits', () => {
-    const onStart = vi.fn();
-    render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
-
-    const modes = screen.getByRole('tablist', { name: 'Choose a planning view' });
-    fireEvent.click(within(modes).getByRole('tab', { name: 'Cars' }));
-
-    expect(screen.getByRole('heading', {
-      level: 1,
-      name: 'Where should the road take you?',
-    })).toBeVisible();
-    const suggestions = screen.getByRole('list', {
-      name: 'Suggested Cars requests',
-    });
-    fireEvent.click(within(suggestions).getByRole('button', {
-      name: 'Airport pickup',
-    }));
-
-    expect(onStart).not.toHaveBeenCalled();
-    const composer = screen.getByRole('textbox', { name: 'Ask the travel assistant' });
-    expect(composer).toHaveValue(
-      'I need a compact SUV at Lisbon airport next Friday for four days.',
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Submit car request' }));
-    expect(onStart).toHaveBeenCalledWith(
-      'I need a compact SUV at Lisbon airport next Friday for four days.',
-    );
-  });
-
-  it('renders a three-window explore scene around the real trip composer', () => {
-    const { container } = render(
+  it('uses location only as a bounded starting hint', () => {
+    const { rerender } = render(
       <TravelZeroState inputRef={createRef()} onStart={vi.fn()} />,
     );
-
-    const panel = screen.getByRole('tabpanel', { name: 'Explore' });
-    expect(within(panel).getByText('Your trip, brought together')).toBeVisible();
-    expect(within(panel).getByText('A window into what comes next')).toBeVisible();
-    expect(screen.queryByTestId('hero-window-deck')).not.toBeInTheDocument();
-    expect(container.querySelector('.travel-hero__experience img[alt=""]'))
-      .toHaveAttribute('src', expect.stringContaining('wayfare-explore-windows-v2'));
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute(
         'placeholder',
-        'Your departure to somewhere warm for two, next week',
+        'Your departure — describe the trip you have in mind',
       );
-  });
 
-  it('uses the derived local airport in pre-search route examples', () => {
-    render(
+    rerender(
       <TravelZeroState
         defaults={{
           origin: { iata: 'ISB', city: 'Islamabad', country: 'PK' },
@@ -209,25 +117,30 @@ describe('travel assistant zero state', () => {
         onStart={vi.fn()}
       />,
     );
-
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute(
         'placeholder',
-        'Islamabad to somewhere warm for two, next week',
+        'Islamabad — describe the trip you have in mind',
       );
   });
 
-  it('submits a configured prompt through the same first-message callback', () => {
+  it.each([
+    'A long weekend somewhere warm in October.',
+    'Find a hotel near the Louvre.',
+    'Plan a family trip from Toronto to Rome during spring break.',
+    'I already have flights to Lisbon. Help with the rest.',
+  ])('submits the natural-language intent unchanged: %s', (prompt) => {
     const onStart = vi.fn();
     render(<TravelZeroState inputRef={createRef()} onStart={onStart} />);
 
-    const suggestedTrips = screen.getByRole('list', { name: 'Suggested trips' });
-    expect(within(suggestedTrips).getAllByRole('button')).toHaveLength(2);
-    fireEvent.click(within(suggestedTrips).getByRole('button', {
-      name: siteConfig.prompts[0],
-    }));
+    fireEvent.change(
+      screen.getByRole('textbox', { name: 'Ask the travel assistant' }),
+      { target: { value: prompt } },
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Submit trip request' }));
 
-    expect(onStart).toHaveBeenCalledWith(siteConfig.prompts[0]);
+    expect(onStart).toHaveBeenCalledOnce();
+    expect(onStart).toHaveBeenCalledWith(prompt);
   });
 
   it('assigns the shared Plan a trip input ref to the travel prompt textarea', () => {
@@ -240,41 +153,22 @@ describe('travel assistant zero state', () => {
     expect(inputRef.current).toHaveAttribute('id', 'travel-prompt');
   });
 
-  it('places the three trip entry points directly after the hero', () => {
-    render(<TravelZeroState inputRef={createRef()} onStart={vi.fn()} />);
-
-    expect(screen.getByRole('region', {
-      name: 'Start with flights, stays, or rewards',
-    })).toBeVisible();
-    expect(screen.getByRole('region', { name: 'Places to start' }))
-      .toHaveAttribute('id', 'places-to-start');
-  });
-
-  it('keeps editorial landing content in main and the single footer after main', () => {
+  it('keeps passive landing content in main and the single footer after main', () => {
     const { container } = render(
       <TravelAssistantPage
         runtime={{ status: 'setup-required', message: 'setup' }}
       />,
     );
 
-    expect(screen.getByRole('heading', { level: 2, name: 'Places to start' }))
-      .toBeVisible();
-    expect(screen.getAllByRole('button', { name: /Plan a trip to/u }))
-      .toHaveLength(5);
-    const capabilityList = screen.getByRole('list', {
-      name: 'Start with flights, stays, or rewards',
-    });
-    expect(capabilityList).toBeVisible();
-    expect(within(capabilityList).getByText('Search flights')).toBeVisible();
-    expect(within(capabilityList).getByText('Compare stays')).toBeVisible();
-    expect(within(capabilityList).getByText('Explore rewards')).toBeVisible();
+    expect(screen.getByRole('heading', {
+      level: 2,
+      name: 'Where the journey could take you',
+    })).toBeVisible();
     expect(screen.getByRole('heading', {
       level: 2,
       name: 'One conversation, every part of the trip.',
     })).toBeVisible();
-    expect(screen.queryByText('Travel inspiration')).not.toBeInTheDocument();
-    expect(screen.getByText('Built on Noodle Seed · Powered by Nuitee'))
-      .toBeVisible();
+    expect(screen.getByText('Travel inspiration')).toBeVisible();
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
 
     const main = container.querySelector<HTMLElement>('main#travel-canvas');
@@ -283,7 +177,6 @@ describe('travel assistant zero state', () => {
     expect(landing).not.toBeNull();
     const orderedRegions = [
       '.travel-hero',
-      '.travel-capabilities',
       '.destination-inspiration',
       '.travel-editorial',
     ].map((selector) => landing!.querySelector(selector));
@@ -298,58 +191,7 @@ describe('travel assistant zero state', () => {
     expect(main!.nextElementSibling).toBe(contentinfoLandmarks[0]);
   });
 
-  it('starts each supported intent through the same conversation callback', () => {
-    const onStart = vi.fn();
-    render(<TravelZeroState inputRef={{ current: null }} onStart={onStart} />);
-
-    const intents = screen.getByRole('region', {
-      name: 'Start with flights, stays, or rewards',
-    });
-    for (const [label, prompt] of [
-      ['Search flights', siteConfig.prompts[0]],
-      ['Compare stays', siteConfig.prompts[1]],
-      ['Explore rewards', siteConfig.prompts[2]],
-    ] as const) {
-      fireEvent.click(within(intents).getByRole('button', { name: label }));
-      expect(onStart).toHaveBeenLastCalledWith(prompt);
-    }
-    expect(onStart).toHaveBeenCalledTimes(3);
-  });
-
-  it('keeps the complete landing and sibling footer copy concise', () => {
-    const { container } = render(
-      <TravelAssistantPage
-        runtime={{ status: 'setup-required', message: 'setup' }}
-      />,
-    );
-
-    const main = container.querySelector<HTMLElement>('main#travel-canvas');
-    const footer = main?.nextElementSibling;
-    expect(main).not.toBeNull();
-    expect(footer).toHaveClass('travel-footer');
-
-    const countedCopy = container.ownerDocument.createElement('div');
-    countedCopy.append(main!.cloneNode(true), footer!.cloneNode(true));
-    for (const excluded of countedCopy.querySelectorAll(
-      '.travel-starter-prompts, .travel-footer nav, .travel-footer__attribution',
-    )) {
-      excluded.remove();
-    }
-    expect(countedCopy).toHaveTextContent(siteConfig.brand.tagline);
-    expect(countedCopy).toHaveTextContent(
-      'No account is required to plan a trip.',
-    );
-    expect(footer).toHaveTextContent(
-      siteConfig.disclosure.persistent,
-    );
-    expect(within(main!).queryByText(siteConfig.disclosure.persistent))
-      .not.toBeInTheDocument();
-    const words = (countedCopy.textContent ?? '').trim().split(/\s+/);
-
-    expect(words.length).toBeLessThanOrEqual(150);
-  });
-
-  it('advertises compact destination-window images at each breakpoint', () => {
+  it('keeps destination image delivery responsive without making it actionable', () => {
     const { container } = render(
       <TravelZeroState inputRef={{ current: null }} onStart={vi.fn()} />,
     );
@@ -364,33 +206,7 @@ describe('travel assistant zero state', () => {
         '(max-width: 767px) 78vw, (max-width: 1023px) 42vw, 22vw',
       );
     }
-  });
-
-  it.each(landingDestinations)(
-    'starts the $name destination prompt through onStart',
-    ({ name, prompt }) => {
-      const onStart = vi.fn();
-      render(<TravelZeroState inputRef={{ current: null }} onStart={onStart} />);
-
-      fireEvent.click(screen.getByRole('button', {
-        name: `Plan a trip to ${name}`,
-      }));
-
-      expect(onStart).toHaveBeenCalledOnce();
-      expect(onStart).toHaveBeenCalledWith(prompt);
-    },
-  );
-
-  it('starts the flexible editorial prompt through onStart', () => {
-    const onStart = vi.fn();
-    render(<TravelZeroState inputRef={{ current: null }} onStart={onStart} />);
-
-    fireEvent.click(screen.getByRole('button', {
-      name: landingEditorialFeature.action,
-    }));
-
-    expect(onStart).toHaveBeenCalledOnce();
-    expect(onStart).toHaveBeenCalledWith(landingEditorialFeature.prompt);
+    expect(container.querySelectorAll('.destination-card button')).toHaveLength(0);
   });
 
   it('renders developer and support links with legal fallbacks', () => {
@@ -401,7 +217,6 @@ describe('travel assistant zero state', () => {
     );
 
     const footer = screen.getByRole('contentinfo');
-
     expect(within(footer).getByRole('link', { name: 'For developers' }))
       .toHaveAttribute('href', siteConfig.website.developerPath);
     expect(within(footer).getByRole('link', { name: 'Support' }))

@@ -75,6 +75,12 @@ describe('parseTravelInputSchema', () => {
     {
       type: 'object',
       properties: {
+        departureDate: { type: 'string', format: 'date', description: { html: '<b>Date</b>' } },
+      },
+    },
+    {
+      type: 'object',
+      properties: {
         origin: { type: 'object', properties: { code: { type: 'string' } } },
       },
     },

@@ -37,6 +37,23 @@ function modelVisible(manifest: any) {
 }
 
 describe('Wayfare expanded travel profile', () => {
+  it('keeps capability choice inside one agent-led journey', async () => {
+    const manifest = await demoLiveApp.toManifest() as any;
+    const guide = manifest.server.agentGuide;
+    const wire = JSON.stringify(guide);
+
+    expect(guide.description).toContain('agent-led conversation');
+    expect(wire).toContain('capability choice as internal');
+    expect(wire).toContain('Keep a focused request focused');
+    expect(wire).toContain('Reuse route, dates, travelers, preferences, and selections');
+    expect(wire).toContain('at most one contextually relevant next step');
+    expect(wire).toContain('registered in the active profile');
+    expect(wire).toContain('explicit traveler instruction always wins');
+    expect(wire).toContain('Flight results come from the connected provider');
+    expect(wire).toContain('illustrative');
+    expect(wire).not.toContain('plan_everything');
+  });
+
   it('leaves every normal starter entrypoint on its existing capability surface', async () => {
     const live = await liveApp.toManifest() as any;
     const embedded = await embeddedApp.toManifest() as any;

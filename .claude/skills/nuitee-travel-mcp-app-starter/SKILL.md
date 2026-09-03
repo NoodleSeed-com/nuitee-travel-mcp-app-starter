@@ -5,7 +5,7 @@ description: Guide conversation-first flight discovery with minimal questions, v
 
 # Nuitee Travel MCP App Starter
 
-<!-- noodle-app-package source:3238e45ab1b892abe6e846236b61ed9dd3278293067e813b2f9c1579f4a23db9 surface:62377dfd1f0aac322d209e8aadda68eb1d0d177021010cdd31c69df6390d9dc0 -->
+<!-- noodle-app-package source:60f91bd1d5af1759553200781438a6ac19267d95a79282e89943a5149982a946 surface:62377dfd1f0aac322d209e8aadda68eb1d0d177021010cdd31c69df6390d9dc0 -->
 
 ## When to use this product
 - A user wants to discover, compare, refine, select, or verify a one-way or round-trip flight.

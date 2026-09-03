@@ -6,7 +6,6 @@ import {
   type TravelDefaults,
 } from '../lib/travel-defaults';
 import { DestinationInspiration } from './destination-inspiration';
-import { TravelCapabilityStrip } from './travel-capability-strip';
 import { TravelEditorialFeature } from './travel-editorial-feature';
 import { TravelHero } from './travel-hero';
 
@@ -31,9 +30,8 @@ export function TravelZeroState({
         launchError={launchError}
         onStart={onStart}
       />
-      <TravelCapabilityStrip onStart={onStart} />
-      <DestinationInspiration onStart={onStart} />
-      <TravelEditorialFeature onStart={onStart} />
+      <DestinationInspiration />
+      <TravelEditorialFeature />
     </div>
   );
 }

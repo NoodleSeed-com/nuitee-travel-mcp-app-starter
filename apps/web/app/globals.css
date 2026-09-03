@@ -296,8 +296,8 @@ code {
   transition: background 400ms var(--travel-ease-out);
 }
 
-.travel-hero__experience--explore .travel-hero__image {
-  filter: saturate(0.9) brightness(0.86);
+.travel-hero__experience--agent-led .travel-hero__image {
+  filter: saturate(0.9) brightness(0.82);
 }
 
 .travel-hero__interface {
@@ -305,61 +305,15 @@ code {
   z-index: 4;
   display: grid;
   min-height: inherit;
-  grid-template-rows: auto minmax(0, 1fr);
-  justify-items: center;
-  gap: 1rem;
-  padding: clamp(1rem, 2vw, 1.35rem) clamp(1rem, 5vw, 4rem) clamp(1.25rem, 2.8vw, 2rem);
-}
-
-.travel-hero__modes {
-  display: grid;
-  width: min(100%, 39rem);
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.25rem;
-  padding: 0.28rem;
-  border: 1px solid rgb(255 255 255 / 55%);
-  border-radius: 999px;
-  background: rgb(255 255 255 / 82%);
-  box-shadow: 0 12px 34px rgb(4 20 36 / 16%);
-  backdrop-filter: blur(18px);
-}
-
-.travel-hero__mode {
-  display: inline-flex;
-  min-width: 0;
-  min-height: 44px;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.55rem 0.75rem;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--travel-ink);
-  font-size: 0.75rem;
-  font-weight: 650;
-  white-space: nowrap;
-}
-
-.travel-hero__mode[aria-selected='true'] {
-  background: var(--travel-ink);
-  box-shadow: 0 7px 18px rgb(5 24 40 / 24%);
-  color: #fff;
-}
-
-.travel-hero__mode svg {
-  width: 1rem;
-  height: 1rem;
-  flex: 0 0 auto;
+  place-items: center;
+  padding: clamp(1.25rem, 4vw, 3.5rem);
 }
 
 .travel-hero__panel {
   display: grid;
-  width: 100%;
-  min-height: 0;
-  grid-template-rows: auto 1fr auto auto;
+  width: min(100%, 50rem);
   justify-items: center;
-  gap: 0.75rem;
+  gap: clamp(0.85rem, 2vw, 1.25rem);
 }
 
 .travel-hero__copy {
@@ -389,10 +343,6 @@ code {
   text-wrap: balance;
 }
 
-.travel-hero__heading-tail {
-  white-space: nowrap;
-}
-
 .travel-hero__copy > p:last-child {
   max-width: 35rem;
   margin: 0.8rem auto 0;
@@ -402,10 +352,9 @@ code {
 }
 
 .travel-hero__panel .travel-composer--hero {
-  align-self: end;
   display: grid;
-  width: min(100%, 50rem);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   border-color: rgb(255 255 255 / 62%);
   background: rgb(255 255 255 / 86%);
   box-shadow: 0 20px 54px rgb(4 20 36 / 24%);
@@ -436,27 +385,6 @@ code {
   text-shadow: 0 2px 14px rgb(4 20 36 / 65%);
 }
 
-.travel-starter-prompts {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
-  width: min(100%, 52rem);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.travel-starter-prompts button {
-  min-height: 44px;
-  padding: 0.55rem 0.8rem;
-  border: 1px solid var(--travel-boundary);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--travel-ink);
-  font-size: 0.76rem;
-}
-
 .travel-zero-state__error {
   max-width: 48rem;
   margin: 0 auto;
@@ -470,10 +398,6 @@ code {
     min-height: 42rem;
   }
 
-  .travel-hero__mode {
-    padding-inline: 0.55rem;
-  }
-
   .travel-hero__copy h1 {
     font-size: clamp(2.55rem, 7vw, 4.4rem);
   }
@@ -481,37 +405,16 @@ code {
 
 @media (max-width: 767px) {
   .travel-hero__experience {
-    min-height: 43rem;
+    min-height: min(39rem, calc(100svh - 5rem));
     border-radius: 26px;
   }
 
   .travel-hero__interface {
-    padding: 0.8rem 0.8rem 1rem;
-  }
-
-  .travel-hero__modes {
-    width: 100%;
-    grid-template-columns: repeat(4, max-content);
-    justify-content: start;
-    overflow-x: auto;
-    border-radius: 18px;
-    scrollbar-width: none;
-  }
-
-  .travel-hero__modes::-webkit-scrollbar {
-    display: none;
-  }
-
-  .travel-hero__mode {
-    padding-inline: 0.7rem;
-  }
-
-  .travel-hero__mode svg {
-    display: none;
+    padding: 1rem 0.8rem;
   }
 
   .travel-hero__copy {
-    padding-inline: 0.5rem;
+    padding-inline: 0.35rem;
   }
 
   .travel-hero__copy h1 {
@@ -637,9 +540,6 @@ code {
     0 18px 40px rgb(20 33 61 / 12%),
     inset 0 0 0 1px rgb(28 48 62 / 28%);
   isolation: isolate;
-  transition:
-    box-shadow 160ms var(--travel-ease-out),
-    transform 160ms var(--travel-ease-out);
 }
 
 .destination-card__image {
@@ -704,113 +604,6 @@ code {
   letter-spacing: 0.04em;
 }
 
-.destination-card:focus-visible {
-  box-shadow: 0 16px 38px rgb(20 33 61 / 16%);
-}
-
-.travel-capabilities {
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-.travel-capabilities__heading {
-  display: grid;
-  justify-items: center;
-  gap: 0.35rem;
-  margin-bottom: 1.25rem;
-  text-align: center;
-}
-
-.travel-capabilities__heading > span {
-  color: var(--travel-blue);
-  font-size: 0.7rem;
-  font-weight: 720;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.travel-capabilities__heading h2 {
-  margin: 0;
-  font-size: clamp(1.35rem, 2.6vw, 2rem);
-  font-weight: 600;
-  letter-spacing: -0.035em;
-  line-height: 1.1;
-}
-
-.travel-capabilities ol {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(0.7rem, 1.5vw, 1rem);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.travel-capabilities li {
-  min-width: 0;
-}
-
-.travel-capabilities button {
-  display: grid;
-  width: 100%;
-  min-height: 8.25rem;
-  height: 100%;
-  grid-template-columns: 2.75rem minmax(0, 1fr) 1.25rem;
-  align-items: start;
-  gap: 0.8rem;
-  padding: 1rem;
-  border: 1px solid var(--travel-boundary);
-  border-radius: 20px;
-  background: color-mix(in srgb, var(--travel-raised) 92%, var(--travel-canvas));
-  box-shadow: 0 12px 30px color-mix(in srgb, var(--travel-ink) 5%, transparent);
-  color: var(--travel-ink);
-  text-align: left;
-  transition:
-    border-color 180ms var(--travel-ease-out),
-    box-shadow 180ms var(--travel-ease-out),
-    transform 180ms var(--travel-ease-out);
-}
-
-.travel-capabilities__icon {
-  display: grid;
-  width: 2.75rem;
-  height: 2.75rem;
-  place-items: center;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--travel-blue) 9%, var(--travel-raised));
-  color: var(--travel-blue);
-}
-
-.travel-capabilities__icon svg,
-.travel-capabilities__arrow {
-  width: 20px;
-  height: 20px;
-}
-
-.travel-capabilities__copy {
-  display: grid;
-  gap: 0.35rem;
-  min-width: 0;
-  padding-top: 0.15rem;
-}
-
-.travel-capabilities__copy strong {
-  font-size: 0.95rem;
-  font-weight: 680;
-  letter-spacing: -0.015em;
-}
-
-.travel-capabilities__copy > span {
-  color: var(--travel-muted);
-  font-size: 0.79rem;
-  line-height: 1.55;
-}
-
-.travel-capabilities__arrow {
-  margin-top: 0.25rem;
-  color: var(--travel-muted);
-}
-
 .travel-editorial {
   display: grid;
   grid-template-columns: minmax(10rem, 0.6fr) minmax(0, 1.4fr);
@@ -854,25 +647,10 @@ code {
 }
 
 .travel-editorial__copy > p {
-  margin-bottom: 1.75rem;
+  margin-bottom: 0;
   color: rgb(255 255 255 / 78%);
   font-size: 0.92rem;
   line-height: 1.6;
-}
-
-.travel-editorial__copy button {
-  min-height: 44px;
-  padding: 0.65rem 1rem;
-  border: 1px solid rgb(255 255 255 / 56%);
-  border-radius: 12px;
-  background: var(--travel-raised);
-  color: var(--travel-ink);
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.travel-editorial__copy button:focus-visible {
-  background: #e8f1ff;
 }
 
 .travel-footer {
@@ -968,26 +746,6 @@ code {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .travel-starter-prompts button:hover {
-    border-color: color-mix(in srgb, var(--travel-blue) 42%, var(--travel-boundary));
-    background: color-mix(in srgb, var(--travel-blue) 5%, transparent);
-  }
-
-  .destination-card:hover {
-    box-shadow: 0 16px 38px rgb(20 33 61 / 16%);
-    transform: translateY(-2px);
-  }
-
-  .travel-editorial__copy button:hover {
-    background: #e8f1ff;
-  }
-
-  .travel-capabilities button:hover {
-    border-color: color-mix(in srgb, var(--travel-blue) 38%, var(--travel-boundary));
-    box-shadow: 0 18px 38px color-mix(in srgb, var(--travel-ink) 9%, transparent);
-    transform: translateY(-2px);
-  }
-
   .travel-footer nav > a:hover {
     color: var(--travel-blue);
     text-decoration: underline;
@@ -1052,7 +810,7 @@ code {
     "transcript"
     "lower-chrome"
     "composer";
-  grid-template-rows: auto auto auto auto auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
   gap: 0.75rem;
   border: 0;
   border-radius: 0;
@@ -1724,17 +1482,6 @@ code {
     line-height: 1.2;
   }
 
-  .travel-starter-prompts {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .travel-starter-prompts button {
-    width: 100%;
-    height: 100%;
-    padding-inline: 0.65rem;
-  }
-
   .destination-inspiration {
     padding-inline: 1rem;
   }
@@ -1761,22 +1508,9 @@ code {
     aspect-ratio: 3 / 4;
   }
 
-  .travel-capabilities ol,
   .travel-editorial,
   .travel-footer {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .travel-capabilities li {
-    padding: 0;
-  }
-
-  .travel-capabilities li + li {
-    border: 0;
-  }
-
-  .travel-capabilities button {
-    min-height: 0;
   }
 
   .travel-editorial {
@@ -1885,10 +1619,20 @@ code {
   background: var(--travel-raised);
 }
 
-.travel-header__currency {
-  min-width: 4.4rem;
+.travel-header__currency-control {
+  position: relative;
+  display: grid;
+  min-width: 6.75rem;
   min-height: 44px;
-  padding: 0 1.7rem 0 0.75rem;
+  align-items: center;
+}
+
+.travel-header__currency {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  appearance: none;
+  padding: 0 2.25rem 0 2.4rem;
   border: 1px solid var(--travel-boundary);
   border-radius: 999px;
   background-color: transparent;
@@ -1897,6 +1641,36 @@ code {
   font-size: 0.78rem;
   font-weight: 650;
   cursor: pointer;
+}
+
+.travel-header__currency-flag,
+.travel-header__currency-chevron {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.travel-header__currency-flag {
+  left: 0.8rem;
+  display: block;
+  width: 1.125rem;
+  height: 0.75rem;
+  overflow: hidden;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgb(7 24 39 / 14%);
+}
+
+.travel-header__currency-flag svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.travel-header__currency-chevron {
+  right: 0.75rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  color: var(--travel-muted);
 }
 
 .travel-header__actions {
@@ -2286,9 +2060,8 @@ code {
     height: 44px;
   }
 
-  .travel-header__currency {
-    min-width: 4rem;
-    padding-inline: 0.65rem 1.45rem;
+  .travel-header__currency-control {
+    min-width: 6.4rem;
   }
 
   .travel-navigation-dialog {
@@ -2358,13 +2131,6 @@ code {
   }
 }
 
-/* Conversation-first Private Jets and Cars experiences. The photographic
-   layers stay decorative; every word and control remains live HTML. */
-.travel-hero__modes {
-  width: min(100%, 68rem);
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-}
-
 .travel-composer--with-suggestions {
   border-radius: 32px;
 }
@@ -2395,413 +2161,6 @@ code {
   font-size: 0.72rem;
   font-weight: 650;
   white-space: nowrap;
-}
-
-.travel-hero__experience--private-jet,
-.travel-hero__experience--car {
-  min-height: clamp(44rem, 63vw, 50rem);
-}
-
-.travel-hero__experience--private-jet .travel-hero__media-veil,
-.travel-hero__experience--car .travel-hero__media-veil {
-  background: linear-gradient(180deg, rgb(5 24 40 / 24%), transparent 35%, rgb(5 24 40 / 26%));
-}
-
-.travel-hero__experience--private-jet .travel-hero__panel,
-.travel-hero__experience--car .travel-hero__panel {
-  align-content: center;
-  gap: clamp(0.9rem, 2vw, 1.35rem);
-  padding-block: clamp(1rem, 3vw, 2.5rem);
-}
-
-.travel-hero__experience--private-jet .travel-hero__copy,
-.travel-hero__experience--car .travel-hero__copy {
-  width: min(100%, 64rem);
-  text-shadow: none;
-}
-
-.travel-hero__experience--private-jet .travel-hero__copy h1,
-.travel-hero__experience--car .travel-hero__copy h1 {
-  max-width: 18ch;
-  font-family: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(3rem, 5.4vw, 5.6rem);
-  font-weight: 640;
-  letter-spacing: -0.058em;
-  line-height: 0.95;
-}
-
-.travel-hero__experience--private-jet .travel-hero__copy > p:last-child,
-.travel-hero__experience--car .travel-hero__copy > p:last-child {
-  max-width: 47rem;
-  font-size: clamp(0.95rem, 1.6vw, 1.25rem);
-}
-
-.travel-hero__experience--tone-light .travel-hero__copy {
-  color: var(--travel-ink);
-  text-shadow: 0 1px 18px rgb(255 255 255 / 88%);
-}
-
-.travel-hero__experience--tone-light .travel-hero__copy > p:last-child {
-  color: color-mix(in srgb, var(--travel-ink) 82%, transparent);
-}
-
-.travel-hero__experience--tone-dark .travel-hero__copy {
-  color: #fff;
-  text-shadow: 0 2px 24px rgb(3 12 24 / 78%);
-}
-
-.travel-hero__experience--tone-dark .travel-hero__copy > p:last-child {
-  color: rgb(255 255 255 / 86%);
-}
-
-.travel-hero__experience--private-jet .travel-composer--hero,
-.travel-hero__experience--car .travel-composer--hero {
-  align-self: center;
-  width: min(100%, 66rem);
-  min-height: 0;
-  gap: 0.8rem;
-  margin: 0 auto;
-  padding: clamp(0.85rem, 1.8vw, 1.25rem);
-  border-radius: clamp(28px, 3vw, 40px);
-  box-shadow: 0 24px 70px rgb(3 18 30 / 26%);
-}
-
-.travel-hero__experience--private-jet .travel-composer__input,
-.travel-hero__experience--car .travel-composer__input {
-  min-height: 62px;
-  padding-inline: clamp(0.35rem, 1vw, 0.8rem);
-  font-size: clamp(0.9rem, 1.4vw, 1.08rem);
-  line-height: 1.5;
-}
-
-.travel-hero__experience--private-jet .travel-composer__input::placeholder,
-.travel-hero__experience--car .travel-composer__input::placeholder {
-  color: currentColor;
-  opacity: 0.78;
-}
-
-.travel-hero__experience--tone-light .travel-composer--hero {
-  border-color: rgb(255 255 255 / 72%);
-  background: rgb(255 253 249 / 84%);
-  color: var(--travel-ink);
-}
-
-.travel-hero__experience--tone-dark .travel-composer--hero {
-  border-color: rgb(30 224 224 / 62%);
-  background: rgb(4 24 40 / 82%);
-  color: #fff;
-  box-shadow:
-    0 24px 70px rgb(0 0 0 / 34%),
-    0 0 0 1px rgb(25 227 227 / 18%);
-}
-
-.travel-hero__experience[data-scene='car-desert'] .travel-composer--hero {
-  border-color: rgb(49 216 218 / 88%);
-  box-shadow:
-    0 24px 70px rgb(0 0 0 / 36%),
-    0 0 0 1px rgb(49 216 218 / 72%),
-    0 0 34px rgb(49 216 218 / 38%),
-    inset 0 0 28px rgb(49 216 218 / 8%);
-}
-
-.travel-hero__experience--tone-dark .travel-composer__input {
-  color: #fff;
-}
-
-.travel-hero__experience--tone-dark .travel-composer__suggestions button {
-  border-color: rgb(79 229 229 / 25%);
-  background: rgb(2 18 32 / 45%);
-}
-
-.travel-hero__experience--private-jet .travel-composer__send,
-.travel-hero__experience--car .travel-composer__send {
-  width: 52px;
-  min-width: 52px;
-  height: 52px;
-  padding: 0;
-  background: #0f7f8c;
-}
-
-.travel-hero__experience--tone-dark .travel-composer__send {
-  background: #31d8da;
-  color: #031926;
-}
-
-.travel-hero__experience--private-jet .travel-composer__send:disabled,
-.travel-hero__experience--car .travel-composer__send:disabled {
-  opacity: 0.78;
-}
-
-.travel-hero__experience--private-jet .travel-hero__detail,
-.travel-hero__experience--car .travel-hero__detail {
-  padding: 0.35rem 0.65rem;
-  border-radius: 999px;
-  background: rgb(4 20 36 / 52%);
-  color: rgb(255 255 255 / 92%);
-  backdrop-filter: blur(10px);
-}
-
-.travel-hero__experience--layout-editorial .travel-hero__panel {
-  width: 100%;
-  grid-template-columns: minmax(0, 0.92fr) minmax(25rem, 1.08fr);
-  grid-template-rows: minmax(0, 1fr) auto;
-  align-items: center;
-  align-content: stretch;
-  column-gap: clamp(1rem, 4vw, 4rem);
-}
-
-.travel-hero__experience--layout-editorial .travel-hero__copy {
-  grid-column: 1;
-  grid-row: 1 / -1;
-  justify-self: start;
-  text-align: left;
-}
-
-.travel-hero__experience--layout-editorial .travel-hero__copy h1,
-.travel-hero__experience--layout-editorial .travel-hero__copy > p:last-child {
-  margin-inline: 0;
-}
-
-.travel-hero__experience--layout-editorial .travel-composer--hero {
-  grid-column: 2;
-  grid-row: 1;
-  align-self: center;
-  justify-self: end;
-  border-radius: 34px;
-}
-
-.travel-hero__experience--layout-editorial .travel-hero__detail {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.travel-hero__experience[data-scene='private-night'] .travel-hero__copy {
-  color: #fff;
-  text-shadow: 0 2px 24px rgb(0 0 0 / 68%);
-}
-
-.travel-hero__experience[data-scene='private-night'] .travel-hero__copy > p:last-child {
-  color: rgb(255 255 255 / 88%);
-}
-
-.travel-hero__scene-picker {
-  display: grid;
-  width: min(100%, 66rem);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.travel-hero__scene {
-  position: relative;
-  display: grid;
-  min-height: 7.5rem;
-  overflow: hidden;
-  place-items: end start;
-  padding: 1rem;
-  border: 2px solid transparent;
-  border-radius: 22px;
-  background: #183246;
-  box-shadow: 0 12px 30px rgb(4 20 36 / 12%);
-  color: #fff;
-  isolation: isolate;
-  text-align: left;
-}
-
-.travel-hero__scene img {
-  z-index: -2;
-  object-fit: cover;
-  transition: transform 420ms var(--travel-ease-out);
-}
-
-.travel-hero__scene-veil {
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  background: linear-gradient(180deg, transparent 25%, rgb(4 20 36 / 78%));
-}
-
-.travel-hero__scene > span:last-child {
-  font-size: 0.82rem;
-  font-weight: 740;
-  letter-spacing: 0.01em;
-}
-
-.travel-hero__scene[aria-selected='true'] {
-  border-color: var(--travel-blue);
-  box-shadow:
-    0 12px 34px rgb(4 20 36 / 17%),
-    0 0 0 3px rgb(35 121 150 / 12%);
-}
-
-.travel-hero__scene:focus-visible {
-  outline: 3px solid var(--travel-focus);
-  outline-offset: 3px;
-}
-
-@media (hover: hover) {
-  .travel-hero__scene:hover img {
-    transform: scale(1.035);
-  }
-}
-
-@media (max-width: 1023px) {
-  .travel-hero__modes {
-    width: 100%;
-    grid-template-columns: none;
-    grid-auto-flow: column;
-    grid-auto-columns: max-content;
-    justify-content: start;
-    overflow-x: auto;
-    border-radius: 18px;
-    scrollbar-width: none;
-  }
-
-  .travel-hero__modes::-webkit-scrollbar {
-    display: none;
-  }
-
-  .travel-hero__mode {
-    font-size: 0.68rem;
-  }
-
-  .travel-hero__experience--layout-editorial .travel-hero__panel {
-    grid-template-columns: minmax(0, 0.78fr) minmax(23rem, 1.22fr);
-    column-gap: 1rem;
-  }
-
-  .travel-hero__experience--private-jet .travel-hero__copy h1,
-  .travel-hero__experience--car .travel-hero__copy h1 {
-    font-size: clamp(2.7rem, 6.6vw, 4.5rem);
-  }
-}
-
-@media (max-width: 767px) {
-  .travel-hero__modes {
-    grid-template-columns: none;
-  }
-
-  .travel-hero__experience--private-jet,
-  .travel-hero__experience--car {
-    min-height: 47rem;
-  }
-
-  .travel-hero__experience--private-jet .travel-hero__interface,
-  .travel-hero__experience--car .travel-hero__interface {
-    padding: 0.7rem;
-  }
-
-  .travel-hero__experience--private-jet .travel-hero__panel,
-  .travel-hero__experience--car .travel-hero__panel,
-  .travel-hero__experience--layout-editorial .travel-hero__panel {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto auto;
-    align-content: center;
-    gap: 0.75rem;
-    padding-block: 0.6rem;
-  }
-
-  .travel-hero__experience--layout-editorial .travel-hero__copy,
-  .travel-hero__experience--layout-editorial .travel-composer--hero,
-  .travel-hero__experience--layout-editorial .travel-hero__detail {
-    grid-column: 1;
-    grid-row: auto;
-    justify-self: stretch;
-  }
-
-  .travel-hero__experience--layout-editorial .travel-hero__copy {
-    text-align: center;
-  }
-
-  .travel-hero__experience--layout-editorial .travel-hero__copy h1,
-  .travel-hero__experience--layout-editorial .travel-hero__copy > p:last-child {
-    margin-inline: auto;
-  }
-
-  .travel-hero__experience--private-jet .travel-hero__copy h1,
-  .travel-hero__experience--car .travel-hero__copy h1 {
-    max-width: 12ch;
-    font-size: clamp(2.15rem, 11vw, 3.25rem);
-  }
-
-  .travel-hero__experience--private-jet .travel-hero__copy > p:last-child,
-  .travel-hero__experience--car .travel-hero__copy > p:last-child {
-    font-size: 0.88rem;
-  }
-
-  .travel-hero__experience--private-jet .travel-composer--hero,
-  .travel-hero__experience--car .travel-composer--hero {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.65rem;
-    border-radius: 24px;
-  }
-
-  .travel-hero__experience--private-jet .travel-composer__controls,
-  .travel-hero__experience--car .travel-composer__controls {
-    width: auto;
-  }
-
-  .travel-hero__experience--private-jet .travel-composer__input,
-  .travel-hero__experience--car .travel-composer__input {
-    min-height: 72px;
-    padding: 0.5rem;
-    font-size: 0.82rem;
-  }
-
-  .travel-composer__suggestions {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.35rem;
-  }
-
-  .travel-composer__suggestions button {
-    width: 100%;
-    height: 100%;
-    padding: 0.45rem 0.35rem;
-    font-size: 0.64rem;
-    white-space: normal;
-  }
-
-  .travel-hero__scene-picker {
-    grid-template-columns: none;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(13rem, 74vw);
-    justify-self: stretch;
-    overflow-x: auto;
-    padding: 0.2rem 0.2rem 0.75rem;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: thin;
-  }
-
-  .travel-hero__scene {
-    min-height: 7rem;
-    scroll-snap-align: center;
-  }
-}
-
-@media (max-width: 420px) {
-  .travel-hero__experience--private-jet,
-  .travel-hero__experience--car {
-    min-height: 45rem;
-  }
-
-  .travel-hero__experience--private-jet .travel-hero__copy h1,
-  .travel-hero__experience--car .travel-hero__copy h1 {
-    font-size: clamp(2rem, 10.5vw, 2.7rem);
-  }
-
-  .travel-hero__experience--private-jet .travel-hero__copy > span,
-  .travel-hero__experience--car .travel-hero__copy > span {
-    margin-bottom: 0.3rem;
-    font-size: 0.62rem;
-  }
-
-  .travel-hero__experience--private-jet .travel-hero__detail,
-  .travel-hero__experience--car .travel-hero__detail {
-    font-size: 0.62rem;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

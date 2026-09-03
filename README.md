@@ -11,12 +11,13 @@ This is an independent starter, not an official Nuitee connector, airline partne
 ## Primary guest website
 
 The Next.js application in `apps/web/` is the main developer path. Wayfare uses
-a light, Inter-only shared multi-mode cinematic landing with exact Explore,
-Flights, Stays, Flight + Stay, and Insurance imagery; Private Jets and Cars are
-conversation-first visual concepts. The alternate `/experience` route presents
-the five core modes as a full-bleed option using the same image paths. Submitting
-a prompt moves into one chronological conversation with delayed anonymous
-Assistant admission and plain-language progress. The compact typed trip
+a light, Inter-only single-entry cinematic landing with one natural-language
+composer. The homepage keeps capability choice inside the assistant while the
+existing conversation, inline widgets, and Search → Select → Verify flight
+boundary remain unchanged. The alternate `/experience` route is an optional
+visual reference for the five core image modes; it does not define the default
+homepage contract. Submitting a prompt moves into one chronological conversation
+with delayed anonymous Assistant admission and plain-language progress. The compact typed trip
 disclosure is absent until validated facts exist, stays collapsed by default,
 and is derived only from structured tool results—never conversation prose.
 

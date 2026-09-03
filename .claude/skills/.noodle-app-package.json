@@ -8,13 +8,13 @@
   },
   "packageSchemaVersion": "1",
   "rendererVersion": "0.91.0",
-  "sourceManifestSha256": "3238e45ab1b892abe6e846236b61ed9dd3278293067e813b2f9c1579f4a23db9",
+  "sourceManifestSha256": "60f91bd1d5af1759553200781438a6ac19267d95a79282e89943a5149982a946",
   "mcpSurfaceSha256": "62377dfd1f0aac322d209e8aadda68eb1d0d177021010cdd31c69df6390d9dc0",
-  "bundleSha256": "c3bbd3e7bdf672d78f6da28d6b30bd27d31a5d98be369932c5cbe658a04c2240",
+  "bundleSha256": "a9602c345b96113c9c49dcc12b3b1b7b39b008204e1ffbd84ced637f057ac953",
   "files": [
     {
       "path": ".claude/skills/nuitee-travel-mcp-app-starter/SKILL.md",
-      "sha256": "ac0efcbb23082def14be30908920dfe9fd19e4212df0280610a06345c1e70e01",
+      "sha256": "3d88b35d454d77ca3f0d5e08bf9e67093b689680e84f1b5f1aa95ac749850850",
       "byteLength": 5175
     },
     {
