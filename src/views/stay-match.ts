@@ -36,17 +36,21 @@ export function computeStayMatch(
   const weights: number[] = [];
 
   // Price — position within the returned set, never an absolute budget claim.
+  // A set that does not bracket this hotel (empty, single, or all-equal)
+  // has no meaningful position to report, so fall back to the bare total
+  // rather than dividing by a zero or infinite span.
   const totals = all.map((entry) => entry.staySubtotal.amount);
-  const low = Math.min(...totals);
-  const high = Math.max(...totals);
   const total = hotel.staySubtotal.amount;
-  const priceWeight = high === low ? 1 : 1 - (total - low) / (high - low);
+  const low = totals.length > 0 ? Math.min(...totals, total) : total;
+  const high = totals.length > 0 ? Math.max(...totals, total) : total;
+  const hasRange = high > low;
+  const priceWeight = hasRange ? 1 - (total - low) / (high - low) : 1;
   lines.push({
     key: 'price',
     label: 'Price',
-    detail: high === low
-      ? `${formatAmount(total, hotel.staySubtotal.currency)} total`
-      : `${formatAmount(total, hotel.staySubtotal.currency)} of ${formatAmount(low, hotel.staySubtotal.currency)}–${formatAmount(high, hotel.staySubtotal.currency)}`,
+    detail: hasRange
+      ? `${formatAmount(total, hotel.staySubtotal.currency)} of ${formatAmount(low, hotel.staySubtotal.currency)}–${formatAmount(high, hotel.staySubtotal.currency)}`
+      : `${formatAmount(total, hotel.staySubtotal.currency)} total`,
     status: priceWeight >= 0.5 ? 'ok' : 'partial',
   });
   weights.push(priceWeight);
