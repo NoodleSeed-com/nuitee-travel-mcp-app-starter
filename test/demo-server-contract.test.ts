@@ -97,9 +97,13 @@ describe('Wayfare expanded travel profile', () => {
     expect(demoFlightTools).toEqual(liveFlightTools);
     const liveCatalog = liveApp.toConnectorCatalog();
     const demoCatalog = demoLiveApp.toConnectorCatalog();
-    const liveNuitee = liveCatalog?.connectors.filter((entry: any) => entry.id.startsWith('nuitee_'));
-    const demoNuitee = demoCatalog?.connectors.filter((entry: any) => entry.id.startsWith('nuitee_'));
+    const liveNuitee = liveCatalog?.connectors.filter((entry: any) => entry.id.startsWith('nuitee_flights_'));
+    const demoNuitee = demoCatalog?.connectors.filter((entry: any) => entry.id.startsWith('nuitee_flights_'));
     expect(demoNuitee).toEqual(liveNuitee);
+    expect(demoCatalog?.connectors.find((entry: any) => entry.id === 'nuitee_hotels_gateway'))
+      .toMatchObject({ kind: 'custom', operations: { execute: { type: 'read' } } });
+    expect(demoCatalog?.connectors.find((entry: any) => entry.id === 'nuitee_hotels_http'))
+      .toMatchObject({ kind: 'custom', operations: { search: { type: 'read', path: '/hotels/rates' } } });
     expect(demoCatalog?.connectors.find((entry: any) => entry.id === 'wayfare_preview_gateway'))
       .toMatchObject({ kind: 'custom', operations: { execute: { type: 'read' } } });
 

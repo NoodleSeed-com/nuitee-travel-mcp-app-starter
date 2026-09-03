@@ -70,6 +70,50 @@ function searchDemoHotels(viewPolicy: Readonly<Record<string, unknown>>) {
   });
 }
 
+function searchLiveHotels(viewPolicy: Readonly<Record<string, unknown>>) {
+  return tool('search_hotels', {
+    title: 'Search hotels',
+    description:
+      'Search current Nuitee hotel rates and availability for exact stay dates. Use a city name with its two-letter country code, or an IATA airport code. Results are read-only, can change, and do not hold or reserve a room.',
+    annotations: annotations.readOnly(),
+    input: demoHotelSearchInputSchema,
+    output: demoHotelSearchOutputSchema,
+    fulfil: ({ input, context, connectors }) => {
+      const gateway = connectors.hotels.execute({
+        search: input,
+        requestedAt: context.temporal.instant,
+      });
+      const current = connectors.state.readState({ handle: 'demo_hotel_selections' });
+      connectors.state.patchState({
+        handle: 'demo_hotel_selections',
+        expectedRevision: current.revision,
+        value: {
+          searchId: gateway.result.searchId,
+          updatedAt: context.temporal.instant,
+          records: gateway.records,
+        },
+      });
+      return {
+        status: gateway.result.status,
+        dataSource: gateway.result.dataSource,
+        disclosure: gateway.result.disclosure,
+        message: gateway.result.message,
+        fallback: gateway.result.fallback,
+        searchId: gateway.result.searchId,
+        searchContext: gateway.result.searchContext,
+        hotels: gateway.result.hotels,
+        error: gateway.result.error,
+      };
+    },
+    viewTitle: 'Current hotel results',
+    viewDescription: 'Bounded current hotel rates with clear verification and no-reservation boundaries.',
+    invoking: 'Searching current stays…',
+    invoked: 'Hotel search complete',
+    view: { component: 'hotel-results', entry: './views/hotel-results.tsx' },
+    ...viewPolicy,
+  });
+}
+
 function openDemoLoyalty(viewPolicy: Readonly<Record<string, unknown>>) {
   return tool('open_loyalty', {
     title: 'Open rewards',
@@ -162,7 +206,7 @@ function reviewDemoTrip(viewPolicy: Readonly<Record<string, unknown>>) {
   return tool('review_trip', {
     title: 'Review selected trip',
     description:
-      'Review the active application-selected flight and synthetic stay with illustrative rewards context. Reads server-owned opaque selections only; it never accepts copied prices or identifiers and cannot book, pay, or redeem.',
+      'Review the active application-selected flight and stay with illustrative rewards context. Reads server-owned opaque selections only; it never accepts copied prices or identifiers and cannot book, pay, or redeem.',
     annotations: annotations.readOnly(),
     input: z.object({}),
     output: demoTripReviewSchema,
@@ -200,7 +244,7 @@ function selectDemoHotel() {
     title: 'Remember selected stay',
     visibility: ['app'],
     description:
-      'Remember the opaque illustrative stay selected inside the hotel widget for a later trip review.',
+      'Remember the opaque stay selected inside the hotel widget for a later trip review.',
     // This only updates short-lived caller-scoped widget state; it does not
     // create a booking, hold inventory, or perform an external side effect.
     annotations: annotations.readOnly(),
@@ -227,8 +271,13 @@ function selectDemoHotel() {
   });
 }
 
-export function createDemoCapabilities(viewPolicies: DemoViewPolicies) {
-  const searchHotels = searchDemoHotels(viewPolicies.hotel);
+export function createDemoCapabilities(
+  viewPolicies: DemoViewPolicies,
+  options: { readonly liveHotels?: boolean } = {},
+) {
+  const searchHotels = options.liveHotels
+    ? searchLiveHotels(viewPolicies.hotel)
+    : searchDemoHotels(viewPolicies.hotel);
   const loyalty = openDemoLoyalty(viewPolicies.loyalty);
   const rewardFlights = compareDemoRewardFlights(viewPolicies.loyalty);
   const insurance = compareDemoTravelInsurance(viewPolicies.insurance);

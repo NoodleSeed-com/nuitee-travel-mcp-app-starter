@@ -96,7 +96,11 @@ export function TravelHomeView({
       style={brandStyle}
       displayMode="auto"
       title={demo ? 'Plan your travel' : 'Flight search'}
-      subtitle={demo ? 'Flights, illustrative stays, and rewards' : 'One-way or round trip'}
+      subtitle={demo
+        ? data.domains.find((domain) => domain.name === 'Stays')?.availability === 'available'
+          ? 'Current flights and stays, with rewards guidance'
+          : 'Flights, illustrative stays, and rewards'
+        : 'One-way or round trip'}
       data-llm={data.fallback}
     >
       <Flow variant="stack" density="comfortable">
@@ -122,7 +126,7 @@ export function TravelHomeView({
                 <span className="cc-domain-status">
                   {'label' in domain ? domain.label : domain.availability === 'available' ? 'Available' : 'Coming soon'}
                 </span>
-                {domain.availability === 'illustrative' && onDemoPrompt ? (
+                {domain.availability !== 'coming_soon' && onDemoPrompt && (domain.name === 'Stays' || domain.name === 'Loyalty') ? (
                   <button
                     className="cc-domain-action"
                     onClick={() => onDemoPrompt(domain.name === 'Stays'
@@ -130,7 +134,7 @@ export function TravelHomeView({
                       : 'Show my illustrative rewards.')}
                     type="button"
                   >
-                    {domain.name === 'Stays' ? 'Compare stays' : 'View rewards'}
+                    {domain.name === 'Stays' ? (domain.availability === 'available' ? 'Search stays' : 'Compare stays') : 'View rewards'}
                   </button>
                 ) : null}
               </li>

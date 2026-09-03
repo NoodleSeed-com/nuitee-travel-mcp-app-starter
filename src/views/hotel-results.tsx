@@ -51,7 +51,7 @@ function isDemoHotel(value: unknown): value is DemoHotel {
     hotel &&
     typeof hotel.selectionId === 'string' &&
     /^hsel_[a-f0-9]{32}$/.test(hotel.selectionId) &&
-    hotel.dataSource === 'illustrative' &&
+    (hotel.dataSource === 'illustrative' || hotel.dataSource === 'live_nuitee') &&
     boundedString(hotel.name, 2, 100) &&
     boundedString(hotel.city, 2, 80) &&
     typeof hotel.countryCode === 'string' &&
@@ -67,8 +67,11 @@ function isDemoHotel(value: unknown): value is DemoHotel {
     boundedInteger(hotel.rooms, 1, 4) &&
     isDemoMoney(hotel.nightlyPrice) &&
     isDemoMoney(hotel.staySubtotal) &&
-    hotel.taxesAndFeesIncluded === false &&
-    boundedString(hotel.illustrativePolicy, 2, 160)
+    typeof hotel.taxesAndFeesIncluded === 'boolean' &&
+    boundedString(hotel.policySummary, 2, 200) &&
+    (hotel.imageUrl === undefined || (boundedString(hotel.imageUrl, 1, 2_048) && /^https:\/\/snaphotelapi\.com\//i.test(hotel.imageUrl))) &&
+    (hotel.reviewScore === undefined || (typeof hotel.reviewScore === 'number' && hotel.reviewScore >= 0 && hotel.reviewScore <= 10)) &&
+    (hotel.reviewCount === undefined || boundedInteger(hotel.reviewCount, 0, 10_000_000))
   );
 }
 
@@ -93,8 +96,8 @@ export function isDemoHotelSearchOutput(value: unknown): value is DemoHotelSearc
   const result = record(value);
   if (
     !result ||
-    (result.status !== 'success' && result.status !== 'empty') ||
-    result.dataSource !== 'illustrative' ||
+    !['success', 'partial', 'empty', 'error'].includes(String(result.status)) ||
+    (result.dataSource !== 'illustrative' && result.dataSource !== 'live_nuitee') ||
     !boundedString(result.disclosure, 20, 320) ||
     !boundedString(result.message, 2, 320) ||
     !boundedString(result.fallback, 20, 500) ||
@@ -106,7 +109,13 @@ export function isDemoHotelSearchOutput(value: unknown): value is DemoHotelSearc
     !result.hotels.every(isDemoHotel)
   ) return false;
 
-  return result.status === 'success' ? result.hotels.length > 0 : result.hotels.length === 0;
+  const hasResults = result.status === 'success' || result.status === 'partial';
+  if (hasResults !== (result.hotels.length > 0)) return false;
+  if (result.status === 'error') {
+    const error = record(result.error);
+    return Boolean(error && boundedString(error.code, 2, 80) && boundedString(error.message, 2, 320) && typeof error.retryable === 'boolean');
+  }
+  return result.error === undefined;
 }
 
 function money(amount: number, currency: string, locale: string) {
@@ -117,10 +126,10 @@ function money(amount: number, currency: string, locale: string) {
   }).format(amount);
 }
 
-function DemoDisclosure({ text }: { readonly text: string }) {
+function HotelDisclosure({ text, live }: { readonly text: string; readonly live: boolean }) {
   return (
-    <aside className="cc-demo-disclosure cc-hotel-disclosure" aria-label="Illustrative hotel data disclosure">
-      <StatusBadge tone="info">Illustrative stays</StatusBadge>
+    <aside className="cc-demo-disclosure cc-hotel-disclosure" aria-label={live ? 'Current hotel data disclosure' : 'Illustrative hotel data disclosure'}>
+      <StatusBadge tone="info">{live ? 'Current Nuitee rates' : 'Illustrative stays'}</StatusBadge>
       <p>{text}</p>
     </aside>
   );
@@ -160,20 +169,22 @@ function HotelSkeletonCard() {
   );
 }
 
-function HotelLoading({ theme, brandStyle }: {
+function HotelLoading({ theme, displayMode, brandStyle }: {
   readonly theme: 'light' | 'dark';
+  readonly displayMode: string;
   readonly brandStyle?: CSSProperties;
 }) {
+  const expanded = displayMode === 'fullscreen';
   return (
     <Frame
       className={`cc-app cc-hotel-results ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
       style={brandStyle}
       displayMode="auto"
       title="Hotel results"
-      subtitle="Preparing illustrative stay comparisons"
+      subtitle="Preparing hotel comparisons"
     >
       <section className="cc-hotel-skeleton" role="status" aria-live="polite" aria-busy="true">
-        <span className="cc-visually-hidden">Preparing synthetic hotel comparisons…</span>
+        <span className="cc-visually-hidden">Preparing hotel comparisons…</span>
         <div className="cc-demo-disclosure cc-hotel-skeleton-disclosure" aria-hidden="true">
           <span className="cc-skeleton-block cc-shimmer" />
           <span className="cc-skeleton-block cc-shimmer" />
@@ -182,20 +193,26 @@ function HotelLoading({ theme, brandStyle }: {
           <span className="cc-skeleton-block cc-shimmer" />
           <span className="cc-skeleton-block cc-shimmer" />
         </div>
-        <div className="cc-hotel-carousel cc-hotel-carousel-inline" aria-hidden="true">
-          <div className="cc-hotel-carousel-stage">
-            <span className="cc-hotel-carousel-arrow cc-hotel-carousel-arrow-previous" />
-            <div className="cc-hotel-carousel-window">
-              <div className="cc-hotel-carousel-track">
-                <div className="cc-hotel-carousel-slide"><HotelSkeletonCard /></div>
-                <div className="cc-hotel-carousel-peek-shell">
-                  <div className="cc-hotel-carousel-slide cc-hotel-carousel-peek-slide"><HotelSkeletonCard /></div>
+        {expanded ? (
+          <div className="cc-hotel-carousel cc-hotel-carousel-expanded" aria-hidden="true">
+            <div className="cc-hotel-carousel-stage">
+              <span className="cc-hotel-carousel-arrow cc-hotel-carousel-arrow-previous" />
+              <div className="cc-hotel-carousel-window">
+                <div className="cc-hotel-carousel-track">
+                  <div className="cc-hotel-carousel-slide"><HotelSkeletonCard /></div>
+                  <div className="cc-hotel-carousel-peek-shell">
+                    <div className="cc-hotel-carousel-slide cc-hotel-carousel-peek-slide"><HotelSkeletonCard /></div>
+                  </div>
                 </div>
               </div>
+              <span className="cc-hotel-carousel-arrow cc-hotel-carousel-arrow-next" />
             </div>
-            <span className="cc-hotel-carousel-arrow cc-hotel-carousel-arrow-next" />
           </div>
-        </div>
+        ) : (
+          <div className="cc-hotel-inline-grid" aria-hidden="true">
+            {[0, 1, 2].map((index) => <HotelSkeletonCard key={index} />)}
+          </div>
+        )}
       </section>
     </Frame>
   );
@@ -208,13 +225,15 @@ function HotelDetails({ hotel }: { readonly hotel: DemoHotel }) {
         <div><span>Room</span><strong>{hotel.roomName}</strong></div>
         <div><span>Stay</span><strong>{hotel.nights} night{hotel.nights === 1 ? '' : 's'} · {hotel.rooms} room{hotel.rooms === 1 ? '' : 's'}</strong></div>
         <div><span>Location</span><strong>{hotel.neighborhood}</strong></div>
-        <div><span>Taxes and fees</span><strong>Not included in subtotal</strong></div>
+        <div><span>Taxes and fees</span><strong>{hotel.taxesAndFeesIncluded
+          ? 'Included in shown total'
+          : hotel.dataSource === 'live_nuitee' ? 'Review before booking' : 'Not included in subtotal'}</strong></div>
       </div>
       <p>{hotel.description}</p>
-      <ul className="cc-hotel-detail-amenities" aria-label="Synthetic hotel amenities">
+      <ul className="cc-hotel-detail-amenities" aria-label="Hotel amenity highlights">
         {hotel.amenities.map((amenity) => <li key={amenity}><CheckIcon />{amenity}</li>)}
       </ul>
-      <p className="cc-hotel-policy">{hotel.illustrativePolicy}</p>
+      <p className="cc-hotel-policy">{hotel.policySummary}</p>
     </div>
   );
 }
@@ -231,8 +250,8 @@ function HotelCard({ hotel, locale, selected, pending, onAdd }: {
 
   return (
     <article className={`cc-hotel-card ${selected ? 'cc-hotel-card-selected' : ''}`}>
-      <div className="cc-hotel-visual" aria-hidden="true">
-        <BedIcon />
+      <div className={`cc-hotel-visual ${hotel.imageUrl ? 'cc-hotel-visual-has-image' : ''}`} aria-hidden="true">
+        {hotel.imageUrl ? <img alt="" src={hotel.imageUrl} /> : <BedIcon />}
         <span>{hotel.city}</span>
       </div>
       <div className="cc-hotel-face-stack">
@@ -243,17 +262,17 @@ function HotelCard({ hotel, locale, selected, pending, onAdd }: {
         >
           <header className="cc-hotel-card-header">
             <div>
-              <StatusBadge tone="info">Illustrative stay</StatusBadge>
+              <StatusBadge tone="info">{hotel.dataSource === 'live_nuitee' ? 'Current rate' : 'Illustrative stay'}</StatusBadge>
               <h3>{hotel.name}</h3>
               <p>{hotel.neighborhood} · {hotel.city}, {hotel.countryCode}</p>
             </div>
-            <span className="cc-hotel-category" aria-label={`${hotel.category} out of 5 concept category`}>
+            <span className="cc-hotel-category" aria-label={`${hotel.category} out of 5 star category`}>
               <StarIcon />{hotel.category}/5
             </span>
           </header>
           <div className="cc-hotel-room-summary">
             <BedIcon />
-            <div><span>Illustrative room</span><strong>{hotel.roomName}</strong></div>
+            <div><span>{hotel.dataSource === 'live_nuitee' ? 'Available room' : 'Illustrative room'}</span><strong>{hotel.roomName}</strong></div>
           </div>
           <ul className="cc-hotel-amenities" aria-label="Amenity highlights">
             {hotel.amenities.slice(0, 3).map((amenity) => <li key={amenity}>{amenity}</li>)}
@@ -271,7 +290,9 @@ function HotelCard({ hotel, locale, selected, pending, onAdd }: {
             <div>
               <span>{money(hotel.nightlyPrice.amount, hotel.nightlyPrice.currency, locale)} per night</span>
               <strong>{money(hotel.staySubtotal.amount, hotel.staySubtotal.currency, locale)}</strong>
-              <small>Illustrative subtotal · taxes and fees not included</small>
+              <small>{hotel.dataSource === 'live_nuitee'
+                ? `Current total · ${hotel.taxesAndFeesIncluded ? 'shown taxes included' : 'verify taxes and fees'}`
+                : 'Illustrative subtotal · taxes and fees not included'}</small>
             </div>
             {onAdd ? (
               <Action
@@ -295,7 +316,7 @@ function HotelCard({ hotel, locale, selected, pending, onAdd }: {
           inert={detailsVisible ? undefined : true}
         >
           <header className="cc-hotel-detail-header">
-            <div><span>Illustrative stay overview</span><h3>{hotel.name}</h3></div>
+            <div><span>{hotel.dataSource === 'live_nuitee' ? 'Current stay overview' : 'Illustrative stay overview'}</span><h3>{hotel.name}</h3></div>
             <button className="cc-hotel-back-button" onClick={() => setDetailsVisible(false)} type="button">
               <ArrowLeftIcon />Back to hotel
             </button>
@@ -304,6 +325,29 @@ function HotelCard({ hotel, locale, selected, pending, onAdd }: {
         </div>
       </div>
     </article>
+  );
+}
+
+function HotelInlineGrid({ hotels, locale, selectedSelectionId, pendingSelectionId, onAdd }: {
+  readonly hotels: readonly DemoHotel[];
+  readonly locale: string;
+  readonly selectedSelectionId?: string;
+  readonly pendingSelectionId?: string;
+  readonly onAdd?: (selectionId: string) => void;
+}) {
+  return (
+    <section aria-label="Hotel options" className="cc-hotel-inline-grid">
+      {hotels.map((hotel) => (
+        <HotelCard
+          hotel={hotel}
+          key={hotel.selectionId}
+          locale={locale}
+          onAdd={onAdd}
+          pending={pendingSelectionId === hotel.selectionId}
+          selected={selectedSelectionId === hotel.selectionId}
+        />
+      ))}
+    </section>
   );
 }
 
@@ -418,8 +462,8 @@ function HotelCarousel({ hotels, expanded, locale, selectedSelectionId, pendingS
   );
 }
 
-function statusView(state: HotelResultsState, theme: 'light' | 'dark', brandStyle?: CSSProperties) {
-  if (state === 'loading') return <HotelLoading theme={theme} brandStyle={brandStyle} />;
+function statusView(state: HotelResultsState, theme: 'light' | 'dark', displayMode: string, brandStyle?: CSSProperties) {
+  if (state === 'loading') return <HotelLoading theme={theme} displayMode={displayMode} brandStyle={brandStyle} />;
   const malformed = state === 'malformed';
   return (
     <Frame
@@ -467,16 +511,31 @@ export function HotelResultsView({
   readonly onExpand?: () => void;
   readonly brandStyle?: CSSProperties;
 }) {
-  if (state) return statusView(state, theme, brandStyle);
-  if (!result) return statusView('malformed', theme, brandStyle);
+  if (state) return statusView(state, theme, displayMode, brandStyle);
+  if (!result) return statusView('malformed', theme, displayMode, brandStyle);
 
   const frameClassName = `cc-app cc-hotel-results ${theme === 'dark' ? 'cc-theme-dark' : ''}`;
+  const live = result.dataSource === 'live_nuitee';
+  if (result.status === 'error') {
+    return (
+      <Frame className={frameClassName} style={brandStyle} displayMode="auto" title="Hotel search needs attention" data-llm={result.fallback}>
+        <Flow variant="stack" density="comfortable">
+          <HotelDisclosure live={live} text={result.disclosure} />
+          <Feedback status="error">{result.error?.message ?? result.message}</Feedback>
+          <p className="cc-hotel-status-note">No room was held, reserved, or added to the trip.</p>
+        </Flow>
+      </Frame>
+    );
+  }
   if (result.status === 'empty') {
     return (
       <Frame className={frameClassName} style={brandStyle} displayMode="auto" title="No hotels found" data-llm={result.fallback}>
         <Flow variant="stack" density="comfortable">
-          <DemoDisclosure text={result.disclosure} />
-          <Region title="No illustrative stays matched" description="Try Lisbon, Toronto, or Vancouver for this bounded preview.">
+          <HotelDisclosure live={live} text={result.disclosure} />
+          <Region
+            title={live ? 'No current stays matched' : 'No illustrative stays matched'}
+            description={live ? 'Try different dates or a nearby destination.' : 'Try Lisbon, Toronto, or Vancouver for this bounded preview.'}
+          >
             <p className="cc-hotel-empty">{result.message}</p>
           </Region>
         </Flow>
@@ -492,26 +551,38 @@ export function HotelResultsView({
       style={brandStyle}
       displayMode="auto"
       title="Hotel results"
-      subtitle={`${result.hotels.length} fictional option${result.hotels.length === 1 ? '' : 's'} · no live availability`}
+      subtitle={live
+        ? `${result.hotels.length} current option${result.hotels.length === 1 ? '' : 's'} · verify before booking`
+        : `${result.hotels.length} fictional option${result.hotels.length === 1 ? '' : 's'} · no live availability`}
       data-llm={result.fallback}
     >
       <Flow variant="stack" density={expanded ? 'comfortable' : 'compact'}>
-        <DemoDisclosure text={result.disclosure} />
+        <HotelDisclosure live={live} text={result.disclosure} />
         <div className="cc-hotel-results-toolbar">
           <div>
             <strong>{result.searchContext.destination}</strong>
             <span>{result.searchContext.checkInDate} – {result.searchContext.checkOutDate} · {result.searchContext.rooms} room{result.searchContext.rooms === 1 ? '' : 's'}</span>
           </div>
-          <StatusBadge tone="info">Illustrative prices</StatusBadge>
+          <StatusBadge tone="info">{live ? 'Current prices' : 'Illustrative prices'}</StatusBadge>
         </div>
-        <HotelCarousel
-          expanded={expanded}
-          hotels={shown}
-          locale={locale}
-          onAdd={onAdd}
-          pendingSelectionId={pendingSelectionId}
-          selectedSelectionId={selectedSelectionId}
-        />
+        {expanded ? (
+          <HotelCarousel
+            expanded
+            hotels={shown}
+            locale={locale}
+            onAdd={onAdd}
+            pendingSelectionId={pendingSelectionId}
+            selectedSelectionId={selectedSelectionId}
+          />
+        ) : (
+          <HotelInlineGrid
+            hotels={shown}
+            locale={locale}
+            onAdd={onAdd}
+            pendingSelectionId={pendingSelectionId}
+            selectedSelectionId={selectedSelectionId}
+          />
+        )}
         {!expanded && result.hotels.length > 3 ? (
           onExpand
             ? <Action variant="quiet" onClick={onExpand}>Show all {Math.min(10, result.hotels.length)} hotels</Action>
@@ -520,7 +591,7 @@ export function HotelResultsView({
         {selectionError ? <Feedback status="error">{selectionError}</Feedback> : null}
         {selectedSelectionId ? (
           <p className="cc-hotel-selection-status" role="status">
-            The illustrative stay was added to this trip. Nothing was booked, held, or paid.
+            {live ? 'The current hotel option' : 'The illustrative stay'} was added to this trip. Nothing was booked, held, or paid.
           </p>
         ) : null}
       </Flow>
@@ -569,9 +640,13 @@ export default function HotelResults() {
             setSelected(selectionId);
             return;
           }
-          setSelectionError('That illustrative stay is no longer available in this search. Choose another hotel.');
+          setSelectionError(result?.dataSource === 'live_nuitee'
+            ? 'That hotel option is no longer available in this search. Choose another hotel.'
+            : 'That illustrative stay is no longer available in this search. Choose another hotel.');
         }).catch(() => {
-          setSelectionError('The illustrative stay could not be added to this trip. Try again.');
+          setSelectionError(result?.dataSource === 'live_nuitee'
+            ? 'The hotel option could not be added to this trip. Try again.'
+            : 'The illustrative stay could not be added to this trip. Try again.');
         }).finally(() => setPendingSelectionId(undefined));
       } : undefined}
       brandStyle={{

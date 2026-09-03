@@ -60,7 +60,7 @@ const hotel = (index: number): DemoHotel => ({
   nightlyPrice: { amount: 286 + index, currency: 'CAD' },
   staySubtotal: { amount: (286 + index) * 3, currency: 'CAD' },
   taxesAndFeesIncluded: false,
-  illustrativePolicy: 'Illustrative flexible terms; no transaction can be created.',
+  policySummary: 'Illustrative flexible terms; no transaction can be created.',
 });
 
 const result: DemoHotelSearchOutput = {
@@ -90,21 +90,19 @@ const render = (props: Parameters<typeof HotelResultsView>[0]) =>
 const visibleText = (markup: string) => markup.replace(/<[^>]*>/gu, ' ');
 
 describe('Wayfare illustrative hotel widget', () => {
-  it('renders a geometry-matched shimmer skeleton with a next-card peek', () => {
+  it('renders a geometry-matched three-card inline shimmer skeleton', () => {
     const markup = render({ state: 'loading', displayMode: 'inline', theme: 'light' });
 
     expect(markup).toContain('cc-hotel-skeleton');
     expect(markup).toContain('cc-hotel-skeleton-disclosure');
     expect(markup).toContain('cc-hotel-results-toolbar');
-    expect(markup).toContain('cc-hotel-carousel-stage');
-    expect(markup).toContain('cc-hotel-carousel-window');
-    expect(markup).toContain('cc-hotel-carousel-track');
-    expect(markup).toContain('cc-hotel-carousel-peek-slide');
-    expect((markup.match(/cc-hotel-skeleton-card/g) ?? [])).toHaveLength(2);
+    expect(markup).toContain('cc-hotel-inline-grid');
+    expect(markup).not.toContain('cc-hotel-carousel-stage');
+    expect((markup.match(/cc-hotel-skeleton-card/g) ?? [])).toHaveLength(3);
     expect(markup).toContain('cc-hotel-skeleton-details');
     expect(markup).toContain('cc-shimmer');
     expect(markup).toContain('aria-busy="true"');
-    expect(markup).toContain('Preparing synthetic hotel comparisons');
+    expect(markup).toContain('Preparing hotel comparisons');
   });
 
   it('renders bounded error, malformed, and honest empty states', () => {
@@ -124,19 +122,19 @@ describe('Wayfare illustrative hotel widget', () => {
     expect(empty).not.toContain('Add to trip');
   });
 
-  it('shows three bounded inline options through a non-circular carousel', () => {
+  it('shows three bounded inline options together in a compact desktop grid', () => {
     const markup = render({ result, displayMode: 'inline', onAdd: vi.fn() });
 
     expect(markup).toContain(result.disclosure);
     expect(markup).toContain('Illustrative stays');
     expect(markup).toContain('Illustrative prices');
-    expect(markup).toContain('aria-label="Hotel options carousel"');
-    expect(markup).toContain('Hotel 1 of 3');
-    const previous = markup.match(/<button[^>]*aria-label="Previous hotel"[^>]*>/u)?.[0] ?? '';
-    const next = markup.match(/<button[^>]*aria-label="Next hotel"[^>]*>/u)?.[0] ?? '';
-    expect(previous).toContain('disabled');
-    expect(next).not.toContain('disabled');
-    expect((markup.match(/>Add to trip<\/button>/gu) ?? [])).toHaveLength(2);
+    expect(markup).toContain('aria-label="Hotel options"');
+    expect(markup).toContain('cc-hotel-inline-grid');
+    expect(markup).not.toContain('aria-label="Hotel options carousel"');
+    expect((markup.match(/>Add to trip<\/button>/gu) ?? [])).toHaveLength(3);
+    expect(markup).toContain('Tagus Lantern Hotel 1');
+    expect(markup).toContain('Tagus Lantern Hotel 2');
+    expect(markup).toContain('Tagus Lantern Hotel 3');
     expect(markup).toContain('Open the App in expanded view to compare all 4 hotels');
     expect(markup).not.toContain('<img');
     expect(visibleText(markup)).not.toMatch(/\bdemo\b|\bsandbox\b/iu);

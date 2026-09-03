@@ -3,6 +3,7 @@ import { travelCompanionDemoConfig } from './demo-config.js';
 import { selectionIdSchema } from './flight-schemas.js';
 
 export const syntheticDataSourceSchema = z.literal('illustrative');
+export const hotelDataSourceSchema = z.enum(['live_nuitee', 'illustrative']);
 export const demoHotelSelectionIdSchema = z.string().regex(/^hsel_[a-f0-9]{32}$/);
 export const demoHotelSearchIdSchema = z.string().regex(/^hsearch_[a-f0-9]{32}$/);
 export const demoRewardFlightSearchIdSchema = z.string().regex(/^rsearch_[a-f0-9]{32}$/);
@@ -38,7 +39,11 @@ function calendarDay(value: string) {
 }
 
 export const demoHotelSearchInputSchema = z.object({
-  destination: destinationSchema.describe('City name or IATA/metro code for the synthetic stay fixture search'),
+  destination: destinationSchema.describe('City name or IATA airport code for the stay search'),
+  countryCode: z.string()
+    .regex(/^[A-Z]{2}$/)
+    .optional()
+    .describe('Two-letter destination country code when destination is a city name'),
   checkInDate: calendarDateSchema.describe('Check-in date in YYYY-MM-DD format'),
   checkOutDate: calendarDateSchema.describe('Check-out date in YYYY-MM-DD format'),
   adults: z.number().int().min(1).max(8).default(2),
@@ -64,7 +69,7 @@ export const demoMoneySchema = z.object({
 
 export const demoHotelSchema = z.object({
   selectionId: demoHotelSelectionIdSchema,
-  dataSource: syntheticDataSourceSchema,
+  dataSource: hotelDataSourceSchema,
   name: z.string().trim().min(2).max(100),
   city: z.string().trim().min(2).max(80),
   countryCode: z.string().regex(/^[A-Z]{2}$/),
@@ -77,28 +82,53 @@ export const demoHotelSchema = z.object({
   rooms: z.number().int().min(1).max(4),
   nightlyPrice: demoMoneySchema,
   staySubtotal: demoMoneySchema,
-  taxesAndFeesIncluded: z.literal(false),
-  illustrativePolicy: z.string().trim().min(2).max(160),
+  taxesAndFeesIncluded: z.boolean(),
+  policySummary: z.string().trim().min(2).max(200),
+  imageUrl: z.url().max(2_048).optional(),
+  reviewScore: z.number().min(0).max(10).optional(),
+  reviewCount: z.number().int().nonnegative().max(10_000_000).optional(),
+});
+
+export const hotelErrorSchema = z.object({
+  code: z.enum([
+    'configuration_required',
+    'authentication',
+    'entitlement',
+    'invalid_request',
+    'rate_limited',
+    'timeout',
+    'provider_error',
+    'malformed_response',
+    'service_unavailable',
+  ]),
+  message: z.string().trim().min(2).max(320),
+  retryable: z.boolean(),
 });
 
 export const demoHotelSearchOutputSchema = z.object({
-  status: z.enum(['success', 'empty']),
-  dataSource: syntheticDataSourceSchema,
+  status: z.enum(['success', 'partial', 'empty', 'error']),
+  dataSource: hotelDataSourceSchema,
   disclosure: z.string().trim().min(20).max(320),
   message: z.string().trim().min(2).max(320),
   fallback: z.string().trim().min(20).max(500),
   searchId: demoHotelSearchIdSchema,
   searchContext: demoHotelSearchInputSchema,
   hotels: z.array(demoHotelSchema).max(10),
+  error: hotelErrorSchema.optional(),
 }).refine(
-  ({ status, hotels }) => status === 'success' ? hotels.length > 0 : hotels.length === 0,
-  { path: ['hotels'], message: 'Successful searches need results; empty searches cannot contain results.' },
+  ({ status, hotels }) => status === 'success' || status === 'partial' ? hotels.length > 0 : hotels.length === 0,
+  { path: ['hotels'], message: 'Successful/partial searches need results; empty/error searches cannot contain results.' },
+).refine(
+  ({ status, error }) => status === 'error' ? error !== undefined : error === undefined,
+  { path: ['error'], message: 'Only failed hotel searches include an error.' },
 );
 
 export const demoHotelSelectionRecordSchema = z.object({
   selectionId: demoHotelSelectionIdSchema,
   searchId: demoHotelSearchIdSchema,
-  fixtureKey: z.string().regex(/^demo_hotel_[a-z0-9_]{2,64}$/),
+  dataSource: hotelDataSourceSchema.default('illustrative'),
+  fixtureKey: z.string().regex(/^demo_hotel_[a-z0-9_]{2,64}$/).optional(),
+  providerOfferId: z.string().min(1).max(16_384).optional(),
   propertyName: z.string().trim().min(2).max(100),
   city: z.string().trim().min(2).max(80),
   checkInDate: calendarDateSchema,
@@ -285,7 +315,7 @@ export const demoTripReviewFlightSchema = z.object({
 });
 
 export const demoTripReviewStaySchema = z.object({
-  dataSource: syntheticDataSourceSchema,
+  dataSource: hotelDataSourceSchema,
   selectionId: demoHotelSelectionIdSchema,
   propertyName: z.string().trim().min(2).max(100),
   city: z.string().trim().min(2).max(80),

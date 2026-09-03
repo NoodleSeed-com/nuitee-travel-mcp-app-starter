@@ -548,6 +548,25 @@ describe('Nuitee gateway verification', () => {
     expect(JSON.stringify(result)).not.toContain('secret-provider-body');
   });
 
+  it('classifies a nested hosted connector status without leaking provider details', () => {
+    const callOperation = vi.fn(() => {
+      throw Object.assign(new Error('hosted connector failed'), {
+        cause: {
+          response: {
+            statusCode: 401,
+            body: 'secret-provider-body',
+          },
+        },
+      });
+    });
+    const result = runNuiteeGateway(
+      { kind: 'verify', selectionId: selectionState.records[0].selectionId, state: selectionState, requestedAt: now },
+      { callOperation },
+    );
+    expect(result.error?.code).toBe('authentication');
+    expect(JSON.stringify(result)).not.toContain('secret-provider-body');
+  });
+
   it.each([
     ['request timed out', 'timeout'],
     ['response body too large', 'oversized_response'],

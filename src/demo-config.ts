@@ -5,7 +5,7 @@ export const travelCompanionDemoConfig = {
     assistantName: 'Wayfare travel assistant',
     tagline: 'Travel, planned around you.',
     intro:
-      'Search current flights, compare illustrative stays and travel protection, and preview rewards in one conversation.',
+      'Search current flights and stays, compare travel protection concepts, and preview rewards in one conversation.',
     palette: {
       light: {
         ink: '#0B1F33',
@@ -44,8 +44,8 @@ export const travelCompanionDemoConfig = {
       label: 'Current flight fares',
     },
     hotels: {
-      mode: 'synthetic_fixture',
-      label: 'Illustrative stays',
+      mode: 'live_nuitee',
+      label: 'Current hotel rates',
     },
     loyalty: {
       mode: 'synthetic_fixture',
@@ -59,7 +59,7 @@ export const travelCompanionDemoConfig = {
   disclosure: {
     badge: 'Preview only',
     persistent:
-      'Flight results come from the connected flight provider. Stays, rewards, and travel protection are illustrative previews. Booking, redemption, and policy purchase are unavailable.',
+      'Flight and stay results come from connected providers. Rewards and travel protection are illustrative previews. Booking, redemption, and policy purchase are unavailable.',
   },
   assets: {
     logo: {

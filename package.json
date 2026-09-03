@@ -46,11 +46,11 @@
     "agent:commands": "noodle commands --json"
   },
   "devDependencies": {
-    "@noodleseed/one": "0.151.1",
-    "@vitest/browser-playwright": "4.1.10",
+    "@noodleseed/one": "0.154.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "@vitejs/plugin-react": "6.1.0",
+    "@vitest/browser-playwright": "4.1.10",
     "playwright": "1.62.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
