@@ -1299,8 +1299,15 @@
 .cc-hotel-skeleton-badge { width: 74px; height: 20px; border-radius: 999px; }
 .cc-hotel-skeleton-amenity { width: 90%; }
 .cc-hotel-skeleton-price { width: 46%; height: 20px; }
-.cc-hotel-skeleton-details { width: 42%; height: 16px; }
-.cc-hotel-skeleton-action { width: 100%; height: 40px; border-radius: 10px; }
+/* These placeholders stand for real <button> elements — the "Hotel and
+   rate details" toggle and the Select action — both forced to
+   min-height: 44px by the global .cc-app button rule. Matching that
+   here closes a real gap in the mirror: the visible shimmer stays a
+   thin line/pill, but the row now reserves the same vertical space the
+   real buttons do. Deliberately not applied to FareCardSkeleton — the
+   flight card is out of scope for this fix. */
+.cc-hotel-skeleton-details { width: 42%; height: 16px; min-height: 44px; }
+.cc-hotel-skeleton-action { width: 100%; height: 40px; min-height: 44px; border-radius: 10px; }
 
 .cc-loyalty {
   overflow: hidden;
