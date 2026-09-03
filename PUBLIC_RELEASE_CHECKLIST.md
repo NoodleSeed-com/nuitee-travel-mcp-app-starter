@@ -76,6 +76,11 @@ These two local preflight results are configuration-shape evidence only. Neither
 
 ### Candidate freeze
 
+- [ ] Remove `docs/internal/` from the public release tree and prove that no
+  internal document or private evidence remains in any Git history that will
+  become public. Deleting the directory only from the latest commit is not
+  sufficient; prefer a clean public export or new public repository from the
+  approved release tree, then rerun the secret-history and release audits.
 - [ ] Run `pnpm ci:offline` from the release commit.
 - [ ] Run `pnpm audit:release` from the release commit. It intentionally remains red while bundled runnable Agent Kit examples use mutable dependencies; CI continuously runs the offline history and license-metadata portions against a full clone.
 - [ ] Update `CHANGELOG.md` with the approved version/date and create release notes from verified evidence.
