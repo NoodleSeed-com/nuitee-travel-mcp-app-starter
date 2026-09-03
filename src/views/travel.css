@@ -2159,6 +2159,8 @@
   overflow: hidden;
 }
 
+.cc-photo-decor { position: absolute; inset: 0; }
+
 .cc-photo-image {
   position: absolute;
   inset: 0;

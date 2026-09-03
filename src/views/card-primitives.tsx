@@ -34,12 +34,17 @@ export function PhotoBand({
   readonly children?: ReactNode;
 }) {
   return (
-    <div
-      aria-hidden="true"
-      className="cc-photo-band"
-      style={{ background: gradientForName(name), height: `${height}px` }}
-    >
-      {imageUrl ? <img alt="" className="cc-photo-image" loading="lazy" src={imageUrl} /> : null}
+    <div className="cc-photo-band" style={{ height: `${height}px` }}>
+      {/* Decoration only. The band's meaning is carried by the hotel name
+          beside it, so the gradient and photo are hidden — but children
+          (score pin, compare control) must stay in the a11y tree. */}
+      <div
+        aria-hidden="true"
+        className="cc-photo-decor"
+        style={{ background: gradientForName(name) }}
+      >
+        {imageUrl ? <img alt="" className="cc-photo-image" loading="lazy" src={imageUrl} /> : null}
+      </div>
       {children}
     </div>
   );
