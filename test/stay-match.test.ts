@@ -75,4 +75,30 @@ describe('computeStayMatch', () => {
     expect(computeStayMatch(rigid, [rigid]).lines.find((l) => l.key === 'flexibility')?.status)
       .toBe('partial');
   });
+
+  it('returns a real score when the comparison set is empty', () => {
+    const match = computeStayMatch(hotel(), []);
+    expect(Number.isNaN(match.score)).toBe(false);
+    expect(match.score).toBeGreaterThanOrEqual(0);
+    expect(match.score).toBeLessThanOrEqual(100);
+    expect(match.lines.find((line) => line.key === 'price')?.detail).not.toContain('∞');
+  });
+
+  it('reports a bare total when the set has no price span', () => {
+    const only = hotel();
+    const detail = computeStayMatch(only, [only]).lines.find((l) => l.key === 'price')?.detail;
+    expect(detail).toContain('total');
+    expect(detail).not.toContain('–');
+  });
+
+  it('keeps price weight in range for a hotel outside the comparison set', () => {
+    const cheap = hotel({ staySubtotal: { amount: 1000, currency: 'CAD' } });
+    const others = [
+      hotel({ staySubtotal: { amount: 1500, currency: 'CAD' } }),
+      hotel({ staySubtotal: { amount: 2000, currency: 'CAD' } }),
+    ];
+    const match = computeStayMatch(cheap, others);
+    expect(match.score).toBeGreaterThanOrEqual(0);
+    expect(match.score).toBeLessThanOrEqual(100);
+  });
 });
