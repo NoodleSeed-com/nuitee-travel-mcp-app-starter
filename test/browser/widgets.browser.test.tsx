@@ -261,7 +261,7 @@ describe('real-browser widget readiness', () => {
     await expect.element(toggle).toHaveAttribute('aria-expanded', 'false');
     const front = document.querySelector<HTMLElement>('.cc-fare-face-front')!;
     const back = document.querySelector<HTMLElement>('.cc-fare-face-back')!;
-    const frontContentLeft = document.querySelector<HTMLElement>('.cc-fare-header')!.getBoundingClientRect().left;
+    const frontContentLeft = document.querySelector<HTMLElement>('.cc-fare-top')!.getBoundingClientRect().left;
     const summary = document.querySelector<HTMLElement>('.cc-fare-front-summary')!;
     const footer = document.querySelector<HTMLElement>('.cc-fare-footer')!;
     const initialHeight = card.getBoundingClientRect().height;

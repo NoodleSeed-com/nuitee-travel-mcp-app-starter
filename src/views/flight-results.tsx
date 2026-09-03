@@ -22,9 +22,9 @@ import {
 } from '../helpers.js';
 import type { Itinerary, SearchContext, SearchOutput, Verification } from '../flight-schemas.js';
 import type { GatewayError } from '../flight-runtime.js';
+import { Badge } from './card-primitives.js';
 import {
   ArrowLeftIcon,
-  CarryOnIcon,
   CheckIcon,
   CheckedBagIcon,
   ClockIcon,
@@ -214,6 +214,15 @@ function instantTime(value: string) {
   return new Intl.DateTimeFormat(undefined, {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC', timeZoneName: 'short',
   }).format(parsed);
+}
+
+// Boarding-pass route strip shows only the clock time, matching the compact
+// endpoint format on a physical pass. Reuses the same non-converting regex
+// approach as flightTime so displayed times keep matching the itinerary's
+// own offset instead of the host's timezone.
+function flightMoment(value: string) {
+  const match = /T(\d{2}):(\d{2})/.exec(value);
+  return match ? `${match[1]}:${match[2]}` : value;
 }
 
 function airportLabel(route: Itinerary['route'], side: 'origin' | 'destination') {
@@ -518,8 +527,25 @@ function FareDetailContent({ itinerary, compact = false }: { readonly itinerary:
   );
 }
 
-function FareCard({ itinerary, selected, onSelect }: {
+function cabinLabel(cabinClass: string): string {
+  return cabinClass
+    .toLowerCase()
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+function fareBadgesFor(itinerary: Itinerary): string[] {
+  const badges: string[] = [];
+  if (itinerary.isCheapest) badges.push('Cheapest');
+  if (itinerary.baggage.checked) badges.push('Checked bag');
+  if (itinerary.fare.family) badges.push(itinerary.fare.family);
+  return badges.slice(0, 3);
+}
+
+function FareCard({ itinerary, searchContext, selected, onSelect }: {
   readonly itinerary: Itinerary;
+  readonly searchContext?: SearchContext;
   readonly selected: boolean;
   readonly onSelect?: (selectionId: string) => void;
 }) {
@@ -527,7 +553,7 @@ function FareCard({ itinerary, selected, onSelect }: {
   const backFaceId = useId();
   const detailsButtonRef = useRef<HTMLButtonElement>(null);
   const backButtonRef = useRef<HTMLButtonElement>(null);
-  const accent = carrierAccent(itinerary.carrier.code);
+  const fareBadges = fareBadgesFor(itinerary);
 
   function showDetails() {
     setDetailsVisible(true);
@@ -541,9 +567,9 @@ function FareCard({ itinerary, selected, onSelect }: {
 
   return (
     <article
-      className={`cc-fare-card ${detailsVisible ? 'cc-fare-card-details' : ''} ${selected ? 'cc-fare-selected' : ''}`}
+      className={`cc-card cc-fare-card ${detailsVisible ? 'cc-fare-card-details' : ''} ${selected ? 'cc-fare-selected' : ''}`}
       aria-label={`${itinerary.route.origin} to ${itinerary.route.destination} with ${itinerary.carrier.name}`}
-      style={accent ? { '--cc-carrier-accent': accent } as CSSProperties : undefined}
+      style={{ '--cc-carrier-accent': carrierAccent(itinerary.carrier.code) } as CSSProperties}
     >
       <div className="cc-fare-face-stack">
         <div
@@ -551,18 +577,41 @@ function FareCard({ itinerary, selected, onSelect }: {
           className={`cc-fare-face cc-fare-face-front ${detailsVisible ? 'cc-fare-face-is-hidden' : ''}`}
           inert={detailsVisible ? true : undefined}
         >
-          <header className="cc-fare-header">
-            <div className="cc-fare-heading">
-              <CarrierIdentity carrier={itinerary.carrier} />
-              <h3><span>{itinerary.route.origin}</span><PlaneIcon /><span>{itinerary.route.destination}</span></h3>
+          <div className="cc-fare-top">
+            <CarrierIdentity carrier={itinerary.carrier} compact />
+            <span className="cc-fare-price">
+              <strong>{money(itinerary.price.total, itinerary.price.currency)}</strong>
+              <span>total</span>
+            </span>
+          </div>
+          {itinerary.isCheapest ? <StatusBadge className="cc-fare-highlight-badge" tone="info">Lowest fare</StatusBadge> : null}
+          <div className="cc-route-strip">
+            <span className="cc-route-end">
+              <strong>{flightMoment(itinerary.departureTime)}</strong>
+              <span>{itinerary.route.origin}</span>
+            </span>
+            <span aria-hidden="true" className="cc-route-mid">
+              <span className="cc-route-line" />
+              <PlaneIcon />
+              <span className="cc-route-line" />
+            </span>
+            <span className="cc-route-end">
+              <strong>{flightMoment(itinerary.arrivalTime)}</strong>
+              <span>{itinerary.route.destination}</span>
+            </span>
+          </div>
+          <div className="cc-fare-body">
+            <RouteTimeline itinerary={itinerary} />
+            <div className="cc-fare-meta">
+              <span><ClockIcon />{duration(itinerary.durationMinutes)}</span>
+              <span><RouteIcon />{stopLabel(itinerary.stops)}</span>
+              {searchContext ? <span><CheckedBagIcon />{cabinLabel(searchContext.cabinClass)}</span> : null}
             </div>
-            {itinerary.isCheapest ? <StatusBadge className="cc-fare-highlight-badge" tone="info">Lowest fare</StatusBadge> : null}
-          </header>
-          <RouteTimeline itinerary={itinerary} />
-          <div className="cc-fare-meta">
-            <span><CarryOnIcon />{itinerary.baggage.carryOn ? 'Carry-on included' : 'Carry-on not confirmed'}</span>
-            <span><CheckedBagIcon />{itinerary.baggage.checked ? 'Checked bag included' : 'Checked bag not confirmed'}</span>
-            {itinerary.fare.family ? <span><TagIcon />{itinerary.fare.family}</span> : null}
+            {fareBadges.length > 0 ? (
+              <div className="cc-card-badges">
+                {fareBadges.map((badge) => <Badge key={badge} tone="good">{badge}</Badge>)}
+              </div>
+            ) : null}
           </div>
           <div className="cc-details">
             <button
@@ -578,11 +627,7 @@ function FareCard({ itinerary, selected, onSelect }: {
           </div>
           <FareFrontSummary itinerary={itinerary} />
           <footer className="cc-fare-footer">
-            <div>
-              <span>Trip total</span>
-              <strong>{money(itinerary.price.total, itinerary.price.currency)}</strong>
-              <small>Search price · must be verified</small>
-            </div>
+            <small>Search price · must be verified</small>
             <Action
               variant={selected ? 'secondary' : 'primary'}
               aria-pressed={selected}
@@ -617,8 +662,9 @@ function FareCard({ itinerary, selected, onSelect }: {
   );
 }
 
-function FareCarousel({ itineraries, selectedSelectionId, onSelect }: {
+function FareCarousel({ itineraries, searchContext, selectedSelectionId, onSelect }: {
   readonly itineraries: readonly Itinerary[];
+  readonly searchContext?: SearchContext;
   readonly selectedSelectionId?: string;
   readonly onSelect?: (selectionId: string) => void;
 }) {
@@ -680,6 +726,7 @@ function FareCarousel({ itineraries, selectedSelectionId, onSelect }: {
                 <div aria-hidden="true" className="cc-carousel-slide cc-carousel-peek-slide" inert>
                   <FareCard
                     itinerary={previous}
+                    searchContext={searchContext}
                     onSelect={onSelect}
                     selected={false}
                   />
@@ -702,6 +749,7 @@ function FareCarousel({ itineraries, selectedSelectionId, onSelect }: {
             >
               <FareCard
                 itinerary={active}
+                searchContext={searchContext}
                 onSelect={onSelect}
                 selected={selectedSelectionId === active.selectionId}
               />
@@ -711,6 +759,7 @@ function FareCarousel({ itineraries, selectedSelectionId, onSelect }: {
                 <div aria-hidden="true" className="cc-carousel-slide cc-carousel-peek-slide" inert>
                   <FareCard
                     itinerary={next}
+                    searchContext={searchContext}
                     onSelect={onSelect}
                     selected={false}
                   />
@@ -927,11 +976,12 @@ export function FlightResultsView({
         {result.status === 'partial' ? <div className="cc-partial" role="status">Some provider results were incomplete. Showing only the options that could be interpreted safely.</div> : null}
         {displayMode === 'fullscreen' ? (
           <div className="cc-result-list">
-            {shown.map((itinerary) => <FareCard key={itinerary.selectionId} itinerary={itinerary} selected={selectedSelectionId === itinerary.selectionId} onSelect={onSelect} />)}
+            {shown.map((itinerary) => <FareCard key={itinerary.selectionId} itinerary={itinerary} searchContext={result.searchContext} selected={selectedSelectionId === itinerary.selectionId} onSelect={onSelect} />)}
           </div>
         ) : (
           <FareCarousel
             itineraries={shown}
+            searchContext={result.searchContext}
             onSelect={onSelect}
             selectedSelectionId={selectedSelectionId}
           />

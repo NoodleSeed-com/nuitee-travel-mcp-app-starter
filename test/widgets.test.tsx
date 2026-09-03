@@ -98,6 +98,21 @@ const itinerary = {
   messages: ['Fictional fixture fare; not live inventory.'],
 };
 
+// A carrier with a curated accent (unlike the shared `itinerary` fixture
+// above, whose ZZ code is deliberately unmapped) so tests can assert the
+// `--cc-carrier-accent` custom property is actually emitted.
+const sampleSearchOutput = {
+  status: 'success' as const,
+  itineraries: [{ ...itinerary, carrier: { name: 'Nuitee Air', code: 'ND' } }],
+  fallback: 'One flight',
+  message: 'One flight',
+  retrievedAt: itinerary.retrievedAt,
+  searchContext: {
+    origin: 'QZX', destination: 'QZY', departureDate: '2030-04-20', adults: 1, children: 0, infants: 0,
+    childrenAges: [], infantAges: [], cabinClass: 'ECONOMY' as const, currency: 'CAD', country: 'CA',
+  },
+};
+
 describe('TravelHome', () => {
   it('shows familiar editable flight fields, one available domain, and noninteractive coming-soon domains', () => {
     const html = renderToStaticMarkup(<TravelHomeView data={home} theme="light" onSearchPrompt={vi.fn()} />);
@@ -673,7 +688,7 @@ describe('FlightResults', () => {
     expect(css).toMatch(/\.cc-fare-face\s*\{[^}]*grid-area:\s*1\s*\/\s*1/s);
     expect(css).toMatch(/\.cc-fare-face\s*\{[^}]*transition:/s);
     expect(css).toMatch(/\.cc-fare-card-details\s*\{[^}]*background:/s);
-    expect(css).toMatch(/\.cc-carousel-slide\s*>\s*\.cc-fare-card\s*\{[^}]*min-block-size:\s*(?:30|31|32)rem/s);
+    expect(css).toMatch(/\.cc-carousel-slide\s*>\s*\.cc-fare-card\s*\{[^}]*min-block-size:\s*(?:39|40|41)rem/s);
     expect(css).toContain('var(--cc-carrier-accent, var(--cc-accent))');
     expect(css).toMatch(/\.cc-fare-back-header\s*\{[^}]*grid-template-columns:/s);
     expect(css).toMatch(/\.cc-fare-back-button\s*\{[^}]*border:\s*0/s);
@@ -689,5 +704,28 @@ describe('FlightResults', () => {
     expect(editorSource).not.toContain('<form');
     expect(homeSource).toContain('useWidgetReady()');
     expect(resultsSource).toContain('useWidgetReady()');
+  });
+
+  describe('boarding-pass fare card', () => {
+    it('brackets the route strip with dashed rules', () => {
+      const html = renderToStaticMarkup(
+        <FlightResultsView displayMode="inline" result={sampleSearchOutput} onVerify={vi.fn()} />,
+      );
+      expect(html).toContain('cc-route-strip');
+    });
+
+    it('renders the fare card on the shared card shell', () => {
+      const html = renderToStaticMarkup(
+        <FlightResultsView displayMode="inline" result={sampleSearchOutput} onVerify={vi.fn()} />,
+      );
+      expect(html).toMatch(/class="[^"]*cc-card[^"]*cc-fare-card/);
+    });
+
+    it('keeps the per-carrier accent custom property', () => {
+      const html = renderToStaticMarkup(
+        <FlightResultsView displayMode="inline" result={sampleSearchOutput} onVerify={vi.fn()} />,
+      );
+      expect(html).toContain('--cc-carrier-accent');
+    });
   });
 });
