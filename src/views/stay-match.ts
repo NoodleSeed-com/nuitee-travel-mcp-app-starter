@@ -31,6 +31,7 @@ export function computeStayMatch(
   hotel: DemoHotel,
   all: readonly DemoHotel[],
   requestedAmenities: readonly string[] = [],
+  locale = 'en-CA',
 ): StayMatch {
   const lines: MatchLine[] = [];
   const weights: number[] = [];
@@ -49,8 +50,8 @@ export function computeStayMatch(
     key: 'price',
     label: 'Price',
     detail: hasRange
-      ? `${formatAmount(total, hotel.staySubtotal.currency)} of ${formatAmount(low, hotel.staySubtotal.currency)}–${formatAmount(high, hotel.staySubtotal.currency)}`
-      : `${formatAmount(total, hotel.staySubtotal.currency)} total`,
+      ? `${formatAmount(total, hotel.staySubtotal.currency, locale)} of ${formatAmount(low, hotel.staySubtotal.currency, locale)}–${formatAmount(high, hotel.staySubtotal.currency, locale)}`
+      : `${formatAmount(total, hotel.staySubtotal.currency, locale)} total`,
     status: priceWeight >= 0.5 ? 'ok' : 'partial',
   });
   weights.push(priceWeight);
@@ -85,7 +86,7 @@ export function computeStayMatch(
       label: 'Rating',
       detail: reviewCount === undefined
         ? `${reviewScore.toFixed(1)} guest rating`
-        : `${reviewScore.toFixed(1)} from ${reviewCount.toLocaleString('en')} reviews`,
+        : `${reviewScore.toFixed(1)} from ${reviewCount.toLocaleString(locale)} reviews`,
       status: reviewScore >= 8 ? 'ok' : 'partial',
     });
     weights.push(Math.min(1, Math.max(0, reviewScore / 10)));
@@ -118,9 +119,9 @@ export function computeStayMatch(
   return { score: Math.round(Math.min(100, Math.max(0, mean * 100))), lines };
 }
 
-function formatAmount(amount: number, currency: string): string {
+function formatAmount(amount: number, currency: string, locale: string): string {
   try {
-    return new Intl.NumberFormat('en-CA', {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
       maximumFractionDigits: 0,

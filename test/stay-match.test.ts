@@ -101,4 +101,33 @@ describe('computeStayMatch', () => {
     expect(match.score).toBeGreaterThanOrEqual(0);
     expect(match.score).toBeLessThanOrEqual(100);
   });
+
+  it('formats the price line in the passed locale rather than a hardcoded en-CA', () => {
+    const stay = hotel({ staySubtotal: { amount: 1716, currency: 'CAD' } });
+    const defaultLocale = computeStayMatch(stay, [stay]);
+    const frCA = computeStayMatch(stay, [stay], undefined, 'fr-CA');
+    const defaultPrice = defaultLocale.lines.find((line) => line.key === 'price')?.detail;
+    const frPrice = frCA.lines.find((line) => line.key === 'price')?.detail;
+    expect(defaultPrice).toBeDefined();
+    expect(frPrice).toBeDefined();
+    expect(frPrice).not.toBe(defaultPrice);
+  });
+
+  it('defaults to en-CA when no locale is passed, keeping existing callers unaffected', () => {
+    const stay = hotel({ staySubtotal: { amount: 1716, currency: 'CAD' } });
+    const noLocaleArg = computeStayMatch(stay, [stay]);
+    const explicitEnCA = computeStayMatch(stay, [stay], undefined, 'en-CA');
+    expect(noLocaleArg.lines.find((line) => line.key === 'price')?.detail)
+      .toBe(explicitEnCA.lines.find((line) => line.key === 'price')?.detail);
+  });
+
+  it('formats the review count in the passed locale rather than a hardcoded "en"', () => {
+    const rated = hotel({ reviewScore: 8.9, reviewCount: 1204 } as Partial<DemoHotel>);
+    const frCA = computeStayMatch(rated, [rated], undefined, 'fr-CA');
+    const rating = frCA.lines.find((line) => line.key === 'rating')?.detail;
+    expect(rating).toContain('8.9');
+    // fr-CA groups thousands with a space, not a comma.
+    expect(rating).toContain('204');
+    expect(rating).not.toContain('1,204');
+  });
 });

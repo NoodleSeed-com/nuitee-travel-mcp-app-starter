@@ -18,7 +18,7 @@ import {
   useWidgetReady,
 } from '../helpers.js';
 import { Badge, MatchDetail, MatchRing, PhotoBand, Price, Rail, ScorePin } from './card-primitives.js';
-import { CheckIcon, StarIcon, TagIcon } from './icons.js';
+import { BedIcon, CheckIcon, StarIcon, TagIcon } from './icons.js';
 import { computeStayMatch } from './stay-match.js';
 import './travel.css';
 
@@ -198,14 +198,14 @@ function HotelCard({ hotel, allHotels, locale, selected, pending, onAdd }: {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const matchDetailsId = useId();
   const hotelDetailsId = useId();
-  const match = computeStayMatch(hotel, allHotels);
+  const match = computeStayMatch(hotel, allHotels, undefined, locale);
   const reviewScore = (hotel as { reviewScore?: number }).reviewScore;
   const imageUrl = (hotel as { imageUrl?: string }).imageUrl;
   const flexible = hotel.policySummary.toLowerCase().includes('flexible');
 
   return (
     <article className={`cc-card cc-hotel-card ${selected ? 'cc-hotel-card-selected' : ''}`}>
-      <PhotoBand imageUrl={imageUrl} name={hotel.name}>
+      <PhotoBand glyph={<BedIcon />} imageUrl={imageUrl} name={hotel.name}>
         <ScorePin score={reviewScore} />
       </PhotoBand>
       <div className="cc-hotel-body">
@@ -240,6 +240,7 @@ function HotelCard({ hotel, allHotels, locale, selected, pending, onAdd }: {
           perNight={hotel.nightlyPrice.amount}
           total={hotel.staySubtotal.amount}
         />
+        <small className="cc-price-note">Illustrative subtotal · taxes and fees not included</small>
         <button
           aria-controls={hotelDetailsId}
           aria-expanded={detailsOpen}

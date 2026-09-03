@@ -71,6 +71,32 @@ describe('PhotoBand', () => {
     expect(decorStart).toBeGreaterThan(-1);
     expect(buttonAt).toBeGreaterThan(decorEnd);
   });
+
+  it('centers the category glyph on the gradient when no image is available', () => {
+    const html = renderToStaticMarkup(
+      <PhotoBand glyph={<span data-testid="glyph-mark">bed</span>} name="Tagus Lantern Hotel" />,
+    );
+    expect(html).toContain('cc-photo-glyph');
+    expect(html).toContain('glyph-mark');
+  });
+
+  it('never shows the glyph once a real photo is available', () => {
+    const html = renderToStaticMarkup(
+      <PhotoBand
+        glyph={<span data-testid="glyph-mark">bed</span>}
+        imageUrl="https://snaphotelapi.com/a.jpg"
+        name="Tagus Lantern Hotel"
+      />,
+    );
+    expect(html).toContain('<img');
+    expect(html).not.toContain('cc-photo-glyph');
+    expect(html).not.toContain('glyph-mark');
+  });
+
+  it('renders no glyph wrapper when neither an image nor a glyph is supplied', () => {
+    const html = renderToStaticMarkup(<PhotoBand name="Tagus Lantern Hotel" />);
+    expect(html).not.toContain('cc-photo-glyph');
+  });
 });
 
 describe('Price', () => {
@@ -89,6 +115,16 @@ describe('Rail', () => {
     expect(html).toContain('aria-label="Stays"');
     expect(html).toContain('cc-rail-arrow-prev');
     expect(html).toContain('cc-rail-arrow-next');
+  });
+
+  it('exposes role="group" so the aria-label is announced, not ignored', () => {
+    // aria-label on an implicit role=generic element (a bare <div>) is
+    // dropped by assistive tech; role="group" gives it a labellable role.
+    const html = renderToStaticMarkup(<Rail ariaLabel="Stays"><div>card</div></Rail>);
+    const railOpenTag = html.match(/<div[^>]*class="cc-rail"[^>]*>/u)?.[0] ?? '';
+    expect(railOpenTag).not.toBe('');
+    expect(railOpenTag).toContain('role="group"');
+    expect(railOpenTag).toContain('aria-label="Stays"');
   });
 });
 

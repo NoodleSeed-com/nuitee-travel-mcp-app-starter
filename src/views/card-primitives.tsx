@@ -26,11 +26,13 @@ export function gradientForName(name: string): string {
 export function PhotoBand({
   name,
   imageUrl,
+  glyph,
   height = 152,
   children,
 }: {
   readonly name: string;
   readonly imageUrl?: string;
+  readonly glyph?: ReactNode;
   readonly height?: number;
   readonly children?: ReactNode;
 }) {
@@ -38,24 +40,31 @@ export function PhotoBand({
     <div className="cc-photo-band" style={{ height: `${height}px` }}>
       {/* Decoration only. The band's meaning is carried by the hotel name
           beside it, so the gradient and photo are hidden — but children
-          (score pin, compare control) must stay in the a11y tree. */}
+          (score pin, compare control) must stay in the a11y tree. When
+          there is no photo, a low-opacity category glyph is centred on the
+          gradient so the band reads as a deliberate treatment rather than a
+          broken image. */}
       <div
         aria-hidden="true"
         className="cc-photo-decor"
         style={{ background: gradientForName(name) }}
       >
-        {imageUrl ? <img alt="" className="cc-photo-image" loading="lazy" src={imageUrl} /> : null}
+        {imageUrl
+          ? <img alt="" className="cc-photo-image" loading="lazy" src={imageUrl} />
+          : glyph
+            ? <span className="cc-photo-glyph">{glyph}</span>
+            : null}
       </div>
       {children}
     </div>
   );
 }
 
-export function ScorePin({ score, small = false }: { readonly score?: number; readonly small?: boolean }) {
+export function ScorePin({ score }: { readonly score?: number }) {
   if (score === undefined) return null;
   const rounded = Math.round(score * 10) / 10;
   return (
-    <span className={`cc-score-pin${small ? ' cc-score-pin-sm' : ''}`}>
+    <span className="cc-score-pin">
       <span aria-hidden="true">{rounded.toFixed(1)}</span>
       <span className="cc-visually-hidden">Guest rating {rounded.toFixed(1)} out of 10</span>
     </span>
@@ -114,7 +123,7 @@ export function Rail({ ariaLabel, children }: { readonly ariaLabel: string; read
   };
   return (
     <div className="cc-rail-outer">
-      <div aria-label={ariaLabel} className="cc-rail" ref={railRef} tabIndex={0}>
+      <div aria-label={ariaLabel} className="cc-rail" ref={railRef} role="group" tabIndex={0}>
         {children}
       </div>
       <button
