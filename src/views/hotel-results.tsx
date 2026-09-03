@@ -18,7 +18,7 @@ import {
   useWidgetReady,
 } from '../helpers.js';
 import { Badge, MatchDetail, MatchRing, PhotoBand, Price, Rail, ScorePin } from './card-primitives.js';
-import { StarIcon } from './icons.js';
+import { CheckIcon, StarIcon, TagIcon } from './icons.js';
 import { computeStayMatch } from './stay-match.js';
 import './travel.css';
 
@@ -123,32 +123,26 @@ function DemoDisclosure({ text }: { readonly text: string }) {
 function HotelSkeletonCard() {
   return (
     <article className="cc-hotel-card cc-hotel-skeleton-card" aria-hidden="true">
-      <div className="cc-hotel-visual cc-hotel-skeleton-visual">
+      <div className="cc-photo-band cc-hotel-skeleton-band">
         <span className="cc-skeleton-block cc-shimmer" />
       </div>
-      <div className="cc-hotel-face cc-hotel-face-front">
-        <header className="cc-hotel-card-header">
+      <div className="cc-hotel-body">
+        <div className="cc-hotel-title-row">
           <div>
-            <span className="cc-skeleton-block cc-shimmer" />
-            <span className="cc-skeleton-block cc-shimmer" />
+            <span className="cc-skeleton-block cc-shimmer cc-hotel-skeleton-name" />
+            <span className="cc-skeleton-block cc-shimmer cc-hotel-skeleton-category" />
           </div>
-          <span className="cc-skeleton-block cc-shimmer" />
-        </header>
-        <div className="cc-hotel-room-summary">
-          <span className="cc-skeleton-block cc-shimmer" />
-          <span className="cc-skeleton-block cc-shimmer" />
+          <span className="cc-skeleton-block cc-shimmer cc-hotel-skeleton-ring" />
         </div>
-        <div className="cc-hotel-amenities">
-          {[0, 1, 2].map((index) => <span className="cc-skeleton-block cc-shimmer" key={index} />)}
+        <span className="cc-skeleton-block cc-shimmer cc-hotel-skeleton-hood" />
+        <div className="cc-card-badges">
+          <span className="cc-skeleton-block cc-shimmer cc-hotel-skeleton-badge" />
+          <span className="cc-skeleton-block cc-shimmer cc-hotel-skeleton-badge" />
         </div>
+        <span className="cc-skeleton-block cc-shimmer cc-hotel-skeleton-amenity" />
+        <span className="cc-skeleton-block cc-shimmer cc-hotel-skeleton-price" />
         <span className="cc-skeleton-block cc-shimmer cc-hotel-skeleton-details" />
-        <footer className="cc-hotel-card-footer">
-          <div>
-            <span className="cc-skeleton-block cc-shimmer" />
-            <span className="cc-skeleton-block cc-shimmer" />
-          </div>
-          <span className="cc-skeleton-block cc-shimmer" />
-        </footer>
+        <span className="cc-skeleton-block cc-shimmer cc-hotel-skeleton-action" />
       </div>
     </article>
   );
@@ -176,19 +170,13 @@ function HotelLoading({ theme, brandStyle }: {
           <span className="cc-skeleton-block cc-shimmer" />
           <span className="cc-skeleton-block cc-shimmer" />
         </div>
-        <div className="cc-hotel-carousel cc-hotel-carousel-inline" aria-hidden="true">
-          <div className="cc-hotel-carousel-stage">
-            <span className="cc-hotel-carousel-arrow cc-hotel-carousel-arrow-previous" />
-            <div className="cc-hotel-carousel-window">
-              <div className="cc-hotel-carousel-track">
-                <div className="cc-hotel-carousel-slide"><HotelSkeletonCard /></div>
-                <div className="cc-hotel-carousel-peek-shell">
-                  <div className="cc-hotel-carousel-slide cc-hotel-carousel-peek-slide"><HotelSkeletonCard /></div>
-                </div>
-              </div>
-            </div>
-            <span className="cc-hotel-carousel-arrow cc-hotel-carousel-arrow-next" />
+        <div className="cc-rail-outer" aria-hidden="true">
+          <div className="cc-rail">
+            <HotelSkeletonCard />
+            <HotelSkeletonCard />
           </div>
+          <span className="cc-rail-arrow cc-rail-arrow-prev" />
+          <span className="cc-rail-arrow cc-rail-arrow-next" />
         </div>
       </section>
     </Frame>
@@ -203,8 +191,10 @@ function HotelCard({ hotel, allHotels, locale, selected, pending, onAdd }: {
   readonly pending: boolean;
   readonly onAdd?: (selectionId: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const detailsId = useId();
+  const [matchOpen, setMatchOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const matchDetailsId = useId();
+  const hotelDetailsId = useId();
   const match = computeStayMatch(hotel, allHotels);
   const reviewScore = (hotel as { reviewScore?: number }).reviewScore;
   const imageUrl = (hotel as { imageUrl?: string }).imageUrl;
@@ -224,10 +214,10 @@ function HotelCard({ hotel, allHotels, locale, selected, pending, onAdd }: {
             </span>
           </div>
           <button
-            aria-controls={detailsId}
-            aria-expanded={open}
+            aria-controls={matchDetailsId}
+            aria-expanded={matchOpen}
             className="cc-ring-btn"
-            onClick={() => setOpen((value) => !value)}
+            onClick={() => setMatchOpen((value) => !value)}
             type="button"
           >
             <MatchRing score={match.score} />
@@ -247,8 +237,16 @@ function HotelCard({ hotel, allHotels, locale, selected, pending, onAdd }: {
           perNight={hotel.nightlyPrice.amount}
           total={hotel.staySubtotal.amount}
         />
+        <button
+          aria-controls={hotelDetailsId}
+          aria-expanded={detailsOpen}
+          className="cc-hotel-details-toggle"
+          onClick={() => setDetailsOpen((value) => !value)}
+          type="button"
+        >
+          <TagIcon />Hotel and rate details
+        </button>
         <div className="cc-hotel-actions">
-          <Action disabled title="Arrives with live stays" variant="secondary">Details</Action>
           {onAdd ? (
             <Action
               aria-label={`Add ${hotel.name} to trip`}
@@ -264,16 +262,27 @@ function HotelCard({ hotel, allHotels, locale, selected, pending, onAdd }: {
           ) : null}
         </div>
       </div>
-      {open ? (
-        <div id={detailsId}>
-          <MatchDetail
-            footnote={reviewScore === undefined
-              ? 'Computed from returned search fields. Guest rating omitted — not returned.'
-              : 'Computed from returned search fields.'}
-            match={match}
-          />
+      <div className="cc-match-detail-panel" hidden={!matchOpen} id={matchDetailsId}>
+        <MatchDetail
+          footnote={reviewScore === undefined
+            ? 'Computed from returned search fields. Guest rating omitted — not returned.'
+            : 'Computed from returned search fields.'}
+          match={match}
+        />
+      </div>
+      <div className="cc-hotel-detail-content" hidden={!detailsOpen} id={hotelDetailsId}>
+        <div className="cc-hotel-detail-grid">
+          <div><span>Room</span><strong>{hotel.roomName}</strong></div>
+          <div><span>Stay</span><strong>{hotel.nights} night{hotel.nights === 1 ? '' : 's'} · {hotel.rooms} room{hotel.rooms === 1 ? '' : 's'}</strong></div>
+          <div><span>Location</span><strong>{hotel.neighborhood}</strong></div>
+          <div><span>Taxes and fees</span><strong>Not included in subtotal</strong></div>
         </div>
-      ) : null}
+        <p>{hotel.description}</p>
+        <ul className="cc-hotel-detail-amenities" aria-label="Synthetic hotel amenities">
+          {hotel.amenities.map((amenity) => <li key={amenity}><CheckIcon />{amenity}</li>)}
+        </ul>
+        <p className="cc-hotel-policy">{hotel.illustrativePolicy}</p>
+      </div>
     </article>
   );
 }
