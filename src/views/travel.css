@@ -2052,12 +2052,12 @@
   --cc-shadow-card-hover:
     0 8px 24px -6px color-mix(in srgb, var(--cc-accent) 18%, transparent),
     0 2px 6px rgb(25 32 43 / 0.06);
+  /* Deepened from the reference's #10961d: our canvas is warm cream, where
+     that green falls below 4.5:1 for the score pin's small bold numerals. */
   --cc-good: #1a7f37;
   --cc-rail-gap: 14px;
 }
 
-/* Deepened from the reference's #10961d: our canvas is warm cream, where
-   that green falls below 4.5:1 for the score pin's small bold numerals. */
 .cc-theme-dark {
   --cc-good: #5fc47c;
   --cc-shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 1px 3px rgb(0 0 0 / 0.36);
@@ -2100,12 +2100,12 @@
   scroll-snap-align: start;
 }
 
-/* Overrides the global `.cc-app button { min-height: 44px; min-width: 44px }`
-   rule down to 36px: at 44px the overlay arrows would be too large for the
-   card gutter. This is the one deliberate exception — the arrows duplicate
-   scroll behaviour that is already reachable by keyboard and touch, so they
-   are not the sole path to any content. */
-.cc-rail-arrow {
+/* Specificity note: `.cc-app button` is (0,1,1), so a bare `.cc-rail-arrow`
+   (0,1,0) would LOSE to the global 44px tap-target minimum no matter the
+   source order. `.cc-app .cc-rail-arrow` is (0,2,0) and actually wins.
+   This narrow exception is safe because the arrows duplicate scrolling that
+   is already reachable by keyboard, touch drag, and trackpad. */
+.cc-app .cc-rail-arrow {
   position: absolute;
   top: 80px;
   z-index: 10;
@@ -2126,13 +2126,13 @@
 }
 
 @media (min-width: 640px) {
-  .cc-rail-arrow {
+  .cc-app .cc-rail-arrow {
     display: grid;
   }
 }
 
-.cc-rail-arrow-prev { left: -6px; }
-.cc-rail-arrow-next { right: -6px; }
+.cc-app .cc-rail-arrow-prev { left: -6px; }
+.cc-app .cc-rail-arrow-next { right: -6px; }
 
 @media (prefers-reduced-motion: reduce) {
   .cc-rail {

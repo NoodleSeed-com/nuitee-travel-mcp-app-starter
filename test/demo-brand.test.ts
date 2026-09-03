@@ -107,6 +107,12 @@ describe('ported card design tokens', () => {
   });
 
   it('shows rail arrows only at 640px and up', () => {
-    expect(css).toMatch(/@media \(min-width: 640px\)\s*\{\s*\.cc-rail-arrow\s*\{\s*display:\s*grid/);
+    expect(css).toMatch(/@media \(min-width: 640px\)\s*\{\s*\.cc-app \.cc-rail-arrow\s*\{\s*display:\s*grid/);
+  });
+
+  it('qualifies the rail arrow so it outranks the global 44px tap target', () => {
+    // `.cc-app button` is (0,1,1); a bare `.cc-rail-arrow` is (0,1,0) and loses.
+    expect(css).toContain('.cc-app .cc-rail-arrow');
+    expect(css).not.toMatch(/^\.cc-rail-arrow\s*\{/m);
   });
 });
