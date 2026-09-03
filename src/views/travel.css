@@ -1274,16 +1274,10 @@
 .cc-hotel-empty,
 .cc-hotel-selection-status { padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--cc-accent) 7%, var(--cc-surface)); }
 
-/* min-height approximates the real, rendered content height (disclosure +
-   toolbar + one row of the photo-led rail, with the section's own 14px
-   gaps): measured at 556px at a 900px host and 612px at a 320px host —
-   real width shrinks the card's fixed 268px width not at all, but the
-   disclosure/toolbar rows wrap more at narrow widths, so this is a single
-   flat value in between rather than a per-breakpoint tune. Either way it
-   is far closer to reality than the flip-card-era 610px it replaces, which
-   predates the Rail and no longer corresponds to anything this state
-   turns into. */
-.cc-hotel-skeleton { display: grid; gap: 14px; min-height: 590px; }
+/* No fixed min-height: the skeleton mirrors the real card's structure, so it
+   sizes itself and tracks the loaded layout across viewport widths. A constant
+   here cannot work — real content measures 571px at 900w but 656px at 320w. */
+.cc-hotel-skeleton { display: grid; gap: 14px; }
 .cc-hotel-skeleton-disclosure .cc-skeleton-block:first-child { width: 128px; height: 24px; }
 .cc-hotel-skeleton-disclosure .cc-skeleton-block:last-child { width: 100%; height: 30px; }
 .cc-hotel-skeleton .cc-hotel-results-toolbar .cc-skeleton-block:first-child { width: min(42%, 180px); height: 18px; }
@@ -1298,7 +1292,9 @@
 .cc-hotel-skeleton-card .cc-hotel-title-row > div { display: grid; gap: 4px; }
 .cc-hotel-skeleton-name { width: 72%; height: 17px; }
 .cc-hotel-skeleton-category { width: 38%; height: 13px; }
-.cc-hotel-skeleton-ring { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 999px; }
+.cc-hotel-skeleton-ring-wrap { display: grid; justify-items: center; gap: 3px; flex: 0 0 auto; }
+.cc-hotel-skeleton-ring { width: 42px; height: 42px; border-radius: 999px; }
+.cc-hotel-skeleton-ring-cap { width: 30px; height: 8px; }
 .cc-hotel-skeleton-hood { width: 82%; }
 .cc-hotel-skeleton-badge { width: 74px; height: 20px; border-radius: 999px; }
 .cc-hotel-skeleton-amenity { width: 90%; }
