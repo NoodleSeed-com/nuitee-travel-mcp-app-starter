@@ -1159,11 +1159,7 @@
   background: color-mix(in srgb, var(--cc-accent) 7%, var(--cc-surface));
 }
 
-.cc-hotel-results-toolbar,
-.cc-hotel-carousel-controls,
-.cc-hotel-card-header,
-.cc-hotel-card-footer,
-.cc-hotel-detail-header {
+.cc-hotel-results-toolbar {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -1171,63 +1167,8 @@
 }
 .cc-hotel-results-toolbar > div { display: grid; gap: 3px; }
 .cc-hotel-results-toolbar span,
-.cc-hotel-card-header p,
-.cc-hotel-card-footer span,
-.cc-hotel-card-footer small,
-.cc-hotel-detail-header span,
 .cc-hotel-detail-content > p { color: var(--cc-muted); }
 .cc-hotel-results-toolbar span { font-size: 0.8rem; }
-.cc-hotel-carousel { display: grid; gap: 8px; min-width: 0; }
-.cc-hotel-carousel-controls { justify-content: flex-end; color: var(--cc-muted); font-size: 0.78rem; }
-.cc-hotel-carousel-stage { position: relative; min-width: 0; padding-inline: 34px; }
-.cc-hotel-carousel-window { width: 100%; overflow: clip; }
-.cc-hotel-carousel-track { display: flex; gap: 12px; width: 100%; min-width: 0; }
-.cc-hotel-carousel-slide { flex: 0 0 calc(84% - 6px); min-width: 0; }
-.cc-hotel-carousel-expanded .cc-hotel-carousel-slide { flex-basis: calc(76.923% - 6px); }
-.cc-hotel-carousel-peek-shell {
-  position: relative;
-  flex: 1 1 0;
-  min-width: 0;
-  overflow: clip;
-}
-.cc-hotel-carousel-peek-shell .cc-hotel-carousel-peek-slide {
-  width: 525%;
-  max-width: none;
-}
-.cc-hotel-carousel-expanded .cc-hotel-carousel-peek-shell .cc-hotel-carousel-peek-slide { width: 333.333%; }
-.cc-hotel-carousel-previous-peek-shell .cc-hotel-carousel-peek-slide { transform: translateX(-81%); }
-.cc-hotel-carousel-expanded .cc-hotel-carousel-previous-peek-shell .cc-hotel-carousel-peek-slide { transform: translateX(-70%); }
-.cc-hotel-carousel-peek-hit-target {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-}
-.cc-hotel-carousel-arrow {
-  position: absolute;
-  z-index: 4;
-  top: 50%;
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  min-width: 48px;
-  padding: 0;
-  border: 1px solid var(--cc-border);
-  border-radius: 50%;
-  color: var(--cc-text);
-  background: var(--cc-surface);
-  box-shadow: 0 10px 28px color-mix(in srgb, var(--cc-text) 13%, transparent);
-  transform: translateY(-50%);
-}
-.cc-hotel-carousel-arrow:disabled { opacity: 0.34; cursor: not-allowed; }
-.cc-hotel-carousel-arrow-previous { left: 8px; }
-.cc-hotel-carousel-arrow-next { right: 8px; }
-.cc-hotel-carousel-arrow-next .cc-icon { transform: rotate(180deg); }
 
 /* Qualified with .cc-app (0,2,0) rather than left bare (0,1,0): .cc-card
    (Task 1/2's shared shell, appended later in this file) sets the same
@@ -1247,43 +1188,6 @@
    state cue, and at equal specificity .cc-card's later border shorthand
    would otherwise blank it out silently. */
 .cc-app .cc-hotel-card-selected { border-color: color-mix(in srgb, var(--cc-accent) 70%, var(--cc-border)); }
-.cc-hotel-visual {
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  min-height: 104px;
-  padding: 16px;
-  overflow: hidden;
-  color: var(--cc-surface);
-  background:
-    radial-gradient(circle at 78% 18%, color-mix(in srgb, var(--cc-surface) 24%, transparent), transparent 31%),
-    linear-gradient(130deg, color-mix(in srgb, var(--cc-accent) 76%, #071d29), var(--cc-accent));
-}
-.cc-hotel-visual::after {
-  content: '';
-  position: absolute;
-  inset: auto -10% -45% 28%;
-  height: 100%;
-  border: 1px solid color-mix(in srgb, var(--cc-surface) 32%, transparent);
-  border-radius: 50% 50% 0 0;
-  transform: rotate(-8deg);
-}
-.cc-hotel-visual .cc-icon { width: 26px; height: 26px; }
-.cc-hotel-visual span { position: relative; z-index: 1; font-weight: 740; }
-.cc-hotel-face-stack { display: grid; }
-.cc-hotel-face {
-  grid-area: 1 / 1;
-  display: grid;
-  grid-template-rows: auto auto auto auto 1fr;
-  gap: 14px;
-  min-height: 430px;
-  padding: clamp(16px, 3.5vw, 22px);
-  background: var(--cc-surface);
-}
-.cc-hotel-face-is-hidden { visibility: hidden; pointer-events: none; }
-.cc-hotel-card-header > div { display: grid; gap: 4px; }
-.cc-hotel-card-header h3 { font-size: 1.08rem; }
 .cc-hotel-category {
   display: inline-flex;
   gap: 5px;
@@ -1292,17 +1196,6 @@
   color: var(--cc-accent);
   font-weight: 740;
 }
-.cc-hotel-room-summary {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  padding: 12px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--cc-text) 4%, var(--cc-surface));
-}
-.cc-hotel-room-summary > div { display: grid; gap: 2px; }
-.cc-hotel-room-summary span { color: var(--cc-muted); font-size: 0.75rem; }
-.cc-hotel-amenities,
 .cc-hotel-detail-amenities {
   display: flex;
   flex-wrap: wrap;
@@ -1311,7 +1204,6 @@
   margin: 0;
   list-style: none;
 }
-.cc-hotel-amenities li,
 .cc-hotel-detail-amenities li {
   display: inline-flex;
   align-items: center;
@@ -1322,8 +1214,7 @@
   background: color-mix(in srgb, var(--cc-text) 5%, var(--cc-surface));
   font-size: 0.76rem;
 }
-.cc-hotel-details-toggle,
-.cc-hotel-back-button {
+.cc-hotel-details-toggle {
   width: fit-content;
   padding: 7px 2px;
   border: 0;
@@ -1332,17 +1223,24 @@
   cursor: pointer;
   font-weight: 700;
 }
-.cc-hotel-card-footer {
-  align-items: end;
-  align-self: end;
-  padding-top: 14px;
+/* Sits directly in the card now (no longer inside a padded flip-face
+   wrapper), so it needs its own inset — matching .cc-match-detail's
+   treatment keeps the two disclosure panels visually consistent. */
+.cc-hotel-detail-content {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  padding: 13px;
   border-top: 1px solid var(--cc-border);
+  background: color-mix(in srgb, var(--cc-text) 3%, var(--cc-surface));
 }
-.cc-hotel-card-footer > div { display: grid; gap: 3px; }
-.cc-hotel-card-footer strong { font-size: 1.28rem; }
-.cc-hotel-detail-header { align-items: center; }
-.cc-hotel-detail-header > div { display: grid; gap: 2px; }
-.cc-hotel-detail-content { display: grid; gap: 14px; align-content: start; }
+/* An author `display` rule on the same element beats the UA stylesheet's
+   `[hidden] { display: none }` regardless of specificity (origin, not
+   specificity, decides that contest) — so the `display: grid` above would
+   silently defeat the `hidden` attribute and show the panel while
+   collapsed. Same fix already applied to .cc-review-secondary[hidden]
+   above for the identical reason. */
+.cc-hotel-detail-content[hidden] { display: none; }
 .cc-hotel-detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1376,27 +1274,37 @@
 .cc-hotel-empty,
 .cc-hotel-selection-status { padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--cc-accent) 7%, var(--cc-surface)); }
 
-.cc-hotel-skeleton { display: grid; gap: 14px; min-height: 610px; }
+/* min-height approximates the real, rendered content height (disclosure +
+   toolbar + one row of the photo-led rail, with the section's own 14px
+   gaps): measured at 556px at a 900px host and 612px at a 320px host —
+   real width shrinks the card's fixed 268px width not at all, but the
+   disclosure/toolbar rows wrap more at narrow widths, so this is a single
+   flat value in between rather than a per-breakpoint tune. Either way it
+   is far closer to reality than the flip-card-era 610px it replaces, which
+   predates the Rail and no longer corresponds to anything this state
+   turns into. */
+.cc-hotel-skeleton { display: grid; gap: 14px; min-height: 590px; }
 .cc-hotel-skeleton-disclosure .cc-skeleton-block:first-child { width: 128px; height: 24px; }
 .cc-hotel-skeleton-disclosure .cc-skeleton-block:last-child { width: 100%; height: 30px; }
 .cc-hotel-skeleton .cc-hotel-results-toolbar .cc-skeleton-block:first-child { width: min(42%, 180px); height: 18px; }
 .cc-hotel-skeleton .cc-hotel-results-toolbar .cc-skeleton-block:last-child { width: 110px; height: 24px; }
-.cc-hotel-skeleton-visual { min-height: 104px; padding: 0; background: color-mix(in srgb, var(--cc-text) 8%, var(--cc-surface)); }
-.cc-hotel-skeleton-visual::after { display: none; }
-.cc-hotel-skeleton-visual .cc-skeleton-block { width: 100%; height: 104px; border-radius: 0; }
-.cc-hotel-skeleton-card .cc-hotel-card-header > div { display: grid; gap: 8px; width: 70%; }
-.cc-hotel-skeleton-card .cc-hotel-card-header > div .cc-skeleton-block:first-child { width: 44%; height: 22px; }
-.cc-hotel-skeleton-card .cc-hotel-card-header > div .cc-skeleton-block:last-child { width: 100%; height: 18px; }
-.cc-hotel-skeleton-card .cc-hotel-card-header > .cc-skeleton-block { width: 58px; height: 22px; }
-.cc-hotel-skeleton-card .cc-hotel-room-summary { display: grid; gap: 8px; }
-.cc-hotel-skeleton-card .cc-hotel-room-summary .cc-skeleton-block:first-child { width: 38%; }
-.cc-hotel-skeleton-card .cc-hotel-room-summary .cc-skeleton-block:last-child { width: 72%; height: 16px; }
-.cc-hotel-skeleton-card .cc-hotel-amenities .cc-skeleton-block { width: 82px; height: 28px; }
+
+/* Skeleton card: mirrors the real HotelCard's photo band + body sections
+   one-for-one (same .cc-photo-band/.cc-hotel-body/.cc-hotel-title-row/
+   .cc-card-badges classes as the real card, so it inherits the same box
+   model and only needs its own block sizes below). */
+.cc-hotel-skeleton-band { height: 152px; padding: 0; background: color-mix(in srgb, var(--cc-text) 8%, var(--cc-surface)); }
+.cc-hotel-skeleton-band .cc-skeleton-block { width: 100%; height: 100%; border-radius: 0; }
+.cc-hotel-skeleton-card .cc-hotel-title-row > div { display: grid; gap: 4px; }
+.cc-hotel-skeleton-name { width: 72%; height: 17px; }
+.cc-hotel-skeleton-category { width: 38%; height: 13px; }
+.cc-hotel-skeleton-ring { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 999px; }
+.cc-hotel-skeleton-hood { width: 82%; }
+.cc-hotel-skeleton-badge { width: 74px; height: 20px; border-radius: 999px; }
+.cc-hotel-skeleton-amenity { width: 90%; }
+.cc-hotel-skeleton-price { width: 46%; height: 20px; }
 .cc-hotel-skeleton-details { width: 42%; height: 16px; }
-.cc-hotel-skeleton-card .cc-hotel-card-footer > div { display: grid; gap: 8px; width: 50%; }
-.cc-hotel-skeleton-card .cc-hotel-card-footer > div .cc-skeleton-block:first-child { width: 82%; }
-.cc-hotel-skeleton-card .cc-hotel-card-footer > div .cc-skeleton-block:last-child { width: 65%; height: 22px; }
-.cc-hotel-skeleton-card .cc-hotel-card-footer > .cc-skeleton-block { width: 120px; height: 44px; border-radius: 9px; }
+.cc-hotel-skeleton-action { width: 100%; height: 40px; border-radius: 10px; }
 
 .cc-loyalty {
   overflow: hidden;
@@ -1686,12 +1594,6 @@
   .cc-carousel-track > .cc-carousel-slide,
   .cc-carousel-track > .cc-carousel-peek-shell { flex-basis: 86%; }
   .cc-carousel-track-is-last { transform: translateX(calc(-72% - 12px)); }
-  .cc-hotel-carousel-slide,
-  .cc-hotel-carousel-expanded .cc-hotel-carousel-slide { flex-basis: calc(86% - 6px); }
-  .cc-hotel-carousel-peek-shell .cc-hotel-carousel-peek-slide,
-  .cc-hotel-carousel-expanded .cc-hotel-carousel-peek-shell .cc-hotel-carousel-peek-slide { width: 614%; }
-  .cc-hotel-carousel-previous-peek-shell .cc-hotel-carousel-peek-slide,
-  .cc-hotel-carousel-expanded .cc-hotel-carousel-previous-peek-shell .cc-hotel-carousel-peek-slide { transform: translateX(-84%); }
   .cc-reward-flight-slide { flex-basis: calc(86% - 6px); }
   .cc-reward-flight-peek-shell .cc-reward-flight-peek-slide { width: 614%; }
   .cc-reward-flight-previous-peek-shell .cc-reward-flight-peek-slide { transform: translateX(-84%); }
@@ -1736,17 +1638,6 @@
   .cc-loyalty-benefits,
   .cc-loyalty-selections { grid-template-columns: 1fr; }
   .cc-hotel-results .cc-hotel-disclosure { grid-template-columns: 1fr; }
-  .cc-hotel-carousel-stage { padding-inline: 20px; }
-  .cc-hotel-carousel-slide,
-  .cc-hotel-carousel-expanded .cc-hotel-carousel-slide { flex-basis: 100%; }
-  .cc-hotel-carousel-peek-shell { display: none; }
-  .cc-hotel-carousel-arrow-previous { left: -2px; }
-  .cc-hotel-carousel-arrow-next { right: -2px; }
-  .cc-hotel-card-header,
-  .cc-hotel-card-footer,
-  .cc-hotel-detail-header { align-items: stretch; flex-direction: column; }
-  .cc-hotel-card-footer > *,
-  .cc-hotel-card-footer button { width: 100%; }
   .cc-hotel-detail-grid { grid-template-columns: 1fr; }
   .cc-reward-flight-disclosure { grid-template-columns: 1fr; }
   .cc-reward-flight-toolbar { align-items: flex-start; flex-direction: column; }
@@ -1774,8 +1665,6 @@
   .cc-loyalty-missing,
   .cc-loyalty-review,
   .cc-loyalty-hero { padding: 12px; }
-  .cc-hotel-face { min-height: 470px; padding: 12px; }
-  .cc-hotel-visual { min-height: 88px; padding: 12px; }
   .cc-reward-flight-card { padding: 12px; }
   .cc-reward-flight-points { grid-template-columns: 1fr; }
 }

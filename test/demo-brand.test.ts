@@ -125,4 +125,14 @@ describe('ported card design tokens', () => {
     expect(css).toContain('.cc-app .cc-hotel-card-selected {');
     expect(css).not.toMatch(/^\.cc-hotel-card-selected\s*\{/m);
   });
+
+  it('reasserts display:none under [hidden] for panels that also set an author display', () => {
+    // Origin beats specificity: an author `display` rule on the very same
+    // element unconditionally outranks the UA stylesheet's
+    // `[hidden] { display: none }`, regardless of selector specificity. Any
+    // selector that sets `display` AND is toggled via the `hidden`
+    // attribute needs its own `[hidden] { display: none }` reassertion, or
+    // the "collapsed" state silently renders visible.
+    expect(css).toContain('.cc-hotel-detail-content[hidden]');
+  });
 });

@@ -93,16 +93,19 @@ const render = (props: Parameters<typeof HotelResultsView>[0]) =>
 const visibleText = (markup: string) => markup.replace(/<[^>]*>/gu, ' ');
 
 describe('Wayfare illustrative hotel widget', () => {
-  it('renders a geometry-matched shimmer skeleton with a next-card peek', () => {
+  it('renders a geometry-matched shimmer skeleton mirroring the photo-led rail', () => {
     const markup = render({ state: 'loading', displayMode: 'inline', theme: 'light' });
 
     expect(markup).toContain('cc-hotel-skeleton');
     expect(markup).toContain('cc-hotel-skeleton-disclosure');
     expect(markup).toContain('cc-hotel-results-toolbar');
-    expect(markup).toContain('cc-hotel-carousel-stage');
-    expect(markup).toContain('cc-hotel-carousel-window');
-    expect(markup).toContain('cc-hotel-carousel-track');
-    expect(markup).toContain('cc-hotel-carousel-peek-slide');
+    // The loaded state is a Rail of full cards, so the skeleton reuses the
+    // same rail shell and card classes rather than the old carousel markup.
+    expect(markup).toContain('cc-rail-outer');
+    expect(markup).toContain('cc-rail-arrow-prev');
+    expect(markup).toContain('cc-rail-arrow-next');
+    expect(markup).toContain('cc-photo-band');
+    expect(markup).toContain('cc-hotel-body');
     expect((markup.match(/cc-hotel-skeleton-card/g) ?? [])).toHaveLength(2);
     expect(markup).toContain('cc-hotel-skeleton-details');
     expect(markup).toContain('cc-shimmer');
@@ -151,15 +154,60 @@ describe('Wayfare illustrative hotel widget', () => {
     expect(markup).not.toContain('Open the App in expanded view');
   });
 
-  it('provides a disclosable stay-match panel without exposing a transactional action', () => {
+  it('provides two disclosable panels — stay match and hotel/rate details — without a dead-end action', () => {
     const markup = render({ result: { ...result, hotels: [hotel(0)] }, displayMode: 'inline', onAdd: vi.fn() });
 
     expect(markup).toContain('cc-ring-btn');
-    expect(markup).toContain('aria-expanded="false"');
-    expect(markup).toMatch(/<button[^>]*disabled[^>]*>Details<\/button>/u);
-    expect(markup).not.toContain('cc-match-detail');
+    expect(markup).toContain('cc-hotel-details-toggle');
+    expect(markup).toContain('Hotel and rate details');
+    expect((markup.match(/aria-expanded="false"/gu) ?? [])).toHaveLength(2);
+    expect(markup).not.toMatch(/disabled[^>]*>Details</u);
     expect(markup).toContain('Select');
     expect(markup).not.toMatch(/Book now|Reserve now|Pay now|Redeem now|Checkout/iu);
+  });
+
+  it('keeps both disclosure panels mounted (not unmounted) behind distinct aria-controls', () => {
+    const markup = render({ result: { ...result, hotels: [hotel(0)] }, displayMode: 'inline', onAdd: vi.fn() });
+
+    const ringButton = markup.match(/<button[^>]*class="cc-ring-btn"[^>]*>/u)?.[0] ?? '';
+    const detailsButton = markup.match(/<button[^>]*class="cc-hotel-details-toggle"[^>]*>/u)?.[0] ?? '';
+    const matchControls = ringButton.match(/aria-controls="([^"]+)"/u)?.[1];
+    const detailsControls = detailsButton.match(/aria-controls="([^"]+)"/u)?.[1];
+
+    expect(matchControls).toBeTruthy();
+    expect(detailsControls).toBeTruthy();
+    expect(matchControls).not.toBe(detailsControls);
+
+    // aria-controls must resolve to a real, still-mounted element — not a
+    // dangling id left over from a panel that unmounts on collapse.
+    const matchPanel = markup.match(new RegExp(`<div[^>]*id="${matchControls}"[^>]*>`, 'u'))?.[0] ?? '';
+    const detailsPanel = markup.match(new RegExp(`<div[^>]*id="${detailsControls}"[^>]*>`, 'u'))?.[0] ?? '';
+    expect(matchPanel).toContain('hidden');
+    expect(detailsPanel).toContain('hidden');
+  });
+
+  it('restores the full hotel and rate details behind the second disclosure', () => {
+    const sixAmenities = ['Breakfast preview', 'Rooftop concept', 'Wi-Fi', 'Spa access', 'Pet friendly', 'Parking included'];
+    const markup = render({
+      result: { ...result, hotels: [{ ...hotel(0), amenities: sixAmenities }] },
+      displayMode: 'inline',
+      onAdd: vi.fn(),
+    });
+
+    // The collapsed-card preview line still shows only 3.
+    expect(markup).toContain('Breakfast preview · Rooftop concept · Wi-Fi');
+    // The restored panel reaches fields the photo-led collapsed view drops:
+    // room name, stay length, the taxes disclosure, the description, and
+    // the FULL amenity list (not sliced to the 3-item preview).
+    expect(markup).toContain('Lantern king room');
+    expect(markup).toContain('3 nights · 1 room');
+    expect(markup).toContain('Taxes and fees');
+    expect(markup).toContain('Not included in subtotal');
+    expect(markup).toContain('An illustrative central stay created for a bounded comparison.');
+    for (const amenity of sixAmenities) {
+      expect(markup).toContain(amenity);
+    }
+    expect(markup).toContain('Illustrative flexible terms; no transaction can be created.');
   });
 
   it('renders pending, selected, and safe selection-error states', () => {
