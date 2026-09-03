@@ -132,7 +132,10 @@ function HotelSkeletonCard() {
             <span className="cc-skeleton-block cc-shimmer cc-hotel-skeleton-name" />
             <span className="cc-skeleton-block cc-shimmer cc-hotel-skeleton-category" />
           </div>
-          <span className="cc-skeleton-block cc-shimmer cc-hotel-skeleton-ring" />
+          <span className="cc-hotel-skeleton-ring-wrap">
+            <span className="cc-skeleton-block cc-shimmer cc-hotel-skeleton-ring" />
+            <span className="cc-skeleton-block cc-shimmer cc-hotel-skeleton-ring-cap" />
+          </span>
         </div>
         <span className="cc-skeleton-block cc-shimmer cc-hotel-skeleton-hood" />
         <div className="cc-card-badges">
