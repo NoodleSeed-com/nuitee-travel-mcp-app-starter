@@ -294,8 +294,20 @@ describe('PhotoBand', () => {
     expect(html).toContain('linear-gradient(');
   });
 
-  it('is decoration, so it is hidden from assistive technology', () => {
+  it('hides only the decorative layer from assistive technology', () => {
     expect(renderToStaticMarkup(<PhotoBand name="X" />)).toContain('aria-hidden="true"');
+  });
+
+  it('keeps children out of the aria-hidden decorative layer', () => {
+    const html = renderToStaticMarkup(
+      <PhotoBand name="Tagus Lantern Hotel">
+        <button type="button">Compare</button>
+      </PhotoBand>,
+    );
+    const decorStart = html.indexOf('cc-photo-decor');
+    const decorEnd = html.indexOf('</div>', decorStart);
+    expect(decorStart).toBeGreaterThan(-1);
+    expect(html.indexOf('<button')).toBeGreaterThan(decorEnd);
   });
 });
 
@@ -383,12 +395,18 @@ export function PhotoBand({
   readonly children?: ReactNode;
 }) {
   return (
-    <div
-      aria-hidden="true"
-      className="cc-photo-band"
-      style={{ background: gradientForName(name), height: `${height}px` }}
-    >
-      {imageUrl ? <img alt="" className="cc-photo-image" loading="lazy" src={imageUrl} /> : null}
+    <div className="cc-photo-band" style={{ height: `${height}px` }}>
+      {/* Decoration only. The band's meaning is carried by the hotel name
+          beside it, so the gradient and photo are hidden — but children
+          (score pin, compare control) must stay in the a11y tree. An
+          aria-hidden ancestor would erase them. */}
+      <div
+        aria-hidden="true"
+        className="cc-photo-decor"
+        style={{ background: gradientForName(name) }}
+      >
+        {imageUrl ? <img alt="" className="cc-photo-image" loading="lazy" src={imageUrl} /> : null}
+      </div>
       {children}
     </div>
   );
@@ -493,6 +511,8 @@ Append to `src/views/travel.css`:
   place-items: center;
   overflow: hidden;
 }
+
+.cc-photo-decor { position: absolute; inset: 0; }
 
 .cc-photo-image {
   position: absolute;
