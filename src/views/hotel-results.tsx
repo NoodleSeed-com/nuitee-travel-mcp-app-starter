@@ -1,6 +1,6 @@
 import '@fontsource-variable/inter';
 import '@noodleseed/one/react/styles.css';
-import { useEffect, useId, useState, type CSSProperties } from 'react';
+import { useId, useState, type CSSProperties } from 'react';
 import type { DemoHotel, DemoHotelSearchOutput } from '../demo-schemas.js';
 import {
   Action,
@@ -17,7 +17,9 @@ import {
   useViewState,
   useWidgetReady,
 } from '../helpers.js';
-import { ArrowLeftIcon, BedIcon, CheckIcon, StarIcon, TagIcon } from './icons.js';
+import { Badge, MatchDetail, MatchRing, PhotoBand, Price, Rail, ScorePin } from './card-primitives.js';
+import { StarIcon } from './icons.js';
+import { computeStayMatch } from './stay-match.js';
 import './travel.css';
 
 type HotelResultsState = 'loading' | 'error' | 'malformed';
@@ -109,15 +111,7 @@ export function isDemoHotelSearchOutput(value: unknown): value is DemoHotelSearc
   return result.status === 'success' ? result.hotels.length > 0 : result.hotels.length === 0;
 }
 
-function money(amount: number, currency: string, locale: string) {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: 2,
-  }).format(amount);
-}
-
-function DemoDisclosure({ text }: { readonly text: string }) {
+function HotelDisclosure({ text, live }: { readonly text: string; readonly live: boolean }) {
   return (
     <aside className="cc-demo-disclosure cc-hotel-disclosure" aria-label="Illustrative hotel data disclosure">
       <StatusBadge tone="info">Illustrative stays</StatusBadge>
@@ -201,220 +195,86 @@ function HotelLoading({ theme, brandStyle }: {
   );
 }
 
-function HotelDetails({ hotel }: { readonly hotel: DemoHotel }) {
-  return (
-    <div className="cc-hotel-detail-content">
-      <div className="cc-hotel-detail-grid">
-        <div><span>Room</span><strong>{hotel.roomName}</strong></div>
-        <div><span>Stay</span><strong>{hotel.nights} night{hotel.nights === 1 ? '' : 's'} · {hotel.rooms} room{hotel.rooms === 1 ? '' : 's'}</strong></div>
-        <div><span>Location</span><strong>{hotel.neighborhood}</strong></div>
-        <div><span>Taxes and fees</span><strong>Not included in subtotal</strong></div>
-      </div>
-      <p>{hotel.description}</p>
-      <ul className="cc-hotel-detail-amenities" aria-label="Synthetic hotel amenities">
-        {hotel.amenities.map((amenity) => <li key={amenity}><CheckIcon />{amenity}</li>)}
-      </ul>
-      <p className="cc-hotel-policy">{hotel.illustrativePolicy}</p>
-    </div>
-  );
-}
-
-function HotelCard({ hotel, locale, selected, pending, onAdd }: {
+function HotelCard({ hotel, allHotels, locale, selected, pending, onAdd }: {
   readonly hotel: DemoHotel;
+  readonly allHotels: readonly DemoHotel[];
   readonly locale: string;
   readonly selected: boolean;
   readonly pending: boolean;
   readonly onAdd?: (selectionId: string) => void;
 }) {
-  const [detailsVisible, setDetailsVisible] = useState(false);
+  const [open, setOpen] = useState(false);
   const detailsId = useId();
+  const match = computeStayMatch(hotel, allHotels);
+  const reviewScore = (hotel as { reviewScore?: number }).reviewScore;
+  const imageUrl = (hotel as { imageUrl?: string }).imageUrl;
+  const flexible = hotel.policySummary.toLowerCase().includes('flexible');
 
   return (
-    <article className={`cc-hotel-card ${selected ? 'cc-hotel-card-selected' : ''}`}>
-      <div className="cc-hotel-visual" aria-hidden="true">
-        <BedIcon />
-        <span>{hotel.city}</span>
-      </div>
-      <div className="cc-hotel-face-stack">
-        <div
-          aria-hidden={detailsVisible}
-          className={`cc-hotel-face cc-hotel-face-front ${detailsVisible ? 'cc-hotel-face-is-hidden' : ''}`}
-          inert={detailsVisible ? true : undefined}
-        >
-          <header className="cc-hotel-card-header">
-            <div>
-              <StatusBadge tone="info">Illustrative stay</StatusBadge>
-              <h3>{hotel.name}</h3>
-              <p>{hotel.neighborhood} · {hotel.city}, {hotel.countryCode}</p>
-            </div>
+    <article className={`cc-card cc-hotel-card ${selected ? 'cc-hotel-card-selected' : ''}`}>
+      <PhotoBand imageUrl={imageUrl} name={hotel.name}>
+        <ScorePin score={reviewScore} />
+      </PhotoBand>
+      <div className="cc-hotel-body">
+        <div className="cc-hotel-title-row">
+          <div>
+            <h3>{hotel.name}</h3>
             <span className="cc-hotel-category" aria-label={`${hotel.category} out of 5 concept category`}>
               <StarIcon />{hotel.category}/5
             </span>
-          </header>
-          <div className="cc-hotel-room-summary">
-            <BedIcon />
-            <div><span>Illustrative room</span><strong>{hotel.roomName}</strong></div>
           </div>
-          <ul className="cc-hotel-amenities" aria-label="Amenity highlights">
-            {hotel.amenities.slice(0, 3).map((amenity) => <li key={amenity}>{amenity}</li>)}
-          </ul>
           <button
             aria-controls={detailsId}
-            aria-expanded={false}
-            className="cc-hotel-details-toggle"
-            onClick={() => setDetailsVisible(true)}
+            aria-expanded={open}
+            className="cc-ring-btn"
+            onClick={() => setOpen((value) => !value)}
             type="button"
           >
-            <TagIcon />Hotel and rate details
+            <MatchRing score={match.score} />
           </button>
-          <footer className="cc-hotel-card-footer">
-            <div>
-              <span>{money(hotel.nightlyPrice.amount, hotel.nightlyPrice.currency, locale)} per night</span>
-              <strong>{money(hotel.staySubtotal.amount, hotel.staySubtotal.currency, locale)}</strong>
-              <small>Illustrative subtotal · taxes and fees not included</small>
-            </div>
-            {onAdd ? (
-              <Action
-                aria-label={`Add ${hotel.name} to trip`}
-                aria-pressed={selected}
-                disabled={selected}
-                pending={pending}
-                pendingLabel="Adding…"
-                onClick={() => onAdd(hotel.selectionId)}
-                variant={selected ? 'secondary' : 'primary'}
-              >
-                {selected ? 'Added to trip' : 'Add to trip'}
-              </Action>
-            ) : null}
-          </footer>
         </div>
-        <div
-          aria-hidden={!detailsVisible}
-          className={`cc-hotel-face cc-hotel-face-back ${detailsVisible ? '' : 'cc-hotel-face-is-hidden'}`}
-          id={detailsId}
-          inert={detailsVisible ? undefined : true}
-        >
-          <header className="cc-hotel-detail-header">
-            <div><span>Illustrative stay overview</span><h3>{hotel.name}</h3></div>
-            <button className="cc-hotel-back-button" onClick={() => setDetailsVisible(false)} type="button">
-              <ArrowLeftIcon />Back to hotel
-            </button>
-          </header>
-          <HotelDetails hotel={hotel} />
+        <p className="cc-hotel-hood">{hotel.neighborhood} · {hotel.city}, {hotel.countryCode}</p>
+        <div className="cc-card-badges">
+          <Badge tone={flexible ? 'good' : 'muted'}>
+            {flexible ? 'Flexible terms' : 'Terms only'}
+          </Badge>
+          <Badge tone="muted">{hotel.dataSource === 'live_nuitee' ? 'Current rate' : 'Illustrative'}</Badge>
         </div>
-      </div>
-    </article>
-  );
-}
-
-function HotelCarousel({ hotels, expanded, locale, selectedSelectionId, pendingSelectionId, onAdd }: {
-  readonly hotels: readonly DemoHotel[];
-  readonly expanded: boolean;
-  readonly locale: string;
-  readonly selectedSelectionId?: string;
-  readonly pendingSelectionId?: string;
-  readonly onAdd?: (selectionId: string) => void;
-}) {
-  const selectedIndex = selectedSelectionId
-    ? hotels.findIndex((hotel) => hotel.selectionId === selectedSelectionId)
-    : -1;
-  const [activeIndex, setActiveIndex] = useState(() => Math.max(0, selectedIndex));
-  const lastIndex = Math.max(0, hotels.length - 1);
-
-  useEffect(() => {
-    setActiveIndex((current) => selectedIndex >= 0 ? selectedIndex : Math.min(current, lastIndex));
-  }, [lastIndex, selectedIndex]);
-
-  const moveTo = (index: number) => setActiveIndex(Math.max(0, Math.min(lastIndex, index)));
-  const active = hotels[activeIndex] ?? hotels[0]!;
-  const hasPrevious = activeIndex > 0;
-  const hasNext = activeIndex < lastIndex;
-  const previousIndex = hasPrevious ? activeIndex - 1 : activeIndex;
-  const nextIndex = hasNext ? activeIndex + 1 : activeIndex;
-  const peekIndex = hasNext ? nextIndex : previousIndex;
-  const peek = hotels[peekIndex] ?? active;
-  const previousPeek = !hasNext && hasPrevious;
-
-  return (
-    <section
-      aria-label="Hotel options carousel"
-      className={`cc-hotel-carousel ${expanded ? 'cc-hotel-carousel-expanded' : 'cc-hotel-carousel-inline'}`}
-      onKeyDown={(event) => {
-        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-        event.preventDefault();
-        moveTo(activeIndex + (event.key === 'ArrowRight' ? 1 : -1));
-      }}
-    >
-      <div className="cc-hotel-carousel-controls">
-        <span aria-live="polite" role="status">Hotel {activeIndex + 1} of {hotels.length}</span>
-      </div>
-      <div className="cc-hotel-carousel-stage">
-        <Action
-          aria-label="Previous hotel"
-          className="cc-hotel-carousel-arrow cc-hotel-carousel-arrow-previous"
-          disabled={!hasPrevious}
-          onClick={() => moveTo(activeIndex - 1)}
-          variant="quiet"
-        >
-          <ArrowLeftIcon />
-        </Action>
-        <div className="cc-hotel-carousel-window">
-          <div className={`cc-hotel-carousel-track ${previousPeek ? 'cc-hotel-carousel-track-is-last' : ''}`}>
-            {previousPeek ? (
-              <div className="cc-hotel-carousel-peek-shell cc-hotel-carousel-previous-peek-shell">
-                <div aria-hidden="true" className="cc-hotel-carousel-slide cc-hotel-carousel-peek-slide" inert>
-                  <HotelCard hotel={peek} locale={locale} selected={false} pending={false} onAdd={onAdd} />
-                </div>
-                <button
-                  aria-label={`Show hotel ${peekIndex + 1}`}
-                  className="cc-hotel-carousel-peek-hit-target"
-                  onClick={() => moveTo(peekIndex)}
-                  type="button"
-                />
-              </div>
-            ) : null}
-            <div
-              aria-label={`Hotel ${activeIndex + 1} of ${hotels.length}`}
-              aria-roledescription="slide"
-              className="cc-hotel-carousel-slide"
-              key={active.selectionId}
-              role="region"
-              tabIndex={0}
+        <p className="cc-hotel-amenity-line">{hotel.amenities.slice(0, 3).join(' · ')}</p>
+        <Price
+          currency={hotel.staySubtotal.currency}
+          locale={locale}
+          perNight={hotel.nightlyPrice.amount}
+          total={hotel.staySubtotal.amount}
+        />
+        <div className="cc-hotel-actions">
+          <Action disabled title="Arrives with live stays" variant="secondary">Details</Action>
+          {onAdd ? (
+            <Action
+              aria-label={`Add ${hotel.name} to trip`}
+              aria-pressed={selected}
+              disabled={selected}
+              onClick={() => onAdd(hotel.selectionId)}
+              pending={pending}
+              pendingLabel="Adding…"
+              variant={selected ? 'secondary' : 'primary'}
             >
-              <HotelCard
-                hotel={active}
-                locale={locale}
-                onAdd={onAdd}
-                pending={pendingSelectionId === active.selectionId}
-                selected={selectedSelectionId === active.selectionId}
-              />
-            </div>
-            {hasNext ? (
-              <div className="cc-hotel-carousel-peek-shell">
-                <div aria-hidden="true" className="cc-hotel-carousel-slide cc-hotel-carousel-peek-slide" inert>
-                  <HotelCard hotel={peek} locale={locale} selected={false} pending={false} onAdd={onAdd} />
-                </div>
-                <button
-                  aria-label={`Show hotel ${peekIndex + 1}`}
-                  className="cc-hotel-carousel-peek-hit-target"
-                  onClick={() => moveTo(peekIndex)}
-                  type="button"
-                />
-              </div>
-            ) : null}
-          </div>
+              {selected ? 'Added' : 'Select'}
+            </Action>
+          ) : null}
         </div>
-        <Action
-          aria-label="Next hotel"
-          className="cc-hotel-carousel-arrow cc-hotel-carousel-arrow-next"
-          disabled={!hasNext}
-          onClick={() => moveTo(activeIndex + 1)}
-          variant="quiet"
-        >
-          <ArrowLeftIcon />
-        </Action>
       </div>
-    </section>
+      {open ? (
+        <div id={detailsId}>
+          <MatchDetail
+            footnote={reviewScore === undefined
+              ? 'Computed from returned search fields. Guest rating omitted — not returned.'
+              : 'Computed from returned search fields.'}
+            match={match}
+          />
+        </div>
+      ) : null}
+    </article>
   );
 }
 
@@ -504,14 +364,19 @@ export function HotelResultsView({
           </div>
           <StatusBadge tone="info">Illustrative prices</StatusBadge>
         </div>
-        <HotelCarousel
-          expanded={expanded}
-          hotels={shown}
-          locale={locale}
-          onAdd={onAdd}
-          pendingSelectionId={pendingSelectionId}
-          selectedSelectionId={selectedSelectionId}
-        />
+        <Rail ariaLabel="Stays">
+          {shown.map((hotel) => (
+            <HotelCard
+              allHotels={result.hotels}
+              hotel={hotel}
+              key={hotel.selectionId}
+              locale={locale}
+              onAdd={onAdd}
+              pending={pendingSelectionId === hotel.selectionId}
+              selected={selectedSelectionId === hotel.selectionId}
+            />
+          ))}
+        </Rail>
         {!expanded && result.hotels.length > 3 ? (
           onExpand
             ? <Action variant="quiet" onClick={onExpand}>Show all {Math.min(10, result.hotels.length)} hotels</Action>

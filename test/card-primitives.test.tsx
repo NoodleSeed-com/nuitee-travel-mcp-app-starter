@@ -3,6 +3,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import {
   Badge,
+  MatchDetail,
+  MatchRing,
   PhotoBand,
   Price,
   Rail,
@@ -93,5 +95,39 @@ describe('Rail', () => {
 describe('Badge', () => {
   it('applies the tone modifier class', () => {
     expect(renderToStaticMarkup(<Badge tone="good">Flexible</Badge>)).toContain('cc-badge-good');
+  });
+});
+
+describe('MatchRing', () => {
+  it('exposes the score as a text alternative, not colour alone', () => {
+    const html = renderToStaticMarkup(<MatchRing score={82} />);
+    expect(html).toContain('82');
+    expect(html).toContain('Stay match 82 out of 100');
+  });
+
+  it('draws the arc proportional to the score', () => {
+    const full = renderToStaticMarkup(<MatchRing score={100} />);
+    const half = renderToStaticMarkup(<MatchRing score={50} />);
+    expect(full).not.toBe(half);
+  });
+});
+
+describe('MatchDetail', () => {
+  it('renders one row per supplied line and shows the footnote', () => {
+    const html = renderToStaticMarkup(
+      <MatchDetail
+        footnote="Guest rating omitted — not returned."
+        match={{
+          score: 82,
+          lines: [
+            { key: 'price', label: 'Price', detail: 'CA$1,716 total', status: 'ok' },
+            { key: 'category', label: 'Category', detail: '4-star', status: 'partial' },
+          ],
+        }}
+      />,
+    );
+    expect(html).toContain('Price');
+    expect(html).toContain('Category');
+    expect(html).toContain('Guest rating omitted');
   });
 });
