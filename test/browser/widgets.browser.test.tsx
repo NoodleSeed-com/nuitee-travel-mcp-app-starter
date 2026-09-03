@@ -319,6 +319,27 @@ describe('real-browser widget readiness', () => {
     expect(hasHorizontalOverflow()).toBe(false);
   });
 
+  it('keeps the loading skeleton rows inset from the card edge, not flush', async () => {
+    // .cc-skeleton-fare's `padding-inline` and .cc-app .cc-fare-card's
+    // `padding: ... 0` both set padding-left/right on the SAME <article>
+    // (FareCardSkeleton carries both classes). A bare `.cc-skeleton-fare`
+    // is (0,1,0) and loses to the qualified (0,2,0) card rule regardless
+    // of source order — the skeleton would render flush to the card's
+    // edges no matter what the (inert) declaration said. A CSS-text
+    // assertion can't catch that; only a real computed-style read can.
+    await page.viewport(720, 1_200);
+    mount(<FlightResultsView state="loading" displayMode="inline" onVerify={vi.fn()} />);
+    await expect.element(page.getByText('Searching current flights')).toBeVisible();
+
+    const skeleton = document.querySelector<HTMLElement>('.cc-skeleton-fare')!;
+    const skeletonStyle = getComputedStyle(skeleton);
+    expect(Number.parseFloat(skeletonStyle.paddingLeft)).toBeGreaterThan(0);
+    expect(Number.parseFloat(skeletonStyle.paddingRight)).toBeGreaterThan(0);
+
+    const row = document.querySelector<HTMLElement>('.cc-skeleton-fare .cc-skeleton-row')!;
+    expect(row.getBoundingClientRect().left).toBeGreaterThan(skeleton.getBoundingClientRect().left + 1);
+  });
+
   it('keeps secondary verified-fare details collapsed until requested', async () => {
     await page.viewport(720, 1_200);
     mount(<FlightResultsView

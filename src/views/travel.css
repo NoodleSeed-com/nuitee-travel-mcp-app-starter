@@ -351,17 +351,14 @@
 
 .cc-skeleton-fare {
   /* Matches .cc-carousel-slide > .cc-fare-card's min-block-size exactly so
-     the loading skeleton and the real card occupy the same box. */
+     the loading skeleton and the real card occupy the same box.
+     Horizontal padding is qualified and set separately, below
+     .cc-app .cc-fare-card — see that rule's neighbor. */
   block-size: 40rem;
   display: grid;
   gap: 6px;
   align-content: start;
   overflow: hidden;
-  /* .cc-app .cc-fare-card below no longer contributes horizontal padding
-     (the real card's boarding-pass sections manage their own insets), so
-     the skeleton — whose rows have no padding of their own — needs it
-     restored directly here. */
-  padding-inline: clamp(14px, 3vw, 16px);
 }
 
 .cc-skeleton-block {
@@ -596,6 +593,18 @@
   background: var(--cc-surface);
   overflow-wrap: anywhere;
   transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+/* FareCardSkeleton's <article> carries both `cc-fare-card` and
+   `cc-skeleton-fare` (never `cc-card`), so this and the rule above set
+   padding-left/right on the SAME element. A bare `.cc-skeleton-fare` is
+   (0,1,0) and would lose to `.cc-app .cc-fare-card` above (0,2,0)
+   regardless of source order — the qualified rule's `padding: ... 0`
+   would silently zero it out, and the skeleton would render flush to the
+   card edges. Qualified to tie at (0,2,0) and placed after the rule above
+   so it also wins the source-order tiebreak. */
+.cc-app .cc-skeleton-fare {
+  padding-inline: clamp(14px, 3vw, 16px);
 }
 
 /* Qualified for the same reason: border-color and background here are the
@@ -1697,6 +1706,13 @@
      at this viewport. Horizontal stays 0 for the same reason as the base
      rule above — the boarding-pass sections own their own insets. */
   .cc-app .cc-fare-card { padding: 12px 0; border-radius: 14px; }
+  /* Re-zeroes .cc-app .cc-skeleton-fare's horizontal padding too (same
+     property, same element, tied (0,2,0) specificity) — without this,
+     the rule above would win here on source order and flatten the
+     skeleton back to flush edges at this breakpoint. clamp's 14px floor
+     already matches what this would resolve to, but stated explicitly so
+     it can't silently regress if the clamp value ever changes. */
+  .cc-app .cc-skeleton-fare { padding-inline: clamp(14px, 3vw, 16px); }
   .cc-details-grid,
   .cc-review-facts { grid-template-columns: 1fr; }
   .cc-review-route strong { font-size: clamp(1.35rem, 11vw, 1.75rem); }

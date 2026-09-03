@@ -106,3 +106,32 @@ Also re-confirmed by hand, per the branch's standing constraints:
 ## Not done / deferred
 
 Nothing from the nine items was skipped. Tasks 6-10 (map, compare, screen model) were not started, per the explicit instruction that they're a deliberate follow-up PR — the `.cc-app .cc-compare-chip` removal in item 5 is the only Task-10-adjacent touch, and it's a *removal*, not new Task 10 work.
+
+## Addendum: residual from re-review — item 2's skeleton fix was inert
+
+A second-pass review caught a real bug in my own item 2 fix: `.cc-skeleton-fare { padding-inline: clamp(14px, 3vw, 16px) }` and `.cc-app .cc-fare-card { padding: clamp(14px, 3vw, 16px) 0 }` both set `padding-left`/`padding-right` on the *same* `<article className="cc-fare-card cc-skeleton-fare">` (`FareCardSkeleton`). At (0,1,0) vs (0,2,0), the qualified card rule's `padding-left/right: 0` always wins regardless of source order — the same specificity trap the branch had already been bitten by four times. Confirmed in a real Chromium computed-style read: `paddingLeft`/`paddingRight` were `0px`; the loading skeleton rendered flush to the card edges.
+
+**Fix** (`src/views/travel.css`): moved the declaration into a new `.cc-app .cc-skeleton-fare { padding-inline: clamp(14px, 3vw, 16px); }` rule — (0,2,0), tying the card rule's specificity — and placed it *after* `.cc-app .cc-fare-card` so it also wins the source-order tiebreak (it originally sat before, at the top of the file, which would have kept it losing even after qualification). The original unqualified `.cc-skeleton-fare` block keeps its non-conflicting properties (`block-size`, `display`, `gap`, `align-content`, `overflow`).
+
+The `≤320px` media query needed the same treatment: it re-declares `.cc-app .cc-fare-card { padding: 12px 0; ... }` (same (0,2,0), later in the file), which would have silently out-ordered my new rule again inside that breakpoint. Added a matching `.cc-app .cc-skeleton-fare { padding-inline: clamp(14px, 3vw, 16px); }` immediately after it inside the same media block.
+
+**Regression test added** (`test/browser/widgets.browser.test.tsx`, `keeps the loading skeleton rows inset from the card edge, not flush`): mounts the loading state in a real browser and asserts `getComputedStyle(.cc-skeleton-fare).paddingLeft`/`paddingRight` are both `> 0`, plus that a skeleton row's left edge sits strictly inside the skeleton's own left edge. A CSS-text assertion would not have caught this — the declaration existed, it just didn't apply.
+
+**Revert-tested**: reverted the qualification (back to bare `.cc-skeleton-fare`) and reran — the new test failed with `expected 0 to be greater than 0`, exactly matching the reviewer's finding. Restored the fix and reran clean.
+
+**Computed value measured** (before restoring, via a temporary probe assertion, at the existing test's 720×1200 viewport): `paddingLeft: 16px`, `paddingRight: 16px` (`clamp(14px, 3vw, 16px)` resolves to its 16px ceiling at that viewport width — `3vw` of 720px = 21.6px, clamped down to 16).
+
+### Re-verification
+
+```
+$ pnpm test
+ Test Files  16 passed (16)
+      Tests  301 passed (301)
+
+$ pnpm test:browser
+ Test Files  3 passed (3)
+      Tests  21 passed (21)
+
+$ npx noodle validate --json
+{"ok":true,"data":{}}
+```
