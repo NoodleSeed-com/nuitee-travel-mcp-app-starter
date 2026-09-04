@@ -90,6 +90,15 @@ Wayfare is a light-theme product. The website must not switch palettes in
 response to the visitor's operating-system color preference. A dark presentation
 requires a new explicit product decision and an update to this contract.
 
+**Approved host exception (2026-09-05):** ChatGPT-hosted MCP widgets inherit
+the host's typography, theme, and neutral surface/text tokens. Wayfare's own
+website and embedded product retain Host Grotesk and the light-only palette.
+Implement this per widget as the conversational simplification rolls out;
+do not change provider contracts or data models. Keep Wayfare's voice,
+Heroicons, rounded controls, and truthful state labels. Only the selection
+button uses selected blue; its surrounding card remains neutral. Host styling
+does not authorize booking, redemption, or other unsupported actions.
+
 ### Neutral tokens
 
 | Token | Value | Use |
@@ -128,7 +137,8 @@ Rules:
 ## 4. Typography
 
 **Host Grotesk Variable** is the sole Wayfare product typeface. It is used by
-the website and repository-owned MCP Apps. System monospace is reserved for
+the website and repository-owned MCP Apps, except the approved ChatGPT host
+adaptation above. System monospace is reserved for
 code, identifiers, and developer examples.
 
 Recommended hierarchy:
@@ -422,7 +432,8 @@ Copy rules:
 - Respect `prefers-reduced-motion: reduce` everywhere.
 - Preserve function at 200% text zoom, 320px viewport width, and touch target
   sizes of at least 44px.
-- Keep the product light even when `prefers-color-scheme: dark` is active.
+- Keep the Wayfare-owned product light even when `prefers-color-scheme: dark`
+  is active. ChatGPT-adapted widgets follow their host's theme instead.
 - Avoid horizontal page overflow. Purposeful destination carousels may scroll
   within their own labelled region.
 
@@ -462,7 +473,7 @@ Before shipping a user-facing capability, confirm:
 - [ ] Every button is a pill or a circular icon control.
 - [ ] Agent activity and composer motion follow the state contract.
 - [ ] Reduced motion, keyboard use, 200% zoom, and mobile work.
-- [ ] A dark operating-system preference still renders the approved light theme.
+- [ ] A dark operating-system preference still renders the approved light theme on Wayfare-owned surfaces; ChatGPT-adapted widgets follow the host theme.
 - [ ] Images have provenance and do not imply unavailable inventory.
 - [ ] Copy distinguishes live, illustrative, selected, and confirmed data.
 - [ ] The implementation was visually inspected, not only snapshot-tested.

@@ -94,172 +94,79 @@ const render = (props: Parameters<typeof HotelResultsView>[0]) =>
 
 const visibleText = (markup: string) => markup.replace(/<[^>]*>/gu, ' ');
 
-describe('Wayfare illustrative hotel widget', () => {
-  it('renders a geometry-matched shimmer skeleton mirroring the photo-led rail', () => {
-    const markup = render({ state: 'loading', displayMode: 'inline', theme: 'light' });
-
-    expect(markup).toContain('cc-hotel-skeleton');
-    expect(markup).toContain('cc-hotel-skeleton-disclosure');
-    expect(markup).toContain('cc-hotel-results-toolbar');
-    // The loaded state is a Rail of full cards, so the skeleton reuses the
-    // same rail shell and card classes rather than the old carousel markup.
-    expect(markup).toContain('cc-rail-outer');
-    expect(markup).toContain('cc-rail-arrow-prev');
-    expect(markup).toContain('cc-rail-arrow-next');
-    expect(markup).toContain('cc-photo-band');
-    expect(markup).toContain('cc-hotel-body');
-    expect((markup.match(/cc-hotel-skeleton-card/g) ?? [])).toHaveLength(2);
-    expect(markup).toContain('cc-hotel-skeleton-details');
-    expect(markup).toContain('cc-shimmer');
-    expect(markup).toContain('aria-busy="true"');
-    expect(markup).toContain('Preparing hotel comparisons');
+describe('Wayfare conversational hotel widget', () => {
+  it('renders loading without actionable fake hotels', () => {
+    const html = render({ state: 'loading', displayMode: 'inline' });
+    expect(html).toContain('aria-busy="true"');
+    expect(html).not.toContain('View stay:');
   });
-
-  it('renders bounded error, malformed, and honest empty states', () => {
-    const failed = render({ state: 'error', displayMode: 'inline', theme: 'dark' });
-    const malformed = render({ state: 'malformed', displayMode: 'inline' });
-    const empty = render({
-      result: { ...result, status: 'empty', hotels: [], message: 'No synthetic stay fixtures are available for Banff.' },
-      displayMode: 'inline',
-    });
-
-    expect(failed).toContain('The hotel comparison could not load');
-    expect(failed).toContain('No live hotel search was attempted');
-    expect(malformed).toContain('could not be shown safely');
-    expect(malformed).toContain('No hotel, rate, or availability was inferred');
-    expect(empty).toContain('No illustrative stays matched');
-    expect(empty).toContain('No synthetic stay fixtures are available for Banff');
-    expect(empty).not.toContain('Select');
+  it('renders bounded errors and empty results', () => {
+    expect(render({ state: 'error', displayMode: 'inline' })).toContain('nothing was selected');
+    expect(render({ state: 'malformed', displayMode: 'inline' })).toContain('could not be shown safely');
+    const html = render({ result: { ...result, status: 'empty', hotels: [], message: 'No stays matched Banff.' }, displayMode: 'inline' });
+    expect(html).toContain('No stays matched Banff');
+    expect(html).not.toContain('View stay:');
   });
-
-  it('shows three bounded inline stays in a scrollable rail', () => {
-    const markup = render({ result, displayMode: 'inline', onAdd: vi.fn() });
-
-    expect(markup).toContain(result.disclosure);
-    expect(markup).toContain('Illustrative stays');
-    expect(markup).toContain('Illustrative prices');
-    expect(markup).toContain('aria-label="Stays"');
-    expect(markup).toContain('cc-rail-arrow-prev');
-    expect(markup).toContain('cc-rail-arrow-next');
-    expect((markup.match(/>Select<\/button>/gu) ?? [])).toHaveLength(3);
-    expect(markup).toContain('Open the App in expanded view to compare all 4 hotels');
-    expect(markup).not.toContain('<img');
-    expect(visibleText(markup)).not.toMatch(/\bdemo\b|\bsandbox\b/iu);
-    expect(markup).not.toMatch(/Book now|Reserve now|Pay now|Checkout/iu);
-  });
-
-  it('shows all bounded results directly in the rail when expanded', () => {
-    const markup = render({ result, displayMode: 'fullscreen', onAdd: vi.fn() });
-
-    expect(markup).toContain('aria-label="Stays"');
-    expect((markup.match(/>Select<\/button>/gu) ?? [])).toHaveLength(4);
-    expect(markup).not.toContain('Open the App in expanded view');
-  });
-
-  it('provides two disclosable panels — stay match and hotel/rate details — without a dead-end action', () => {
-    const markup = render({ result: { ...result, hotels: [hotel(0)] }, displayMode: 'inline', onAdd: vi.fn() });
-
-    expect(markup).toContain('cc-match-score-button');
-    expect(markup).toContain('cc-hotel-details-toggle');
-    expect(markup).toContain('Hotel and rate details');
-    expect((markup.match(/aria-expanded="false"/gu) ?? [])).toHaveLength(2);
-    expect(markup).not.toMatch(/disabled[^>]*>Details</u);
-    expect(markup).toContain('Select');
-    expect(markup).not.toMatch(/Book now|Reserve now|Pay now|Redeem now|Checkout/iu);
-  });
-
-  it('keeps both disclosure panels mounted (not unmounted) behind distinct aria-controls', () => {
-    const markup = render({ result: { ...result, hotels: [hotel(0)] }, displayMode: 'inline', onAdd: vi.fn() });
-
-    const ringButton = markup.match(/<button[^>]*class="cc-match-score-button"[^>]*>/u)?.[0] ?? '';
-    const detailsButton = markup.match(/<button[^>]*class="cc-hotel-details-toggle"[^>]*>/u)?.[0] ?? '';
-    const matchControls = ringButton.match(/aria-controls="([^"]+)"/u)?.[1];
-    const detailsControls = detailsButton.match(/aria-controls="([^"]+)"/u)?.[1];
-
-    expect(matchControls).toBeTruthy();
-    expect(detailsControls).toBeTruthy();
-    expect(matchControls).not.toBe(detailsControls);
-
-    // aria-controls must resolve to a real, still-mounted element — not a
-    // dangling id left over from a panel that unmounts on collapse.
-    const matchPanel = markup.match(new RegExp(`<div[^>]*id="${matchControls}"[^>]*>`, 'u'))?.[0] ?? '';
-    const detailsPanel = markup.match(new RegExp(`<div[^>]*id="${detailsControls}"[^>]*>`, 'u'))?.[0] ?? '';
-    expect(matchPanel).toContain('hidden');
-    expect(detailsPanel).toContain('hidden');
-  });
-
-  it('shows a compact taxes-and-fees qualifier under the price without expanding anything', () => {
-    const markup = render({ result: { ...result, hotels: [hotel(0)] }, displayMode: 'inline', onAdd: vi.fn() });
-
-    expect(markup).toContain('cc-price-note');
-    expect(markup).toContain('Illustrative subtotal · taxes and fees not included');
-
-    // This is standing disclosure, not the fuller note behind the "Hotel
-    // and rate details" toggle — it must sit under the always-visible
-    // price, before that collapsed panel even starts.
-    const noteAt = markup.indexOf('cc-price-note');
-    const detailsPanelAt = markup.indexOf('cc-hotel-detail-content');
-    expect(noteAt).toBeGreaterThan(-1);
-    expect(detailsPanelAt).toBeGreaterThan(-1);
-    expect(noteAt).toBeLessThan(detailsPanelAt);
-  });
-
-  it('threads the widget locale through to the stay-match price and rating formatting', () => {
-    // <Price> already renders in the host locale; the match ring's detail
-    // panel must not fall back to a hardcoded en-CA/en, or the same
-    // currency and review count render two different ways one tap apart.
-    const rated = { ...hotel(0), reviewScore: 8.9, reviewCount: 1204 } as DemoHotel;
-    const defaultLocale = render({ result: { ...result, hotels: [rated] }, displayMode: 'inline', onAdd: vi.fn() });
-    const frCA = render({ result: { ...result, hotels: [rated] }, displayMode: 'inline', locale: 'fr-CA', onAdd: vi.fn() });
-
-    expect(defaultLocale).toContain('1,204');
-    // fr-CA groups thousands with a space, not the en-CA comma.
-    expect(frCA).not.toContain('1,204');
-    expect(frCA).toContain('204');
-  });
-
-  it('restores the full hotel and rate details behind the second disclosure', () => {
-    const sixAmenities = ['Breakfast preview', 'Rooftop concept', 'Wi-Fi', 'Spa access', 'Pet friendly', 'Parking included'];
-    const markup = render({
-      result: { ...result, hotels: [{ ...hotel(0), amenities: sixAmenities }] },
-      displayMode: 'inline',
-      onAdd: vi.fn(),
-    });
-
-    // The collapsed-card preview line still shows only 3.
-    expect(markup).toContain('Breakfast preview · Rooftop concept · Wi-Fi');
-    // The restored panel reaches fields the photo-led collapsed view drops:
-    // room name, stay length, the taxes disclosure, the description, and
-    // the FULL amenity list (not sliced to the 3-item preview).
-    expect(markup).toContain('Lantern king room');
-    expect(markup).toContain('3 nights · 1 room');
-    expect(markup).toContain('Taxes and fees');
-    expect(markup).toContain('Not included in subtotal');
-    expect(markup).toContain('An illustrative central stay created for a bounded comparison.');
-    for (const amenity of sixAmenities) {
-      expect(markup).toContain(amenity);
+  it('limits the initial shortlist to three inspectable options in either display mode', () => {
+    for (const displayMode of ['inline', 'fullscreen']) {
+      const html = render({ result, displayMode });
+      expect((html.match(/aria-label="View stay:/g) ?? [])).toHaveLength(3);
+      expect(html).not.toContain('Tagus Lantern Hotel 4');
+      expect(html).toContain('Show 1 more stay');
+      expect(html).toContain(result.disclosure);
+      expect(html).not.toMatch(/Book now|Reserve now|Pay now|Checkout/);
     }
-    expect(markup).toContain('Illustrative flexible terms; no transaction can be created.');
   });
-
-  it('renders pending, selected, and safe selection-error states', () => {
-    const selectionId = result.hotels[0]!.selectionId;
-    const selected = render({
-      result: { ...result, hotels: [result.hotels[0]!] },
-      displayMode: 'inline',
-      selectedSelectionId: selectionId,
-      pendingSelectionId: selectionId,
-      selectionError: 'The illustrative stay could not be selected. Try again.',
-      onAdd: vi.fn(),
-    });
-
-    expect(selected).toMatch(/>Selected<\/button>/u);
-    expect(selected).not.toMatch(/Added|Adding/u);
-    expect(selected).toContain('Nothing was booked, held, or paid');
-    expect(selected).toContain('could not be selected');
+  it('keeps policy and tax qualifiers visible without inline match controls', () => {
+    const html = render({ result, displayMode: 'inline' });
+    expect(html).toContain(hotel(0).policySummary);
+    expect(html).toContain('Taxes and fees not included');
+    expect(html).not.toContain('cc-match-score');
+    expect(html).not.toContain('Hotel result view');
+    expect(html).not.toContain('Lantern king room');
   });
-
-  it('rejects malformed or over-bounded output at the widget boundary', () => {
+  it('preserves subtotal precision and locale', () => {
+    const precise = { ...hotel(0), staySubtotal: { amount: 858.49, currency: 'CAD' as const } };
+    expect(render({ result: { ...result, hotels: [precise] }, displayMode: 'inline' })).toContain('858.49');
+    expect(render({ result: { ...result, hotels: [precise] }, displayMode: 'inline', locale: 'fr-CA' })).toContain('858,49');
+  });
+  it('does not turn an unconfirmed live tax flag into a claim of exclusion', () => {
+    const live = { ...result, dataSource: 'live_nuitee' as const, hotels: [{ ...hotel(0), dataSource: 'live_nuitee' as const }] };
+    const html = render({ result: live, displayMode: 'inline' });
+    expect(html).toContain('Tax and fee inclusion requires review');
+    expect(html).not.toContain('Taxes and fees not included');
+  });
+  it('restores focused details with the full returned amenities', () => {
+    const html = render({ result, displayMode: 'inline', experience: { searchId: result.searchId, screen: 'detail', detailId: hotel(0).selectionId, compareIds: [], shown: 3 }, onAdd: vi.fn() });
+    expect(html).toContain('Lantern king room');
+    expect(html).toContain(hotel(0).description);
+    for (const amenity of hotel(0).amenities) expect(html).toContain(amenity);
+    expect(html).toContain('Choose this stay');
+    expect(html).not.toContain('Tagus Lantern Hotel 2');
+  });
+  it('ignores presentation state from an older search', () => {
+    const html = render({ result, displayMode: 'inline', experience: { searchId: 'old-search', screen: 'detail', detailId: hotel(0).selectionId, compareIds: [], shown: 10 } });
+    expect((html.match(/aria-label="View stay:/g) ?? [])).toHaveLength(3);
+    expect(html).not.toContain('Choose this stay');
+  });
+  it('does not show selection success for an ID outside current results', () => {
+    const html = render({ result, displayMode: 'inline', selectedSelectionId: 'hsel_99999999999999999999999999999999' });
+    expect(html).not.toContain('Nothing was booked');
+    expect(html).not.toContain('View selected stay');
+  });
+  it('preserves the previous selection alongside a selection error', () => {
+    const html = render({ result, displayMode: 'inline', selectedSelectionId: hotel(0).selectionId, selectionError: 'Could not select the other stay.' });
+    expect(html).toContain('View selected stay: Tagus Lantern Hotel 1');
+    expect(html).toContain('Could not select the other stay');
+    expect(html).toContain('Nothing was booked, held, or paid');
+  });
+  it('uses a truthful no-photo fallback without inventing guest ratings', () => {
+    const html = render({ result, displayMode: 'inline' });
+    expect(html).toContain('Photo not provided');
+    expect(html).not.toContain('Guest rating');
+    expect(html).not.toContain('linear-gradient');
+  });
+  it('rejects malformed or over-bounded output', () => {
     expect(isDemoHotelSearchOutput(result)).toBe(true);
     expect(isDemoHotelSearchOutput({ ...result, hotels: Array.from({ length: 11 }, (_, index) => hotel(index)) })).toBe(false);
     expect(isDemoHotelSearchOutput({ ...result, hotels: [{ ...hotel(0), selectionId: 'provider-rate-id' }] })).toBe(false);
@@ -267,72 +174,5 @@ describe('Wayfare illustrative hotel widget', () => {
     expect(isDemoHotelSearchOutput({ ...result, hotels: [{ ...hotel(0), lat: 91 }] })).toBe(false);
     expect(isDemoHotelSearchOutput({ ...result, status: 'empty' })).toBe(false);
     expect(isDemoHotelSearchOutput({ ...result, hotels: [{ ...hotel(0), amenities: Array(7).fill('Too many') }] })).toBe(false);
-  });
-});
-
-describe('photo-led hotel card', () => {
-  it('paints a deterministic band when the hotel has no image', () => {
-    const html = renderToStaticMarkup(
-      createElement(HotelResultsView, { displayMode: 'inline', result: sampleHotelResult }),
-    );
-    expect(html).toContain('cc-photo-band');
-    expect(html).toContain('linear-gradient(');
-  });
-
-  it('omits the score pin when no review score is returned', () => {
-    const html = renderToStaticMarkup(
-      createElement(HotelResultsView, { displayMode: 'inline', result: sampleHotelResult }),
-    );
-    expect(html).not.toContain('cc-score-pin');
-  });
-
-  it('renders a stay match ring per hotel', () => {
-    const html = renderToStaticMarkup(
-      createElement(HotelResultsView, { displayMode: 'inline', result: sampleHotelResult }),
-    );
-    expect(html).toContain('Stay match');
-  });
-});
-
-describe('hotel screen model', () => {
-  it('offers list and map as one labelled choice', () => {
-    const html = render({ displayMode: 'inline', result: sampleHotelResult });
-    expect(html).toContain('role="radiogroup"');
-    expect(html).toContain('aria-label="Hotel result view"');
-    expect(html.match(/role="radio"/g)).toHaveLength(2);
-  });
-
-  it('hides the map choice when no stay has coordinates', () => {
-    const flat = {
-      ...sampleHotelResult,
-      hotels: sampleHotelResult.hotels.map(({ lat: _lat, lng: _lng, ...hotelWithoutMap }) => hotelWithoutMap),
-    } as DemoHotelSearchOutput;
-    expect(render({ displayMode: 'inline', result: flat })).not.toContain('Hotel result view');
-  });
-
-  it('renders the map board as the selected view', () => {
-    const html = render({
-      displayMode: 'inline',
-      initialBoardView: 'map',
-      result: sampleHotelResult,
-    });
-    expect(html).toContain('cc-map-board');
-    expect(html).toContain('Map hotel choices');
-  });
-
-  it('renders a comparison screen with two initial choices', () => {
-    const html = render({
-      displayMode: 'fullscreen',
-      initialScreen: 'compare',
-      result: sampleHotelResult,
-    });
-    expect(html).toContain('cc-compare-matrix');
-    expect(html).toContain('2 stays compared');
-  });
-
-  it('keeps cards white while compare selection is expressed by its button', () => {
-    const html = render({ displayMode: 'fullscreen', result: sampleHotelResult });
-    expect(html).toContain('Add Tagus Lantern Hotel 1 to comparison');
-    expect(html).not.toContain('cc-hotel-card-comparing');
   });
 });
