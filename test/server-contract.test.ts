@@ -320,6 +320,7 @@ describe('server contract', () => {
       'http://localhost:3000',
       'http://localhost:3001',
       'https://wayfare-experience.fly.dev',
+      'https://gowayfare.io',
     ]);
     for (const origin of starterConfig.embeddedAssistant.origins) expect(wire).toContain(origin);
     expect(wire).not.toContain('https://app.example.com');
