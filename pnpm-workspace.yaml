@@ -11,5 +11,5 @@ allowBuilds:
 # this exception deliberately.
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
-  - '@noodleseed/one@0.151.1'
+  - '@noodleseed/one@0.157.0'
   - '@noodleseed/assistant@1.27.0'

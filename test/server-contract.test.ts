@@ -219,10 +219,9 @@ describe('server contract', () => {
       error: {
         code: 'mcp_error',
         detail: {
-          data: {
-            reason: 'invalid_tool_arguments',
-            validation: [expect.objectContaining({ path: 'origin' })],
-          },
+          reason: 'rpc_error',
+          rpcCode: -32602,
+          status: 400,
         },
       },
     });
