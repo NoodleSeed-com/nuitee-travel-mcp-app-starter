@@ -64,18 +64,16 @@ afterEach(() => {
 });
 
 describe('illustrative hotel widget in a real browser', () => {
-  it('reserves real height for the match ring caption instead of collapsing its line box', async () => {
+  it('renders the match score as readable text inside a 44px disclosure target', async () => {
     await page.viewport(1_100, 1_200);
     mount(<HotelResultsView displayMode="inline" result={result} />);
     await expect.element(page.getByText('Tagus Lantern Hotel 1')).toBeVisible();
 
-    const caption = document.querySelector<HTMLElement>('.cc-ring-cap')!;
-    const captionStyle = getComputedStyle(caption);
-    expect(Number.parseFloat(captionStyle.lineHeight)).toBeGreaterThan(0);
-    expect(caption.getBoundingClientRect().height).toBeGreaterThan(0);
-
-    const wrap = document.querySelector<HTMLElement>('.cc-ring-wrap')!;
-    const ring = document.querySelector<HTMLElement>('.cc-ring')!;
-    expect(wrap.getBoundingClientRect().height).toBeGreaterThan(ring.getBoundingClientRect().height);
+    const score = document.querySelector<HTMLElement>('.cc-match-score')!;
+    const button = document.querySelector<HTMLButtonElement>('.cc-match-score-button')!;
+    expect(score.getAttribute('aria-label')).toMatch(/Stay match \d+ out of 100/u);
+    expect(score.querySelector('svg')).toBeNull();
+    expect(button.getBoundingClientRect().width).toBeGreaterThanOrEqual(44);
+    expect(button.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
   });
 });

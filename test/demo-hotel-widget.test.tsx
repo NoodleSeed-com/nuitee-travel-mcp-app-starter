@@ -157,7 +157,7 @@ describe('Wayfare illustrative hotel widget', () => {
   it('provides two disclosable panels — stay match and hotel/rate details — without a dead-end action', () => {
     const markup = render({ result: { ...result, hotels: [hotel(0)] }, displayMode: 'inline', onAdd: vi.fn() });
 
-    expect(markup).toContain('cc-ring-btn');
+    expect(markup).toContain('cc-match-score-button');
     expect(markup).toContain('cc-hotel-details-toggle');
     expect(markup).toContain('Hotel and rate details');
     expect((markup.match(/aria-expanded="false"/gu) ?? [])).toHaveLength(2);
@@ -169,7 +169,7 @@ describe('Wayfare illustrative hotel widget', () => {
   it('keeps both disclosure panels mounted (not unmounted) behind distinct aria-controls', () => {
     const markup = render({ result: { ...result, hotels: [hotel(0)] }, displayMode: 'inline', onAdd: vi.fn() });
 
-    const ringButton = markup.match(/<button[^>]*class="cc-ring-btn"[^>]*>/u)?.[0] ?? '';
+    const ringButton = markup.match(/<button[^>]*class="cc-match-score-button"[^>]*>/u)?.[0] ?? '';
     const detailsButton = markup.match(/<button[^>]*class="cc-hotel-details-toggle"[^>]*>/u)?.[0] ?? '';
     const matchControls = ringButton.match(/aria-controls="([^"]+)"/u)?.[1];
     const detailsControls = detailsButton.match(/aria-controls="([^"]+)"/u)?.[1];
@@ -247,13 +247,14 @@ describe('Wayfare illustrative hotel widget', () => {
       displayMode: 'inline',
       selectedSelectionId: selectionId,
       pendingSelectionId: selectionId,
-      selectionError: 'The illustrative stay could not be added to this trip. Try again.',
+      selectionError: 'The illustrative stay could not be selected. Try again.',
       onAdd: vi.fn(),
     });
 
-    expect(selected).toMatch(/>Added<\/button>/u);
+    expect(selected).toMatch(/>Selected<\/button>/u);
+    expect(selected).not.toMatch(/Added|Adding/u);
     expect(selected).toContain('Nothing was booked, held, or paid');
-    expect(selected).toContain('could not be added to this trip');
+    expect(selected).toContain('could not be selected');
   });
 
   it('rejects malformed or over-bounded output at the widget boundary', () => {

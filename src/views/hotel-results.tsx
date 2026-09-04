@@ -1,6 +1,6 @@
 import '@fontsource-variable/host-grotesk';
 import '@noodleseed/one/react/styles.css';
-import { useId, useState, type CSSProperties } from 'react';
+import { useId, useState } from 'react';
 import type { DemoHotel, DemoHotelSearchOutput } from '../demo-schemas.js';
 import {
   Action,
@@ -9,7 +9,6 @@ import {
   Frame,
   Region,
   StatusBadge,
-  useBranding,
   useCallTool,
   useLayout,
   useRequestDisplayMode,
@@ -160,14 +159,10 @@ function HotelSkeletonCard() {
   );
 }
 
-function HotelLoading({ theme, brandStyle }: {
-  readonly theme: 'light' | 'dark';
-  readonly brandStyle?: CSSProperties;
-}) {
+function HotelLoading() {
   return (
     <Frame
-      className={`cc-app cc-hotel-results ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
-      style={brandStyle}
+      className="cc-app cc-hotel-results"
       displayMode="auto"
       title="Hotel results"
       subtitle="Preparing hotel comparisons"
@@ -237,7 +232,7 @@ function HotelCard({ hotel, allHotels, locale, selected, pending, onAdd }: {
         </div>
         <p className="cc-hotel-hood">{hotel.neighborhood} · {hotel.city}, {hotel.countryCode}</p>
         <div className="cc-card-badges">
-          <Badge tone={flexible ? 'good' : 'muted'}>
+          <Badge tone="muted">
             {flexible ? 'Flexible terms' : 'Terms only'}
           </Badge>
           <Badge tone="muted">{hotel.dataSource === 'live_nuitee' ? 'Current rate' : 'Illustrative'}</Badge>
@@ -266,15 +261,15 @@ function HotelCard({ hotel, allHotels, locale, selected, pending, onAdd }: {
         <div className="cc-hotel-actions">
           {onAdd ? (
             <Action
-              aria-label={`Add ${hotel.name} to trip`}
+              aria-label={`Select ${hotel.name} for this trip`}
               aria-pressed={selected}
               disabled={selected}
               onClick={() => onAdd(hotel.selectionId)}
               pending={pending}
-              pendingLabel="Adding…"
+              pendingLabel="Selecting…"
               variant={selected ? 'secondary' : 'primary'}
             >
-              {selected ? 'Added' : 'Select'}
+              {selected ? 'Selected' : 'Select'}
             </Action>
           ) : null}
         </div>
@@ -306,13 +301,12 @@ function HotelCard({ hotel, allHotels, locale, selected, pending, onAdd }: {
   );
 }
 
-function statusView(state: HotelResultsState, theme: 'light' | 'dark', brandStyle?: CSSProperties) {
-  if (state === 'loading') return <HotelLoading theme={theme} brandStyle={brandStyle} />;
+function statusView(state: HotelResultsState) {
+  if (state === 'loading') return <HotelLoading />;
   const malformed = state === 'malformed';
   return (
     <Frame
-      className={`cc-app cc-hotel-results ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
-      style={brandStyle}
+      className="cc-app cc-hotel-results"
       displayMode="auto"
       title="Hotel results"
     >
@@ -324,7 +318,7 @@ function statusView(state: HotelResultsState, theme: 'light' | 'dark', brandStyl
       <p className="cc-hotel-status-note">
         {malformed
           ? 'No hotel, rate, or availability was inferred from the incomplete result.'
-          : 'No live hotel search was attempted and nothing was added to the trip.'}
+          : 'No live hotel search was attempted and nothing was selected.'}
       </p>
     </Frame>
   );
@@ -334,14 +328,12 @@ export function HotelResultsView({
   result,
   state,
   displayMode,
-  theme = 'light',
   locale = 'en-CA',
   selectedSelectionId,
   pendingSelectionId,
   selectionError,
   onAdd,
   onExpand,
-  brandStyle,
 }: {
   readonly result?: DemoHotelSearchOutput;
   readonly state?: HotelResultsState;
@@ -353,27 +345,26 @@ export function HotelResultsView({
   readonly selectionError?: string;
   readonly onAdd?: (selectionId: string) => void;
   readonly onExpand?: () => void;
-  readonly brandStyle?: CSSProperties;
 }) {
-  if (state) return statusView(state, theme, brandStyle);
-  if (!result) return statusView('malformed', theme, brandStyle);
+  if (state) return statusView(state);
+  if (!result) return statusView('malformed');
 
-  const frameClassName = `cc-app cc-hotel-results ${theme === 'dark' ? 'cc-theme-dark' : ''}`;
+  const frameClassName = 'cc-app cc-hotel-results';
   const live = result.dataSource === 'live_nuitee';
   if (result.status === 'error') {
     return (
-      <Frame className={frameClassName} style={brandStyle} displayMode="auto" title="Hotel search needs attention" data-llm={result.fallback}>
+      <Frame className={frameClassName} displayMode="auto" title="Hotel search needs attention" data-llm={result.fallback}>
         <Flow variant="stack" density="comfortable">
           <HotelDisclosure live={live} text={result.disclosure} />
           <Feedback status="error">{result.error?.message ?? result.message}</Feedback>
-          <p className="cc-hotel-status-note">No room was held, reserved, or added to the trip.</p>
+          <p className="cc-hotel-status-note">No room was held, reserved, or selected.</p>
         </Flow>
       </Frame>
     );
   }
   if (result.status === 'empty') {
     return (
-      <Frame className={frameClassName} style={brandStyle} displayMode="auto" title="No hotels found" data-llm={result.fallback}>
+      <Frame className={frameClassName} displayMode="auto" title="No hotels found" data-llm={result.fallback}>
         <Flow variant="stack" density="comfortable">
           <HotelDisclosure live={live} text={result.disclosure} />
           <Region
@@ -392,7 +383,6 @@ export function HotelResultsView({
   return (
     <Frame
       className={frameClassName}
-      style={brandStyle}
       displayMode="auto"
       title="Hotel results"
       subtitle={live
@@ -430,7 +420,7 @@ export function HotelResultsView({
         {selectionError ? <Feedback status="error">{selectionError}</Feedback> : null}
         {selectedSelectionId ? (
           <p className="cc-hotel-selection-status" role="status">
-            {live ? 'The current hotel option' : 'The illustrative stay'} was added to this trip. Nothing was booked, held, or paid.
+            {live ? 'The current hotel option' : 'The illustrative stay'} was selected for this trip. Nothing was booked, held, or paid.
           </p>
         ) : null}
       </Flow>
@@ -448,7 +438,6 @@ function selectedHotelOutput(value: unknown) {
 export default function HotelResults() {
   const ready = useWidgetReady();
   const layout = useLayout();
-  const branding = useBranding();
   const toolInfo = useToolInfo('search_hotels');
   const selectHotel = useCallTool('select_hotel');
   const requestDisplayMode = useRequestDisplayMode();
@@ -484,14 +473,10 @@ export default function HotelResults() {
             : 'That illustrative stay is no longer available in this search. Choose another hotel.');
         }).catch(() => {
           setSelectionError(result?.dataSource === 'live_nuitee'
-            ? 'The hotel option could not be added to this trip. Try again.'
-            : 'The illustrative stay could not be added to this trip. Try again.');
+            ? 'The hotel option could not be selected. Try again.'
+            : 'The illustrative stay could not be selected. Try again.');
         }).finally(() => setPendingSelectionId(undefined));
       } : undefined}
-      brandStyle={{
-        '--cc-accent': branding.theme?.[layout.theme]?.accent ?? branding.accent ?? '#006D84',
-        '--cc-focus': branding.theme?.[layout.theme]?.focus ?? '#007D95',
-      } as CSSProperties}
     />
   );
 }

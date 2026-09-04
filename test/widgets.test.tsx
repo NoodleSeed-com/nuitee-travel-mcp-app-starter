@@ -191,7 +191,7 @@ describe('FlightResults', () => {
     expect(html).not.toContain('<h1>Flight results</h1>');
   });
 
-  it('uses neutral navy runtime fallbacks when host branding is absent', () => {
+  it('does not let host branding override the fixed Wayfare widget palette', () => {
     vi.mocked(helpers.useWidgetReady).mockReturnValue(true);
     vi.mocked(helpers.useLayout).mockReturnValue({ theme: 'light', displayMode: 'inline', supports: {} } as never);
     vi.mocked(helpers.useBranding).mockReturnValue({} as never);
@@ -205,7 +205,8 @@ describe('FlightResults', () => {
 
     const html = renderToStaticMarkup(<FlightResults />);
 
-    expect(html).toContain('style="--cc-accent:#14213d;--cc-focus:#245aa8"');
+    expect(html).not.toContain('--cc-accent:');
+    expect(html).not.toContain('--cc-focus:');
   });
 
   it('presents current options for selection without booking claims', () => {
@@ -432,8 +433,11 @@ describe('FlightResults', () => {
     const expired = renderToStaticMarkup(<FlightResultsView {...base} verificationError={{ code: 'expired_offer', message: 'This offer expired. Search again.', retryable: false }} />);
     const retry = renderToStaticMarkup(<FlightResultsView {...base} verificationError={{ code: 'timeout', message: 'Verification timed out.', retryable: true }} />);
     expect(changed).toContain('Price changed');
+    expect(changed).toContain('cc-state-action-needed');
     expect(success).toContain('Verified, not booked');
+    expect(success).toContain('cc-state-confirmed');
     expect(expired).toContain('Search again');
+    expect(expired).toContain('cc-verification-error');
     expect(retry).toContain('Try again');
   });
 
@@ -604,7 +608,7 @@ describe('FlightResults', () => {
     ]) {
       expect(selectionOutcome(unsafeResponse, selectionId)).toEqual({
         confirmed: false,
-        message: 'The fare could not be added to this trip. Your previous selection is unchanged.',
+        message: 'The fare could not be selected. Your previous selection is unchanged.',
       });
     }
   });

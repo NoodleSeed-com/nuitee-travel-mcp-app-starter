@@ -9,7 +9,6 @@ import {
   Region,
   StatusBadge,
   useAppFlow,
-  useBranding,
   useCallTool,
   useLayout,
   useRequestDisplayMode,
@@ -59,7 +58,7 @@ export function selectionOutcome(value: unknown, expectedSelectionId: string) {
     confirmed,
     message: boundedText(content?.message, 240)
       ? content.message
-      : 'The fare could not be added to this trip. Your previous selection is unchanged.',
+      : 'The fare could not be selected. Your previous selection is unchanged.',
   };
 }
 
@@ -407,16 +406,16 @@ function FlightSearchSkeleton() {
   );
 }
 
-function resultStatus(state: ResultsState, theme: 'light' | 'dark', brandStyle?: CSSProperties) {
+function resultStatus(state: ResultsState) {
   if (state === 'loading') {
     return (
-      <Frame className={`cc-app cc-flight-results ${theme === 'dark' ? 'cc-theme-dark' : ''}`} style={brandStyle} displayMode="auto" title="Flight options" subtitle="Searching current fares">
+      <Frame className="cc-app cc-flight-results" displayMode="auto" title="Flight options" subtitle="Searching current fares">
         <FlightSearchSkeleton />
       </Frame>
     );
   }
   return (
-    <Frame className={`cc-app ${theme === 'dark' ? 'cc-theme-dark' : ''}`} style={brandStyle} displayMode="auto" title="Flight results">
+    <Frame className="cc-app" displayMode="auto" title="Flight results">
       <Feedback status="error">The flight result was incomplete and could not be shown safely.</Feedback>
     </Frame>
   );
@@ -556,7 +555,7 @@ function FareCard({ itinerary, pending = false, searchContext, selected, onSelec
             <div className="cc-compact-fare-main">
               <header className="cc-fare-header cc-compact-fare-carrier">
                 <CarrierIdentity carrier={itinerary.carrier} />
-                {selected ? <StatusBadge className="cc-fare-selected-badge" tone="success"><CheckIcon />Selected</StatusBadge> : null}
+                {selected ? <StatusBadge className="cc-fare-selected-badge" tone="info"><CheckIcon />Selected</StatusBadge> : null}
               </header>
               <RouteTimeline itinerary={itinerary} />
               <div className="cc-compact-fare-price">
@@ -569,7 +568,7 @@ function FareCard({ itinerary, pending = false, searchContext, selected, onSelec
                     disabled={pending}
                     onClick={() => onSelect?.(itinerary.selectionId)}
                     pending={pending}
-                    pendingLabel="Adding…"
+                    pendingLabel="Selecting…"
                   >
                     Select fare
                   </Action>
@@ -579,7 +578,7 @@ function FareCard({ itinerary, pending = false, searchContext, selected, onSelec
             <footer className="cc-fare-footer cc-compact-fare-footer">
               <span>{itinerary.carrier.name} · {itineraryFlightLabel(itinerary)}</span>
               <div className="cc-compact-fare-actions">
-                {itinerary.isCheapest ? <StatusBadge className="cc-fare-highlight-badge" tone="success">Best value</StatusBadge> : null}
+                {itinerary.isCheapest ? <StatusBadge className="cc-fare-highlight-badge" tone="info">Best value</StatusBadge> : null}
                 <button
                   aria-controls={backFaceId}
                   aria-expanded={detailsVisible}
@@ -740,7 +739,12 @@ function FareReview({ itinerary, verification, onBack }: {
     <section className="cc-review" aria-labelledby="cc-review-title">
       <header className="cc-review-header">
         <Action type="button" variant="quiet" onClick={onBack}><ArrowLeftIcon />Back to results</Action>
-        <StatusBadge tone={verification.priceChanged ? 'warning' : 'success'}>{verification.priceChanged ? 'Price changed' : 'Verified, not booked'}</StatusBadge>
+        <StatusBadge
+          className={verification.priceChanged ? 'cc-state-action-needed' : 'cc-state-confirmed'}
+          tone={verification.priceChanged ? 'warning' : 'success'}
+        >
+          {verification.priceChanged ? 'Price changed' : 'Verified, not booked'}
+        </StatusBadge>
       </header>
       <div className="cc-review-ticket">
         <div className="cc-review-title">
@@ -807,7 +811,6 @@ export function FlightResultsView({
   result,
   state,
   displayMode,
-  theme = 'light',
   view = 'results',
   onSelect,
   onVerify,
@@ -822,7 +825,6 @@ export function FlightResultsView({
   selectionError,
   verification,
   verificationError,
-  brandStyle,
 }: {
   readonly result?: SearchOutput;
   readonly state?: ResultsState;
@@ -842,14 +844,13 @@ export function FlightResultsView({
   readonly selectionError?: string;
   readonly verification?: Verification;
   readonly verificationError?: GatewayError;
-  readonly brandStyle?: CSSProperties;
 }) {
-  if (state) return resultStatus(state, theme, brandStyle);
-  if (!result) return resultStatus('malformed', theme, brandStyle);
+  if (state) return resultStatus(state);
+  if (!result) return resultStatus('malformed');
 
   if (view === 'search') {
     return (
-      <Frame className={`cc-app ${theme === 'dark' ? 'cc-theme-dark' : ''}`} style={brandStyle} displayMode="auto" title="Edit flight search" data-llm={result.fallback}>
+      <Frame className="cc-app" displayMode="auto" title="Edit flight search" data-llm={result.fallback}>
         <SearchEditor
           context={result.searchContext}
           placeLabels={{
@@ -866,9 +867,9 @@ export function FlightResultsView({
 
   const selected = result.itineraries.find((itinerary) => itinerary.selectionId === selectedSelectionId);
   if (view === 'review') {
-    if (!selected || !verification || verification.selectionId !== selected.selectionId) return resultStatus('malformed', theme, brandStyle);
+    if (!selected || !verification || verification.selectionId !== selected.selectionId) return resultStatus('malformed');
     return (
-      <Frame className={`cc-app ${theme === 'dark' ? 'cc-theme-dark' : ''}`} style={brandStyle} displayMode="auto" title="Verified fare" data-llm={result.fallback}>
+      <Frame className="cc-app" displayMode="auto" title="Verified fare" data-llm={result.fallback}>
         <FareReview itinerary={selected} verification={verification} onBack={onBack} />
       </Frame>
     );
@@ -876,7 +877,7 @@ export function FlightResultsView({
 
   if (result.status === 'error') {
     return (
-      <Frame className={`cc-app ${theme === 'dark' ? 'cc-theme-dark' : ''}`} style={brandStyle} displayMode="auto" title="Search needs attention" data-llm={result.fallback}>
+      <Frame className="cc-app" displayMode="auto" title="Search needs attention" data-llm={result.fallback}>
         <Feedback status="error">{result.error?.message ?? result.message}</Feedback>
         <p className="cc-freshness">
           {result.error?.retryable
@@ -888,7 +889,7 @@ export function FlightResultsView({
   }
   if (result.status === 'empty') {
     return (
-      <Frame className={`cc-app ${theme === 'dark' ? 'cc-theme-dark' : ''}`} style={brandStyle} displayMode="auto" title="No flights found" data-llm={result.fallback}>
+      <Frame className="cc-app" displayMode="auto" title="No flights found" data-llm={result.fallback}>
         <Region title="No flights matched" description="Try different travel dates or nearby airports.">
           <p className="cc-empty">{result.message}</p>
           {onEdit ? <Action onClick={onEdit}>Edit search</Action> : null}
@@ -901,8 +902,7 @@ export function FlightResultsView({
   const shown = result.itineraries.slice(0, limit);
   return (
     <Frame
-      className={`cc-app cc-flight-results ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
-      style={brandStyle}
+      className="cc-app cc-flight-results"
       displayMode="auto"
       data-llm={result.fallback}
     >
@@ -967,7 +967,7 @@ export function FlightResultsView({
         ) : null}
         {selectionError ? (
           <div className="cc-verification cc-verification-error" role="alert">
-            <strong>Fare was not added</strong>
+            <strong>Fare was not selected</strong>
             <span>{selectionError}</span>
             {selectionErrorSelectionId ? (
               <Action onClick={() => onVerify(selectionErrorSelectionId)}>
@@ -992,7 +992,6 @@ export function FlightResultsView({
 export default function FlightResults() {
   const ready = useWidgetReady();
   const layout = useLayout();
-  const branding = useBranding();
   const toolInfo = useToolInfo('search_flights');
   const verify = useCallTool('verify_flight_offer');
   const selectFare = useCallTool('select_flight_offer');
@@ -1014,11 +1013,6 @@ export default function FlightResults() {
   const transportError: GatewayError | undefined = verify.status === 'error'
     ? { code: 'provider_error', message: 'Fare verification could not be completed. Try again.', retryable: true }
     : undefined;
-  const theme = layout.theme === 'dark' ? 'dark' : 'light';
-  const brandStyle = {
-    '--cc-accent': branding.theme?.[layout.theme]?.accent ?? branding.accent ?? '#14213d',
-    '--cc-focus': branding.theme?.[layout.theme]?.focus ?? '#245aa8',
-  } as CSSProperties;
   const selectedItinerary = result?.itineraries.find((itinerary) => itinerary.selectionId === selected);
   const selectedVerification = verification?.selectionId === selected ? verification : undefined;
 
@@ -1051,9 +1045,8 @@ export default function FlightResults() {
       result={result}
       state={pending ? 'loading' : toolInfo.isError || !result ? 'malformed' : undefined}
       displayMode={layout.displayMode}
-      theme={theme}
+      theme={layout.theme === 'dark' ? 'dark' : 'light'}
       view={flow.activeView}
-      brandStyle={brandStyle}
       pendingFareSelectionId={pendingFareSelectionId}
       pendingSelectionId={verify.isPending ? selected : undefined}
       selectedSelectionId={selected}
@@ -1079,7 +1072,7 @@ export default function FlightResults() {
           }
           setSelected(transition.nextSelectionId);
         }).catch(() => {
-          setSelectionError('The fare could not be added to this trip. Your previous selection is unchanged.');
+          setSelectionError('The fare could not be selected. Your previous selection is unchanged.');
           setSelectionErrorSelectionId(selectionId);
         }).finally(() => {
           setPendingFareSelectionId((current) => current === selectionId ? undefined : current);

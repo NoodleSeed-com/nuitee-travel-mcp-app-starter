@@ -629,8 +629,9 @@ describe('real-browser widget readiness', () => {
 
     expect(after.borderColor).not.toBe(unselectedBorderColor);
     expect(after.boxShadow).not.toBe(unselectedBoxShadow);
-    expect(after.borderColor).toBe('rgb(20, 33, 61)'); // --cc-accent: #14213d
+    expect(after.backgroundColor).toBe('rgb(102, 204, 255)');
+    expect(after.borderColor).toBe('rgb(13, 13, 13)');
     expect(after.boxShadow).toContain('inset');
-    expect(after.boxShadow).toContain('rgb(20, 33, 61)');
+    expect(after.boxShadow).toContain('rgb(13, 13, 13)');
   });
 });

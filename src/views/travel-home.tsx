@@ -97,7 +97,7 @@ export function TravelHomeView({
     >
       <Flow variant="stack" density="comfortable">
         <section className="cc-home-intro" aria-label="Flight availability">
-          <StatusBadge className="cc-availability-badge" tone="success"><PlaneIcon />{demo ? 'Current flights' : 'Flights available'}</StatusBadge>
+          <StatusBadge className="cc-availability-badge" tone="info"><PlaneIcon />{demo ? 'Current flights' : 'Flights available'}</StatusBadge>
           <p>{data.message}</p>
           {demo ? <p className="cc-demo-disclosure">{data.disclosure}</p> : null}
         </section>

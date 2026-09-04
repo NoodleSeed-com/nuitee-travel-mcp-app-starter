@@ -17,10 +17,8 @@ export function gradientForName(name: string): string {
     hash = (hash * 31 + name.charCodeAt(index)) >>> 0;
   }
   const angle = 120 + (hash % 90);
-  const lift = 6 + ((hash >> 8) % 14);
-  const warmHue = 28 + ((hash >> 16) % 18);
-  const warmLight = 58 + ((hash >> 4) % 10);
-  return `linear-gradient(${angle}deg, hsl(219 51% ${14 + lift}%) 0%, hsl(213 34% ${30 + lift}%) 46%, hsl(${warmHue} 34% ${warmLight}%) 100%)`;
+  const midpoint = 38 + ((hash >> 8) % 20);
+  return `linear-gradient(${angle}deg, #0D0D0D 0%, #5D5D5D ${midpoint}%, #F7F7F7 100%)`;
 }
 
 export function PhotoBand({
