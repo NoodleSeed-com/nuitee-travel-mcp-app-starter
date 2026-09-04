@@ -6,6 +6,7 @@ import type { HomeOutput } from '../flight-schemas.js';
 import { starterConfig } from '../starter-config.js';
 import { BedIcon, CarIcon, CompassIcon, PlaneIcon, StarIcon } from './icons.js';
 import './travel.css';
+import { CardCarousel } from './card-carousel.js';
 
 type HomeState = 'loading' | 'error' | 'malformed';
 type TravelHomeOutput = HomeOutput | DemoHomeOutput;
@@ -27,7 +28,7 @@ export function isHome(value: unknown): value is TravelHomeOutput {
   const expected = expanded
     ? [
         ['Flights', 'available'],
-        ['Stays', 'illustrative'],
+        ['Stays', candidate.domains?.find(domain => domain?.name === 'Stays')?.availability === 'available' ? 'available' : 'illustrative'],
         ['Loyalty', 'illustrative'],
         ['Ground travel', 'coming_soon'],
         ['Experiences', 'coming_soon'],
@@ -106,11 +107,11 @@ export function TravelHomeView({
           title="Travel capabilities"
           description={demo ? 'One conversation, with the source of every result kept visible.' : 'Only Flights is connected in version one.'}
         >
-          <ul className="cc-domain-grid" aria-label="Travel capability availability">
+          <CardCarousel label="Travel capability availability" itemName="capability" className="cc-domain-grid">
             {data.domains.map((domain) => {
               const DomainIcon = domainIcons[domain.name];
               return (
-              <li className={domain.availability !== 'coming_soon' ? 'cc-domain cc-domain-available' : 'cc-domain'} key={domain.name}>
+              <article className={domain.availability !== 'coming_soon' ? 'cc-domain cc-domain-available' : 'cc-domain'} key={domain.name}>
                 <span className="cc-domain-icon"><DomainIcon /></span>
                 <span className="cc-domain-name">{domain.name}</span>
                 <span className="cc-domain-status">
@@ -127,10 +128,10 @@ export function TravelHomeView({
                     {domain.name === 'Stays' ? (domain.availability === 'available' ? 'Search stays' : 'Compare stays') : 'View rewards'}
                   </button>
                 ) : null}
-              </li>
+              </article>
               );
             })}
-          </ul>
+          </CardCarousel>
         </Region>
 
       </Flow>

@@ -15,6 +15,7 @@ import {
   useWidgetReady,
 } from '../helpers.js';
 import { CheckIcon } from './icons.js';
+import { CardCarousel } from './card-carousel.js';
 import './travel.css';
 
 type InsuranceResultsState = 'loading' | 'error' | 'malformed';
@@ -191,7 +192,7 @@ function InsuranceLoading() {
           <span className="cc-skeleton-block cc-shimmer" />
           <span className="cc-skeleton-block cc-shimmer" />
         </div>
-        <div className="cc-insurance-plan-grid" aria-hidden="true">
+        <div className="cc-insurance-plan-grid cc-card-carousel-track" aria-hidden="true">
           <InsuranceSkeletonCard />
           <InsuranceSkeletonCard />
           <InsuranceSkeletonCard />
@@ -307,9 +308,9 @@ export function InsuranceResultsView({
             <strong>{result.searchContext.adults} adult{result.searchContext.adults === 1 ? '' : 's'} · {result.searchContext.children} child traveler{result.searchContext.children === 1 ? '' : 's'}</strong>
           </div>
         </section>
-        <section aria-label="Illustrative travel protection concepts" className="cc-insurance-plan-grid">
+        <CardCarousel label="Illustrative travel protection concepts" itemName="travel protection concept" className="cc-insurance-plan-grid">
           {result.plans.map((plan) => <PlanCard key={plan.planId} locale={locale} plan={plan} />)}
-        </section>
+        </CardCarousel>
         <Region
           title="What to check before buying elsewhere"
           description="These concepts cannot establish whether any real product is suitable or available."

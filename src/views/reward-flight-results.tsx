@@ -1,12 +1,12 @@
 import '@fontsource-variable/host-grotesk';
 import '@noodleseed/one/react/styles.css';
 import { useEffect, useState } from 'react';
+import { useHorizontalSwipe } from './card-carousel.js';
 import {
   Action,
   Feedback,
   Flow,
   Frame,
-  StatusBadge,
   useLayout,
   useToolInfo,
   useWidgetReady,
@@ -117,7 +117,6 @@ function RewardFlightCard({ option, locale }: {
       <header className="cc-reward-flight-card-header">
         <div className="cc-reward-flight-partner-mark" aria-hidden="true"><PlaneIcon /></div>
         <div>
-          <StatusBadge tone="info">Illustrative reward idea</StatusBadge>
           <strong>{option.partnerLabel}</strong>
           <span>{option.cabinClass === 'PREMIUM_ECONOMY' ? 'Premium economy' : 'Economy'}</span>
         </div>
@@ -137,20 +136,18 @@ function RewardFlightCard({ option, locale }: {
 
       <div className="cc-reward-flight-points">
         <div>
-          <span>Illustrative total</span>
+          <span>Total points</span>
           <strong>{points.format(option.totalPoints)} points</strong>
           <small>{points.format(option.pointsPerAdult)} per adult</small>
         </div>
         <div>
           <span>Estimated taxes</span>
           <strong>{money.format(option.estimatedTaxes.amount)}</strong>
-          <small>No live quote</small>
         </div>
       </div>
 
       <footer className="cc-reward-flight-card-footer">
         <span>{points.format(option.balanceAfter)} points would remain</span>
-        <small>No reward seat was checked, held, or redeemed.</small>
       </footer>
     </article>
   );
@@ -170,6 +167,7 @@ function RewardFlightCarousel({ options, locale }: {
   const peekIndex = hasNext ? activeIndex + 1 : activeIndex - 1;
   const peek = options[peekIndex] ?? active;
   const previousPeek = !hasNext && hasPrevious;
+  const swipe = useHorizontalSwipe(direction => moveTo(activeIndex + direction));
 
   return (
     <section
@@ -184,7 +182,7 @@ function RewardFlightCarousel({ options, locale }: {
       <div className="cc-reward-flight-carousel-count" aria-live="polite" role="status">
         Idea {activeIndex + 1} of {options.length}
       </div>
-      <div className="cc-reward-flight-carousel-stage">
+      <div className="cc-reward-flight-carousel-stage" {...swipe}>
         <Action
           aria-label="Previous reward flight"
           className="cc-reward-flight-arrow cc-reward-flight-arrow-previous"
@@ -243,11 +241,11 @@ function RewardFlightSkeleton() {
     <Frame
       className="cc-app cc-reward-flights"
       displayMode="auto"
-      title="Illustrative reward flights"
+      title="Reward flights"
       subtitle="Comparing points ideas"
     >
       <section className="cc-reward-flight-skeleton" role="status" aria-live="polite" aria-busy="true">
-        <span className="cc-visually-hidden">Preparing illustrative reward-flight ideas…</span>
+        <span className="cc-visually-hidden">Preparing reward-flight ideas…</span>
         <div className="cc-reward-flight-disclosure" aria-hidden="true">
           <span className="cc-skeleton-block cc-shimmer" />
           <span className="cc-skeleton-block cc-shimmer" />
@@ -275,12 +273,12 @@ function statusView(state: RewardFlightState) {
     <Frame
       className="cc-app cc-reward-flights"
       displayMode="auto"
-      title="Illustrative reward flights"
+      title="Reward flights"
     >
       <Feedback status="error">
         {state === 'malformed'
           ? 'The reward-flight result was incomplete and could not be shown safely.'
-          : 'The illustrative reward-flight comparison could not load.'}
+          : 'The reward-flight comparison could not load.'}
       </Feedback>
       <p className="cc-reward-flight-status-note">No points, booking, payment, or account data was changed.</p>
     </Frame>
@@ -305,15 +303,13 @@ export function RewardFlightResultsView({
   const frameClassName = 'cc-app cc-reward-flights';
   if (result.status === 'empty') {
     return (
-      <Frame className={frameClassName} displayMode="auto" title="Illustrative reward flights" data-llm={result.fallback}>
+      <Frame className={frameClassName} displayMode="auto" title="Reward flights" data-llm={result.fallback}>
         <Flow variant="stack" density="comfortable">
-          <aside className="cc-reward-flight-disclosure" aria-label="Illustrative reward-flight disclosure">
-            <StatusBadge tone="info">Illustrative rewards</StatusBadge><p>{result.disclosure}</p>
-          </aside>
           <section className="cc-reward-flight-empty">
-            <h2>No illustrative reward-flight ideas fit</h2>
-            <p>{result.message}</p>
+            <h2>No reward-flight ideas fit</h2>
+            <p>Try a different destination or points budget.</p>
           </section>
+          <p className="cc-reward-flight-boundary">Comparison only · no points were applied and no reward seat was checked or held.</p>
         </Flow>
       </Frame>
     );
@@ -322,14 +318,11 @@ export function RewardFlightResultsView({
     <Frame
       className={frameClassName}
       displayMode="auto"
-      title="Illustrative reward flights"
-      subtitle={`${points.format(result.pointsContext.available)} points available · no live reward inventory`}
+      title="Reward flights"
+      subtitle={`${points.format(result.pointsContext.available)} points available`}
       data-llm={result.fallback}
     >
       <Flow variant="stack" density="compact">
-        <aside className="cc-reward-flight-disclosure" aria-label="Illustrative reward-flight disclosure">
-          <StatusBadge tone="info">Illustrative rewards</StatusBadge><p>{result.disclosure}</p>
-        </aside>
         <div className="cc-reward-flight-toolbar">
           <div><span>Starting point</span><strong>{result.searchContext.origin}</strong></div>
           <div><span>Points budget</span><strong>{points.format(result.pointsContext.available)} points available</strong></div>

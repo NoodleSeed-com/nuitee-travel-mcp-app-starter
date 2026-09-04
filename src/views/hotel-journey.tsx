@@ -4,6 +4,7 @@ import { Action, Feedback, Frame } from '../helpers.js';
 import { BedIcon, CheckIcon } from './icons.js';
 import { MapBoard } from './hotel-map-board.js';
 import './hotel-journey.css';
+import { CardCarousel } from './card-carousel.js';
 
 export interface HotelJourneyState {
   readonly searchId: string;
@@ -124,7 +125,7 @@ export function HotelJourney({ result, state, displayMode, theme = 'light', appe
     <fieldset className="cc-stay-compare-picker"><legend>Choose two stays to compare</legend>
       {hotels.map(hotel => <label key={hotel.selectionId}><input type="checkbox" checked={compareIds.includes(hotel.selectionId)} disabled={compareIds.length === 2 && !compareIds.includes(hotel.selectionId)} onChange={() => change({ compareIds: compareIds.includes(hotel.selectionId) ? compareIds.filter(id => id !== hotel.selectionId) : [...compareIds, hotel.selectionId] })} /><span>{hotel.name}</span></label>)}
     </fieldset>
-    {compared.length === 2 ? <section className="cc-stay-comparison" aria-label="Stay comparison">{compared.map(hotel => <article key={hotel.selectionId}><h3>{hotel.name}</h3><StayPrice hotel={hotel} locale={locale} /><p>{hotel.neighborhood}</p><p>{hotel.policySummary}</p><Action type="button" onClick={() => change({ screen: 'detail', detailId: hotel.selectionId })}>View stay: {hotel.name}</Action></article>)}</section> : <p>Choose {2 - compared.length} more {compared.length ? 'stay' : 'stays'} to see prices and terms together.</p>}
+    {compared.length === 2 ? <CardCarousel className="cc-stay-comparison" label="Stay comparison" itemName="compared stay">{compared.map(hotel => <article key={hotel.selectionId}><h3>{hotel.name}</h3><StayPrice hotel={hotel} locale={locale} /><p>{hotel.neighborhood}</p><p>{hotel.policySummary}</p><Action type="button" onClick={() => change({ screen: 'detail', detailId: hotel.selectionId })}>View stay: {hotel.name}</Action></article>)}</CardCarousel> : <p>Choose {2 - compared.length} more {compared.length ? 'stay' : 'stays'} to see prices and terms together.</p>}
     {back}
   </>, 'Compare location and terms');
 
@@ -133,14 +134,14 @@ export function HotelJourney({ result, state, displayMode, theme = 'light', appe
     <p className="cc-stay-dates">{result.searchContext.checkInDate} to {result.searchContext.checkOutDate} · {result.searchContext.adults + result.searchContext.children} guests</p>
     {disclosure}
     {result.status === 'partial' ? <Feedback status="partial">{result.message}</Feedback> : null}
-    <div className="cc-stay-shortlist" role="list" aria-label="Stays">
-      {hotels.slice(0, current.shown).map(hotel => <article className="cc-stay-card" role="listitem" key={hotel.selectionId}>
+    <CardCarousel className="cc-stay-shortlist" label="Stays" itemName="stay">
+      {hotels.slice(0, current.shown).map(hotel => <article className="cc-stay-card" key={hotel.selectionId}>
         <HotelPhoto hotel={hotel} />
         <div className="cc-stay-card-body"><h3>{hotel.name}</h3><p>{hotel.neighborhood}</p><StayPrice hotel={hotel} locale={locale} /><p className="cc-stay-policy">{hotel.policySummary}</p>
           <Action type="button" variant="primary" aria-label={`${selectedSelectionId === hotel.selectionId ? 'View selected stay' : 'View stay'}: ${hotel.name}`} className={selectedSelectionId === hotel.selectionId ? 'cc-selection-action-selected' : undefined} onClick={() => change({ screen: 'detail', detailId: hotel.selectionId })}>{selectedSelectionId === hotel.selectionId ? <><CheckIcon />Selected · View stay</> : 'View stay'}</Action>
         </div>
       </article>)}
-    </div>
+    </CardCarousel>
     <div className="cc-stay-actions cc-stay-more">
       {current.shown < hotels.length ? <Action type="button" variant="quiet" onClick={() => change({ shown: Math.min(current.shown + 3, hotels.length) })}>Show {Math.min(3, hotels.length - current.shown)} more {hotels.length - current.shown === 1 ? 'stay' : 'stays'}</Action> : null}
       <Action type="button" variant="quiet" onClick={() => { change({ screen: 'explore' }); onExpand?.(); }}>Explore stays</Action>

@@ -335,7 +335,7 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
           status: 'unavailable',
           message: 'That stay is no longer in the current comparison. Search the stays again.',
         },
-        nextHotelState: state,
+        ...(input.hotelState ? { nextHotelState: state } : {}),
       };
     }
     return {

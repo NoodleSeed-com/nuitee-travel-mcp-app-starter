@@ -1,4 +1,4 @@
-import { annotations, tool, z } from '@noodleseed/one';
+import { annotations, tool, when, z } from '@noodleseed/one';
 import {
   DEMO_DESTINATION_ALIASES,
   DEMO_HOTEL_CATALOG,
@@ -213,10 +213,11 @@ function reviewDemoTrip(viewPolicy: Readonly<Record<string, unknown>>) {
     fulfil: ({ connectors }) => {
       const flights = connectors.state.readState({ handle: 'flight_selections' }).value;
       const hotels = connectors.state.readState({ handle: 'demo_hotel_selections' }).value;
+      const states = connectors.demo.prepare_states({ flightState: flights, hotelState: hotels });
       const gateway = connectors.demo.execute({
         kind: 'review',
-        flightState: flights,
-        hotelState: hotels,
+        flightState: states.flightState.optional(),
+        hotelState: states.hotelState.optional(),
         loyalty: getSyntheticLoyaltyOverview(),
       });
       return {
@@ -224,8 +225,8 @@ function reviewDemoTrip(viewPolicy: Readonly<Record<string, unknown>>) {
         dataSource: gateway.review.dataSource,
         disclosure: gateway.review.disclosure,
         fallback: gateway.review.fallback,
-        flight: gateway.review.flight,
-        stay: gateway.review.stay,
+        flight: gateway.review.flight.optional(),
+        stay: gateway.review.stay.optional(),
         loyalty: gateway.review.loyalty,
         missing: gateway.review.missing,
       };
@@ -252,20 +253,21 @@ function selectDemoHotel() {
     output: demoSelectHotelOutputSchema,
     fulfil: ({ input, connectors }) => {
       const current = connectors.state.readState({ handle: 'demo_hotel_selections' });
+      const states = connectors.demo.prepare_states({ hotelState: current.value });
       const gateway = connectors.demo.execute({
         kind: 'select',
         selectionId: input.selectionId,
-        hotelState: current.value,
+        hotelState: states.hotelState.optional(),
       });
-      connectors.state.patchState({
+      when(gateway.selection.status.equals('selected'), () => connectors.state.patchState({
         handle: 'demo_hotel_selections',
         expectedRevision: current.revision,
         value: gateway.nextHotelState,
-      });
+      }));
       return {
         status: gateway.selection.status,
         message: gateway.selection.message,
-        selectionId: gateway.selection.selectionId,
+        selectionId: gateway.selection.selectionId.optional(),
       };
     },
   });

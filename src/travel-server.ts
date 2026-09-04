@@ -7,6 +7,7 @@ import {
   server,
   tool,
   variable,
+  when,
   z,
 } from '@noodleseed/one';
 import { createDemoCapabilities } from './demo-capabilities.js';
@@ -523,7 +524,8 @@ function liveSelectFlightOffer() {
     output: selectFlightOutputSchema,
     fulfil: ({ input, connectors }) => {
       const current = connectors.state.readState({ handle: 'flight_selections' });
-      connectors.state.patchState({
+      const selection = connectors.gateway.select({ state: current.value, selectionId: input.selectionId });
+      when(selection.status.equals('selected'), () => connectors.state.patchState({
         handle: 'flight_selections',
         expectedRevision: current.revision,
         value: {
@@ -532,11 +534,11 @@ function liveSelectFlightOffer() {
           records: current.value.records,
           activeSelectionId: input.selectionId,
         },
-      });
+      }));
       return {
-        status: 'selected' as const,
-        message: 'The selected fare is ready for verification.',
-        selectionId: input.selectionId,
+        status: selection.status,
+        message: selection.message,
+        selectionId: selection.selectionId.optional(),
       };
     },
   });

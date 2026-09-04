@@ -216,7 +216,11 @@ describe('real-browser widget readiness', () => {
       firstBounds.top + firstBounds.height / 2 - (nextBounds.top + nextBounds.height / 2),
     )).toBeLessThanOrEqual(2);
     const oneCardStep = peekBounds.left - firstBounds.left;
-    await page.getByRole('button', { name: 'Next flight option' }).click();
+    const stage = document.querySelector('.cc-carousel-stage')!;
+    const start = new Touch({ identifier: 1, target: stage, clientX: 250, clientY: 100 });
+    const end = new Touch({ identifier: 1, target: stage, clientX: 100, clientY: 110 });
+    stage.dispatchEvent(new TouchEvent('touchstart', { touches: [start], bubbles: true }));
+    stage.dispatchEvent(new TouchEvent('touchend', { changedTouches: [end], bubbles: true }));
     await expect.element(page.getByText('Option 2 of 3')).toBeVisible();
     await expect.element(page.getByText('CA$309.50', { exact: true })).toBeVisible();
     expect(document.querySelectorAll('.cc-fare-card')).toHaveLength(3);
@@ -313,7 +317,7 @@ describe('real-browser widget readiness', () => {
     expect(hasHorizontalOverflow()).toBe(false);
   });
 
-  it('bounds fare chips and swaps to an accessible fare-details face without changing card height', async () => {
+  it('bounds fare chips and lets expanded details grow without an inner scroll', async () => {
     await page.viewport(720, 1_200);
     mount(<InteractiveResults />);
     await expect.element(page.getByText('Best value')).toBeVisible();
@@ -363,7 +367,7 @@ describe('real-browser widget readiness', () => {
     expect(document.querySelector('.cc-fare-watermark')).toBeNull();
     const dataTile = document.querySelector<HTMLElement>('.cc-fare-detail-content-compact .cc-details-grid > div')!;
     expect(getComputedStyle(dataTile).borderTopWidth).toBe('1px');
-    expect(Math.abs(card.getBoundingClientRect().height - initialHeight)).toBeLessThanOrEqual(1);
+    expect(back.scrollHeight).toBeLessThanOrEqual(back.clientHeight + 1);
     await backButton.click();
     await expect.element(toggle).toHaveFocus();
     expect(Math.abs(card.getBoundingClientRect().height - initialHeight)).toBeLessThanOrEqual(1);
@@ -501,7 +505,8 @@ describe('real-browser widget readiness', () => {
     await page.getByRole('button', { name: 'Flight and fare details' }).click();
     const back = document.querySelector<HTMLElement>('.cc-fare-face-back')!;
     expect(back.textContent).toContain('North Cedar International Test Airport');
-    expect(getComputedStyle(back).overflowY).toBe('auto');
+    expect(getComputedStyle(back).overflowY).toBe('visible');
+    expect(back.scrollHeight).toBeLessThanOrEqual(back.clientHeight + 1);
     expect(hasHorizontalOverflow()).toBe(false);
   });
 

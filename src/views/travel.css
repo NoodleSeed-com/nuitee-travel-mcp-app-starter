@@ -12,6 +12,9 @@
   --cc-confirmed: #99FF99;
   --cc-action-needed: #FF6666;
   --cc-response: #2F7391;
+  --cc-brand-blue: #66CCFF;
+  --cc-brand-teal: #2AA6A4;
+  --cc-brand-ink: #147D83;
   --surface-primary: #FFFFFF;
   --surface-secondary: #F7F7F7;
   --text-primary: #0D0D0D;
@@ -29,6 +32,17 @@
   font-size: 0.9375rem;
   line-height: 1.45;
   font-variant-numeric: tabular-nums;
+}
+
+/* Approved static blue/teal identity accent, separate from semantic states. */
+.cc-app::before {
+  content: '';
+  display: block;
+  width: 64px;
+  height: 4px;
+  margin: 16px 16px 0;
+  border-radius: 999px;
+  background: linear-gradient(100deg, var(--cc-brand-blue), var(--cc-brand-teal));
 }
 
 /* Hotel map board — adapted from Tribe's stay board to the Wayfare light-only contract. */
@@ -3044,3 +3058,55 @@
 .cc-hotel-amenity-line { font-size: 0.72rem; color: var(--cc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cc-hotel-actions { display: flex; gap: 8px; padding-top: 3px; }
 .cc-hotel-actions > * { flex: 1; }
+
+/* A single native horizontal row; height always follows its content. */
+.cc-card-carousel { min-width: 0; max-width: 100%; }
+.cc-app .cc-card-carousel-track {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 4px 2px 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  scroll-behavior: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--cc-brand-teal) var(--cc-surface-muted);
+}
+.cc-app .cc-card-carousel-track > * {
+  flex: 0 0 min(86%, 340px);
+  min-width: 0;
+  scroll-snap-align: start;
+}
+.cc-card-carousel-item { display: flex; }
+.cc-card-carousel-item > * { width: 100%; min-width: 0; box-sizing: border-box; }
+.cc-card-carousel-nav { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: 6px; }
+.cc-card-carousel-nav > span { margin-right: auto; color: var(--cc-muted); font-size: .78rem; }
+.cc-app .cc-card-carousel-nav button {
+  display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
+  border: 1px solid var(--cc-border); border-radius: 50%; background: var(--cc-surface); color: var(--cc-text);
+}
+.cc-card-carousel-nav button:disabled { opacity: .35; cursor: default; }
+.cc-card-carousel-track:focus-visible { outline: 2px solid var(--cc-focus); outline-offset: 2px; }
+.cc-app .cc-domain-available .cc-domain-icon,
+.cc-app .cc-reward-flight-partner-mark { color: var(--cc-brand-ink); background: var(--cc-surface-muted); }
+.cc-app .cc-insurance-plan-card { box-shadow: none; }
+
+/* Expanded fare details grow the widget instead of capturing chat scroll. */
+.cc-carousel-slide > .cc-fare-card-details { block-size: auto; }
+.cc-fare-card-details .cc-fare-face-stack { block-size: auto; min-block-size: 0; }
+.cc-fare-card-details .cc-fare-face-front { display: none; }
+.cc-fare-face-back { overflow: visible; overscroll-behavior: auto; }
+.cc-fare-face-back.cc-fare-face-is-hidden { display: none; }
+.cc-app .cc-card-carousel-item > .cc-stay-card { flex-basis: auto; }
+.cc-app .cc-card-carousel-item > .cc-domain { border: 1px solid var(--cc-border); border-radius: 16px; padding: 16px; }
+.cc-loyalty-summary .cc-loyalty-hero { grid-template-columns: 1fr; align-content: start; background: var(--cc-surface); }
+.cc-loyalty-summary .cc-loyalty-balance { text-align: left; }
+.cc-loyalty-summary .cc-loyalty-tier { justify-self: start; }
+.cc-loyalty-summary .cc-card-carousel-item > section { border: 1px solid var(--cc-border); border-radius: 18px; padding: 20px; }
+.cc-loyalty-summary .cc-loyalty-benefits { display: grid; grid-template-columns: 1fr; margin: 12px 0 0; padding: 0; }
+.cc-loyalty-summary .cc-loyalty-benefit { border: 0; border-radius: 0; padding: 8px 0; background: transparent; }
+.cc-carousel-stage, .cc-reward-flight-carousel-stage { touch-action: pan-y pinch-zoom; }

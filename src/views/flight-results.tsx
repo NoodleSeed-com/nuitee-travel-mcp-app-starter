@@ -1,6 +1,7 @@
 import '@fontsource-variable/host-grotesk';
 import '@noodleseed/one/react/styles.css';
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
+import { useHorizontalSwipe } from './card-carousel.js';
 import {
   Action,
   ActionBar,
@@ -642,6 +643,7 @@ function FareCarousel({ itineraries, pendingSelectionId, searchContext, selected
 
   const hasPrevious = activeIndex > 0;
   const hasNext = activeIndex < lastIndex;
+  const swipe = useHorizontalSwipe(direction => moveTo(activeIndex + direction));
 
   return (
     <section
@@ -669,6 +671,7 @@ function FareCarousel({ itineraries, pendingSelectionId, searchContext, selected
       </div>
       <div
         className="cc-carousel-stage"
+        {...swipe}
       >
         <Action
           aria-label="Previous flight option"

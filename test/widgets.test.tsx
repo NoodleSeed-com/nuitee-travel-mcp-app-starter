@@ -116,6 +116,23 @@ const sampleSearchOutput = {
 };
 
 describe('TravelHome', () => {
+  it('accepts current stays alongside illustrative rewards in the live expanded home', () => {
+    const liveHome = {
+      ...home,
+      disclosure: 'Current flights and stays. Rewards remain illustrative; nothing can be booked.',
+      domains: [
+        { name: 'Flights', availability: 'available' },
+        { name: 'Stays', availability: 'available' },
+        { name: 'Loyalty', availability: 'illustrative' },
+        { name: 'Ground travel', availability: 'coming_soon' },
+        { name: 'Experiences', availability: 'coming_soon' },
+      ],
+    };
+    expect(isHome(liveHome)).toBe(true);
+    if (!isHome(liveHome)) throw new Error('Live home rejected');
+    expect(renderToStaticMarkup(<TravelHomeView data={liveHome} theme="light" />)).toContain('Current flights and stays');
+    expect(isHome({ ...liveHome, domains: liveHome.domains.map(d => d.name === 'Experiences' ? { ...d, availability: 'available' } : d) })).toBe(false);
+  });
   it('keeps the starter chat first while showing capability availability', () => {
     const html = renderToStaticMarkup(<TravelHomeView data={home} theme="light" />);
     expect(html).toContain('Flight search');

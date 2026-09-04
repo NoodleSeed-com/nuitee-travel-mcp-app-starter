@@ -439,6 +439,15 @@ describe('synthetic Wayfare travel fixtures', () => {
     expect(gateway.result?.hotels[0]).toMatchObject({ nights: 3 });
   });
 
+  it('returns unavailable without inventing state for a fresh hotel selection', () => {
+    const result = demoGatewayOutputSchema.parse(runDemoGateway({
+      kind: 'select',
+      selectionId: 'hsel_ffffffffffffffffffffffffffffffff',
+    }));
+    expect(result.selection).toMatchObject({ status: 'unavailable' });
+    expect(result.nextHotelState).toBeUndefined();
+  });
+
   it('rejects stale hotel selections and reviews only active server-owned records', () => {
     const searched = demoGatewayOutputSchema.parse(runDemoGateway({
       kind: 'search',

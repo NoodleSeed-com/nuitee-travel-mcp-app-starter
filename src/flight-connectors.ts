@@ -1,10 +1,13 @@
 import { connector, secret, z } from '@noodleseed/one';
 import { runNuiteeGateway } from './flight-runtime.js';
+import { selectStoredFlight } from './selection-state.js';
 import {
   errorSchema,
   itinerarySchema,
   searchInputSchema,
   selectionRecordSchema,
+  selectionIdSchema,
+  selectFlightOutputSchema,
   verificationSchema,
 } from './flight-schemas.js';
 
@@ -94,6 +97,13 @@ export const gatewayOutputSchema = z.object({
 
 export const nuiteeGateway = connector('nuitee_flights_gateway')
   .version('1.0.1')
+  .compute('select', {
+    type: 'read',
+    input: z.object({ state: z.unknown(), selectionId: selectionIdSchema }),
+    output: selectFlightOutputSchema,
+    limits: { timeoutMs: 1_000 },
+    run: selectStoredFlight,
+  })
   .compute('execute', {
     type: 'read',
     input: gatewayInputSchema,

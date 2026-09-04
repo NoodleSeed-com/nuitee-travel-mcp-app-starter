@@ -77,8 +77,24 @@ describe('illustrative travel-protection widget in a real browser', () => {
 
     await expect.element(page.getByText('Essential concept')).toBeVisible();
     expect(document.querySelectorAll('.cc-insurance-plan-card')).toHaveLength(3);
-    expect(document.querySelectorAll('button, a')).toHaveLength(0);
+    expect(document.querySelectorAll('button, a')).toHaveLength(2);
     expect(hasHorizontalOverflow()).toBe(false);
+  });
+
+  it('keeps concepts in one horizontal row with working navigation and no vertical scroll trap', async () => {
+    await page.viewport(320, 900);
+    mount(<InsuranceResultsView displayMode="inline" result={comparison} />);
+    await expect.element(page.getByText('Essential concept')).toBeVisible();
+    const cards = [...document.querySelectorAll<HTMLElement>('.cc-insurance-plan-card')];
+    expect(Math.abs(cards[0]!.getBoundingClientRect().top - cards[1]!.getBoundingClientRect().top)).toBeLessThanOrEqual(1);
+    await page.getByRole('button', { name: 'Next travel protection concept' }).click();
+    const track = document.querySelector<HTMLElement>('.cc-card-carousel-track')!;
+    await expect.poll(() => track.scrollLeft).toBeGreaterThan(0);
+    expect(track.scrollHeight).toBeLessThanOrEqual(track.clientHeight + 1);
+    expect(getComputedStyle(cards[0]!).backgroundColor).toBe('rgb(255, 255, 255)');
+    const accent = getComputedStyle(document.querySelector('.cc-app')!, '::before').backgroundImage;
+    expect(accent).toContain('rgb(102, 204, 255)');
+    expect(accent).toContain('rgb(42, 166, 164)');
   });
 
   it('matches loading and result grid geometry without exposing synthetic values early', async () => {

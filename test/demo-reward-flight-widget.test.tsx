@@ -101,6 +101,15 @@ const render = (props: Parameters<typeof RewardFlightResultsView>[0]) =>
 const visibleText = (markup: string) => markup.replace(/<[^>]*>/gu, ' ');
 
 describe('Wayfare illustrative reward-flight widget', () => {
+  it('keeps example-data disclosure in one footer instead of repeated chips and card warnings', () => {
+    const markup = render({ result, displayMode: 'inline' });
+    expect(markup).not.toContain('Illustrative reward idea');
+    expect(markup).not.toContain('Illustrative rewards');
+    expect(markup).not.toContain('No live quote');
+    expect(markup).not.toContain('No reward seat was checked, held, or redeemed.');
+    expect(markup.match(/Comparison only/g)).toHaveLength(1);
+    expect(markup).toContain('no reward seat was checked or held');
+  });
   it('renders a geometry-matched accessible skeleton', () => {
     const markup = render({ state: 'loading', displayMode: 'inline', theme: 'light' });
     expect(markup).toContain('cc-reward-flight-skeleton');
@@ -112,7 +121,7 @@ describe('Wayfare illustrative reward-flight widget', () => {
   it('renders bounded reward ideas in a non-circular carousel without transactional actions', () => {
     const markup = render({ result, displayMode: 'inline', theme: 'light', locale: 'en-CA' });
 
-    expect(markup).toContain('Illustrative reward flights');
+    expect(markup).toContain('Reward flights');
     expect(markup).toContain('42,500 points available');
     expect(markup).toContain('12,000 points');
     expect(markup).toContain('Toronto');
@@ -137,7 +146,7 @@ describe('Wayfare illustrative reward-flight widget', () => {
     const failed = render({ state: 'error', displayMode: 'inline', theme: 'dark' });
     const malformed = render({ state: 'malformed', displayMode: 'inline', theme: 'light' });
 
-    expect(empty).toContain('No illustrative reward-flight ideas fit');
+    expect(empty).toContain('No reward-flight ideas fit');
     expect(failed).toContain('could not load');
     expect(failed).not.toContain('cc-theme-dark');
     expect(malformed).toContain('could not be shown safely');

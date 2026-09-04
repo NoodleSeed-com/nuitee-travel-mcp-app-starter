@@ -101,6 +101,16 @@ does not authorize booking, redemption, or other unsupported actions.
 
 ### Neutral tokens
 
+**Approved widget accent exception (2026-09-05):** Repository-owned MCP widgets
+may use a small, static blue (`#66CCFF`) to teal (`#2AA6A4`) header accent and
+teal (`#147D83`) capability glyphs. This is identity, not selection or success.
+Keep card fills neutral, default actions black/white, compact logos one-color,
+and selected blue fills confined to selected buttons. No violet, WebGL, ambient
+animation, or decorative full-card gradients. Repeated card groups use a labelled
+horizontal carousel with native swipe and visible previous/next controls; never
+an inner vertical scrolling region. Preserve readable content, focus, zoom, and
+the conversation's vertical scroll. Do not clip information to force a fixed height.
+
 | Token | Value | Use |
 | --- | --- | --- |
 | Canvas | `#FFFFFF` | Page and conversation background |
@@ -415,6 +425,13 @@ Avoid:
 - “Book now before it’s gone!”
 
 Copy rules:
+
+- **Approved rewards disclosure refinement (2026-09-05):** Rewards widgets use
+  one small, readable footer disclaimer instead of repeated preview chips,
+  introductory disclosure panels, or illustrative/simulated labels on every
+  field. Keep the example-data and no-transaction distinction in that footer;
+  trip review must still distinguish example stays from current provider stays.
+  Preserve full provenance in tool responses and existing data models.
 
 - Name what happened, what is known, and what the user can do next.
 - Label illustrative data every time it could be mistaken for live inventory.
