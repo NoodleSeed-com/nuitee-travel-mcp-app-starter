@@ -4,6 +4,16 @@
 trip capabilities. These modules are preparatory: importing them does not add
 tools to an existing server profile or change its flight response format.
 
+## Development checks
+
+Run `pnpm typecheck:domain` to strictly type-check `src/domain/` and its
+`test/domain-*.test.ts` tests without emitting files. `pnpm ci:core` runs this
+check before the behavior tests, using the root package's pinned compiler.
+It does not require a temporary configuration or a compiler from another
+workspace. The focused configuration inherits the root compiler options;
+it is not a claim that unrelated legacy server modules pass a full TypeScript
+check. `pnpm test` continues to exercise those modules' existing contracts.
+
 ## Money
 
 `Money` is `{ amountMinor, currency }`. Amounts are nonnegative safe integers.
