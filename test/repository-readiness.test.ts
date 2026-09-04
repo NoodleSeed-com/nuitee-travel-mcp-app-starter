@@ -374,10 +374,10 @@ describe('public repository contracts', () => {
       'pnpm agent:check:assistant',
       'pnpm check:embedded-host',
     ]) expect(rootPackage.scripts['ci:core']).toContain(command);
-    expect(rootPackage.scripts['ci:widget-browser']).toBe('pnpm test:browser');
-    expect(rootPackage.scripts['ci:web']).toBe('pnpm check:web');
+    expect(rootPackage.scripts['ci:widget-browser']).toBeUndefined();
+    expect(rootPackage.scripts['ci:web']).not.toContain('test:browser');
     expect(rootPackage.scripts['ci:offline']).toBe(
-      'pnpm ci:core && pnpm ci:widget-browser && pnpm ci:web',
+      'pnpm ci:core && pnpm ci:web',
     );
   });
 
@@ -405,7 +405,16 @@ describe('public repository contracts', () => {
     expect(rootPackage.scripts['check:web']).toContain(
       '@nuitee-travel-starter/web build',
     );
-    expect(rootPackage.scripts['ci:web']).toBe('pnpm check:web');
+    expect(rootPackage.scripts['ci:web']).toContain(
+      '@nuitee-travel-starter/web typecheck',
+    );
+    expect(rootPackage.scripts['ci:web']).toContain(
+      '@nuitee-travel-starter/web test',
+    );
+    expect(rootPackage.scripts['ci:web']).toContain(
+      '@nuitee-travel-starter/web build',
+    );
+    expect(rootPackage.scripts['ci:web']).not.toContain('test:browser');
     expect(rootPackage.scripts['ci:core']).toContain('pnpm check:embedded-host');
   });
 
@@ -451,9 +460,9 @@ describe('public repository contracts', () => {
     expect(workflow).toContain('actions/setup-node@820762786026740c76f36085b0efc47a31fe5020');
     expect(workflow).toContain('persist-credentials: false');
     expect(workflow).toContain('merge_group:');
-    expect(workflow).toContain('suite: [core, widget-browser, web]');
+    expect(workflow).toContain('suite: [core, web]');
     expect(workflow).toContain('run: pnpm ci:${{ matrix.suite }}');
-    expect(workflow).toContain("if: matrix.suite != 'core'");
+    expect(workflow).not.toContain('playwright');
     expect(workflow).toContain('needs: quality');
     expect(workflow).not.toMatch(/uses:\s+[^\s]+@v\d/);
     expect(dependabot).toContain('package-ecosystem: github-actions');

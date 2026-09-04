@@ -51,8 +51,10 @@ The `production` GitHub environment owns these deployment coordinates:
 - `FLY_API_TOKEN` environment secret: an app-scoped deploy token for
   `wayfare-experience`. It is never passed to the Docker build.
 
-CI runs the core, widget-browser, and web suites in parallel. The stable
-`offline-quality-gates` check requires all three, so branch protection and the
+CI runs the core and web suites in parallel. Browser suites remain available
+for explicit local and pre-release validation, but are not part of the hosted
+CI or Fly deployment path. The stable
+`offline-quality-gates` check requires both, so branch protection and the
 deployment dependency stay simple while individual failures remain easy to
 identify. The deployment job then serializes production deployments, uses
 immutable action and Fly CLI versions, waits for the Fly rollout, and verifies

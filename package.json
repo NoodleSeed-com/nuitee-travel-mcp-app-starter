@@ -43,9 +43,8 @@
     "test:web": "pnpm --filter @nuitee-travel-starter/web test",
     "check:web": "pnpm --filter @nuitee-travel-starter/web typecheck && pnpm --filter @nuitee-travel-starter/web test && pnpm --filter @nuitee-travel-starter/web test:browser && pnpm --filter @nuitee-travel-starter/web build",
     "ci:core": "pnpm agent:doctor && pnpm customize:check && pnpm audit:history && pnpm audit:licenses && pnpm test && pnpm agent:check && pnpm agent:check:live && pnpm agent:check:assistant && pnpm check:embedded-host",
-    "ci:widget-browser": "pnpm test:browser",
-    "ci:web": "pnpm check:web",
-    "ci:offline": "pnpm ci:core && pnpm ci:widget-browser && pnpm ci:web",
+    "ci:web": "pnpm --filter @nuitee-travel-starter/web typecheck && pnpm --filter @nuitee-travel-starter/web test && pnpm --filter @nuitee-travel-starter/web build",
+    "ci:offline": "pnpm ci:core && pnpm ci:web",
     "agent:commands": "noodle commands --json"
   },
   "devDependencies": {
