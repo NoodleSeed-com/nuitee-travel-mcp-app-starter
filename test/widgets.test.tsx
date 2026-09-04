@@ -37,6 +37,8 @@ import {
   isGatewayError,
   isSearchOutput,
   isVerification,
+  selectionOutcome,
+  selectionTransition,
   selectedFareModelContext,
 } from '../src/views/flight-results.js';
 import { SearchEditor, searchPrompt } from '../src/views/search-editor.js';
@@ -96,6 +98,21 @@ const itinerary = {
   ],
   segments: [],
   messages: ['Fictional fixture fare; not live inventory.'],
+};
+
+// A carrier with a curated accent (unlike the shared `itinerary` fixture
+// above, whose ZZ code is deliberately unmapped) so tests can assert the
+// `--cc-carrier-accent` custom property is actually emitted.
+const sampleSearchOutput = {
+  status: 'success' as const,
+  itineraries: [{ ...itinerary, carrier: { name: 'Nuitee Air', code: 'ND' } }],
+  fallback: 'One flight',
+  message: 'One flight',
+  retrievedAt: itinerary.retrievedAt,
+  searchContext: {
+    origin: 'QZX', destination: 'QZY', departureDate: '2030-04-20', adults: 1, children: 0, infants: 0,
+    childrenAges: [], infantAges: [], cabinClass: 'ECONOMY' as const, currency: 'CAD', country: 'CA',
+  },
 };
 
 describe('TravelHome', () => {
@@ -213,15 +230,15 @@ describe('FlightResults', () => {
       <FlightResultsView result={result} displayMode="inline" onVerify={vi.fn()} />,
     );
 
-    expect(html).toContain('Current flight options');
+    expect(html).toContain('Flight options');
     expect(html).toContain('Select fare');
     expect(html).not.toMatch(/Book|Continue to payment|fare held/i);
-    expect(html).toContain('Lowest fare');
+    expect(html).toContain('Best value');
 
     const withoutCheapest = renderToStaticMarkup(
       <FlightResultsView result={{ ...result, itineraries: [{ ...itinerary, isCheapest: false }] }} displayMode="inline" onVerify={vi.fn()} />,
     );
-    expect(withoutCheapest).not.toContain('Lowest fare');
+    expect(withoutCheapest).not.toContain('Best value');
   });
 
   it('publishes only the active fare as bounded model context', () => {
@@ -263,14 +280,17 @@ describe('FlightResults', () => {
         onVerify={vi.fn()}
       />,
     );
-    expect((inline.match(/>Select fare<\/button>/g) ?? [])).toHaveLength(2);
+    expect((inline.match(/>Select fare<\/button>/g) ?? [])).toHaveLength(3);
     expect(inline).toContain('aria-label="Flight options carousel"');
     expect(inline).toContain('cc-carousel-stage');
     expect(inline).toContain('cc-carousel-window');
     expect(inline).toContain('cc-carousel-track');
     expect(inline).toContain('cc-carousel-slide');
-    expect(inline).toContain('cc-carousel-peek-slide');
+    expect(inline).toContain('data-active-index="0"');
+    expect(inline).toContain('data-slide-index="2"');
     expect(inline).toContain('aria-hidden="true"');
+    expect(inline).toContain('cc-results-toolbar');
+    expect((inline.match(/>Flight options</g) ?? [])).toHaveLength(1);
     expect(inline).not.toContain('cc-result-carousel');
     expect(inline).toContain('aria-label="Previous flight option"');
     expect(inline).toContain('aria-label="Next flight option"');
@@ -279,6 +299,8 @@ describe('FlightResults', () => {
     expect(previousButton).toContain('disabled');
     expect(nextButton).not.toContain('disabled');
     expect(inline).toContain('Option 1 of 3');
+    expect(inline).not.toContain('Open the App in expanded view');
+    expect(inline).not.toContain('Select one fare to verify');
     expect((fullscreen.match(/>Select fare<\/button>/g) ?? [])).toHaveLength(10);
     expect(fullscreen).not.toContain('aria-label="Flight options carousel"');
     expect(inline).not.toContain('Verify current fare');
@@ -292,7 +314,7 @@ describe('FlightResults', () => {
       />,
     );
     expect((selected.match(/>Verify current fare<\/button>/g) ?? [])).toHaveLength(1);
-    expect(selected).toContain('cc-carousel-peek-slide');
+    expect(selected).toContain('data-active-index="1"');
     const selectedNextButton = selected.match(/<button[^>]*aria-label="Next flight option"[^>]*>/)?.[0] ?? '';
     expect(selectedNextButton).not.toContain('disabled');
     for (const forbidden of ['Book', 'Checkout', 'Reserve', 'Pay', 'Redeem']) expect(inline).not.toContain(forbidden);
@@ -307,19 +329,18 @@ describe('FlightResults', () => {
     expect(renderToStaticMarkup(<FlightResultsView displayMode="inline" onVerify={vi.fn()} {...props} />)).toContain(text);
   });
 
-  it('renders a geometry-matched carousel skeleton with a next-card peek and no route-scanning animation', () => {
+  it('renders a geometry-matched carousel skeleton with a next-card preview and no duplicate status shell', () => {
     const html = renderToStaticMarkup(<FlightResultsView state="loading" displayMode="inline" onVerify={vi.fn()} />);
     expect(html).toContain('aria-busy="true"');
-    expect(html).toContain('Searching current flights');
-    expect(html).toContain('Comparing routes, schedules, and fares');
+    expect(html).toContain('Searching current fares');
     expect((html.match(/cc-skeleton-fare/g) ?? [])).toHaveLength(2);
     expect(html).toContain('cc-carousel-stage');
     expect(html).toContain('cc-carousel-window');
     expect(html).toContain('cc-carousel-track');
-    expect(html).toContain('cc-carousel-peek-slide');
+    expect(html).not.toContain('cc-results-toolbar');
     expect(html).toContain('cc-fare-card cc-skeleton-fare');
     expect(html).toContain('cc-skeleton-leg');
-    expect((html.match(/cc-skeleton-chip"/g) ?? [])).toHaveLength(6);
+    expect((html.match(/cc-skeleton-price-stack"/g) ?? [])).toHaveLength(2);
     expect(html).toContain('cc-skeleton-details');
     expect(html).toContain('cc-shimmer');
     expect(html).not.toContain('cc-route-scan');
@@ -341,9 +362,13 @@ describe('FlightResults', () => {
     expect(html).toContain('cc-fare-face-stack');
     expect(html).toContain('cc-fare-face-front');
     expect(html).toContain('cc-fare-face-back');
-    expect(html).toContain('cc-fare-front-summary');
+    expect(html).toContain('cc-compact-fare-front');
+    expect(html).toContain('cc-compact-fare-main');
+    expect(html).toContain('cc-compact-fare-price');
     expect(html).toContain('cc-leg-route-origin');
     expect(html).toContain('cc-leg-route-destination');
+    expect(html).toContain('cc-flight-segment-row');
+    expect(html).toContain('cc-flight-path-line');
     expect(html).toContain('cc-fare-detail-content-compact');
     expect(html).toContain('Back to flight');
     expect(html).not.toContain('cc-fare-watermark');
@@ -563,6 +588,81 @@ describe('FlightResults', () => {
     expect(isGatewayError({ code: 'made_up', message: 'No', retryable: true })).toBe(false);
   });
 
+  it('confirms a fare selection only when the tool explicitly returns the same bounded selection', () => {
+    const selectionId = itinerary.selectionId;
+
+    expect(selectionOutcome({
+      structuredContent: {
+        status: 'selected',
+        selectionId,
+        message: 'The fare was added to this trip.',
+      },
+    }, selectionId)).toEqual({
+      confirmed: true,
+      message: 'The fare was added to this trip.',
+    });
+
+    for (const unsafeResponse of [
+      undefined,
+      { structuredContent: { status: 'error', selectionId } },
+      { structuredContent: { status: 'selected', selectionId: 'sel_ffffffffffffffffffffffffffffffff' } },
+      { structuredContent: { status: 'selected' } },
+    ]) {
+      expect(selectionOutcome(unsafeResponse, selectionId)).toEqual({
+        confirmed: false,
+        message: 'The fare could not be added to this trip. Your previous selection is unchanged.',
+      });
+    }
+  });
+
+  it('retains a verified current fare when a replacement selection is rejected', () => {
+    const replacement = {
+      ...itinerary,
+      selectionId: 'sel_ffffffffffffffffffffffffffffffff',
+      price: { ...itinerary.price, total: 399.5 },
+    };
+    const verified = {
+      status: 'success' as const,
+      selectionId: itinerary.selectionId,
+      availability: 'available' as const,
+      priceChanged: true,
+      previousPrice: itinerary.price,
+      currentPrice: { total: 299.5, currency: 'CAD' },
+      messages: ['The current fare remains available.'],
+      verifiedAt: itinerary.retrievedAt,
+    };
+    const transition = selectionTransition(
+      { structuredContent: { status: 'error', selectionId: replacement.selectionId } },
+      replacement.selectionId,
+      itinerary.selectionId,
+    );
+
+    expect(transition).toMatchObject({
+      confirmed: false,
+      nextSelectionId: itinerary.selectionId,
+      resetVerification: false,
+    });
+    const review = renderToStaticMarkup(
+      <FlightResultsView
+        displayMode="inline"
+        onVerify={vi.fn()}
+        result={{
+          status: 'success',
+          itineraries: [itinerary, replacement],
+          fallback: 'Two flights',
+          message: 'Two flights',
+          retrievedAt: itinerary.retrievedAt,
+        }}
+        selectedSelectionId={transition.nextSelectionId}
+        verification={verified}
+        view="review"
+      />,
+    );
+    expect(review).toContain('Verified fare review');
+    expect(review).toContain('CA$299.50');
+    expect(review).toContain('The current fare remains available.');
+  });
+
   it('renders price freshness, verification messages, and distinct accessible actions', () => {
     const result = { status: 'success' as const, itineraries: [itinerary], fallback: 'One flight', message: 'One flight', retrievedAt: itinerary.retrievedAt };
     const actionHtml = renderToStaticMarkup(<FlightResultsView
@@ -673,12 +773,21 @@ describe('FlightResults', () => {
     expect(css).toMatch(/\.cc-fare-face\s*\{[^}]*grid-area:\s*1\s*\/\s*1/s);
     expect(css).toMatch(/\.cc-fare-face\s*\{[^}]*transition:/s);
     expect(css).toMatch(/\.cc-fare-card-details\s*\{[^}]*background:/s);
-    expect(css).toMatch(/\.cc-carousel-slide\s*>\s*\.cc-fare-card\s*\{[^}]*min-block-size:\s*(?:30|31|32)rem/s);
+    expect(css).toMatch(/\.cc-carousel-slide\s*>\s*\.cc-fare-card\s*\{[^}]*min-block-size:\s*var\(--cc-fare-card-size,\s*15\.5rem\)/s);
+    expect(css).toMatch(/\.cc-fare-card-round-trip\s*\{[^}]*--cc-fare-card-size:\s*19rem/s);
     expect(css).toContain('var(--cc-carrier-accent, var(--cc-accent))');
     expect(css).toMatch(/\.cc-fare-back-header\s*\{[^}]*grid-template-columns:/s);
     expect(css).toMatch(/\.cc-fare-back-button\s*\{[^}]*border:\s*0/s);
     expect(css).toMatch(/\.cc-fare-back-button\s*\{[^}]*background:\s*transparent/s);
-    expect(css).toMatch(/\.cc-carousel-track-is-last\s*\{[^}]*transform:/s);
+    expect(css).toMatch(/\.cc-carousel-track\[data-active-index='1'\]\s*\{[^}]*transform:/s);
+    expect(css).toMatch(/\.cc-carousel-track\s*\{[^}]*transition:\s*transform/s);
+  });
+
+  it('keeps compact fare state rules independent from the shared card shell', () => {
+    const css = readFileSync(new URL('../src/views/travel.css', import.meta.url), 'utf8');
+    expect(css).toMatch(/^\.cc-fare-selected\s*\{/m);
+    expect(css).toMatch(/^\.cc-fare-card-details\s*\{/m);
+    expect(css).not.toContain('.cc-app .cc-fare-card-details');
   });
 
   it('uses the portable Noodle Form and gates bridge-backed controls on widget readiness', () => {
@@ -689,5 +798,13 @@ describe('FlightResults', () => {
     expect(editorSource).not.toContain('<form');
     expect(homeSource).toContain('useWidgetReady()');
     expect(resultsSource).toContain('useWidgetReady()');
+  });
+
+  it('keeps the per-carrier accent on the compact fare card', () => {
+    const html = renderToStaticMarkup(
+      <FlightResultsView displayMode="inline" result={sampleSearchOutput} onVerify={vi.fn()} />,
+    );
+    expect(html).toContain('--cc-carrier-accent');
+    expect(html).toContain('cc-compact-fare-front');
   });
 });

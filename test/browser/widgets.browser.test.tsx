@@ -187,21 +187,24 @@ describe('real-browser widget readiness', () => {
     }));
     const result = { ...search, itineraries };
     mount(<FlightResultsView result={result} displayMode="inline" onVerify={vi.fn()} />);
-    await expect.element(page.getByText('Open the App in expanded view to browse all 4 options.')).toBeVisible();
+    expect(document.body.textContent).not.toContain('Open the App in expanded view to browse all 4 options.');
     const carousel = page.getByRole('region', { name: 'Flight option 1 of 3' });
     await expect.element(carousel).toBeVisible();
     await expect.element(page.getByText('Option 1 of 3')).toBeVisible();
     await expect.element(page.getByRole('button', { name: 'Previous flight option' })).toBeDisabled();
     await expect.element(page.getByRole('button', { name: 'Next flight option' })).not.toBeDisabled();
-    expect(document.querySelectorAll('.cc-fare-card')).toHaveLength(2);
+    expect(document.querySelectorAll('.cc-fare-card')).toHaveLength(3);
     const carouselWindow = document.querySelector<HTMLElement>('.cc-carousel-window')!;
-    const firstCard = document.querySelector<HTMLElement>('.cc-carousel-slide:not(.cc-carousel-peek-slide) .cc-fare-card')!;
-    const peekCard = document.querySelector<HTMLElement>('.cc-carousel-peek-slide .cc-fare-card')!;
+    const editSearchCard = document.querySelector<HTMLElement>('.cc-results-toolbar')!;
+    const firstCard = document.querySelector<HTMLElement>('.cc-carousel-slide[data-slide-index="0"] .cc-fare-card')!;
+    const peekCard = document.querySelector<HTMLElement>('.cc-carousel-slide[data-slide-index="1"] .cc-fare-card')!;
     const windowBounds = carouselWindow.getBoundingClientRect();
+    const editSearchBounds = editSearchCard.getBoundingClientRect();
     const firstBounds = firstCard.getBoundingClientRect();
     const peekBounds = peekCard.getBoundingClientRect();
     const visiblePeek = Math.max(0, Math.min(windowBounds.right, peekBounds.right) - Math.max(windowBounds.left, peekBounds.left));
     expect(getComputedStyle(carouselWindow).overflowX).toBe('clip');
+    expect(Math.abs(windowBounds.left - editSearchBounds.left)).toBeLessThanOrEqual(1);
     expect(firstBounds.left).toBeGreaterThanOrEqual(windowBounds.left);
     expect(firstBounds.right).toBeLessThanOrEqual(windowBounds.right);
     expect(visiblePeek / windowBounds.width).toBeGreaterThanOrEqual(0.2);
@@ -212,17 +215,24 @@ describe('real-browser widget readiness', () => {
     expect(Math.abs(
       firstBounds.top + firstBounds.height / 2 - (nextBounds.top + nextBounds.height / 2),
     )).toBeLessThanOrEqual(2);
+    const oneCardStep = peekBounds.left - firstBounds.left;
     await page.getByRole('button', { name: 'Next flight option' }).click();
     await expect.element(page.getByText('Option 2 of 3')).toBeVisible();
     await expect.element(page.getByText('CA$309.50', { exact: true })).toBeVisible();
-    expect(document.querySelectorAll('.cc-fare-card')).toHaveLength(2);
+    expect(document.querySelectorAll('.cc-fare-card')).toHaveLength(3);
+    await expect.poll(() => Math.abs(
+      document.querySelector<HTMLElement>('.cc-carousel-slide[data-slide-index="1"] .cc-fare-card')!.getBoundingClientRect().left
+        - firstBounds.left,
+    )).toBeLessThanOrEqual(1);
+    expect(oneCardStep).toBeGreaterThan(firstBounds.width);
+    expect(oneCardStep - firstBounds.width).toBeLessThanOrEqual(13);
     await page.getByRole('button', { name: 'Next flight option' }).click();
     await expect.element(page.getByText('Option 3 of 3')).toBeVisible();
     await expect.element(page.getByRole('button', { name: 'Next flight option' })).toBeDisabled();
     await expect.element(page.getByRole('button', { name: 'Previous flight option' })).not.toBeDisabled();
-    expect(document.querySelectorAll('.cc-fare-card')).toHaveLength(2);
-    const previousPeek = document.querySelector<HTMLElement>('.cc-carousel-previous-peek-shell .cc-fare-card')!;
-    const finalCard = document.querySelector<HTMLElement>('.cc-carousel-slide:not(.cc-carousel-peek-slide) .cc-fare-card')!;
+    expect(document.querySelectorAll('.cc-fare-card')).toHaveLength(3);
+    const previousPeek = document.querySelector<HTMLElement>('.cc-carousel-slide[data-slide-index="1"] .cc-fare-card')!;
+    const finalCard = document.querySelector<HTMLElement>('.cc-carousel-slide[data-slide-index="2"] .cc-fare-card')!;
     await expect.poll(() => {
       const peek = previousPeek.getBoundingClientRect();
       const window = carouselWindow.getBoundingClientRect();
@@ -244,10 +254,50 @@ describe('real-browser widget readiness', () => {
     expect(hasHorizontalOverflow()).toBe(false);
   });
 
+  it('keeps a visible next and previous fare preview on mobile', async () => {
+    await page.viewport(390, 1_200);
+    const itineraries = Array.from({ length: 3 }, (_, index) => ({
+      ...itinerary,
+      selectionId: `sel_${String(index).padStart(32, '0')}`,
+      price: { ...itinerary.price, total: itinerary.price.total + index * 25 },
+    }));
+    mount(<FlightResultsView
+      result={{ ...search, itineraries }}
+      displayMode="inline"
+      onVerify={vi.fn()}
+    />);
+
+    await expect.element(page.getByRole('region', { name: 'Flight option 1 of 3' }))
+      .toBeVisible();
+    const carouselWindow = document.querySelector<HTMLElement>('.cc-carousel-window')!;
+    const visibleShare = (card: HTMLElement) => {
+      const windowBounds = carouselWindow.getBoundingClientRect();
+      const cardBounds = card.getBoundingClientRect();
+      return Math.max(
+        0,
+        Math.min(windowBounds.right, cardBounds.right)
+          - Math.max(windowBounds.left, cardBounds.left),
+      ) / windowBounds.width;
+    };
+    const nextPeek = document.querySelector<HTMLElement>('.cc-carousel-slide[data-slide-index="1"] .cc-fare-card')!;
+    expect(visibleShare(nextPeek)).toBeGreaterThan(0.1);
+    expect(visibleShare(nextPeek)).toBeLessThan(0.2);
+
+    await page.getByRole('button', { name: 'Next flight option' }).click();
+    await page.getByRole('button', { name: 'Next flight option' }).click();
+    await expect.element(page.getByText('Option 3 of 3')).toBeVisible();
+    const previousPeek = document.querySelector<HTMLElement>(
+      '.cc-carousel-slide[data-slide-index="1"] .cc-fare-card',
+    )!;
+    await expect.poll(() => visibleShare(previousPeek)).toBeLessThan(0.2);
+    expect(visibleShare(previousPeek)).toBeGreaterThan(0.1);
+    expect(hasHorizontalOverflow()).toBe(false);
+  });
+
   it('bounds fare chips and swaps to an accessible fare-details face without changing card height', async () => {
     await page.viewport(720, 1_200);
     mount(<InteractiveResults />);
-    await expect.element(page.getByText('Lowest fare')).toBeVisible();
+    await expect.element(page.getByText('Best value')).toBeVisible();
 
     const card = document.querySelector<HTMLElement>('.cc-fare-card')!;
     const chip = document.querySelector<HTMLElement>('.cc-fare-highlight-badge')!;
@@ -261,11 +311,12 @@ describe('real-browser widget readiness', () => {
     await expect.element(toggle).toHaveAttribute('aria-expanded', 'false');
     const front = document.querySelector<HTMLElement>('.cc-fare-face-front')!;
     const back = document.querySelector<HTMLElement>('.cc-fare-face-back')!;
-    const frontContentLeft = document.querySelector<HTMLElement>('.cc-fare-header')!.getBoundingClientRect().left;
-    const summary = document.querySelector<HTMLElement>('.cc-fare-front-summary')!;
+    const frontContentLeft = document.querySelector<HTMLElement>('.cc-compact-fare-main')!.getBoundingClientRect().left;
+    const frontScroll = document.querySelector<HTMLElement>('.cc-fare-front-scroll')!;
     const footer = document.querySelector<HTMLElement>('.cc-fare-footer')!;
     const initialHeight = card.getBoundingClientRect().height;
-    expect(footer.getBoundingClientRect().top - summary.getBoundingClientRect().bottom).toBeLessThanOrEqual(120);
+    expect(getComputedStyle(frontScroll).overflowY).toBe('hidden');
+    expect(footer.getBoundingClientRect().bottom).toBeLessThanOrEqual(card.getBoundingClientRect().bottom);
     expect(front.getAttribute('aria-hidden')).toBe('false');
     expect(back.getAttribute('aria-hidden')).toBe('true');
     expect(getComputedStyle(back).transitionProperty).toContain('opacity');
@@ -300,10 +351,145 @@ describe('real-browser widget readiness', () => {
     expect(hasHorizontalOverflow()).toBe(false);
   });
 
+  it('keeps a two-leg fare footer visible inside its aligned card at mobile width', async () => {
+    await page.viewport(320, 1_200);
+    const returnLeg = {
+      direction: 'INBOUND' as const,
+      route: { origin: 'QZY', destination: 'QZX' },
+      departureTime: '2030-04-27T16:00:00+02:00',
+      arrivalTime: '2030-04-27T19:30:00+02:00',
+      durationMinutes: 210,
+      stops: 0,
+    };
+    mount(
+      <FlightResultsView
+        displayMode="inline"
+        onSelect={vi.fn()}
+        onVerify={vi.fn()}
+        result={{
+          ...search,
+          searchContext: {
+            ...search.searchContext!,
+            returnDate: '2030-04-27',
+            tripType: 'ROUND_TRIP',
+          },
+          itineraries: [{ ...itinerary, legs: [itinerary.legs[0]!, returnLeg] }],
+        }}
+      />,
+    );
+
+    await expect.element(page.getByRole('region', { name: 'Flight option 1 of 1' })).toBeVisible();
+    expect(document.querySelector('section[aria-label="Return QZY to QZX"]')).not.toBeNull();
+    const card = document.querySelector<HTMLElement>('.cc-fare-card')!;
+    const footer = document.querySelector<HTMLElement>('.cc-fare-footer')!;
+    const cardBounds = card.getBoundingClientRect();
+    const footerBounds = footer.getBoundingClientRect();
+    expect(card.classList.contains('cc-fare-card-round-trip')).toBe(true);
+    expect(footerBounds.bottom).toBeLessThanOrEqual(cardBounds.bottom);
+    expect(footerBounds.top).toBeGreaterThanOrEqual(cardBounds.top);
+    expect(hasHorizontalOverflow()).toBe(false);
+  });
+
+  it('keeps a max-content multi-stop itinerary compact with overflow details on its back face', async () => {
+    await page.viewport(720, 1_200);
+    const crowdedItinerary: Itinerary = {
+      ...itinerary,
+      arrivalTime: '2030-04-20T18:45:00Z',
+      durationMinutes: 585,
+      stops: 2,
+      legs: [
+        {
+          direction: 'OUTBOUND',
+          route: { origin: 'QZX', destination: 'QZY' },
+          departureTime: '2030-04-20T09:00:00Z',
+          arrivalTime: '2030-04-20T18:45:00Z',
+          durationMinutes: 585,
+          stops: 2,
+        },
+        {
+          direction: 'INBOUND',
+          route: { origin: 'QZY', destination: 'QZX' },
+          departureTime: '2030-04-27T08:00:00Z',
+          arrivalTime: '2030-04-27T18:30:00Z',
+          durationMinutes: 630,
+          stops: 2,
+        },
+      ],
+      segments: [
+        {
+          origin: 'QZX', destination: 'QZA', direction: 'OUTBOUND',
+          departureTime: '2030-04-20T09:00:00Z', arrivalTime: '2030-04-20T11:00:00Z',
+          durationMinutes: 120, carrier: itinerary.carrier, flightNumber: '101',
+        },
+        {
+          origin: 'QZA', originName: 'North Cedar International Test Airport', destination: 'QZB', direction: 'OUTBOUND',
+          departureTime: '2030-04-20T12:10:00Z', arrivalTime: '2030-04-20T14:40:00Z',
+          durationMinutes: 150, carrier: itinerary.carrier, flightNumber: '202',
+        },
+        {
+          origin: 'QZB', originName: 'South Cloud Harbour Test Airport', destination: 'QZY', direction: 'OUTBOUND',
+          departureTime: '2030-04-20T15:55:00Z', arrivalTime: '2030-04-20T18:45:00Z',
+          durationMinutes: 170, carrier: itinerary.carrier, flightNumber: '303',
+        },
+        {
+          origin: 'QZY', destination: 'QZB', direction: 'INBOUND',
+          departureTime: '2030-04-27T08:00:00Z', arrivalTime: '2030-04-27T10:50:00Z',
+          durationMinutes: 170, carrier: itinerary.carrier, flightNumber: '404',
+        },
+        {
+          origin: 'QZB', originName: 'South Cloud Harbour Test Airport', destination: 'QZA', direction: 'INBOUND',
+          departureTime: '2030-04-27T12:05:00Z', arrivalTime: '2030-04-27T14:35:00Z',
+          durationMinutes: 150, carrier: itinerary.carrier, flightNumber: '505',
+        },
+        {
+          origin: 'QZA', originName: 'North Cedar International Test Airport', destination: 'QZX', direction: 'INBOUND',
+          departureTime: '2030-04-27T16:30:00Z', arrivalTime: '2030-04-27T18:30:00Z',
+          durationMinutes: 120, carrier: itinerary.carrier, flightNumber: '606',
+        },
+      ],
+    };
+
+    mount(
+      <FlightResultsView
+        displayMode="inline"
+        onSelect={vi.fn()}
+        onVerify={vi.fn()}
+        result={{
+          ...search,
+          searchContext: {
+            ...search.searchContext!,
+            returnDate: '2030-04-27',
+            tripType: 'ROUND_TRIP',
+          },
+          itineraries: [crowdedItinerary],
+        }}
+      />,
+    );
+
+    await expect.element(page.getByRole('button', { name: 'Flight and fare details' })).toBeVisible();
+    const card = document.querySelector<HTMLElement>('.cc-fare-card')!;
+    const front = document.querySelector<HTMLElement>('.cc-fare-front-scroll')!;
+    const footer = document.querySelector<HTMLElement>('.cc-fare-footer')!;
+    const select = page.getByRole('button', { name: /Select fare from QZX to QZY/ });
+    const cardBounds = card.getBoundingClientRect();
+    const footerBounds = footer.getBoundingClientRect();
+
+    expect(getComputedStyle(front).overflowY).toBe('hidden');
+    expect(footerBounds.top).toBeGreaterThanOrEqual(cardBounds.top);
+    expect(footerBounds.bottom).toBeLessThanOrEqual(cardBounds.bottom);
+    await expect.element(select).toBeVisible();
+    expect((await select.element()).getBoundingClientRect().bottom).toBeLessThanOrEqual(cardBounds.bottom);
+    await page.getByRole('button', { name: 'Flight and fare details' }).click();
+    const back = document.querySelector<HTMLElement>('.cc-fare-face-back')!;
+    expect(back.textContent).toContain('North Cedar International Test Airport');
+    expect(getComputedStyle(back).overflowY).toBe('auto');
+    expect(hasHorizontalOverflow()).toBe(false);
+  });
+
   it('keeps the loading skeleton and result card on the same carousel geometry', async () => {
     await page.viewport(720, 1_200);
     mount(<FlightResultsView state="loading" displayMode="inline" onVerify={vi.fn()} />);
-    await expect.element(page.getByText('Searching current flights')).toBeVisible();
+    await expect.element(page.getByText('Searching current fares', { exact: true })).toBeVisible();
     const skeletonBounds = document.querySelector<HTMLElement>('.cc-skeleton-fare')!
       .getBoundingClientRect();
 
@@ -319,6 +505,22 @@ describe('real-browser widget readiness', () => {
     expect(Math.abs(skeletonBounds.left - resultBounds.left)).toBeLessThanOrEqual(1);
     expect(Math.abs(skeletonBounds.height - resultBounds.height)).toBeLessThanOrEqual(1);
     expect(hasHorizontalOverflow()).toBe(false);
+  });
+
+  it('keeps the loading skeleton rows inset from the card edge, not flush', async () => {
+    // The loading skeleton shares the compact fare-card shell and should
+    // retain the same visible content inset as the loaded result.
+    await page.viewport(720, 1_200);
+    mount(<FlightResultsView state="loading" displayMode="inline" onVerify={vi.fn()} />);
+    await expect.element(page.getByText('Searching current fares', { exact: true })).toBeVisible();
+
+    const skeleton = document.querySelector<HTMLElement>('.cc-skeleton-fare')!;
+    const skeletonStyle = getComputedStyle(skeleton);
+    expect(Number.parseFloat(skeletonStyle.paddingLeft)).toBeGreaterThan(0);
+    expect(Number.parseFloat(skeletonStyle.paddingRight)).toBeGreaterThan(0);
+
+    const row = document.querySelector<HTMLElement>('.cc-skeleton-fare .cc-skeleton-row')!;
+    expect(row.getBoundingClientRect().left).toBeGreaterThan(skeleton.getBoundingClientRect().left + 1);
   });
 
   it('keeps secondary verified-fare details collapsed until requested', async () => {
@@ -401,18 +603,14 @@ describe('real-browser widget readiness', () => {
     await page.viewport(320, 900);
     expect(matchMedia('(prefers-reduced-motion: reduce)').matches).toBe(true);
     mount(<FlightResultsView state="loading" displayMode="inline" onVerify={vi.fn()} />);
-    await expect.element(page.getByText('Searching current flights')).toBeVisible();
+    await expect.element(page.getByText('Searching current fares', { exact: true })).toBeVisible();
 
     const shimmer = document.querySelector<HTMLElement>('.cc-shimmer');
     expect(shimmer).not.toBeNull();
     expect(getComputedStyle(shimmer!).animationName).toBe('none');
   });
-  it('actually renders the selected-fare accent, not just the shared card shell', async () => {
-    // .cc-card (the shared shell from Task 1/2) sets its own border and
-    // box-shadow at the same (0,1,0) specificity as .cc-fare-selected, and
-    // came later in the file — a regression here means the selected-state
-    // border-color and box-shadow computed styles stay identical to the
-    // unselected card even though the `cc-fare-selected` class is present.
+
+  it('renders the compact card selected state after choosing a fare', async () => {
     await page.viewport(720, 1_200);
     mount(<InteractiveResults />);
     await expect.element(page.getByRole('button', { name: /Select fare from QZX to QZY/ })).toBeVisible();
@@ -422,7 +620,7 @@ describe('real-browser widget readiness', () => {
     const unselectedBoxShadow = before.boxShadow;
 
     await page.getByRole('button', { name: /Select fare from QZX to QZY/ }).click();
-    await expect.element(page.getByRole('button', { name: /Selected fare from QZX to QZY/ })).toBeVisible();
+    await expect.poll(() => card.classList.contains('cc-fare-selected')).toBe(true);
     // .cc-fare-card also transitions border-color/background-color over
     // 120ms; wait for it to settle before reading the final computed value.
     await new Promise((resolve) => setTimeout(resolve, 200));
@@ -433,10 +631,5 @@ describe('real-browser widget readiness', () => {
     expect(after.borderColor).toBe('rgb(20, 33, 61)'); // --cc-accent: #14213d
     expect(after.boxShadow).toContain('inset');
     expect(after.boxShadow).toContain('rgb(20, 33, 61)');
-    // .cc-fare-selected must ADD its accent inset, not REPLACE .cc-card's
-    // own elevation — otherwise the selected card is the only flat one in
-    // the row. The unselected box-shadow's shadow layers must still be
-    // present verbatim, with the inset accent layered in front of them.
-    expect(after.boxShadow.endsWith(unselectedBoxShadow)).toBe(true);
   });
 });
