@@ -40,6 +40,16 @@ const nextConfig: NextConfig = {
       './src/starter-config.js': '../../src/starter-config.ts',
     },
   },
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.gowayfare.io' }],
+        destination: 'https://gowayfare.io/:path*',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

@@ -21,6 +21,8 @@ e6d793cc15a411fb0539dd5cec6dc0baf4002ab4 apps/web/public/images/destinations/rom
 # Current deterministic product previews, recaptured from the premium Wayfare revision.
 89ee2a00affed845604da63b37bb193aa1a03315 docs/images/travel-home.png
 aa6fb4d40dd0aa3941d740d09f1e9b6f2e22823d docs/images/flight-results.png
+# User-approved Wayfare social preview, reviewed at native 1200 by 630 detail.
+6ecc10929afd8169e4f48aee2fae2d20e29fde4c apps/web/app/opengraph-image.png
 # Active shared Wayfare hero masters, visually reviewed at original detail.
 060089d1f0fe41cbc89af3e2afe424dcb83a08a6 apps/web/public/images/immersive/wayfare-explore-windows-v2.png
 1940a8249a53ec3d774dbe76427cb70971321154 apps/web/public/images/immersive/wayfare-cockpit-v2.png

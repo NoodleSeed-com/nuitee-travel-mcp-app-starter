@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev --port 3000",
     "build": "next build",
+    "render:og": "node scripts/render-social-preview.mjs",
     "start": "next start --port 3000",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

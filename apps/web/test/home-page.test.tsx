@@ -1,3 +1,9 @@
+import {
+  Children,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const requestHeaders = vi.hoisted(() => vi.fn());
@@ -5,6 +11,16 @@ const requestHeaders = vi.hoisted(() => vi.fn());
 vi.mock('next/headers', () => ({ headers: requestHeaders }));
 
 import HomePage from '../app/page';
+import { TravelAssistantPage } from '../src/components/travel-assistant-page';
+
+function travelAssistantProps(page: ReactElement<{ children?: ReactNode }>) {
+  const assistant = Children.toArray(page.props.children).find((child) => (
+    isValidElement(child) && child.type === TravelAssistantPage
+  )) as ReactElement<{ initialCountry?: string }> | undefined;
+
+  expect(assistant).toBeDefined();
+  return assistant?.props ?? {};
+}
 
 describe('Wayfare home request defaults', () => {
   beforeEach(() => {
@@ -36,7 +52,7 @@ describe('Wayfare home request defaults', () => {
         }),
       }),
     );
-    expect(page.props).toMatchObject({ initialCountry: 'PK' });
+    expect(travelAssistantProps(page)).toMatchObject({ initialCountry: 'PK' });
     expect(JSON.stringify(page.props)).not.toContain('203.0.113.42');
   });
 
@@ -51,6 +67,6 @@ describe('Wayfare home request defaults', () => {
     const page = await HomePage();
 
     expect(lookup).not.toHaveBeenCalled();
-    expect(page.props.initialCountry).toBeUndefined();
+    expect(travelAssistantProps(page).initialCountry).toBeUndefined();
   });
 });

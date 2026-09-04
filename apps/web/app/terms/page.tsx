@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import { LegalDocument, type LegalSection } from '../../src/components/legal-document';
+import { routeMetadata } from '../../src/lib/seo-config';
 
 export const metadata: Metadata = {
-  title: 'Terms of service | Wayfare',
+  title: 'Terms of service',
   description: 'Terms for using the Wayfare demonstration experience.',
+  ...routeMetadata.terms,
 };
 
 const sections: readonly LegalSection[] = [
