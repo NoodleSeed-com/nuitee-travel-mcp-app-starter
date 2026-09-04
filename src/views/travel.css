@@ -93,7 +93,6 @@
   background: #66ccff;
   color: #0d0d0d;
 }
-.cc-map-pin[data-active='true'] { transform: translate(-50%, -100%) scale(1.04); }
 .cc-map-note { margin: 0; color: var(--cc-muted); font-size: 0.78rem; }
 .cc-chip-rail-wrap { display: grid; gap: 8px; }
 .cc-chip-rail-cap { margin: 0; color: var(--cc-muted); font-size: 0.78rem; font-weight: 600; }
@@ -389,11 +388,7 @@
 
 .cc-app button {
   border-radius: 999px;
-  transition: transform 120ms ease;
-}
-
-.cc-app button:active {
-  transform: scale(0.985);
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
 .cc-app :focus-visible {
@@ -2241,10 +2236,6 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-
-  .cc-app button:active {
-    transform: none;
   }
 
   .cc-shimmer {

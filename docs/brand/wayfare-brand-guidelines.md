@@ -337,6 +337,10 @@ requests to demonstrate that natural language is accepted.
 
 ### Timing and easing
 
+- Buttons, links, chips, and map pins keep their position and size on press,
+  hover, and selection. Do not add scale, bounce, or translation feedback.
+  Preserve transforms used to position controls; use color, border, and focus
+  treatment to communicate interaction.
 - Hover and focus feedback: `120–180ms`.
 - Sheets, disclosures, and state transitions: `180–280ms`.
 - Prefer opacity and transform. Do not animate layout dimensions when an
