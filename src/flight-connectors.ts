@@ -121,7 +121,14 @@ export const noodleState = connector('noodle_state')
   .operation('read_state', {
     type: 'read',
     input: z.object({ handle: z.string(), key: z.string().optional() }),
-    output: z.object({ value: z.unknown(), revision: z.number().int(), status: z.string() }),
+    output: z.object({
+      ok: z.boolean(),
+      handle: z.string(),
+      value: z.unknown(),
+      revision: z.number().int(),
+      status: z.string(),
+      expiresAt: z.string().optional(),
+    }),
   })
   .operation('patch_state', {
     type: 'action',
