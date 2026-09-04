@@ -749,6 +749,9 @@ describe('FlightResults', () => {
     expect(css).toContain('--cc-confirmed: #99FF99');
     expect(css).toContain('--cc-action-needed: #FF6666');
     expect(css).toContain('--cc-response: #2F7391');
+    expect(css).toContain('--accent: #0D0D0D');
+    expect(css).toContain('--accent-foreground: #FFFFFF');
+    expect(css).toMatch(/\.cc-loyalty-progress progress::-webkit-progress-value\s*\{[^}]*background:\s*var\(--cc-text\)/s);
     expect(css).toContain('background: var(--cc-bg)');
     expect(css).not.toContain('font-family: inherit;');
     expect(css).not.toContain('2.7rem');

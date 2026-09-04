@@ -294,6 +294,25 @@ describe('real-browser widget readiness', () => {
     expect(hasHorizontalOverflow()).toBe(false);
   });
 
+  it('uses the full rail width at narrow mobile sizes so fare copy is not clipped', async () => {
+    await page.viewport(280, 1_200);
+    const itineraries = Array.from({ length: 3 }, (_, index) => ({
+      ...itinerary,
+      selectionId: `sel_${String(index).padStart(32, '0')}`,
+      price: { ...itinerary.price, total: itinerary.price.total + index * 25 },
+    }));
+    mount(<FlightResultsView result={{ ...search, itineraries }} displayMode="inline" onVerify={vi.fn()} />);
+    await expect.element(page.getByRole('region', { name: 'Flight option 1 of 3' })).toBeVisible();
+
+    const windowBounds = document.querySelector<HTMLElement>('.cc-carousel-window')!.getBoundingClientRect();
+    const cardBounds = document.querySelector<HTMLElement>('.cc-carousel-slide[data-slide-index="0"] .cc-fare-card')!
+      .getBoundingClientRect();
+    const arrivalBounds = document.querySelector<HTMLElement>('.cc-flight-endpoint-arrival')!.getBoundingClientRect();
+    expect(Math.abs(windowBounds.width - cardBounds.width)).toBeLessThanOrEqual(1);
+    expect(arrivalBounds.right).toBeLessThanOrEqual(cardBounds.right);
+    expect(hasHorizontalOverflow()).toBe(false);
+  });
+
   it('bounds fare chips and swaps to an accessible fare-details face without changing card height', async () => {
     await page.viewport(720, 1_200);
     mount(<InteractiveResults />);

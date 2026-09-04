@@ -12,6 +12,13 @@
   --cc-confirmed: #99FF99;
   --cc-action-needed: #FF6666;
   --cc-response: #2F7391;
+  --surface-primary: #FFFFFF;
+  --surface-secondary: #F7F7F7;
+  --text-primary: #0D0D0D;
+  --text-secondary: #5D5D5D;
+  --border-subtle: #E8E8E8;
+  --accent: #0D0D0D;
+  --accent-foreground: #FFFFFF;
   --font-sans: "Host Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
   color-scheme: light;
   min-width: 0;
@@ -1593,12 +1600,26 @@
 }
 
 .cc-loyalty-progress progress {
+  appearance: none;
+  -webkit-appearance: none;
   width: 100%;
   height: 10px;
   overflow: hidden;
   border: 0;
   border-radius: 999px;
   accent-color: var(--cc-accent);
+}
+
+.cc-loyalty-progress progress::-webkit-progress-bar {
+  background: var(--cc-surface-muted);
+}
+
+.cc-loyalty-progress progress::-webkit-progress-value {
+  background: var(--cc-text);
+}
+
+.cc-loyalty-progress progress::-moz-progress-bar {
+  background: var(--cc-text);
 }
 
 .cc-loyalty-section-heading { margin-bottom: 10px; }
@@ -1904,6 +1925,15 @@
   .cc-loyalty-hero { padding: 12px; }
   .cc-reward-flight-card { padding: 12px; }
   .cc-reward-flight-points { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 350px) {
+  .cc-carousel-track > .cc-carousel-slide { flex-basis: 100%; }
+  .cc-carousel-track[data-active-index='1'],
+  .cc-carousel-track[data-active-index='1'][data-last-index='1'] {
+    transform: translateX(calc(-100% - 12px));
+  }
+  .cc-carousel-track[data-active-index='2'] { transform: translateX(calc(-200% - 24px)); }
 }
 
 @media (prefers-reduced-motion: reduce) {

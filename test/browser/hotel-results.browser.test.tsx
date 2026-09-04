@@ -76,4 +76,17 @@ describe('illustrative hotel widget in a real browser', () => {
     expect(button.getBoundingClientRect().width).toBeGreaterThanOrEqual(44);
     expect(button.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
   });
+
+  it('renders primary actions with the Wayfare black pill treatment', async () => {
+    await page.viewport(720, 1_200);
+    mount(<HotelResultsView displayMode="inline" result={result} onAdd={() => undefined} />);
+    const action = page.getByRole('button', { name: /Select Tagus Lantern Hotel 1/u });
+    await expect.element(action).toBeVisible();
+
+    const button = await action.element();
+    const style = getComputedStyle(button);
+    expect(style.backgroundColor).toBe('rgb(13, 13, 13)');
+    expect(style.color).toBe('rgb(255, 255, 255)');
+    expect(Number.parseFloat(style.borderRadius)).toBeGreaterThanOrEqual(22);
+  });
 });
