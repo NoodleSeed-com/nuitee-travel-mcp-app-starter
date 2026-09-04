@@ -1,4 +1,4 @@
-import '@fontsource-variable/inter';
+import '@fontsource-variable/host-grotesk';
 import '@noodleseed/one/react/styles.css';
 import { useEffect, useState, type CSSProperties } from 'react';
 import {
@@ -16,6 +16,7 @@ import type {
   DemoRewardFlightOption,
   DemoRewardFlightSearchOutput,
 } from '../demo-schemas.js';
+import { ArrowLeftIcon, PlaneIcon } from './icons.js';
 import './travel.css';
 
 type RewardFlightState = 'loading' | 'error' | 'malformed';
@@ -99,23 +100,6 @@ export function isDemoRewardFlightSearchOutput(
     return false;
   }
   return root.options.every((option) => isRewardFlightOption(option, points.available as number));
-}
-
-function ArrowLeftIcon() {
-  return (
-    <svg aria-hidden="true" className="cc-icon" fill="none" viewBox="0 0 24 24">
-      <path d="m15 18-6-6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
-    </svg>
-  );
-}
-
-function PlaneIcon() {
-  return (
-    <svg aria-hidden="true" className="cc-icon" fill="none" viewBox="0 0 24 24">
-      <path d="m3.5 11.2 17-7-7 17-2.8-7.9-7.2-2.1Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.7" />
-      <path d="m10.7 13.3 4.2-4.2" stroke="currentColor" strokeLinecap="round" strokeWidth="1.7" />
-    </svg>
-  );
 }
 
 function RewardFlightCard({ option, locale }: {

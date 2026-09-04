@@ -1,4 +1,4 @@
-import '@fontsource-variable/inter';
+import '@fontsource-variable/host-grotesk';
 import '@noodleseed/one/react/styles.css';
 import type { CSSProperties } from 'react';
 import { Feedback, Flow, Frame, Region, StatusBadge, useBranding, useLayout, useSendFollowUpMessage, useToolInfo, useWidgetReady } from '../helpers.js';

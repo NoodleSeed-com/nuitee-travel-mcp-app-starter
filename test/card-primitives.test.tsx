@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   Badge,
   MatchDetail,
-  MatchRing,
+  MatchScore,
   PhotoBand,
   Price,
   Rail,
@@ -134,17 +134,19 @@ describe('Badge', () => {
   });
 });
 
-describe('MatchRing', () => {
+describe('MatchScore', () => {
   it('exposes the score as a text alternative, not colour alone', () => {
-    const html = renderToStaticMarkup(<MatchRing score={82} />);
+    const html = renderToStaticMarkup(<MatchScore score={82} />);
     expect(html).toContain('82');
     expect(html).toContain('Stay match 82 out of 100');
   });
 
-  it('draws the arc proportional to the score', () => {
-    const full = renderToStaticMarkup(<MatchRing score={100} />);
-    const half = renderToStaticMarkup(<MatchRing score={50} />);
+  it('renders a plain score pill without a custom SVG data ring', () => {
+    const full = renderToStaticMarkup(<MatchScore score={100} />);
+    const half = renderToStaticMarkup(<MatchScore score={50} />);
     expect(full).not.toBe(half);
+    expect(full).not.toContain('<svg');
+    expect(full).toContain('cc-match-score');
   });
 });
 
@@ -164,6 +166,10 @@ describe('MatchDetail', () => {
     );
     expect(html).toContain('Price');
     expect(html).toContain('Category');
+    expect(html).toContain('Matches');
+    expect(html).toContain('Consider');
+    expect(html).not.toContain('✓');
+    expect(html).not.toContain('~');
     expect(html).toContain('Guest rating omitted');
   });
 });

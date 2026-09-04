@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from 'react';
-import { ChevronLeftIcon, ChevronRightIcon } from './icons.js';
+import { CheckCircleIcon, ChevronLeftIcon, ChevronRightIcon, ExclamationCircleIcon } from './icons.js';
 import type { StayMatch } from './stay-match.js';
 
 /**
@@ -146,29 +146,12 @@ export function Rail({ ariaLabel, children }: { readonly ariaLabel: string; read
   );
 }
 
-export function MatchRing({ score, size = 42 }: { readonly score: number; readonly size?: number }) {
-  const radius = size / 2 - 4;
-  const circumference = 2 * Math.PI * radius;
-  const filled = (Math.min(100, Math.max(0, score)) / 100) * circumference;
+export function MatchScore({ score }: { readonly score: number }) {
+  const boundedScore = Math.min(100, Math.max(0, Math.round(score)));
   return (
-    <span className="cc-ring-wrap">
-      <svg className="cc-ring" height={size} role="img" viewBox={`0 0 ${size} ${size}`} width={size}>
-        <title>{`Stay match ${score} out of 100`}</title>
-        <circle className="cc-ring-track" cx={size / 2} cy={size / 2} fill="none" r={radius} strokeWidth="4" />
-        <circle
-          className="cc-ring-fill"
-          cx={size / 2}
-          cy={size / 2}
-          fill="none"
-          r={radius}
-          strokeDasharray={`${filled.toFixed(1)} ${circumference.toFixed(1)}`}
-          strokeWidth="4"
-        />
-        <text className="cc-ring-num" textAnchor="middle" x={size / 2} y={size / 2 + 4.5}>
-          {score}
-        </text>
-      </svg>
-      <span className="cc-ring-cap">match</span>
+    <span aria-label={`Stay match ${boundedScore} out of 100`} className="cc-match-score" role="img">
+      <strong aria-hidden="true">{boundedScore}</strong>
+      <span aria-hidden="true">match</span>
     </span>
   );
 }
@@ -180,7 +163,8 @@ export function MatchDetail({ match, footnote }: { readonly match: StayMatch; re
       {match.lines.map((line) => (
         <p className="cc-match-line" key={line.key}>
           <span className={`cc-match-status cc-match-status-${line.status}`}>
-            {line.status === 'ok' ? '✓' : '~'}
+            {line.status === 'ok' ? <CheckCircleIcon /> : <ExclamationCircleIcon />}
+            <span>{line.status === 'ok' ? 'Matches' : 'Consider'}</span>
           </span>
           <span className="cc-match-label">{line.label}</span>
           <span className="cc-match-value">{line.detail}</span>

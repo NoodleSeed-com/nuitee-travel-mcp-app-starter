@@ -1,4 +1,4 @@
-import '@fontsource-variable/inter';
+import '@fontsource-variable/host-grotesk';
 import '@noodleseed/one/react/styles.css';
 import { useId, useState, type CSSProperties } from 'react';
 import type { DemoHotel, DemoHotelSearchOutput } from '../demo-schemas.js';
@@ -17,7 +17,7 @@ import {
   useViewState,
   useWidgetReady,
 } from '../helpers.js';
-import { Badge, MatchDetail, MatchRing, PhotoBand, Price, Rail, ScorePin } from './card-primitives.js';
+import { Badge, MatchDetail, MatchScore, PhotoBand, Price, Rail, ScorePin } from './card-primitives.js';
 import { BedIcon, CheckIcon, StarIcon, TagIcon } from './icons.js';
 import { computeStayMatch } from './stay-match.js';
 import './travel.css';
@@ -228,11 +228,11 @@ function HotelCard({ hotel, allHotels, locale, selected, pending, onAdd }: {
           <button
             aria-controls={matchDetailsId}
             aria-expanded={matchOpen}
-            className="cc-ring-btn"
+            className="cc-match-score-button"
             onClick={() => setMatchOpen((value) => !value)}
             type="button"
           >
-            <MatchRing score={match.score} />
+            <MatchScore score={match.score} />
           </button>
         </div>
         <p className="cc-hotel-hood">{hotel.neighborhood} · {hotel.city}, {hotel.countryCode}</p>

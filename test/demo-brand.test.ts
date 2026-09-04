@@ -96,8 +96,8 @@ describe('ported card design tokens', () => {
     expect(css.toLowerCase()).not.toContain('#1570ef');
   });
 
-  it('derives the card shadow hover tint from the accent token', () => {
-    expect(css).toMatch(/--cc-shadow-card-hover:[^;]*var\(--cc-accent\)/);
+  it('uses a neutral card shadow rather than a decorative semantic tint', () => {
+    expect(css).toMatch(/--cc-shadow-card-hover:[^;]*rgb\(13 13 13/);
   });
 
   it('hides the rail scrollbar on all three engines', () => {
@@ -110,10 +110,10 @@ describe('ported card design tokens', () => {
     expect(css).toMatch(/@media \(min-width: 640px\)\s*\{\s*\.cc-app \.cc-rail-arrow\s*\{\s*display:\s*grid/);
   });
 
-  it('qualifies the rail arrow so it outranks the global 44px tap target', () => {
-    // `.cc-app button` is (0,1,1); a bare `.cc-rail-arrow` is (0,1,0) and loses.
+  it('keeps the rail arrow at the global 44px tap target', () => {
     expect(css).toContain('.cc-app .cc-rail-arrow');
     expect(css).not.toMatch(/^\.cc-rail-arrow\s*\{/m);
+    expect(css).toMatch(/\.cc-app \.cc-rail-arrow\s*\{[^}]*width:\s*44px[^}]*height:\s*44px/s);
   });
 
   it('qualifies the hotel card and its selected state so they outrank .cc-card', () => {

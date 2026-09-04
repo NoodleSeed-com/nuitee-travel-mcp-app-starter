@@ -732,21 +732,25 @@ describe('FlightResults', () => {
     for (const falseClaim of ['Boarding pass', 'Ticket number', 'Gate', 'Seat assigned', 'Book now']) expect(review).not.toContain(falseClaim);
   });
 
-  it('uses bundled Inter and includes responsive accessibility safeguards', () => {
+  it('uses the Wayfare widget foundation and includes responsive accessibility safeguards', () => {
     const css = readFileSync(new URL('../src/views/travel.css', import.meta.url), 'utf8');
-    expect(css).toContain('--font-sans: "Inter Variable", Inter');
+    expect(css).toContain('--font-sans: "Host Grotesk Variable"');
     expect(css).toContain('font-family: var(--font-sans)');
     expect(readFileSync(new URL('../src/views/travel-home.tsx', import.meta.url), 'utf8'))
-      .toContain("import '@fontsource-variable/inter';");
+      .toContain("import '@fontsource-variable/host-grotesk';");
     expect(readFileSync(new URL('../src/views/flight-results.tsx', import.meta.url), 'utf8'))
-      .toContain("import '@fontsource-variable/inter';");
-    expect(css).toContain('--cc-bg: #fbfaf7');
-    expect(css).toContain('--cc-surface: #ffffff');
-    expect(css).toContain('--cc-text: #19202b');
-    expect(css).toContain('--cc-muted: #657083');
-    expect(css).toContain('--cc-border: #d9dee6');
-    expect(css).toContain('--cc-accent: #14213d');
-    expect(css).toContain('--cc-focus: #245aa8');
+      .toContain("import '@fontsource-variable/host-grotesk';");
+    expect(css).toContain('--cc-bg: #FFFFFF');
+    expect(css).toContain('--cc-surface-muted: #F7F7F7');
+    expect(css).toContain('--cc-surface: #FFFFFF');
+    expect(css).toContain('--cc-text: #0D0D0D');
+    expect(css).toContain('--cc-muted: #5D5D5D');
+    expect(css).toContain('--cc-subtle: #767676');
+    expect(css).toContain('--cc-border: #E8E8E8');
+    expect(css).toContain('--cc-selected: #66CCFF');
+    expect(css).toContain('--cc-confirmed: #99FF99');
+    expect(css).toContain('--cc-action-needed: #FF6666');
+    expect(css).toContain('--cc-response: #2F7391');
     expect(css).toContain('background: var(--cc-bg)');
     expect(css).not.toContain('font-family: inherit;');
     expect(css).not.toContain('2.7rem');

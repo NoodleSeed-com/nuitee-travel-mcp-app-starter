@@ -1,12 +1,18 @@
 .cc-app {
-  --cc-bg: #fbfaf7;
-  --cc-surface: #ffffff;
-  --cc-text: #19202b;
-  --cc-muted: #657083;
-  --cc-border: #d9dee6;
-  --cc-accent: #14213d;
-  --cc-focus: #245aa8;
-  --font-sans: "Inter Variable", Inter, ui-sans-serif, system-ui, sans-serif;
+  --cc-bg: #FFFFFF;
+  --cc-surface-muted: #F7F7F7;
+  --cc-surface: #FFFFFF;
+  --cc-text: #0D0D0D;
+  --cc-muted: #5D5D5D;
+  --cc-subtle: #767676;
+  --cc-border: #E8E8E8;
+  --cc-accent: #0D0D0D;
+  --cc-focus: #0D0D0D;
+  --cc-selected: #66CCFF;
+  --cc-confirmed: #99FF99;
+  --cc-action-needed: #FF6666;
+  --cc-response: #2F7391;
+  --font-sans: "Host Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
   color-scheme: light;
   min-width: 0;
   max-width: 100%;
@@ -16,15 +22,6 @@
   font-size: 0.9375rem;
   line-height: 1.45;
   font-variant-numeric: tabular-nums;
-}
-
-.cc-theme-dark {
-  color-scheme: dark;
-  --cc-bg: #061a22;
-  --cc-surface: #0a222c;
-  --cc-text: #f3fafc;
-  --cc-muted: #b5c7cd;
-  --cc-border: #24404a;
 }
 
 .cc-app *,
@@ -92,7 +89,7 @@
 }
 
 .cc-app :focus-visible {
-  outline: 3px solid var(--cc-focus);
+  outline: 2px solid var(--cc-focus);
   outline-offset: 3px;
 }
 
@@ -2493,22 +2490,12 @@
 
 .cc-app {
   --cc-radius-card: 16px;
-  --cc-shadow-card: 0 1px 2px rgb(25 32 43 / 0.04), 0 1px 3px rgb(25 32 43 / 0.06);
+  --cc-shadow-card: 0 1px 2px rgb(13 13 13 / 0.04), 0 1px 3px rgb(13 13 13 / 0.06);
   --cc-shadow-card-hover:
-    0 8px 24px -6px color-mix(in srgb, var(--cc-accent) 18%, transparent),
-    0 2px 6px rgb(25 32 43 / 0.06);
-  /* Deepened from the reference's #10961d: our canvas is warm cream, where
-     that green falls below 4.5:1 for the score pin's small bold numerals. */
-  --cc-good: #1a7f37;
+    0 8px 24px -6px rgb(13 13 13 / 0.12),
+    0 2px 6px rgb(13 13 13 / 0.06);
+  --cc-good: var(--cc-confirmed);
   --cc-rail-gap: 14px;
-}
-
-.cc-theme-dark {
-  --cc-good: #5fc47c;
-  --cc-shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 1px 3px rgb(0 0 0 / 0.36);
-  --cc-shadow-card-hover:
-    0 8px 24px -6px color-mix(in srgb, var(--cc-accent) 34%, transparent),
-    0 2px 6px rgb(0 0 0 / 0.36);
 }
 
 .cc-card {
@@ -2548,18 +2535,17 @@
 /* Specificity note: `.cc-app button` is (0,1,1), so a bare `.cc-rail-arrow`
    (0,1,0) would LOSE to the global 44px tap-target minimum no matter the
    source order. `.cc-app .cc-rail-arrow` is (0,2,0) and actually wins.
-   This narrow exception is safe because the arrows duplicate scrolling that
-   is already reachable by keyboard, touch drag, and trackpad. */
+   The visible control still preserves the global 44px pointer target. */
 .cc-app .cc-rail-arrow {
   position: absolute;
   top: 80px;
   z-index: 10;
   display: none;
   place-items: center;
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
-  min-height: 36px;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
   padding: 0;
   border: 0;
   border-radius: 999px;
@@ -2638,8 +2624,6 @@
   box-shadow: 0 6px 14px color-mix(in srgb, var(--cc-good) 34%, transparent);
 }
 
-.cc-theme-dark .cc-score-pin { color: #04141b; }
-
 .cc-badge {
   display: inline-flex;
   align-items: center;
@@ -2652,8 +2636,7 @@
   color: var(--cc-accent);
 }
 
-.cc-theme-dark .cc-badge { background: color-mix(in srgb, var(--cc-accent) 20%, transparent); }
-.cc-badge-good { background: color-mix(in srgb, var(--cc-good) 12%, var(--cc-surface)); color: var(--cc-good); }
+.cc-badge-good { background: var(--cc-confirmed); color: var(--cc-text); }
 .cc-badge-muted { background: color-mix(in srgb, var(--cc-text) 6%, var(--cc-surface)); color: var(--cc-muted); }
 
 .cc-price { margin-top: auto; padding-top: 3px; }
@@ -2665,25 +2648,31 @@
    "Hotel and rate details" panel. */
 .cc-price-note { display: block; margin-top: 1px; color: var(--cc-muted); font-size: 0.66rem; }
 
-/* ── Stay match ring ──────────────────────────────────────────────────────── */
-.cc-ring-wrap { display: inline-block; flex: 0 0 auto; text-align: center; }
-.cc-ring { display: block; }
-.cc-ring-track { stroke: color-mix(in srgb, var(--cc-text) 11%, transparent); }
-.cc-ring-fill { stroke: var(--cc-accent); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; }
-.cc-ring-num { fill: var(--cc-text); font-size: 0.8rem; font-weight: 700; }
-/* line-height must be set explicitly here rather than inherited: the
-   button's `line-height: 0` (below .cc-app .cc-ring-btn) is a unitless
-   value, so it inherits as the multiplier 0, not a resolved length — every
-   descendant, including this caption, would otherwise compute its own line
-   box to 0px and paint the text out of a box that reserves no height. */
-.cc-ring-cap { display: block; margin-top: 1px; font-size: 0.53rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--cc-muted); line-height: 1; }
+/* ── Stay match score ─────────────────────────────────────────────────────── */
+.cc-match-score {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: 4px;
+  padding: 7px 10px;
+  border: 1px solid var(--cc-border);
+  border-radius: 999px;
+  color: var(--cc-text);
+  background: var(--cc-surface-muted);
+  line-height: 1;
+}
 
-/* Specificity note: same as .cc-app .cc-rail-arrow above — `.cc-app button`
-   is (0,1,1), so a bare `.cc-ring-btn` (0,1,0) would lose the 44px tap
-   target override no matter the source order. The ring itself is the
-   visible hit target; the button only wraps it to stay keyboard-operable
-   and to expose aria-expanded for the match detail panel it discloses. */
-.cc-app .cc-ring-btn { border: 0; background: none; padding: 0; min-height: 0; min-width: 0; line-height: 0; }
+.cc-match-score strong { font-size: 0.875rem; }
+.cc-match-score span { color: var(--cc-muted); font-size: 0.75rem; font-weight: 600; }
+
+.cc-app .cc-match-score-button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+}
 
 .cc-match-detail {
   display: grid;
@@ -2694,11 +2683,11 @@
 }
 
 .cc-match-head { font-size: 0.75rem; font-weight: 700; }
-.cc-match-line { display: grid; grid-template-columns: 15px 70px 1fr; gap: 8px; align-items: baseline; font-size: 0.72rem; }
-.cc-match-status { font-weight: 700; }
-.cc-match-status-ok { color: var(--cc-good); }
-.cc-match-status-partial { color: #a8730f; }
-.cc-theme-dark .cc-match-status-partial { color: #e0b06a; }
+.cc-match-line { display: grid; grid-template-columns: 88px 70px 1fr; gap: 8px; align-items: baseline; font-size: 0.75rem; }
+.cc-match-status { display: inline-flex; align-items: center; gap: 4px; color: var(--cc-text); font-weight: 650; }
+.cc-match-status .cc-icon { width: 16px; height: 16px; }
+.cc-match-status-ok .cc-icon { color: var(--cc-text); }
+.cc-match-status-partial .cc-icon { color: var(--cc-action-needed); }
 .cc-match-label { font-weight: 600; color: var(--cc-muted); }
 .cc-match-value { color: var(--cc-text); }
 .cc-match-foot { padding-top: 7px; border-top: 1px dashed var(--cc-border); font-size: 0.66rem; color: var(--cc-muted); }
