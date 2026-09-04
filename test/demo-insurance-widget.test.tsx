@@ -137,6 +137,7 @@ describe('Wayfare illustrative travel-protection widget', () => {
     const malformed = render({ state: 'malformed', displayMode: 'inline' });
 
     expect(failed).toContain('The travel protection comparison could not load');
+    expect(failed).not.toContain('cc-theme-dark');
     expect(failed).toContain('No insurer or policy was contacted');
     expect(malformed).toContain('could not be shown safely');
     expect(malformed).toContain('No price, eligibility, or coverage was inferred');

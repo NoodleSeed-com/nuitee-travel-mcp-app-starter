@@ -99,4 +99,16 @@ describe('illustrative travel-protection widget in a real browser', () => {
     expect(Math.abs(loadingGrid.left - resultGrid.left)).toBeLessThanOrEqual(1);
     expect(Math.abs(loadingGrid.width - resultGrid.width)).toBeLessThanOrEqual(1);
   });
+
+  it('stays on the light Wayfare palette when the host reports dark mode', async () => {
+    await page.viewport(320, 1_200);
+    mount(<InsuranceResultsView displayMode="inline" result={comparison} theme="dark" />);
+    await expect.element(page.getByText('Essential concept')).toBeVisible();
+
+    const app = document.querySelector<HTMLElement>('.cc-insurance-results')!;
+    expect(app.classList.contains('cc-theme-dark')).toBe(false);
+    expect(getComputedStyle(app).colorScheme).toContain('light');
+    expect(getComputedStyle(app).backgroundColor).toBe('rgb(255, 255, 255)');
+    expect(getComputedStyle(app).fontFamily).toContain('Host Grotesk Variable');
+  });
 });

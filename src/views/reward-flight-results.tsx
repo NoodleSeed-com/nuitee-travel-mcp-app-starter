@@ -1,13 +1,12 @@
 import '@fontsource-variable/host-grotesk';
 import '@noodleseed/one/react/styles.css';
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Action,
   Feedback,
   Flow,
   Frame,
   StatusBadge,
-  useBranding,
   useLayout,
   useToolInfo,
   useWidgetReady,
@@ -239,15 +238,11 @@ function RewardFlightCarousel({ options, locale }: {
   );
 }
 
-function RewardFlightSkeleton({ theme, brandStyle }: {
-  readonly theme: 'light' | 'dark';
-  readonly brandStyle?: CSSProperties;
-}) {
+function RewardFlightSkeleton() {
   return (
     <Frame
-      className={`cc-app cc-reward-flights ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
+      className="cc-app cc-reward-flights"
       displayMode="auto"
-      style={brandStyle}
       title="Illustrative reward flights"
       subtitle="Comparing points ideas"
     >
@@ -274,13 +269,12 @@ function RewardFlightSkeleton({ theme, brandStyle }: {
   );
 }
 
-function statusView(state: RewardFlightState, theme: 'light' | 'dark', brandStyle?: CSSProperties) {
-  if (state === 'loading') return <RewardFlightSkeleton theme={theme} brandStyle={brandStyle} />;
+function statusView(state: RewardFlightState) {
+  if (state === 'loading') return <RewardFlightSkeleton />;
   return (
     <Frame
-      className={`cc-app cc-reward-flights ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
+      className="cc-app cc-reward-flights"
       displayMode="auto"
-      style={brandStyle}
       title="Illustrative reward flights"
     >
       <Feedback status="error">
@@ -297,24 +291,21 @@ export function RewardFlightResultsView({
   result,
   state,
   displayMode: _displayMode,
-  theme = 'light',
   locale = 'en-CA',
-  brandStyle,
 }: {
   readonly result?: DemoRewardFlightSearchOutput;
   readonly state?: RewardFlightState;
   readonly displayMode: string;
   readonly theme?: 'light' | 'dark';
   readonly locale?: string;
-  readonly brandStyle?: CSSProperties;
 }) {
-  if (state) return statusView(state, theme, brandStyle);
-  if (!result) return statusView('malformed', theme, brandStyle);
+  if (state) return statusView(state);
+  if (!result) return statusView('malformed');
   const points = new Intl.NumberFormat(locale);
-  const frameClassName = `cc-app cc-reward-flights ${theme === 'dark' ? 'cc-theme-dark' : ''}`;
+  const frameClassName = 'cc-app cc-reward-flights';
   if (result.status === 'empty') {
     return (
-      <Frame className={frameClassName} displayMode="auto" style={brandStyle} title="Illustrative reward flights" data-llm={result.fallback}>
+      <Frame className={frameClassName} displayMode="auto" title="Illustrative reward flights" data-llm={result.fallback}>
         <Flow variant="stack" density="comfortable">
           <aside className="cc-reward-flight-disclosure" aria-label="Illustrative reward-flight disclosure">
             <StatusBadge tone="info">Illustrative rewards</StatusBadge><p>{result.disclosure}</p>
@@ -331,7 +322,6 @@ export function RewardFlightResultsView({
     <Frame
       className={frameClassName}
       displayMode="auto"
-      style={brandStyle}
       title="Illustrative reward flights"
       subtitle={`${points.format(result.pointsContext.available)} points available · no live reward inventory`}
       data-llm={result.fallback}
@@ -354,7 +344,6 @@ export function RewardFlightResultsView({
 export default function RewardFlightResults() {
   const ready = useWidgetReady();
   const layout = useLayout();
-  const branding = useBranding();
   const toolInfo = useToolInfo('compare_reward_flights');
   const pending = !ready || Object.keys(toolInfo).length === 0;
   const result = isDemoRewardFlightSearchOutput(toolInfo.structuredContent)
@@ -367,10 +356,6 @@ export default function RewardFlightResults() {
       displayMode={layout.displayMode}
       theme={layout.theme === 'dark' ? 'dark' : 'light'}
       locale={layout.locale ?? 'en-CA'}
-      brandStyle={{
-        '--cc-accent': branding.theme?.[layout.theme]?.accent ?? branding.accent ?? '#006D84',
-        '--cc-focus': branding.theme?.[layout.theme]?.focus ?? '#007D95',
-      } as CSSProperties}
     />
   );
 }

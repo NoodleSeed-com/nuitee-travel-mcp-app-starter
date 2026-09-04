@@ -520,8 +520,8 @@
   border: 0;
   cursor: pointer;
   display: grid;
-  min-height: 32px;
-  min-width: 32px;
+  min-height: 44px;
+  min-width: 44px;
   padding: 0;
   place-items: center;
 }
@@ -758,7 +758,7 @@
 }
 
 .cc-compact-fare-actions { align-items: center; display: flex; flex: 0 0 auto; gap: 8px; }
-.cc-compact-fare-actions .cc-details-toggle { min-height: 32px; padding: 0 2px; }
+.cc-compact-fare-actions .cc-details-toggle { min-height: 44px; padding: 0 10px; }
 
 .cc-fare-face-back {
   position: relative;
@@ -925,7 +925,7 @@
   height: 100%;
   padding: 6px;
   object-fit: contain;
-  background: #fff;
+  background: #FFFFFF;
 }
 
 .cc-carrier-initials { font-size: 0.68rem; font-weight: 760; letter-spacing: 0.04em; }
@@ -1339,7 +1339,7 @@
   overflow-wrap: anywhere;
 }
 
-.cc-partial { background: color-mix(in srgb, #a84a1f 9%, var(--cc-surface)); }
+.cc-partial { background: color-mix(in srgb, var(--cc-action-needed) 12%, var(--cc-surface)); }
 .cc-empty { background: color-mix(in srgb, var(--cc-text) 5%, var(--cc-surface)); }
 .cc-more-note,
 .cc-freshness { color: var(--cc-muted); }
@@ -1641,7 +1641,7 @@
   overflow-wrap: anywhere;
 }
 .cc-loyalty-boundary { margin-top: 10px !important; }
-.cc-loyalty-missing { background: color-mix(in srgb, #a84a1f 8%, var(--cc-surface)); }
+.cc-loyalty-missing { background: color-mix(in srgb, var(--cc-action-needed) 12%, var(--cc-surface)); }
 
 .cc-loyalty-skeleton {
   display: grid;
@@ -1926,8 +1926,7 @@
 }
 
 .cc-insurance-results {
-  --cc-insurance-tint: #f3f6f8;
-  --cc-insurance-tint: color-mix(in srgb, var(--cc-accent) 8%, var(--cc-surface, #fff));
+  --cc-insurance-tint: var(--cc-surface-muted);
 }
 
 .cc-insurance-disclosure,
@@ -1940,7 +1939,7 @@
 
 .cc-insurance-disclosure p {
   margin: 0;
-  color: var(--cc-muted, #526173);
+  color: var(--cc-muted, #5D5D5D);
   line-height: 1.5;
 }
 
@@ -1949,7 +1948,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   padding: 14px;
-  border: 1px solid var(--cc-border, #d8dee7);
+  border: 1px solid var(--cc-border, #E8E8E8);
   border-radius: 16px;
   background: var(--cc-insurance-tint);
 }
@@ -1962,7 +1961,7 @@
 .cc-insurance-context span,
 .cc-insurance-price span,
 .cc-insurance-price small {
-  color: var(--cc-muted, #526173);
+  color: var(--cc-muted, #5D5D5D);
   font-size: 0.78rem;
 }
 
@@ -1995,7 +1994,7 @@
 .cc-insurance-comparison-heading p,
 .cc-insurance-empty-summary,
 .cc-insurance-summary-disclosure {
-  color: var(--cc-muted, #526173);
+  color: var(--cc-muted, #5D5D5D);
   line-height: 1.5;
 }
 
@@ -2021,10 +2020,10 @@
   align-items: center;
   min-height: 82px;
   padding: 12px;
-  border: 1px solid var(--cc-border, #d8dee7);
+  border: 1px solid var(--cc-border, #E8E8E8);
   border-radius: 16px;
-  color: var(--cc-text, #19202b);
-  background: var(--cc-surface, #fff);
+  color: var(--cc-text, #0D0D0D);
+  background: var(--cc-surface, #FFFFFF);
   text-align: left;
   cursor: pointer;
 }
@@ -2081,7 +2080,7 @@
 }
 
 .cc-insurance-priority-card.is-selected .cc-insurance-priority-check {
-  color: var(--cc-surface, #fff);
+  color: var(--cc-surface, #FFFFFF);
   background: var(--cc-accent);
 }
 
@@ -2103,7 +2102,7 @@
 }
 
 .cc-insurance-focus-panel p {
-  color: var(--cc-muted, #526173);
+  color: var(--cc-muted, #5D5D5D);
   line-height: 1.45;
 }
 
@@ -2111,9 +2110,9 @@
   display: grid;
   gap: 12px;
   padding: 16px;
-  border: 1px solid var(--cc-border, #d8dee7);
+  border: 1px solid var(--cc-border, #E8E8E8);
   border-radius: 18px;
-  background: var(--cc-surface, #fff);
+  background: var(--cc-surface, #FFFFFF);
   box-shadow: 0 12px 30px rgb(11 31 51 / 7%);
 }
 
@@ -2147,9 +2146,9 @@
   align-items: center;
   min-height: 44px;
   padding: 8px 10px;
-  border: 1px solid var(--cc-border, #d8dee7);
+  border: 1px solid var(--cc-border, #E8E8E8);
   border-radius: 12px;
-  color: var(--cc-text, #19202b);
+  color: var(--cc-text, #0D0D0D);
   background: color-mix(in srgb, var(--cc-accent) 4%, var(--cc-surface));
   cursor: pointer;
 }
@@ -2163,7 +2162,7 @@
 }
 
 .cc-insurance-chip-remove {
-  color: var(--cc-muted, #526173);
+  color: var(--cc-muted, #5D5D5D);
   font-size: 1.2rem;
   line-height: 1;
 }
@@ -2184,7 +2183,7 @@
   padding: 12px 16px;
   border: 0;
   border-radius: 14px;
-  color: #fff;
+  color: #FFFFFF;
   background: var(--cc-accent);
   font-weight: 740;
   cursor: pointer;
@@ -2198,7 +2197,7 @@
 
 .cc-insurance-summary-disclosure {
   padding-top: 2px;
-  border-top: 1px solid var(--cc-border, #d8dee7);
+  border-top: 1px solid var(--cc-border, #E8E8E8);
 }
 
 .cc-insurance-comparison-heading > div {
@@ -2210,10 +2209,10 @@
   flex: 0 0 auto;
   min-height: 44px;
   padding: 8px 12px;
-  border: 1px solid var(--cc-border, #d8dee7);
+  border: 1px solid var(--cc-border, #E8E8E8);
   border-radius: 12px;
   color: var(--cc-accent);
-  background: var(--cc-surface, #fff);
+  background: var(--cc-surface, #FFFFFF);
   font-weight: 680;
   cursor: pointer;
 }
@@ -2247,9 +2246,9 @@
   gap: 14px;
   min-width: 0;
   padding: 16px;
-  border: 1px solid var(--cc-border, #d8dee7);
+  border: 1px solid var(--cc-border, #E8E8E8);
   border-radius: 18px;
-  background: var(--cc-surface, #fff);
+  background: var(--cc-surface, #FFFFFF);
   box-shadow: 0 10px 26px rgb(11 31 51 / 7%);
 }
 
@@ -2268,7 +2267,7 @@
 }
 
 .cc-insurance-plan-card header p {
-  color: var(--cc-muted, #526173);
+  color: var(--cc-muted, #5D5D5D);
   font-size: 0.85rem;
   line-height: 1.45;
 }
@@ -2282,7 +2281,7 @@
 }
 
 .cc-insurance-price strong {
-  color: var(--cc-ink, #0b1f33);
+  color: var(--cc-text, #0D0D0D);
   font-size: clamp(1.35rem, 3vw, 1.8rem);
   line-height: 1.1;
 }
@@ -2298,7 +2297,7 @@
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   padding: 9px 0;
-  border-bottom: 1px solid var(--cc-border, #d8dee7);
+  border-bottom: 1px solid var(--cc-border, #E8E8E8);
 }
 
 .cc-insurance-coverage-list dt,
@@ -2307,7 +2306,7 @@
 }
 
 .cc-insurance-coverage-list dt {
-  color: var(--cc-muted, #526173);
+  color: var(--cc-muted, #5D5D5D);
   font-size: 0.8rem;
 }
 
@@ -2319,7 +2318,7 @@
 }
 
 .cc-insurance-coverage-list dd span {
-  color: var(--cc-muted, #526173);
+  color: var(--cc-muted, #5D5D5D);
   font-size: 0.68rem;
   font-weight: 500;
 }
@@ -2360,7 +2359,7 @@
 .cc-insurance-assumptions li,
 .cc-insurance-boundary,
 .cc-insurance-status-note {
-  color: var(--cc-muted, #526173);
+  color: var(--cc-muted, #5D5D5D);
   font-size: 0.78rem;
   line-height: 1.45;
 }
@@ -2628,7 +2627,7 @@
    a broken image": centred and low-opacity so it lands as a watermark, not
    content competing with the hotel name. Never shown alongside a real
    photo — PhotoBand only renders one or the other. */
-.cc-photo-glyph { color: #fff; opacity: 0.32; }
+.cc-photo-glyph { color: #FFFFFF; opacity: 0.32; }
 .cc-photo-glyph .cc-icon { width: 30px; height: 30px; }
 
 .cc-score-pin {
@@ -2642,7 +2641,7 @@
   height: 30px;
   border-radius: 18px 56px 56px;
   background: var(--cc-text);
-  color: #fff;
+  color: #FFFFFF;
   font-size: 0.75rem;
   font-weight: 700;
   box-shadow: 0 6px 14px rgb(13 13 13 / 0.18);

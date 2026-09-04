@@ -1,6 +1,5 @@
 import '@fontsource-variable/host-grotesk';
 import '@noodleseed/one/react/styles.css';
-import type { CSSProperties } from 'react';
 import type {
   DemoInsuranceComparisonOutput,
   DemoInsurancePlan,
@@ -11,7 +10,6 @@ import {
   Frame,
   Region,
   StatusBadge,
-  useBranding,
   useLayout,
   useToolInfo,
   useWidgetReady,
@@ -175,14 +173,10 @@ function InsuranceSkeletonCard() {
   );
 }
 
-function InsuranceLoading({ theme, brandStyle }: {
-  readonly theme: 'light' | 'dark';
-  readonly brandStyle?: CSSProperties;
-}) {
+function InsuranceLoading() {
   return (
     <Frame
-      className={`cc-app cc-insurance-results ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
-      style={brandStyle}
+      className="cc-app cc-insurance-results"
       displayMode="auto"
       title="Travel protection"
       subtitle="Preparing illustrative travel protection"
@@ -209,14 +203,11 @@ function InsuranceLoading({ theme, brandStyle }: {
 
 function statusView(
   state: Exclude<InsuranceResultsState, 'loading'>,
-  theme: 'light' | 'dark',
-  brandStyle?: CSSProperties,
 ) {
   const malformed = state === 'malformed';
   return (
     <Frame
-      className={`cc-app cc-insurance-results ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
-      style={brandStyle}
+      className="cc-app cc-insurance-results"
       displayMode="auto"
       title="Travel protection"
     >
@@ -276,25 +267,21 @@ export function InsuranceResultsView({
   result,
   state,
   displayMode,
-  theme = 'light',
   locale = 'en-CA',
-  brandStyle,
 }: {
   readonly result?: DemoInsuranceComparisonOutput;
   readonly state?: InsuranceResultsState;
   readonly displayMode: string;
   readonly theme?: 'light' | 'dark';
   readonly locale?: string;
-  readonly brandStyle?: CSSProperties;
 }) {
-  if (state === 'loading') return <InsuranceLoading theme={theme} brandStyle={brandStyle} />;
-  if (state) return statusView(state, theme, brandStyle);
-  if (!result) return statusView('malformed', theme, brandStyle);
+  if (state === 'loading') return <InsuranceLoading />;
+  if (state) return statusView(state);
+  if (!result) return statusView('malformed');
 
   return (
     <Frame
-      className={`cc-app cc-insurance-results ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
-      style={brandStyle}
+      className="cc-app cc-insurance-results"
       displayMode="auto"
       title="Travel protection"
       subtitle="Three fictional concepts · no live policy check"
@@ -342,7 +329,6 @@ export function InsuranceResultsView({
 export default function InsuranceResults() {
   const ready = useWidgetReady();
   const layout = useLayout();
-  const branding = useBranding();
   const toolInfo = useToolInfo('compare_travel_insurance');
   const pending = !ready || Object.keys(toolInfo).length === 0;
   const result = isDemoInsuranceComparisonOutput(toolInfo.structuredContent)
@@ -356,10 +342,6 @@ export default function InsuranceResults() {
       displayMode={layout.displayMode}
       theme={layout.theme === 'dark' ? 'dark' : 'light'}
       locale={layout.locale ?? 'en-CA'}
-      brandStyle={{
-        '--cc-accent': branding.theme?.[layout.theme]?.accent ?? branding.accent ?? '#006D84',
-        '--cc-focus': branding.theme?.[layout.theme]?.focus ?? '#007D95',
-      } as CSSProperties}
     />
   );
 }

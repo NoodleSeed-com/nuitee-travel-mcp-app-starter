@@ -1,12 +1,10 @@
 import '@fontsource-variable/host-grotesk';
 import '@noodleseed/one/react/styles.css';
-import type { CSSProperties } from 'react';
 import {
   Feedback,
   Flow,
   Frame,
   StatusBadge,
-  useBranding,
   useLayout,
   useToolInfo,
   useWidgetReady,
@@ -177,14 +175,10 @@ function Disclosure() {
   );
 }
 
-function LoyaltySkeleton({ theme, brandStyle }: {
-  readonly theme: 'light' | 'dark';
-  readonly brandStyle?: CSSProperties;
-}) {
+function LoyaltySkeleton() {
   return (
     <Frame
-      className={`cc-app cc-loyalty ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
-      style={brandStyle}
+      className="cc-app cc-loyalty"
       displayMode="auto"
       title="Wayfare Rewards"
       subtitle="Illustrative loyalty profile"
@@ -333,7 +327,7 @@ function TripReview({ data, locale }: {
         <section className="cc-loyalty-missing" role="status" aria-labelledby="cc-loyalty-missing-title">
           <h2 id="cc-loyalty-missing-title">Trip review needs another selection</h2>
           <p>
-            Add {data.missing.map((item) => item === 'flight' ? 'a flight' : 'a hotel').join(' and ')}
+            Select {data.missing.map((item) => item === 'flight' ? 'a flight' : 'a hotel').join(' and ')}
             {' '}in the conversation to complete this illustrative comparison.
           </p>
         </section>
@@ -347,7 +341,7 @@ function TripReview({ data, locale }: {
         <div className="cc-loyalty-selections">
           {data.flight ? (
             <article className="cc-loyalty-selection">
-              <StatusBadge className="cc-loyalty-provenance" tone="success">
+              <StatusBadge className="cc-loyalty-provenance" tone="info">
                 Current Nuitee flight selection
               </StatusBadge>
               <h3>Selected flight</h3>
@@ -392,24 +386,21 @@ function TripReview({ data, locale }: {
 export function LoyaltyOverviewView({
   data,
   state,
-  theme,
   locale = 'en-CA',
-  brandStyle,
 }: {
   readonly data?: LoyaltyData;
   readonly state?: LoyaltyState;
   readonly theme: 'light' | 'dark';
   readonly locale?: string;
-  readonly brandStyle?: CSSProperties;
 }) {
   if (state === 'loading') {
-    return <LoyaltySkeleton theme={theme} brandStyle={brandStyle} />;
+    return <LoyaltySkeleton />;
   }
 
-  const frameClassName = `cc-app cc-loyalty ${theme === 'dark' ? 'cc-theme-dark' : ''}`;
+  const frameClassName = 'cc-app cc-loyalty';
   if (state === 'error') {
     return (
-      <Frame className={frameClassName} style={brandStyle} displayMode="auto" title="Wayfare Rewards">
+      <Frame className={frameClassName} displayMode="auto" title="Wayfare Rewards">
         <Feedback status="error">
           The loyalty experience could not load. No account, points, booking, or payment was changed.
         </Feedback>
@@ -418,7 +409,7 @@ export function LoyaltyOverviewView({
   }
   if (state === 'malformed' || !data) {
     return (
-      <Frame className={frameClassName} style={brandStyle} displayMode="auto" title="Wayfare Rewards">
+      <Frame className={frameClassName} displayMode="auto" title="Wayfare Rewards">
         <Feedback status="error">
           The result was incomplete, so no balance, benefit, or trip value was inferred.
         </Feedback>
@@ -430,7 +421,6 @@ export function LoyaltyOverviewView({
   return (
     <Frame
       className={frameClassName}
-      style={brandStyle}
       displayMode="auto"
       title={review ? 'Trip and rewards review' : 'Wayfare Rewards'}
       subtitle={review ? 'Current flight context with simulated hotels and rewards' : 'Illustrative loyalty profile'}
@@ -448,7 +438,6 @@ export function LoyaltyOverviewView({
 export default function LoyaltyOverview() {
   const ready = useWidgetReady();
   const layout = useLayout();
-  const branding = useBranding();
   const toolInfo = useToolInfo();
   const pending = !ready || Object.keys(toolInfo).length === 0;
   const structured = toolInfo.structuredContent;
@@ -464,10 +453,6 @@ export default function LoyaltyOverview() {
       state={pending ? 'loading' : toolInfo.isError ? 'error' : data ? undefined : 'malformed'}
       theme={layout.theme === 'dark' ? 'dark' : 'light'}
       locale={layout.locale ?? 'en-CA'}
-      brandStyle={{
-        '--cc-accent': branding.theme?.[layout.theme]?.accent ?? branding.accent ?? '#006D84',
-        '--cc-focus': branding.theme?.[layout.theme]?.focus ?? '#007D95',
-      } as CSSProperties}
     />
   );
 }

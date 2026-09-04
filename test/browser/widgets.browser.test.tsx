@@ -611,6 +611,18 @@ describe('real-browser widget readiness', () => {
     expect(getComputedStyle(shimmer!).animationName).toBe('none');
   });
 
+  it('keeps compact flight controls at the 44px accessible target minimum', async () => {
+    await page.viewport(320, 1_000);
+    mount(<FlightResultsView result={search} displayMode="inline" onVerify={vi.fn()} />);
+    await expect.element(page.getByRole('button', { name: 'Flight and fare details' })).toBeVisible();
+
+    const details = await page.getByRole('button', { name: 'Flight and fare details' }).element();
+    const option = await page.getByRole('button', { name: 'Show flight option 1' }).element();
+    expect(details.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
+    expect(option.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
+    expect(option.getBoundingClientRect().width).toBeGreaterThanOrEqual(44);
+  });
+
   it('renders the compact card selected state after choosing a fare', async () => {
     await page.viewport(720, 1_200);
     mount(<InteractiveResults />);

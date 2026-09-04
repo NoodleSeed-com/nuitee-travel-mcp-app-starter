@@ -134,6 +134,7 @@ describe('Wayfare loyalty widget', () => {
     const malformed = render({ state: 'malformed', theme: 'light' });
 
     expect(failed).toContain('The loyalty experience could not load');
+    expect(failed).not.toContain('cc-theme-dark');
     expect(failed).toContain('No account, points, booking, or payment was changed');
     expect(failed).not.toContain('84,500');
     expect(malformed).toContain('no balance, benefit, or trip value was inferred');
@@ -164,6 +165,7 @@ describe('Wayfare loyalty widget', () => {
     const markup = render({ data: review, theme: 'dark', locale: 'en-CA' });
 
     expect(markup).toContain('Trip and rewards review');
+    expect(markup).not.toContain('cc-theme-dark');
     expect(markup).toContain('Current Nuitee flight selection');
     expect(markup).toContain('Simulated hotel selection');
     expect(markup).toContain('610.40');
@@ -185,7 +187,7 @@ describe('Wayfare loyalty widget', () => {
     const markup = render({ data: incomplete, theme: 'light' });
 
     expect(markup).toContain('Trip review needs another selection');
-    expect(markup).toContain('Add a flight in the conversation');
+    expect(markup).toContain('Select a flight in the conversation');
     expect(markup).toContain('Simulated hotel selection');
     expect(markup).not.toContain('Current Nuitee flight selection');
   });

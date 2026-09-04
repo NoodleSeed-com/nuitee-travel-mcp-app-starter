@@ -123,6 +123,7 @@ describe('Wayfare illustrative reward-flight widget', () => {
     expect(previous).toContain('disabled');
     expect(next).not.toContain('disabled');
     expect(markup).toContain('cc-reward-flight-peek-slide');
+    expect(markup).toContain('data-slot="icon"');
     expect(visibleText(markup)).not.toMatch(/\bdemo\b|\bsandbox\b/iu);
     expect(markup).not.toMatch(/Book now|Redeem now|Apply points|Checkout/iu);
   });
@@ -138,6 +139,7 @@ describe('Wayfare illustrative reward-flight widget', () => {
 
     expect(empty).toContain('No illustrative reward-flight ideas fit');
     expect(failed).toContain('could not load');
+    expect(failed).not.toContain('cc-theme-dark');
     expect(malformed).toContain('could not be shown safely');
   });
 
