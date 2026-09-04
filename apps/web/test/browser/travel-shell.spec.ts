@@ -775,6 +775,51 @@ test('keeps the cinematic hero legible, fitted, and keyboard-reachable on deskto
   expect(unsupportedUtilities).toEqual([]);
 });
 
+test('uses one rounded hover treatment for every secondary menu action', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium');
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Open menu' }).click();
+
+  const menu = page.getByRole('dialog', { name: 'Travel menu' });
+  const actions = [
+    menu.getByRole('link', { name: 'For developers' }),
+    menu.getByRole('button', { name: 'Settings' }),
+    menu.getByRole('link', { name: 'Support' }),
+  ];
+  const hoverStates = [];
+  for (const action of actions) {
+    await action.hover();
+    await page.waitForTimeout(200);
+    hoverStates.push(await action.evaluate((element) => {
+      const style = getComputedStyle(element);
+      const bounds = element.getBoundingClientRect();
+      return {
+        backgroundColor: style.backgroundColor,
+        borderRadius: Number.parseFloat(style.borderRadius),
+        borderTopWidth: Number.parseFloat(style.borderTopWidth),
+        height: bounds.height,
+        paddingLeft: style.paddingLeft,
+        paddingRight: style.paddingRight,
+      };
+    }));
+  }
+
+  expect(new Set(hoverStates.map(({ backgroundColor }) => backgroundColor)).size)
+    .toBe(1);
+  for (const state of hoverStates) {
+    expect(state.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+    expect(state.borderRadius).toBeGreaterThanOrEqual(state.height / 2);
+    expect(state.borderTopWidth).toBe(0);
+    expect(state.paddingLeft).toBe(state.paddingRight);
+  }
+  await page.screenshot({
+    animations: 'disabled',
+    path: testInfo.outputPath('menu-secondary-hover-system.png'),
+  });
+});
+
 test('keeps motion reduced without restoring the retired animation layer', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');

@@ -205,10 +205,12 @@ reusable brand device for places and inspiration—not a universal card shape.
   menu. Do not add a separator line below the header.
 - The menu is a white, softly elevated sheet with a 24px outer radius, a compact
   title, and a 20px Heroicons close glyph inside a 44px circular target. Its
-  primary action is a black pill. Secondary navigation uses unboxed text rows
-  divided by neutral hairlines; legal availability is a quiet group at the
-  bottom. Use selected blue only for keyboard focus. On mobile, the same menu
-  becomes a full-width rounded bottom sheet.
+  primary action is a black pill. Secondary navigation uses equally inset,
+  border-free pill rows with one shared soft-grey hover treatment; never mix
+  rectangular link hovers with rounded button hovers. Legal availability is a
+  quiet group at the bottom behind one neutral hairline. Use selected blue only
+  for keyboard focus. On mobile, the same menu becomes a full-width rounded
+  bottom sheet.
 - Directly below the homepage hero, use one spacious endorsement-style
   attribution row: `Built on`
   with the official Noodle Seed wordmark and `Powered by` with the official

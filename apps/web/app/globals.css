@@ -2314,6 +2314,7 @@ code {
 
 .travel-navigation-dialog__menu-list {
   display: grid;
+  gap: 0.2rem;
 }
 
 .travel-navigation-dialog__menu-list a,
@@ -2322,20 +2323,16 @@ code {
   min-height: 48px;
   align-items: center;
   width: 100%;
-  padding: 0 0.35rem;
+  padding: 0 0.75rem;
   border: 0;
-  border-top: 1px solid var(--travel-boundary);
-  border-radius: 0;
+  border-radius: 999px;
   background: transparent;
   color: var(--travel-ink);
   font-size: 0.84rem;
   font-weight: 540;
   text-align: left;
   text-decoration: none;
-}
-
-.travel-navigation-dialog__menu-list > :first-child {
-  border-top: 0;
+  transition: background-color 160ms var(--travel-ease-out);
 }
 
 .travel-navigation-dialog__legal {
