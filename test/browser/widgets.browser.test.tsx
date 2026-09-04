@@ -129,7 +129,7 @@ describe('real-browser widget readiness', () => {
     ['error', { state: 'error' as const }, 'The travel starter could not open. Try again.'],
     ['malformed', { state: 'malformed' as const }, 'The travel starter result was incomplete.'],
     ['success', { data: home }, 'Flights available'],
-  ])('renders the TravelHome %s state and nested primitives in Inter', async (
+  ])('renders the TravelHome %s state and nested primitives in Host Grotesk', async (
     _state,
     props,
     visibleText,
@@ -139,7 +139,6 @@ describe('real-browser widget readiness', () => {
       <TravelHomeView
         {...props}
         theme="light"
-        onSearchPrompt={vi.fn()}
       />,
     );
     await expect.element(page.getByText(visibleText)).toBeVisible();
@@ -150,16 +149,17 @@ describe('real-browser widget readiness', () => {
 
     expect(frame).not.toBeNull();
     expect(primitive).not.toBeNull();
-    expect(getComputedStyle(frame!).fontFamily).toContain('Inter Variable');
+    expect(getComputedStyle(frame!).fontFamily).toContain('Host Grotesk Variable');
     expect(getComputedStyle(frame!).getPropertyValue('--font-sans'))
-      .toContain('Inter Variable');
-    expect(getComputedStyle(primitive!).fontFamily).toContain('Inter Variable');
+      .toContain('Host Grotesk Variable');
+    expect(getComputedStyle(primitive!).fontFamily).toContain('Host Grotesk Variable');
   });
 
   it.each([280, 320])('renders TravelHome at %ipx without horizontal overflow', async (width) => {
     await page.viewport(width, 1_000);
-    mount(<TravelHomeView data={home} theme="light" onSearchPrompt={vi.fn()} />);
-    await expect.element(page.getByRole('button', { name: 'Search flights' })).toBeVisible();
+    mount(<TravelHomeView data={home} theme="light" />);
+    await expect.element(page.getByRole('heading', { name: 'Travel capabilities' })).toBeVisible();
+    expect(document.querySelector('.cc-search-form')).toBeNull();
     expect(hasHorizontalOverflow()).toBe(false);
   });
 
@@ -560,17 +560,17 @@ describe('real-browser widget readiness', () => {
   it('reflows without overflow under a 400% CSS zoom simulation', async () => {
     await page.viewport(1_280, 1_200);
     document.body.style.zoom = '4';
-    mount(<TravelHomeView data={home} theme="light" onSearchPrompt={vi.fn()} />);
-    await expect.element(page.getByRole('button', { name: 'Search flights' })).toBeVisible();
+    mount(<TravelHomeView data={home} theme="light" />);
+    await expect.element(page.getByRole('heading', { name: 'Travel capabilities' })).toBeVisible();
     expect(hasHorizontalOverflow()).toBe(false);
   });
 
   it('exposes a visible keyboard focus indicator', async () => {
     await page.viewport(320, 1_000);
-    mount(<TravelHomeView data={home} theme="light" onSearchPrompt={vi.fn()} />);
-    const search = page.getByRole('button', { name: 'Search flights' });
-    await expect.element(search).toBeVisible();
-    const searchButton = await search.element();
+    mount(<FlightResultsView result={search} displayMode="inline" view="search" onSearchPrompt={vi.fn()} onBack={vi.fn()} onVerify={vi.fn()} />);
+    const searchAction = page.getByRole('button', { name: 'Search flights' });
+    await expect.element(searchAction).toBeVisible();
+    const searchButton = await searchAction.element();
 
     // Chromium date controls expose multiple internal keyboard stops, so keep
     // walking the real tab order until the primary action is reached.
@@ -586,14 +586,15 @@ describe('real-browser widget readiness', () => {
 
   it('renders explicit light and dark theme surfaces', async () => {
     await page.viewport(320, 1_000);
-    mount(<TravelHomeView data={home} theme="dark" onSearchPrompt={vi.fn()} />);
+    mount(<TravelHomeView data={home} theme="dark" />);
     await expect.poll(() => document.querySelector('.cc-app')).not.toBeNull();
     const darkApp = document.querySelector<HTMLElement>('.cc-app');
     expect(darkApp).not.toBeNull();
-    expect(darkApp?.classList.contains('cc-theme-dark')).toBe(true);
-    expect(getComputedStyle(darkApp!).colorScheme).toContain('dark');
+    expect(darkApp?.classList.contains('cc-theme-dark')).toBe(false);
+    expect(getComputedStyle(darkApp!).colorScheme).toContain('light');
+    expect(getComputedStyle(darkApp!).backgroundColor).toBe('rgb(255, 255, 255)');
 
-    root?.render(<TravelHomeView data={home} theme="light" onSearchPrompt={vi.fn()} />);
+    root?.render(<TravelHomeView data={home} theme="light" />);
     await expect.poll(() => document.querySelector('.cc-theme-dark')).toBeNull();
     const lightApp = document.querySelector<HTMLElement>('.cc-app');
     expect(getComputedStyle(lightApp!).colorScheme).toContain('light');

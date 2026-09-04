@@ -116,26 +116,18 @@ const sampleSearchOutput = {
 };
 
 describe('TravelHome', () => {
-  it('shows familiar editable flight fields, one available domain, and noninteractive coming-soon domains', () => {
-    const html = renderToStaticMarkup(<TravelHomeView data={home} theme="light" onSearchPrompt={vi.fn()} />);
+  it('keeps the starter chat first while showing capability availability', () => {
+    const html = renderToStaticMarkup(<TravelHomeView data={home} theme="light" />);
     expect(html).toContain('Flight search');
     expect(html).toContain('Flights available');
     expect(html).toContain('cc-availability-badge');
+    expect(html).toContain('Travel capabilities');
     expect(html).toContain('Flights');
     expect(html.match(/Coming soon/g)).toHaveLength(4);
-    for (const field of ['From', 'To', 'Departure', 'Return', 'Adults', 'Cabin', 'Currency', 'Country']) expect(html).toContain(field);
-    expect(html).toContain('Round trip');
-    expect(html).toContain('One way');
-    expect(html).toContain('role="radiogroup"');
-    expect(html).toContain('type="radio"');
-    expect(html).toContain('checked="" value="round_trip"');
-    expect(html).toContain('placeholder="City or airport"');
-    for (const helper of ['City or airport name', 'Ages 2–11', 'Under 2', 'ISO code', 'Point of sale']) expect(html).not.toContain(helper);
-    expect(html).not.toContain('Use city or airport names.');
-    expect(html).toMatch(/<input type="date" required="" name="returnDate"/);
-    expect(html).toContain('aria-label="Swap origin and destination"');
-    expect(html).toContain('>Search flights</button>');
-    expect(html).not.toContain('disabled');
+    expect(html).not.toContain('Trip details');
+    expect(html).not.toContain('cc-search-form');
+    expect(html).not.toContain('role="radiogroup"');
+    expect(html).not.toContain('>Search flights</button>');
     expect(html).not.toContain('airline-logo');
     expect(html).not.toContain('cc-mark');
     expect(html).not.toContain('cc-hero-art');
@@ -161,7 +153,9 @@ describe('TravelHome', () => {
   });
 
   it('renders loading, malformed, and unavailable states', () => {
-    expect(renderToStaticMarkup(<TravelHomeView state="loading" theme="dark" />)).toContain('Opening');
+    const loading = renderToStaticMarkup(<TravelHomeView state="loading" theme="dark" />);
+    expect(loading).toContain('Opening');
+    expect(loading).not.toContain('cc-theme-dark');
     expect(renderToStaticMarkup(<TravelHomeView state="error" theme="light" />)).toContain('could not');
     expect(renderToStaticMarkup(<TravelHomeView state="malformed" theme="light" />)).toContain('incomplete');
   });
@@ -760,7 +754,7 @@ describe('FlightResults', () => {
     expect(css).toContain('min-height: 44px');
     expect(css).toContain('overflow-wrap: anywhere');
     expect(css).toContain('repeat(auto-fit');
-    expect(css).toContain('repeat(auto-fit, minmax(min(100%, 140px), 1fr))');
+    expect(css).toMatch(/\.cc-domain-grid\s*\{[^}]*grid-template-columns:\s*1fr/s);
     expect(css).toContain('.cc-availability-badge');
     expect(css).toMatch(/\.cc-domain-name\s*\{[^}]*overflow-wrap:\s*anywhere/s);
     expect(css).toContain('@media (prefers-reduced-motion: reduce)');
