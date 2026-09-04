@@ -21,8 +21,9 @@ export interface TravelDefaultsController extends TravelDefaults {
 export function useTravelDefaults(
   options: UseTravelDefaultsOptions = {},
 ): TravelDefaultsController {
-  const locale = options.locale
-    ?? (typeof navigator === 'undefined' ? 'en-US' : navigator.language);
+  // Keep the server and the browser's hydration render identical. Browser-only
+  // locale information is applied in an effect immediately after hydration.
+  const locale = options.locale ?? 'en-US';
   const geolocation = options.geolocation === undefined
     ? (typeof navigator === 'undefined' ? null : navigator.geolocation)
     : options.geolocation;
@@ -42,6 +43,26 @@ export function useTravelDefaults(
     userSelectedCurrencyRef.current = true;
     setDefaults((current) => ({ ...current, currency }));
   }, []);
+
+  useEffect(() => {
+    if (options.locale !== undefined || typeof navigator === 'undefined') return;
+
+    const browserLocale = navigator.language || 'en-US';
+    if (browserLocale === initialLocaleRef.current) return;
+    initialLocaleRef.current = browserLocale;
+    const marketCountry = resolveInitialMarketCountry(browserLocale);
+
+    setDefaults((current) => {
+      if (current.source !== 'fallback') return current;
+      return {
+        currency: userSelectedCurrencyRef.current
+          ? current.currency
+          : resolveInitialCurrency({ locale: browserLocale }),
+        ...(marketCountry ? { marketCountry } : {}),
+        source: 'fallback',
+      };
+    });
+  }, [options.locale]);
 
   useEffect(() => {
     const initialGeolocation = geolocationRef.current;

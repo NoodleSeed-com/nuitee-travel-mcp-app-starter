@@ -4,13 +4,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  BedDouble,
-  Compass,
-  Hotel,
-  Menu,
-  PlaneTakeoff,
-  ShieldCheck,
-} from 'lucide-react';
+  Bars3Icon,
+  BuildingOffice2Icon,
+  MapIcon,
+  PaperAirplaneIcon,
+  ShieldCheckIcon,
+} from '@heroicons/react/24/outline';
 import { type KeyboardEvent, useRef, useState } from 'react';
 import type { PublicAssistantRuntime } from '../../lib/assistant-config';
 import {
@@ -33,11 +32,11 @@ interface ImmersiveExplorePageProps {
 }
 
 const modeIcons = {
-  explore: Compass,
-  flight: PlaneTakeoff,
-  stay: Hotel,
-  'flight-stay': BedDouble,
-  insurance: ShieldCheck,
+  explore: MapIcon,
+  flight: PaperAirplaneIcon,
+  stay: BuildingOffice2Icon,
+  'flight-stay': BuildingOffice2Icon,
+  insurance: ShieldCheckIcon,
 } as const;
 
 function focusAdjacentTab(
@@ -149,7 +148,7 @@ export function ImmersiveExplorePage({
           onClick={() => setMenuOpen((open) => !open)}
           type="button"
         >
-          <Menu aria-hidden="true" />
+          <Bars3Icon aria-hidden="true" />
         </button>
       </header>
 
@@ -229,6 +228,7 @@ export function ImmersiveExplorePage({
 
             <div className={styles.composer}>
               <TravelComposer
+                error={Boolean(launchError)}
                 formLabel={`Plan with ${activeMode.label}`}
                 inputId="immersive-trip-prompt"
                 inputRef={inputRef}

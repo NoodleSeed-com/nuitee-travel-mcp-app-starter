@@ -11,7 +11,7 @@ This is an independent starter, not an official Nuitee connector, airline partne
 ## Primary guest website
 
 The Next.js application in `apps/web/` is the main developer path. Wayfare uses
-a light, Inter-only single-entry cinematic landing with one natural-language
+a high-contrast, Host Grotesk single-entry cinematic landing with one natural-language
 composer. The homepage keeps capability choice inside the assistant while the
 existing conversation, inline widgets, and Search → Select → Verify flight
 boundary remain unchanged. The alternate `/experience` route is an optional
@@ -21,6 +21,12 @@ with delayed anonymous Assistant admission and plain-language progress. The comp
 disclosure is absent until validated facts exist, stays collapsed by default,
 and is derived only from structured tool results—never conversation prose.
 
+Before changing any user-facing capability, read the canonical
+[Wayfare brand guidelines](docs/brand/wayfare-brand-guidelines.md). They define
+the exact Wayline logo, typography, light-only tokens, semantic colors,
+rounded controls, Heroicons policy, jet-window device, motion, voice, and
+accessibility requirements for the website and MCP Apps.
+
 Official inline MCP Apps render at the exact chronological message part that
 needs interaction. Every distinct view ID remains in history; the website
 neither reconstructs App output as fare cards nor creates a second results
@@ -29,9 +35,10 @@ illustrative stay results, loyalty overview, reward-flight comparison, trip
 review, and travel-protection comparison views. A tool/URI mismatch never
 reaches `NoodleAppView`.
 
-The route-line SVG in `apps/web/src/components/wayfare-mark.tsx` is the
-repository-owned Wayfare mark. Use the installed Lucide icons only for familiar,
-supported actions; do not introduce icons suggesting attachments, payment,
+The exact Wayline SVG in `apps/web/src/components/wayfare-mark.tsx` is the
+repository-owned Wayfare logo asset. Use only the installed Heroicons React
+library for functional interface iconography; do not hand-author utility SVGs,
+mix icon libraries, or introduce symbols suggesting attachments, payment,
 booking, voice, or account management. The shared core hero and editorial
 destination masters are truthful native `1672 × 941` high-resolution web
 images, not literal 4K sources. Next.js serves responsive AVIF/WebP derivatives;
@@ -184,7 +191,7 @@ pnpm customize -- --production-origin "https://<your-exact-domain>"
 pnpm customize:check
 ```
 
-The customizer does not rename packages, server IDs, tool names, connector contracts, state handles, provider limits, or fixtures. Review light/dark contrast and browser layout after visual changes. Full constraints are in [docs/customization.md](docs/customization.md).
+The customizer does not rename packages, server IDs, tool names, connector contracts, state handles, provider limits, or fixtures. Review light-theme contrast and browser layout after visual changes. Full constraints are in [docs/customization.md](docs/customization.md).
 
 ## Architecture and security
 

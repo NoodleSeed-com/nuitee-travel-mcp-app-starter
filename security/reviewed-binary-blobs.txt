@@ -25,6 +25,16 @@ aa6fb4d40dd0aa3941d740d09f1e9b6f2e22823d docs/images/flight-results.png
 060089d1f0fe41cbc89af3e2afe424dcb83a08a6 apps/web/public/images/immersive/wayfare-explore-windows-v2.png
 1940a8249a53ec3d774dbe76427cb70971321154 apps/web/public/images/immersive/wayfare-cockpit-v2.png
 b657e59195f697df14f6e7eda50c0b775deea053 apps/web/public/images/immersive/wayfare-insurance-v1.png
+# Layered homepage hero, visually reviewed at original detail and responsive crops.
+f4d3c3248a1b133ba848868146b35e62825d45bb apps/web/public/images/immersive/wayfare-window-view-v1.png
+4cb2591aa07608f1abd537e4d48874bf4a6e06fd apps/web/public/images/immersive/wayfare-cabin-frame-v1.png
+# Refreshed destination portraits, visually reviewed at original generated
+# detail for credentials, private data, markings, and commercial claims.
+ba4e041735fe906e153f71eff986af1bdfe84bb2 apps/web/public/images/destinations/rome-editorial-v3.jpg
+7b6ef94d25b03e58739a45fdabb69c3a48560693 apps/web/public/images/destinations/london-editorial-v3.jpg
+e3ec66365d3c98c5b73f6eb3b365aad86a910da5 apps/web/public/images/destinations/istanbul-editorial-v3.jpg
+6f0c3f2b95b953b277fb89e7ebea473fd1f581b6 apps/web/public/images/destinations/lisbon-editorial-v3.jpg
+242fe88e9c5f390174c9a1382247c3c0be4872f4 apps/web/public/images/destinations/banff-editorial-v3.jpg
 # Additional travel imagery introduced by the immersive Wayfare experience,
 # visually reviewed at original detail for credentials and private data.
 06065455e974ef66ecf6a4a42106b3140761698e apps/web/public/images/destinations/banff-editorial-v1.png

@@ -37,6 +37,10 @@ request, deployment, provider mutation, or publication.
   — future TypeScript `agentGuide` workflows, confirmation language, recovery
   behavior, and end-to-end acceptance journeys.
 
+The public-safe, normative [Wayfare brand guidelines](../brand/wayfare-brand-guidelines.md)
+sit outside this removable internal package so agents and template adopters can
+rely on one stable implementation contract.
+
 The Wayfare documents describe a target design and do not establish that the
 current runtime implements it. Runtime source, validation, local smoke, hosted
 inspection, and deployed behavior are separate evidence layers.

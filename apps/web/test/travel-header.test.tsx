@@ -24,7 +24,7 @@ describe('travel header', () => {
     expect(home.querySelector('[data-wayfare-mark="true"]')).not.toBeNull();
   });
 
-  it('keeps hero navigation focused on planning and opens settings from the menu', () => {
+  it('keeps the hero header quiet and moves navigation into the menu', () => {
     const onPlanTrip = vi.fn();
     const onOpenSettings = vi.fn();
     render(
@@ -38,15 +38,24 @@ describe('travel header', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Plan a trip' })).toBeVisible();
-    expect(screen.getByRole('link', { name: 'For developers' }))
-      .toHaveAttribute('href', starterConfig.website.developerPath);
+    expect(screen.queryByRole('navigation', { name: 'Primary navigation' }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Plan a trip' }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'For developers' }))
+      .not.toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Currency' })).toBeVisible();
     expect(screen.queryByText('Guest trip')).not.toBeInTheDocument();
 
     const trigger = screen.getByRole('button', { name: 'Open menu' });
     fireEvent.click(trigger);
-    expect(screen.getByRole('dialog', { name: 'Travel menu' })).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    const dialog = screen.getByRole('dialog', { name: 'Travel menu' });
+    expect(dialog).toBeVisible();
+    expect(within(dialog).getByRole('button', { name: 'Plan a trip' }))
+      .toHaveClass('travel-navigation-dialog__primary');
+    expect(within(dialog).getByRole('link', { name: 'For developers' }))
+      .toHaveAttribute('href', starterConfig.website.developerPath);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Settings' }));
     expect(onOpenSettings).toHaveBeenCalledOnce();
     expect(screen.queryByRole('dialog', { name: 'Travel menu' }))
       .not.toBeInTheDocument();
@@ -76,7 +85,7 @@ describe('travel header', () => {
     expect(trigger).toHaveFocus();
   });
 
-  it('calls the hero Plan a trip callback without starting a trip', () => {
+  it('calls the hero Plan a trip callback from the menu without starting a trip', () => {
     const onPlanTrip = vi.fn();
     const onNewTrip = vi.fn();
     render(
@@ -90,7 +99,9 @@ describe('travel header', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Plan a trip' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Travel menu' }))
+      .getByRole('button', { name: 'Plan a trip' }));
 
     expect(onPlanTrip).toHaveBeenCalledOnce();
     expect(onNewTrip).not.toHaveBeenCalled();
@@ -140,9 +151,12 @@ describe('travel header', () => {
       .not.toBeInTheDocument();
     expect(within(dialog).queryByRole('link', { name: 'Terms' }))
       .not.toBeInTheDocument();
-    expect(within(dialog).getByText('Privacy').parentElement)
+    const legalAvailability = within(dialog).getByRole('group', {
+      name: 'Legal availability',
+    });
+    expect(within(legalAvailability).getByText('Privacy').parentElement)
       .toHaveTextContent('PrivacyNot configured');
-    expect(within(dialog).getByText('Terms').parentElement)
+    expect(within(legalAvailability).getByText('Terms').parentElement)
       .toHaveTextContent('TermsNot configured');
   });
 
@@ -179,15 +193,27 @@ describe('travel header', () => {
 
     const currency = screen.getByRole('combobox', { name: 'Currency' });
     const menu = screen.getByRole('button', { name: 'Open menu' });
-    expect(currency).toHaveValue('PKR');
+    expect(currency).toHaveAttribute('data-value', 'PKR');
+    expect(currency).toHaveAttribute('aria-expanded', 'false');
     expect(currency.compareDocumentPosition(menu) & Node.DOCUMENT_POSITION_FOLLOWING)
       .toBeTruthy();
-    expect(container.querySelectorAll('select')).toHaveLength(1);
+    expect(container.querySelectorAll('select')).toHaveLength(0);
 
-    fireEvent.change(currency, { target: { value: 'EUR' } });
+    fireEvent.click(currency);
+    const listbox = screen.getByRole('listbox', { name: 'Currency' });
+    expect(within(listbox).getAllByRole('option')).toHaveLength(13);
+    for (const option of within(listbox).getAllByRole('option')) {
+      expect(option.querySelector('[data-currency-option-flag] svg')).not.toBeNull();
+    }
+    fireEvent.click(within(listbox).getByRole('option', {
+      name: 'EUR European Union',
+    }));
 
     expect(onCurrencyChange).toHaveBeenCalledOnce();
     expect(onCurrencyChange).toHaveBeenCalledWith('EUR');
+    expect(screen.queryByRole('listbox', { name: 'Currency' }))
+      .not.toBeInTheDocument();
+    expect(currency).toHaveFocus();
   });
 
   it('pairs the selected currency with a decorative local flag and chevron', () => {
@@ -211,11 +237,48 @@ describe('travel header', () => {
     expect(flag).toHaveAttribute('data-currency-flag', 'PK');
     expect(flag?.querySelector('svg')).not.toBeNull();
     expect(chevron).toHaveAttribute('aria-hidden', 'true');
-    expect(screen.getByRole('option', { name: 'PKR' })).toHaveTextContent('PKR');
+    fireEvent.click(screen.getByRole('combobox', { name: 'Currency' }));
+    expect(screen.getByRole('option', { name: 'PKR Pakistan' }))
+      .toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('option', { name: 'PKR Pakistan' })
+      .querySelector('[data-selected-check]')).not.toBeNull();
 
     rerender(<TravelHeader currency="EUR" {...sharedProps} />);
 
     expect(container.querySelector('.travel-header__currency-flag'))
       .toHaveAttribute('data-currency-flag', 'EU');
+  });
+
+  it('supports arrow-key selection and Escape dismissal', () => {
+    const onCurrencyChange = vi.fn();
+    render(
+      <TravelHeader
+        currency="USD"
+        mode="hero"
+        onCurrencyChange={onCurrencyChange}
+        onNewTrip={vi.fn()}
+        onOpenSettings={vi.fn()}
+        onPlanTrip={vi.fn()}
+      />,
+    );
+
+    const currency = screen.getByRole('combobox', { name: 'Currency' });
+    currency.focus();
+    fireEvent.keyDown(currency, { key: 'ArrowDown' });
+    expect(currency).toHaveAttribute('aria-expanded', 'true');
+    expect(currency).toHaveAttribute(
+      'aria-activedescendant',
+      expect.stringContaining('currency-option-usd'),
+    );
+    fireEvent.keyDown(currency, { key: 'ArrowDown' });
+    fireEvent.keyDown(currency, { key: 'Enter' });
+    expect(onCurrencyChange).toHaveBeenCalledWith('EUR');
+    expect(currency).toHaveFocus();
+
+    fireEvent.click(currency);
+    fireEvent.keyDown(currency, { key: 'Escape' });
+    expect(screen.queryByRole('listbox', { name: 'Currency' }))
+      .not.toBeInTheDocument();
+    expect(currency).toHaveFocus();
   });
 });

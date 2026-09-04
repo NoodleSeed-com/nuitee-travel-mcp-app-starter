@@ -5,17 +5,24 @@ import { describe, expect, it } from 'vitest';
 const publicRoot = join(import.meta.dirname, '..', 'public');
 
 const expectedMasters = [
+  '/images/immersive/wayfare-window-view-v1.png',
+  '/images/immersive/wayfare-cabin-frame-v1.png',
   '/images/immersive/wayfare-explore-windows-v2.png',
   '/images/immersive/wayfare-cockpit-v2.png',
   '/images/immersive/wayfare-insurance-v1.png',
   '/images/immersive/wayfare-stay-v1.png',
   '/images/immersive/wayfare-flight-stay-v1.png',
-  '/images/destinations/rome-editorial-v2.jpg',
-  '/images/destinations/london-editorial-v2.jpg',
-  '/images/destinations/istanbul-editorial-v2.jpg',
-  '/images/destinations/lisbon-editorial-v1.png',
-  '/images/destinations/banff-editorial-v1.png',
+  '/images/destinations/rome-editorial-v3.jpg',
+  '/images/destinations/london-editorial-v3.jpg',
+  '/images/destinations/istanbul-editorial-v3.jpg',
+  '/images/destinations/lisbon-editorial-v3.jpg',
+  '/images/destinations/banff-editorial-v3.jpg',
 ] as const;
+
+const ultraWideMasters = new Set([
+  '/images/immersive/wayfare-window-view-v1.png',
+  '/images/immersive/wayfare-cabin-frame-v1.png',
+]);
 
 function jpegDimensions(bytes: Buffer) {
   let offset = 2;
@@ -52,7 +59,9 @@ describe('editorial landing imagery', () => {
     const dimensions = isPng ? pngDimensions(bytes) : jpegDimensions(bytes);
     if (!isPng) expect([...bytes.subarray(0, 2)]).toEqual([0xff, 0xd8]);
     expect(Math.max(dimensions.width, dimensions.height)).toBeGreaterThanOrEqual(1536);
-    expect(Math.min(dimensions.width, dimensions.height)).toBeGreaterThanOrEqual(900);
+    expect(Math.min(dimensions.width, dimensions.height)).toBeGreaterThanOrEqual(
+      ultraWideMasters.has(src) ? 800 : 900,
+    );
     expect(statSync(path).size).toBeGreaterThan(500_000);
     expect(statSync(path).size).toBeLessThan(4_000_000);
   });

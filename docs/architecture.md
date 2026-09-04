@@ -27,15 +27,29 @@ Noodle public Assistant surface ───── External MCP host
            official Flights API
 ```
 
-`apps/web/` is the primary product surface. Its light, Inter-only homepage owns
+`apps/web/` is the primary product surface. Its high-contrast Host Grotesk homepage owns
 one general composer, so capability choice stays inside the agent rather than
-in a pre-conversation menu. The optional full-bleed `/experience` visual-reference
+in a pre-conversation menu. The hero keeps only the H1 over the layered image;
+idle, empty input examples are visual-only typewriter prompts that stop on
+focus or input and resolve to one static prompt for reduced motion. Its
+blue-hour BorderBeam remains active while the homepage composer is empty and
+stops after text entry; the arrow-only submit control keeps the action compact.
+The header
+keeps only the Wayfare lockup, currency, and menu visible; planning and
+developer navigation remain keyboard-accessible inside that menu. A single
+official-logo attribution row follows the hero and is not duplicated in the
+footer. The optional full-bleed `/experience` visual-reference
 route may reuse the complete core hero catalog without defining the default
 product entry model. After submission `TravelAssistantPage` hands the unchanged
 journey to `TravelConversation`, which owns one chronological conversation,
 delayed guest admission, typed message rendering, and plain-language activity.
 `TravelMessage` preserves
 message-part order and delegates official inline MCP Apps to `NoodleAppView`.
+
+The [Wayfare brand guidelines](brand/wayfare-brand-guidelines.md) are the
+normative presentation contract for the website and repository-owned MCP Apps.
+`AGENTS.md` requires coding agents to read them before any user-facing design,
+implementation, or review.
 Every distinct view ID is a distinct chronological invocation and remains
 mounted in history; the website has no newest-only selector, generic App
 deduplication, second results workspace, page-authored fare reconstruction, or
@@ -55,7 +69,11 @@ The website admits only these exact linked-App identities:
 
 A tool/URI mismatch fails closed inline and never reaches `NoodleAppView`. The compact typed trip disclosure stays inside the conversation, is absent before typed facts exist, and exposes only validated route, date, party, cabin, and optional secondary facts; it never parses Assistant prose.
 
-`apps/web/src/components/wayfare-mark.tsx` owns the deterministic route-line SVG mark. The website uses installed Lucide icons only for familiar supported actions and does not use icons to imply attachments, payment, booking, voice, or account capabilities. The default homepage uses the existing Explore master from `apps/web/src/lib/travel-hero-content.ts`; `/experience` may read the complete mode-aware `1672 × 941` visual catalog. The passive editorial destination cards retain their local JPEG masters. None are claimed as literal 4K sources, and Next.js produces responsive AVIF/WebP delivery from them. Exact bytes, hashes, crop choices, and visual-review evidence are in [the Wayfare provenance ledger](visual-assets/wayfare-premium-concierge.md).
+`apps/web/src/components/wayfare-mark.tsx` owns the deterministic route-line SVG logo asset. Every functional interface icon in the Next.js website comes from the pinned Heroicons React package. Outline icons are the default; compact solid icons are reserved for status emphasis. Hand-authored utility SVGs and mixed icon libraries are not permitted in that surface. Official Noodle Seed and Nuitée SVG wordmarks are a narrow identity-attribution exception, not product icons. The website does not use icons to imply attachments, payment, booking, voice, or account capabilities. The default homepage layers the configured blue-hour panorama beneath a fixed transparent cabin foreground and applies bounded mouse-only movement to the panorama; touch and reduced-motion presentations remain static. `/experience` may read the complete mode-aware `1672 × 941` visual catalog from `apps/web/src/lib/travel-hero-content.ts`. The passive editorial destination cards retain their local JPEG masters. None are claimed as literal 4K sources, and Next.js produces responsive AVIF/WebP delivery from them. Exact bytes, hashes, crop choices, and visual-review evidence are in [the Wayfare provenance ledger](visual-assets/wayfare-premium-concierge.md).
+
+The repository-owned MCP App UI has not been migrated to this visual system in
+the current implementation. That work is explicitly deferred to Wahab; the
+canonical brand guidelines remain the required contract for that later pass.
 
 `src/` owns the MCP server, model-facing workflows, exact public capability allowlist, connector, tools, state, and linked Apps. External MCP hosts enter the same server and provide their own model. No browser-specific or host-specific copy of the business tools exists.
 

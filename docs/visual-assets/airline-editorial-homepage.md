@@ -1,6 +1,6 @@
 # Wayfare landing imagery
 
-The active Wayfare landing uses a light, Inter-only cinematic composition: a
+The active Wayfare landing uses a high-contrast, Host Grotesk cinematic composition: a
 mode-aware hero supports a centered conversation entry, and three compact
 destination images support discovery. The standard and full-bleed experiences
 share exact core image paths through `apps/web/src/lib/travel-hero-content.ts`.

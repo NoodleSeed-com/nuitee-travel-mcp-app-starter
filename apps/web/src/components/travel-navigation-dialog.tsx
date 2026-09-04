@@ -1,5 +1,6 @@
 'use client';
 
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useEffect, useRef } from 'react';
 import { siteConfig } from '../lib/site-config';
 
@@ -111,16 +112,29 @@ export function TravelNavigationDialog({
           ref={closeRef}
           type="button"
         >
-          <span aria-hidden="true">×</span>
+          <XMarkIcon aria-hidden="true" />
         </button>
       </header>
       <nav aria-label="Travel menu links" className="travel-navigation-dialog__links">
-        <button onClick={() => dismiss(primaryAction.onClick)} type="button">
+        <button
+          className="travel-navigation-dialog__primary"
+          onClick={() => dismiss(primaryAction.onClick)}
+          type="button"
+        >
           {primaryAction.label}
         </button>
-        <a href={siteConfig.website.developerPath}>For developers</a>
-        <button onClick={() => dismiss(onOpenSettings)} type="button">Settings</button>
-        <a href={siteConfig.website.supportPath}>Support</a>
+        <div className="travel-navigation-dialog__menu-list">
+          <a href={siteConfig.website.developerPath}>For developers</a>
+          <button onClick={() => dismiss(onOpenSettings)} type="button">Settings</button>
+          <a href={siteConfig.website.supportPath}>Support</a>
+        </div>
+      </nav>
+      <div
+        aria-label="Legal availability"
+        className="travel-navigation-dialog__legal"
+        role="group"
+      >
+        <span className="travel-navigation-dialog__legal-label">Legal</span>
         {siteConfig.website.privacyUrl ? (
           <a href={siteConfig.website.privacyUrl}>Privacy</a>
         ) : (
@@ -137,7 +151,7 @@ export function TravelNavigationDialog({
             <small>Not configured</small>
           </span>
         )}
-      </nav>
+      </div>
     </dialog>
   );
 }

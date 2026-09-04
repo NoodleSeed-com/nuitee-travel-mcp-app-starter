@@ -1,6 +1,9 @@
 import { access, readFile, writeFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
 
+const browserTestPort = Number.parseInt(process.env.PLAYWRIGHT_PORT ?? '3108', 10);
+const browserTestOrigin = `http://localhost:${browserTestPort}`;
+
 function renderedContrastRatio(
   foreground: string,
   background: string,
@@ -129,18 +132,99 @@ test('renders one agent-led start without opening an assistant session', async (
     level: 1,
     name: 'Tell us the trip you have in mind',
   })).toBeVisible();
+  await expect(page.getByText('Your journey starts here')).toHaveCount(0);
+  await expect(page.getByText(/Describe the journey once/)).toHaveCount(0);
+  await expect(page.getByText(/For example:/)).toHaveCount(0);
   await expect(page.getByRole('form', { name: 'Plan a trip' })).toHaveCount(1);
   await expect(page.getByRole('tablist')).toHaveCount(0);
   await expect(page.locator('.travel-starter-prompts')).toHaveCount(0);
-  await expect(page.locator('.travel-capabilities')).toHaveCount(0);
+  const capabilities = page.getByRole('region', { name: 'Wayfare capabilities' });
+  await expect(capabilities).toBeVisible();
+  await expect(capabilities.getByRole('listitem')).toHaveCount(6);
+  await expect(capabilities.getByText(
+    'Search and compare one-way or return fares.',
+  )).toBeVisible();
+  await expect(capabilities.getByText(
+    'Review, confirm, change, or cancel conversationally.',
+  )).toBeVisible();
+  await expect(capabilities.getByRole('button')).toHaveCount(0);
+  await expect(capabilities.getByRole('link')).toHaveCount(0);
+  const liquidIcons = capabilities.locator('[data-wayfare-liquid-icon="true"]');
+  await expect(liquidIcons).toHaveCount(6);
+  await expect(liquidIcons.first()).toHaveAttribute('data-renderer', 'webgl');
+  const capabilityTones = await capabilities.evaluate((element) => ({
+    description: getComputedStyle(
+      element.querySelector('.travel-capabilities__copy p')!,
+    ).color,
+    note: getComputedStyle(
+      element.querySelector('.travel-capabilities__note')!,
+    ).color,
+    title: getComputedStyle(
+      element.querySelector('.travel-capabilities__copy strong')!,
+    ).color,
+  }));
+  expect(capabilityTones).toEqual({
+    description: 'rgb(118, 118, 118)',
+    note: 'rgb(118, 118, 118)',
+    title: 'rgb(13, 13, 13)',
+  });
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const capabilityNoteLines = await capabilities.locator(
+    '.travel-capabilities__note',
+  ).evaluate((element) => {
+    const lineHeight = Number.parseFloat(getComputedStyle(element).lineHeight);
+    return element.getBoundingClientRect().height / lineHeight;
+  });
+  expect(capabilityNoteLines).toBeLessThan(1.2);
   await expect(page.locator('.destination-card')).toHaveCount(5);
   await expect(page.locator('.destination-card button')).toHaveCount(0);
   await expect(page.locator('.travel-editorial button')).toHaveCount(0);
   await expect(page.locator('main h1')).toHaveCount(1);
+  const partners = page.getByRole('complementary', { name: 'Technology partners' });
+  await expect(partners).toBeVisible();
+  await expect(partners.getByRole('img', { name: 'Noodle Seed' })).toBeVisible();
+  await expect(partners.getByRole('img', { name: 'Nuitée' })).toBeVisible();
+  const partnerGeometry = await partners.evaluate((element) => ({
+    height: element.getBoundingClientRect().height,
+    noodleHeight: element.querySelector<HTMLImageElement>('img[alt="Noodle Seed"]')
+      ?.getBoundingClientRect().height ?? 0,
+    nuiteeHeight: element.querySelector<HTMLImageElement>('img[alt="Nuitée"]')
+      ?.getBoundingClientRect().height ?? 0,
+  }));
+  expect(partnerGeometry.height).toBeGreaterThanOrEqual(72);
+  expect(partnerGeometry.noodleHeight).toBeGreaterThanOrEqual(20);
+  expect(partnerGeometry.nuiteeHeight).toBeGreaterThanOrEqual(24);
   expect(assistantRequests).toEqual([]);
 });
 
-test('aligns a local currency flag and custom chevron inside the native selector', async ({
+test('adapts the passive capability grid without horizontal overflow', async ({
+  page,
+}) => {
+  await page.goto('/');
+
+  for (const [width, expectedColumns] of [
+    [1280, 3],
+    [820, 2],
+    [390, 1],
+  ] as const) {
+    await page.setViewportSize({ width, height: 900 });
+
+    const layout = await page.locator('.travel-capabilities__grid').evaluate(
+      (element) => ({
+        columns: getComputedStyle(element).gridTemplateColumns
+          .split(' ')
+          .filter(Boolean).length,
+        documentWidth: document.documentElement.scrollWidth,
+        viewportWidth: document.documentElement.clientWidth,
+      }),
+    );
+
+    expect(layout.columns).toBe(expectedColumns);
+    expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth);
+  }
+});
+
+test('renders a branded flag-rich currency selector at every viewport', async ({
   page,
 }) => {
   await page.goto('/');
@@ -154,7 +238,7 @@ test('aligns a local currency flag and custom chevron inside the native selector
     await page.setViewportSize({ width, height: 720 });
 
     const geometry = await control.evaluate((element) => {
-      const select = element.querySelector('select');
+      const select = element.querySelector('[role="combobox"]');
       const flagElement = element.querySelector('.travel-header__currency-flag');
       const chevronElement = element.querySelector('.travel-header__currency-chevron');
       if (!select || !flagElement || !chevronElement) {
@@ -165,16 +249,12 @@ test('aligns a local currency flag and custom chevron inside the native selector
       const selectBounds = select.getBoundingClientRect();
       const flagBounds = flagElement.getBoundingClientRect();
       const chevronBounds = chevronElement.getBoundingClientRect();
-      const style = getComputedStyle(select);
 
       return {
-        appearance: style.appearance,
         controlHeight: controlBounds.height,
         flagHeight: flagBounds.height,
         flagInset: flagBounds.left - controlBounds.left,
         flagWidth: flagBounds.width,
-        leftPadding: Number.parseFloat(style.paddingLeft),
-        rightPadding: Number.parseFloat(style.paddingRight),
         selectHeight: selectBounds.height,
         chevronInset: controlBounds.right - chevronBounds.right,
         verticalCenterDifference: Math.abs(
@@ -184,21 +264,37 @@ test('aligns a local currency flag and custom chevron inside the native selector
       };
     });
 
-    expect(geometry.appearance).toBe('none');
     expect(geometry.controlHeight).toBeGreaterThanOrEqual(44);
     expect(geometry.selectHeight).toBeGreaterThanOrEqual(44);
     expect(geometry.flagWidth).toBeGreaterThanOrEqual(16);
     expect(geometry.flagHeight).toBeGreaterThanOrEqual(10);
     expect(geometry.flagInset).toBeGreaterThanOrEqual(10);
     expect(geometry.chevronInset).toBeGreaterThanOrEqual(10);
-    expect(geometry.leftPadding).toBeGreaterThanOrEqual(34);
-    expect(geometry.rightPadding).toBeGreaterThanOrEqual(32);
     expect(geometry.verticalCenterDifference).toBeLessThanOrEqual(1);
   }
 
-  await expect(currency).toHaveValue('USD');
+  await expect(currency).toHaveAttribute('data-value', 'USD');
   await expect(flag).toHaveAttribute('data-currency-flag', 'US');
   await expect(flag.locator('svg')).toHaveCount(1);
+  await currency.click();
+  const listbox = page.getByRole('listbox', { name: 'Currency' });
+  await expect(listbox).toBeVisible();
+  await expect(listbox.getByRole('option')).toHaveCount(13);
+  await expect(listbox.locator('[data-currency-option-flag] svg')).toHaveCount(13);
+  await expect(listbox.getByRole('option', {
+    name: 'USD United States',
+  })).toHaveAttribute('aria-selected', 'true');
+  await expect(listbox.locator('[data-selected-check]')).toHaveCount(1);
+  const listboxBounds = await listbox.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    return {
+      left: bounds.left,
+      right: bounds.right,
+      viewportWidth: document.documentElement.clientWidth,
+    };
+  });
+  expect(listboxBounds.left).toBeGreaterThanOrEqual(0);
+  expect(listboxBounds.right).toBeLessThanOrEqual(listboxBounds.viewportWidth);
 });
 
 test('uses a granted browser location for the visible origin and currency defaults', async ({
@@ -206,19 +302,18 @@ test('uses a granted browser location for the visible origin and currency defaul
   page,
 }) => {
   await context.grantPermissions(['geolocation'], {
-    origin: 'http://127.0.0.1:3108',
+    origin: browserTestOrigin,
   });
   await context.setGeolocation({ latitude: 33.6167, longitude: 73.0992 });
 
   await page.goto('/');
 
   await expect(page.getByRole('combobox', { name: 'Currency' }))
-    .toHaveValue('PKR');
+    .toHaveAttribute('data-value', 'PKR');
   await expect(page.getByRole('textbox', { name: 'Ask the travel assistant' }))
-    .toHaveAttribute(
-      'placeholder',
-      'Islamabad — describe the trip you have in mind',
-    );
+    .not.toHaveAttribute('placeholder');
+  await expect(page.locator('[data-typewriter-prompts]'))
+    .toHaveAttribute('data-typewriter-prompts', /Islamabad to Tokyo next spring/);
 });
 
 test('keeps neutral travel defaults when browser location is denied', async ({
@@ -247,24 +342,22 @@ test('keeps neutral travel defaults when browser location is denied', async ({
   await page.goto('/');
 
   await expect(page.getByRole('combobox', { name: 'Currency' }))
-    .toHaveValue('USD');
+    .toHaveAttribute('data-value', 'USD');
   await expect(page.getByRole('textbox', { name: 'Ask the travel assistant' }))
-    .toHaveAttribute(
-      'placeholder',
-      'Your departure — describe the trip you have in mind',
-    );
+    .not.toHaveAttribute('placeholder');
+  await expect(page.locator('[data-typewriter-prompts]'))
+    .toHaveAttribute('data-typewriter-prompts', /Tokyo in spring/);
 });
 
 test('keeps the agent-led hero centered with rounded visual surfaces', async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto('/');
 
   const viewport = page.viewportSize();
   expect(viewport).not.toBeNull();
   for (const selector of [
     '#travel-home-title',
-    '.travel-hero__copy > p',
     '.travel-composer--hero',
   ]) {
     const bounds = await page.locator(selector).boundingBox();
@@ -273,7 +366,7 @@ test('keeps the agent-led hero centered with rounded visual surfaces', async ({
     expect(Math.abs(center - (viewport!.width / 2))).toBeLessThanOrEqual(2);
   }
 
-  await expect(page.getByRole('link', { name: 'Wayfare' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Wayfare', exact: true })).toBeVisible();
   const headlineLayout = await page.locator('#travel-home-title').evaluate((element) => {
     const style = getComputedStyle(element);
     return {
@@ -281,11 +374,19 @@ test('keeps the agent-led hero centered with rounded visual surfaces', async ({
       lineHeight: Number.parseFloat(style.lineHeight),
     };
   });
-  expect(headlineLayout.height).toBeGreaterThan(headlineLayout.lineHeight * 1.5);
-  expect(headlineLayout.height).toBeLessThanOrEqual(headlineLayout.lineHeight * 2.2);
-  await expect(page.locator('.travel-hero__image')).toHaveAttribute(
+  if (testInfo.project.name === 'desktop-chromium') {
+    expect(headlineLayout.height).toBeLessThanOrEqual(headlineLayout.lineHeight * 1.2);
+  } else {
+    expect(headlineLayout.height).toBeGreaterThan(headlineLayout.lineHeight * 1.5);
+  }
+  await expect(page.locator('#travel-home-title')).toHaveCSS('font-weight', '500');
+  await expect(page.locator('.travel-hero__view')).toHaveAttribute(
     'src',
-    /wayfare-explore-windows-v2/,
+    /wayfare-window-view-v1/,
+  );
+  await expect(page.locator('.travel-hero__cabin')).toHaveAttribute(
+    'src',
+    /wayfare-cabin-frame-v1/,
   );
 
   for (const selector of [
@@ -304,25 +405,293 @@ test('keeps the agent-led hero centered with rounded visual surfaces', async ({
   )).toBeVisible();
 });
 
-test('uses Inter throughout the consumer and developer UI', async ({ page }) => {
+test('keeps the hero frame thirty percent shorter at the reviewed viewport', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1009, height: 1024 });
+  await page.goto('/');
+
+  const hero = await page.locator('.travel-hero__experience').boundingBox();
+  expect(hero).not.toBeNull();
+  expect(hero!.height).toBeGreaterThanOrEqual(465);
+  expect(hero!.height).toBeLessThanOrEqual(475);
+  await expect(page.locator('.travel-composer--hero')).toBeVisible();
+});
+
+test('shows the hero photography without a full-frame tint', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(page.locator('.travel-hero__media-veil')).toHaveCount(0);
+  await expect(page.locator('.travel-hero__view')).toHaveCSS('filter', 'none');
+  await expect(page.locator('.travel-hero__copy')).toHaveCSS('text-shadow', 'none');
+  await expect(page.locator('.travel-hero__experience')).toHaveCSS('border-width', '0px');
+  await expect(page.locator('.travel-hero__experience')).toHaveCSS('box-shadow', 'none');
+});
+
+test('moves only the outside view when a pointer looks around the windows', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/');
+
+  const hero = page.locator('.travel-hero__experience');
+  const view = page.locator('.travel-hero__view');
+  const cabin = page.locator('.travel-hero__cabin');
+  await expect(view).toBeVisible();
+  await expect(cabin).toBeVisible();
+  const bounds = await hero.boundingBox();
+  expect(bounds).not.toBeNull();
+  const initialViewTransform = await view.evaluate((element) => (
+    getComputedStyle(element).transform
+  ));
+  const initialCabinTransform = await cabin.evaluate((element) => (
+    getComputedStyle(element).transform
+  ));
+
+  await page.mouse.move(
+    bounds!.x + bounds!.width - 40,
+    bounds!.y + (bounds!.height / 2),
+  );
+  await expect.poll(() => view.evaluate((element) => (
+    getComputedStyle(element).transform
+  ))).not.toBe(initialViewTransform);
+  await expect(cabin).toHaveCSS('transform', initialCabinTransform);
+
+  await page.mouse.move(0, 0);
+  await expect.poll(() => view.evaluate((element) => (
+    getComputedStyle(element).transform
+  ))).toBe(initialViewTransform);
+});
+
+test('keeps the layered hero static when reduced motion is requested', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+
+  const hero = page.locator('.travel-hero__experience');
+  const view = page.locator('.travel-hero__view');
+  const bounds = await hero.boundingBox();
+  expect(bounds).not.toBeNull();
+  const initialTransform = await view.evaluate((element) => (
+    getComputedStyle(element).transform
+  ));
+  await page.mouse.move(
+    bounds!.x + bounds!.width - 40,
+    bounds!.y + (bounds!.height / 2),
+  );
+  await expect(view).toHaveCSS('transform', initialTransform);
+});
+
+test('renders the exact Wayline and state-bound composer beam', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'no-preference' });
+  await page.goto('/');
+
+  const mark = page.locator('[data-wayfare-mark="true"]').first();
+  await expect(mark).toHaveAttribute('viewBox', '0 0 64 64');
+  await expect(mark.locator('path')).toHaveAttribute(
+    'd',
+    'M7 18C14 18 15.5 46 24 46C32.5 46 31 22 39 22C47 22 46 42 53 42C57.5 42 58.5 35.5 59 30',
+  );
+  await expect(mark.locator('circle')).toHaveCount(2);
+
+  const wrapper = page.locator('[data-wayfare-composer-beam="true"]');
+  const beam = wrapper.locator('[data-beam]');
+  const input = page.getByRole('textbox', { name: 'Ask the travel assistant' });
+  await expect(page.locator('.travel-workspace')).toHaveAttribute('data-app-ready', 'true');
+  await expect(input).toBeEditable();
+  await expect(wrapper).toHaveAttribute('data-composer-state', 'idle');
+  await expect(beam).not.toHaveAttribute('data-active', '');
+  const beamStyles = await wrapper.locator('style').textContent();
+  expect(beamStyles).toContain('rgb(80, 60, 200)');
+  expect(beamStyles).not.toContain('rgb(255, 50, 100)');
+  await input.focus();
+  await expect(beam).not.toHaveAttribute('data-active', '');
+  await input.fill('Tokyo in spring');
+  await expect(wrapper).toHaveAttribute('data-composer-state', 'focused');
+  await expect(beam).not.toHaveAttribute('data-active', '');
+  await expect(input).toHaveCSS('box-shadow', 'none');
+  await expect(wrapper.locator('.travel-composer')).toHaveCSS(
+    'box-shadow',
+    /rgb\(13, 13, 13\).*rgb\(102, 204, 255\)/u,
+  );
+  const focusedComposer = await wrapper.locator('.travel-composer').evaluate((element) => ({
+    radius: Number.parseFloat(getComputedStyle(element).borderTopLeftRadius),
+  }));
+  expect(focusedComposer.radius).toBeGreaterThanOrEqual(100);
+  await input.blur();
+  await expect(wrapper).toHaveAttribute('data-composer-state', 'idle');
+  await input.fill('');
+  await input.blur();
+  await expect(beam).not.toHaveAttribute('data-active', '');
+
+  const submit = page.getByRole('button', { name: 'Submit trip request' });
+  await expect(submit).not.toContainText('Plan my trip');
+  await expect(submit.locator('svg')).toHaveCount(1);
+
+  const liquidMark = page.locator('[data-wayfare-liquid="true"]');
+  await liquidMark.scrollIntoViewIfNeeded();
+  await expect(liquidMark).toHaveAttribute('data-renderer', 'webgl');
+  const liquidCanvas = liquidMark.locator('canvas');
+  await expect(liquidCanvas).toBeVisible();
+  await expect(liquidCanvas).toHaveCSS(
+    'mask-image',
+    /wayfare-mark-mask\.svg/u,
+  );
+  const firstLiquidFrame = await liquidMark.screenshot();
+  await page.waitForTimeout(700);
+  const secondLiquidFrame = await liquidMark.screenshot();
+  expect(secondLiquidFrame.equals(firstLiquidFrame)).toBe(false);
+  const editorialMark = liquidMark.locator('[data-wayfare-mark="true"]');
+  await expect(editorialMark).toHaveAttribute('data-wayfare-gradient', 'static');
+  await expect(editorialMark.locator('path')).toHaveAttribute('stroke', /^url\(#.+\)$/u);
+  const stopAnimations = await editorialMark.locator('stop').evaluateAll((stops) => (
+    stops.map((stop) => getComputedStyle(stop).animationName)
+  ));
+  expect(stopAnimations.every((name) => name === 'none')).toBe(true);
+});
+
+test('keeps the exact light Wayfare tokens under every system preference', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/');
+  const light = await page.locator('html').evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      actionNeeded: style.getPropertyValue('--travel-action-needed').trim(),
+      background: getComputedStyle(document.body).backgroundColor,
+      confirmed: style.getPropertyValue('--travel-confirmed').trim(),
+      ink: style.getPropertyValue('--travel-ink').trim(),
+      selected: style.getPropertyValue('--travel-selected').trim(),
+    };
+  });
+  expect(light).toEqual({
+    actionNeeded: '#f66',
+    background: 'rgb(255, 255, 255)',
+    confirmed: '#9f9',
+    ink: '#0d0d0d',
+    selected: '#6cf',
+  });
+
+  await page.emulateMedia({ colorScheme: 'dark' });
+  const darkPreference = await page.locator('html').evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      actionNeeded: style.getPropertyValue('--travel-action-needed').trim(),
+      background: getComputedStyle(document.body).backgroundColor,
+      confirmed: style.getPropertyValue('--travel-confirmed').trim(),
+      ink: style.getPropertyValue('--travel-ink').trim(),
+      selected: style.getPropertyValue('--travel-selected').trim(),
+    };
+  });
+  expect(darkPreference).toEqual({
+    actionNeeded: '#f66',
+    background: 'rgb(255, 255, 255)',
+    confirmed: '#9f9',
+    ink: '#0d0d0d',
+    selected: '#6cf',
+  });
+
+  const lightSurfaceStyles = await page.evaluate(() => {
+    const composer = getComputedStyle(document.querySelector('.travel-composer--hero')!);
+    const destinationName = getComputedStyle(
+      document.querySelector('.destination-card__copy strong')!,
+    );
+    return {
+      composerBackground: composer.backgroundColor,
+      composerText: composer.color,
+      destinationName: destinationName.color,
+    };
+  });
+  expect(lightSurfaceStyles.composerBackground).toBe('rgba(255, 255, 255, 0.86)');
+  expect(lightSurfaceStyles.composerText).toBe('rgb(13, 13, 13)');
+  expect(lightSurfaceStyles.destinationName).toBe('rgb(255, 255, 255)');
+});
+
+test('serves the approved Wayfare mark as a light-blue favicon', async ({ page }) => {
+  await page.goto('/');
+  const faviconPaints = await page.evaluate(async () => {
+    const response = await fetch('/icon.svg');
+    const markup = await response.text();
+    const documentNode = new DOMParser().parseFromString(markup, 'image/svg+xml');
+    return Array.from(documentNode.querySelectorAll('[stroke], [fill]'))
+      .flatMap((element) => [
+        element.getAttribute('stroke'),
+        element.getAttribute('fill'),
+      ])
+      .filter((paint): paint is string => Boolean(paint && paint !== 'none'));
+  });
+
+  expect([...new Set(faviconPaints)]).toEqual(['#66CCFF']);
+});
+
+test('centers every destination caption inside its jet-window safe area', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#places-to-start').scrollIntoViewIfNeeded();
+
+  const geometry = await page.locator('.destination-card').evaluateAll((cards) => (
+    cards.map((card) => {
+      const frame = card.getBoundingClientRect();
+      const copy = card.querySelector<HTMLElement>('.destination-card__copy')!;
+      const bounds = copy.getBoundingClientRect();
+      return {
+        centerDelta: Math.abs(
+          (bounds.left + (bounds.width / 2))
+          - (frame.left + (frame.width / 2)),
+        ),
+        bottomInset: frame.bottom - bounds.bottom,
+        leftInset: bounds.left - frame.left,
+        rightInset: frame.right - bounds.right,
+        textAlign: getComputedStyle(copy).textAlign,
+      };
+    })
+  ));
+
+  for (const window of geometry) {
+    expect(window.centerDelta).toBeLessThanOrEqual(1);
+    expect(window.bottomInset).toBeGreaterThanOrEqual(16);
+    expect(window.leftInset).toBeGreaterThanOrEqual(12);
+    expect(window.rightInset).toBeGreaterThanOrEqual(12);
+    expect(window.textAlign).toBe('center');
+  }
+});
+
+test('keeps every visible button fully rounded', async ({ page }) => {
+  await page.goto('/');
+  const radii = await page.locator('button:visible').evaluateAll((buttons) => (
+    buttons.map((button) => {
+      const bounds = button.getBoundingClientRect();
+      return {
+        height: bounds.height,
+        label: button.getAttribute('aria-label') ?? button.textContent?.trim(),
+        radius: Number.parseFloat(getComputedStyle(button).borderTopLeftRadius),
+      };
+    })
+  ));
+
+  for (const button of radii) {
+    expect(button.radius, button.label ?? 'unlabelled button')
+      .toBeGreaterThanOrEqual(button.height / 2);
+  }
+});
+
+test('uses Host Grotesk throughout the consumer and developer UI', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => document.fonts.ready);
 
-  await expect(page.locator('body')).toHaveCSS('font-family', /Inter Variable/);
+  await expect(page.locator('body')).toHaveCSS('font-family', /Host Grotesk Variable/);
   const consumerFonts = await page.locator(
     '.travel-workspace, .travel-workspace h1, .travel-workspace button, .travel-workspace textarea',
   )
     .evaluateAll((elements) => elements.map((element) => (
       getComputedStyle(element).fontFamily
     )));
-  expect(consumerFonts.every((font) => font.includes('Inter Variable'))).toBe(true);
+  expect(consumerFonts.every((font) => font.includes('Host Grotesk Variable'))).toBe(true);
 
   await page.goto('/developers');
   await page.evaluate(() => document.fonts.ready);
-  await expect(page.locator('body')).toHaveCSS('font-family', /Inter Variable/);
+  await expect(page.locator('body')).toHaveCSS('font-family', /Host Grotesk Variable/);
   await expect(page.locator('code').first()).not.toHaveCSS(
     'font-family',
-    /Inter Variable/,
+    /Host Grotesk Variable/,
   );
 });
 
@@ -358,25 +727,28 @@ test('keeps the cinematic hero legible, fitted, and keyboard-reachable on deskto
   expect(heroAppearance.headingColor).toBe('rgb(255, 255, 255)');
   expect(heroAppearance.imageFit).toBe('cover');
 
-  const developerLink = page.getByRole('navigation', {
-    name: 'Primary navigation',
-  }).getByRole('link', { name: 'For developers' });
-  let reachedDeveloperLink = false;
-  for (let index = 0; index < 8; index += 1) {
-    await page.keyboard.press('Tab');
-    if (await developerLink.evaluate((element) => document.activeElement === element)) {
-      reachedDeveloperLink = true;
-      break;
-    }
-  }
-  expect(reachedDeveloperLink).toBe(true);
+  const header = page.locator('.travel-header');
+  await expect(header.getByRole('navigation', { name: 'Primary navigation' }))
+    .toHaveCount(0);
+  await expect(header.getByRole('button', { name: 'Plan a trip' })).toHaveCount(0);
+  await expect(header.getByRole('link', { name: 'For developers' })).toHaveCount(0);
+  await expect(header).toHaveCSS('border-bottom-width', '0px');
 
   const menuTrigger = page.getByRole('button', { name: 'Open menu' });
   await menuTrigger.focus();
   await page.keyboard.press('Enter');
   const menu = page.getByRole('dialog', { name: 'Travel menu' });
   await expect(menu).toBeVisible();
+  await expect(menu.getByRole('button', { name: 'Plan a trip' })).toBeVisible();
+  await expect(menu.getByRole('link', { name: 'For developers' })).toBeVisible();
   await expect(menu.getByRole('button', { name: 'Close menu' })).toBeFocused();
+  await expect(menu.getByRole('button', { name: 'Plan a trip' }))
+    .toHaveCSS('background-color', 'rgb(13, 13, 13)');
+  const closeIconBounds = await menu.getByRole('button', { name: 'Close menu' })
+    .locator('svg').boundingBox();
+  expect(closeIconBounds).not.toBeNull();
+  expect(closeIconBounds!.width).toBeLessThanOrEqual(20);
+  expect(closeIconBounds!.height).toBeLessThanOrEqual(20);
   const menuTargets = menu.locator('a, button');
   const lastMenuTarget = menuTargets.last();
   await page.keyboard.press('Shift+Tab');
@@ -404,6 +776,21 @@ test('keeps motion reduced without restoring the retired animation layer', async
       getComputedStyle(element).transitionDuration
     )));
   expect(transitionDurations.every((duration) => duration === '0s')).toBe(true);
+  await expect(page.locator('[data-typewriter-prompts]'))
+    .toHaveText('Tokyo in spring');
+  const gradientAnimations = await page.locator('.travel-editorial__mark stop')
+    .evaluateAll((stops) => stops.map((stop) => getComputedStyle(stop).animationName));
+  expect(gradientAnimations.every((name) => name === 'none')).toBe(true);
+  await expect(page.locator('[data-wayfare-liquid="true"]'))
+    .toHaveAttribute('data-renderer', 'fallback');
+  await expect(page.locator('[data-wayfare-liquid="true"] canvas'))
+    .toHaveCSS('display', 'none');
+  const liquidIconRenderers = await page.locator(
+    '[data-wayfare-liquid-icon="true"]',
+  ).evaluateAll((icons) => icons.map((icon) => icon.getAttribute('data-renderer')));
+  expect(liquidIconRenderers).toEqual(Array(6).fill('fallback'));
+  await expect(page.locator('[data-wayfare-liquid-icon="true"] canvas').first())
+    .toHaveCSS('display', 'none');
   await page.getByRole('button', { name: 'Open menu' }).click();
   const menuDurations = await page.getByRole('dialog', { name: 'Travel menu' })
     .locator(':scope, :scope *')
@@ -606,6 +993,86 @@ test('submits one broad intent through one assistant turn', async ({ page }) => 
 
   await expect.poll(() => submittedPrompts).toEqual([prompt]);
   expect(sessionRequests).toBe(1);
+});
+
+test('places the blue response cue in transcript flow and animates only the busy composer', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium');
+
+  let releaseTurn = () => {};
+  const turnGate = new Promise<void>((resolve) => {
+    releaseTurn = resolve;
+  });
+  await page.route('**/v1/assistant/public-sessions', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        token: 'browser-fixture-token',
+        expiresAt: '2099-01-01T00:00:00.000Z',
+        endpoints: {
+          turns: 'http://127.0.0.1:3108/browser-fixture/response-cue',
+          toolConfirmations: 'http://127.0.0.1:3108/browser-fixture/confirmations',
+        },
+      }),
+    });
+  });
+  await page.route('**/browser-fixture/response-cue', async (route) => {
+    await turnGate;
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: [
+        `event: content\ndata: ${JSON.stringify({ delta: 'Here are your options.' })}`,
+        'event: done\ndata: {}',
+        '',
+      ].join('\n\n'),
+    });
+  });
+
+  try {
+    await page.goto('/');
+    await page.getByRole('textbox', { name: 'Ask the travel assistant' })
+      .fill('Find return flights to Tokyo');
+    await page.getByRole('button', { name: 'Submit trip request' }).click();
+
+    const conversation = page.getByRole('region', { name: 'Travel conversation' });
+    const transcript = conversation.getByRole('log', {
+      name: 'Conversation transcript',
+    });
+    const traveler = conversation.getByRole('article', { name: 'Traveler message' });
+    const status = conversation.getByRole('status');
+    const shimmer = status.locator('.text-shimmer');
+    const composer = conversation.locator('[data-wayfare-composer-beam="true"]');
+    const beam = composer.locator('[data-beam]');
+
+    await expect(status).toHaveText('Thinking…');
+    await expect(beam).toHaveAttribute('data-active', '');
+    await expect.poll(() => status.evaluate((element) => (
+      Number.parseFloat(getComputedStyle(element).fontSize)
+    ))).toBeGreaterThan(14);
+    await expect(shimmer).toHaveCSS(
+      'background-image',
+      /rgb\(47, 115, 145\).*rgb\(102, 204, 255\)/u,
+    );
+    expect(await transcript.evaluate((log) => {
+      const travelerMessage = log.querySelector('[aria-label="Traveler message"]');
+      const responseStatus = log.querySelector('[role="status"]');
+      if (!travelerMessage || !responseStatus) return false;
+      return Boolean(
+        travelerMessage.compareDocumentPosition(responseStatus)
+          & Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+    })).toBe(true);
+
+    releaseTurn();
+    await expect(conversation.getByText('Here are your options.')).toBeVisible();
+    await expect(status).toBeEmpty();
+    await expect(beam).not.toHaveAttribute('data-active', '');
+  } finally {
+    releaseTurn();
+  }
 });
 
 test('proves premium active conversation, chronological nested Apps, keyboard order, text zoom, reduced motion, and single-page scrolling', async ({
@@ -1219,6 +1686,7 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
   const focusAppearance = await continueButton.evaluate((button) => {
     const style = getComputedStyle(button);
     return {
+      boxShadow: style.boxShadow,
       focusVisible: button.matches(':focus-visible'),
       outlineStyle: style.outlineStyle,
       outlineWidth: Number.parseFloat(style.outlineWidth),
@@ -1226,7 +1694,8 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
   });
   expect(focusAppearance.focusVisible).toBe(true);
   expect(focusAppearance.outlineStyle).not.toBe('none');
-  expect(focusAppearance.outlineWidth).toBeGreaterThanOrEqual(3);
+  expect(focusAppearance.outlineWidth).toBeGreaterThanOrEqual(2);
+  expect(focusAppearance.boxShadow).toContain('rgb(102, 204, 255)');
   await expectMinimumTargetSize(continueInput);
   await expectMinimumTargetSize(continueButton);
 
@@ -1246,6 +1715,9 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
   expect(scrollOwnership.scrollTop).toBe(0);
   expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   const composer = conversation.getByRole('form', { name: 'Continue trip' });
+  const composerBeam = composer.locator(
+    'xpath=ancestor::*[@data-wayfare-composer-beam="true"]',
+  );
   await expect(composer).toBeVisible();
   const composerBounds = await composer.boundingBox();
   expect(composerBounds).not.toBeNull();
@@ -1549,7 +2021,7 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
     );
     assertHorizontallyContained(outerFrameBounds, hostBounds, 390);
     assertHorizontallyContained(innerFrameBounds, outerFrameBounds, 390);
-    expect(await composer.evaluate((element) => getComputedStyle(element).position))
+    expect(await composerBeam.evaluate((element) => getComputedStyle(element).position))
       .toBe('sticky');
     expect(composerFrameBounds!.y).toBeGreaterThanOrEqual(0);
     expect(composerFrameBounds!.y + composerFrameBounds!.height)
@@ -1626,7 +2098,7 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
       );
       addBadge(
         'conversation composer',
-        '#0b1f33',
+        '#0d0d0d',
         evidence.composer.x + 5,
         evidence.position === 'middle'
           ? evidence.composer.y - 20
@@ -1709,7 +2181,7 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
   });
 });
 
-test('keeps the developer route static, legal-safe, and set in Inter', async ({ page }) => {
+test('keeps the developer route static, legal-safe, and set in Host Grotesk', async ({ page }) => {
   const assistantRequests: string[] = [];
   page.on('request', (request) => {
     if (request.url().includes('/v1/assistant/')) assistantRequests.push(request.url());
@@ -1720,7 +2192,7 @@ test('keeps the developer route static, legal-safe, and set in Inter', async ({ 
   await expect(page.getByRole('heading', { level: 1, name: 'One integration, three travel views' }))
     .toBeVisible();
   await expect(page.getByText(/Search → Compare → Verify/)).toBeVisible();
-  await expect(page.locator('body')).toHaveCSS('font-family', /Inter Variable/);
+  await expect(page.locator('body')).toHaveCSS('font-family', /Host Grotesk Variable/);
   await expect(page.getByRole('link', { name: 'Support' }))
     .toHaveAttribute('href', '/developers#support');
   await expect(page.getByRole('link', { name: 'Privacy' })).toHaveCount(0);
@@ -1896,10 +2368,11 @@ test('keeps 390px passive inspiration and editorial content contained', async ({
   expect(footerBounds).not.toBeNull();
   expect(footerBounds!.x).toBeGreaterThanOrEqual(0);
   expect(footerBounds!.x + footerBounds!.width).toBeLessThanOrEqual(390);
-  await expect(footer.getByText('Privacy').locator('..'))
-    .toContainText('Not configured');
-  await expect(footer.getByText('Terms').locator('..'))
-    .toContainText('Not configured');
+  await expect(footer.getByText('Privacy')).toHaveCount(0);
+  await expect(footer.getByText('Terms')).toHaveCount(0);
+  await expect(footer.getByText('Guest session')).toHaveCount(0);
+  await expect(footer.getByText('Planning note')).toHaveCount(0);
+  await expect(footer.locator('[data-wayfare-mark="true"]')).toHaveCount(1);
   for (const link of await footer.getByRole('link').all()) {
     await expect(link).toHaveCSS('min-height', '44px');
     const bounds = await link.boundingBox();
@@ -1963,7 +2436,7 @@ test('keeps the transcript as the sole flexible row before trip context exists',
     const transcriptBounds = transcript.getBoundingClientRect();
     const lowerBounds = lowerChrome.getBoundingClientRect();
     const composerBounds = composer.getBoundingClientRect();
-    const status = lowerChrome.querySelector<HTMLElement>('[role="status"]')!;
+    const status = transcript.querySelector<HTMLElement>('[role="status"]')!;
     return {
       childCount: children.length,
       areas: children.map((child) => getComputedStyle(child).gridArea),
@@ -2033,7 +2506,8 @@ test('anchors the composer to the bottom safe area for a short conversation', as
   const conversation = page.getByRole('region', { name: 'Travel conversation' });
   await expect(conversation.getByText('Where would you like to go?')).toBeVisible();
   const composer = conversation.getByRole('form', { name: 'Continue trip' });
-  const layout = await composer.evaluate((element) => {
+  const composerBeam = composer.locator('xpath=ancestor::*[@data-wayfare-composer-beam="true"]');
+  const layout = await composerBeam.evaluate((element) => {
     const bounds = element.getBoundingClientRect();
     return {
       bottomSafeArea: window.innerHeight - bounds.bottom,
@@ -2089,7 +2563,7 @@ test('keeps terminal errors bounded in the stable lower chrome row', async ({
     const transcriptBounds = transcript.getBoundingClientRect();
     const lowerBounds = lowerChrome.getBoundingClientRect();
     const composerBounds = composer.getBoundingClientRect();
-    const status = lowerChrome.querySelector<HTMLElement>('[role="status"]')!;
+    const status = transcript.querySelector<HTMLElement>('[role="status"]')!;
     return {
       childCount: children.length,
       areas: children.map((child) => getComputedStyle(child).gridArea),

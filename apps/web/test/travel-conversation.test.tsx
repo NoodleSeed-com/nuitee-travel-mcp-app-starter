@@ -109,10 +109,42 @@ describe('guest travel conversation lifecycle', () => {
     expect(assistantMock.useNoodleAssistant).not.toHaveBeenCalled();
   });
 
-  it('focuses the shared travel prompt when Plan a trip is clicked without initializing the assistant', () => {
+  it('places a concise response status between the traveler and assistant messages', async () => {
+    assistantMock.useNoodleAssistant.mockImplementation(() => ({
+      client,
+      messages: [{
+        id: 'traveler-turn',
+        role: 'user',
+        parts: [{ type: 'text', text: 'JFK to Tokyo next month' }],
+      }, {
+        id: 'assistant-turn',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'I found a few routes.' }],
+      }],
+      status: 'streaming',
+      error: undefined,
+    }));
     render(<TravelAssistantPage runtime={readyRuntime} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Plan a trip' }));
+    submitPrompt('JFK to Tokyo next month');
+
+    const activity = await screen.findByText('Thinking…');
+    const travelerMessage = screen.getByRole('article', { name: 'Traveler message' });
+    const assistantMessage = screen.getByRole('article', { name: 'Assistant message' });
+    expect(activity).toHaveClass('text-shimmer');
+    expect(conversationStatus()).toHaveClass('travel-conversation__activity-status');
+    expect(travelerMessage.compareDocumentPosition(activity))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(activity.compareDocumentPosition(assistantMessage))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('focuses the shared travel prompt from the menu without initializing the assistant', () => {
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Travel menu' }))
+      .getByRole('button', { name: 'Plan a trip' }));
 
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveFocus();
@@ -161,7 +193,8 @@ describe('guest travel conversation lifecycle', () => {
     expect(client.sendMessage).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('button', { name: 'Reset conversation' }))
       .not.toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'New trip' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'New trip' }))
+      .not.toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute('placeholder', 'Tell Wayfare what you need…');
     expect(screen.getAllByRole('region', { name: 'Travel conversation' }))
@@ -205,9 +238,8 @@ describe('guest travel conversation lifecycle', () => {
 
   it('recomputes user-selected currency in untrusted page context', async () => {
     render(<TravelAssistantPage runtime={readyRuntime} />);
-    fireEvent.change(screen.getByRole('combobox', { name: 'Currency' }), {
-      target: { value: 'EUR' },
-    });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Currency' }));
+    fireEvent.click(screen.getByRole('option', { name: 'EUR European Union' }));
     submitPrompt('Islamabad to Rome next weekend');
 
     await waitFor(() => expect(client.sendMessage).toHaveBeenCalledOnce());
@@ -218,9 +250,8 @@ describe('guest travel conversation lifecycle', () => {
       travelDefaultSource: 'fallback',
     });
 
-    fireEvent.change(screen.getByRole('combobox', { name: 'Currency' }), {
-      target: { value: 'GBP' },
-    });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Currency' }));
+    fireEvent.click(screen.getByRole('option', { name: 'GBP United Kingdom' }));
     options = assistantMock.useNoodleAssistant.mock.calls.at(-1)?.[0];
     expect(options.pageContext()).toEqual({
       travelCountry: 'US',
@@ -249,10 +280,13 @@ describe('guest travel conversation lifecycle', () => {
     expect(contextSlot).toBeEmptyDOMElement();
     expect(conversation.children.item(2)).toBe(transcript);
     expect(lowerChrome).toHaveClass('travel-conversation__lower-chrome');
-    expect(lowerChrome).toContainElement(conversationStatus());
+    expect(transcript).toContainElement(conversationStatus());
+    expect(lowerChrome).not.toContainElement(conversationStatus());
     expect(within(lowerChrome as HTMLElement).queryByRole('alert'))
       .not.toBeInTheDocument();
-    expect(conversation.children.item(4)).toBe(composer);
+    expect(conversation.children.item(4)).toBe(
+      composer.closest('[data-wayfare-composer-beam="true"]'),
+    );
     expect(conversation.children).toHaveLength(5);
   });
 
@@ -289,9 +323,12 @@ describe('guest travel conversation lifecycle', () => {
     );
     expect(conversation.children.item(2)).toHaveClass('travel-transcript');
     expect(lowerChrome).toHaveClass('travel-conversation__lower-chrome');
-    expect(lowerChrome).toContainElement(conversationStatus());
+    expect(conversation.children.item(2)).toContainElement(conversationStatus());
+    expect(lowerChrome).not.toContainElement(conversationStatus());
     expect(lowerChrome).toContainElement(alert);
-    expect(conversation.children.item(4)).toBe(composer);
+    expect(conversation.children.item(4)).toBe(
+      composer.closest('[data-wayfare-composer-beam="true"]'),
+    );
     expect(conversation.children).toHaveLength(5);
   });
 
@@ -834,9 +871,7 @@ describe('guest travel conversation lifecycle', () => {
           data: { id: 'call-search-active', tool: 'search_flights' },
         });
       });
-      expect(conversationStatus()).toHaveTextContent(
-        'Searching current flights',
-      );
+      expect(conversationStatus()).toHaveTextContent('Thinking…');
 
       const composer = screen.getByRole('textbox', {
         name: 'Ask the travel assistant',
@@ -936,9 +971,7 @@ describe('guest travel conversation lifecycle', () => {
         data: { id: 'call-search-stale', tool: 'search_flights' },
       });
     });
-    expect(conversationStatus()).toHaveTextContent(
-      'Searching current flights',
-    );
+    expect(conversationStatus()).toHaveTextContent('Thinking…');
     expect(screen.queryByText('Searching')).not.toBeInTheDocument();
 
     hookState = {
@@ -1164,7 +1197,7 @@ describe('guest travel conversation lifecycle', () => {
       });
     });
 
-    expect(activityRegion).toHaveTextContent('Searching current flights');
+    expect(activityRegion).toHaveTextContent('Thinking…');
     expect(screen.queryByText('Searching')).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Current trip' }))
       .not.toBeInTheDocument();
@@ -1201,7 +1234,7 @@ describe('guest travel conversation lifecycle', () => {
         data: { id: 'call-verify-second', tool: 'verify_flight_offer' },
       });
     });
-    expect(activityRegion).toHaveTextContent('Verifying the current fare');
+    expect(activityRegion).toHaveTextContent('Thinking…');
 
     act(() => {
       client.emit({
@@ -1213,7 +1246,7 @@ describe('guest travel conversation lifecycle', () => {
         },
       });
     });
-    expect(activityRegion).toHaveTextContent('Verifying the current fare');
+    expect(activityRegion).toHaveTextContent('Thinking…');
     expect(document.body).not.toHaveTextContent(
       /call-search-first|call-verify-second/,
     );
@@ -1249,7 +1282,7 @@ describe('guest travel conversation lifecycle', () => {
         data: { id: 'call-verify-active', tool: 'verify_flight_offer' },
       });
     });
-    expect(activityRegion).toHaveTextContent('Verifying the current fare');
+    expect(activityRegion).toHaveTextContent('Thinking…');
 
     act(() => {
       client.emit(terminalEvent);
@@ -1316,7 +1349,9 @@ describe('guest travel conversation lifecycle', () => {
       name: 'Current trip',
     })).toHaveTextContent('JFK → LIS');
     expect(screen.getByText('Fare selected')).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'New trip' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Travel menu' }))
+      .getByRole('button', { name: 'New trip' }));
 
     await waitFor(() => {
       expect(client.abort).toHaveBeenCalledOnce();
@@ -1343,7 +1378,9 @@ describe('guest travel conversation lifecycle', () => {
 
     submitPrompt('First trip');
     await waitFor(() => expect(client.sendMessage).toHaveBeenCalledOnce());
-    fireEvent.click(screen.getByRole('button', { name: 'New trip' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Travel menu' }))
+      .getByRole('button', { name: 'New trip' }));
     submitPrompt('Second trip');
 
     await waitFor(() => {

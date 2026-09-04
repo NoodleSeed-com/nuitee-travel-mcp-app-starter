@@ -50,22 +50,34 @@ function withoutFinePointerBlocks(css: string): string {
 describe('Wayfare premium travel theme', () => {
   it('keeps the approved checked-in colors and accessible contrast pairs', () => {
     expect(siteConfig.brand).toMatchObject({
-      accent: '#2F70E8',
-      signal: '#0B1F33',
-      canvas: '#F7F8FA',
-      surface: '#FFFFFF',
-      surfaceDark: '#0B1F33',
-      ink: '#0B1F33',
-      muted: '#526173',
-      boundary: '#D8DEE7',
+      accent: '#0D0D0D',
+      selected: '#66CCFF',
+      confirmed: '#99FF99',
+      actionNeeded: '#FF6666',
+      signal: '#0D0D0D',
+      canvas: '#FFFFFF',
+      surface: '#F7F7F7',
+      ink: '#0D0D0D',
+      muted: '#5D5D5D',
+      boundary: '#E8E8E8',
     });
 
     expect(contrastRatio(siteConfig.brand.ink, siteConfig.brand.canvas))
       .toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(siteConfig.brand.muted, siteConfig.brand.canvas))
       .toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(siteConfig.brand.accent, siteConfig.brand.canvas))
-      .toBeGreaterThanOrEqual(3);
+  });
+
+  it('stays light instead of inheriting the operating-system color scheme', async () => {
+    const globals = await readFile(
+      resolve(process.cwd(), 'app/globals.css'),
+      'utf8',
+    );
+
+    expect(globals).toContain('color-scheme: light;');
+    expect(globals).not.toContain('prefers-color-scheme: dark');
+    expect(siteConfig.brand).not.toHaveProperty('dark');
+    expect(siteConfig.brand).not.toHaveProperty('surfaceDark');
   });
 
   it('uses the approved raised token for surface backgrounds', async () => {
@@ -89,9 +101,11 @@ describe('Wayfare premium travel theme', () => {
       /\.travel-interaction-card__actions > button:first-child\s*\{([^}]*)\}/u,
     )?.[1];
 
-    expect(globals).toContain('--travel-blue: var(--travel-accent, #2f70e8);');
+    expect(globals).toContain('--travel-selected: #66ccff;');
+    expect(globals).toContain('--travel-blue: var(--travel-selected);');
     expect(onAccent).toBe('#ffffff');
-    expect(primaryInteraction).toContain('color: var(--travel-on-accent);');
+    expect(primaryInteraction).toContain('background: var(--travel-ink);');
+    expect(primaryInteraction).toContain('color: var(--travel-canvas);');
     expect(contrastRatio(siteConfig.brand.accent, onAccent ?? '#ffffff'))
       .toBeGreaterThanOrEqual(4.5);
   });

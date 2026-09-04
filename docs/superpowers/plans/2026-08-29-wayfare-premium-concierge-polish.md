@@ -1,5 +1,10 @@
 # Wayfare Premium Concierge Polish Implementation Plan
 
+> **Iconography update — 2026-09-04:** The current Wayfare brand guideline
+> supersedes every Lucide or custom utility-icon instruction in this historical
+> implementation plan. Product iconography now uses Heroicons exclusively; the
+> original Wayfare route-line logo remains the sole custom SVG exception.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Turn the approved Wayfare foundation into a quiet premium airline-concierge experience with a hybrid cinematic landing page, a repository-owned route-line brand mark, restrained iconography, true high-resolution travel imagery, and one cohesive inline MCP App conversation.

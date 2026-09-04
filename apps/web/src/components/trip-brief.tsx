@@ -1,13 +1,13 @@
 'use client';
 
 import {
-  Armchair,
-  BedDouble,
-  CalendarDays,
-  ChevronDown,
-  MapPin,
-  UsersRound,
-} from 'lucide-react';
+  BuildingOffice2Icon,
+  CalendarDaysIcon,
+  ChevronDownIcon,
+  MapPinIcon,
+  TicketIcon,
+  UserGroupIcon,
+} from '@heroicons/react/24/outline';
 import { useState } from 'react';
 import type { TripProjection } from '../lib/trip-projection';
 
@@ -63,7 +63,7 @@ export function TripBrief({
       <div className="trip-brief__facts">
         {projection.origin || projection.destination ? (
           <p className="trip-brief__fact trip-brief__route">
-            <MapPin aria-hidden="true" />
+            <MapPinIcon aria-hidden="true" />
             <strong>{projection.origin ?? '—'}</strong>
             <span aria-hidden="true"> → </span>
             <strong>{projection.destination ?? '—'}</strong>
@@ -71,31 +71,31 @@ export function TripBrief({
         ) : null}
         {projection.stayDestination ? (
           <p className="trip-brief__fact trip-brief__stay">
-            <BedDouble aria-hidden="true" />
+            <BuildingOffice2Icon aria-hidden="true" />
             <strong>Stay in {projection.stayDestination}</strong>
           </p>
         ) : null}
         {projection.departureDate ? (
           <p className="trip-brief__fact">
-            <CalendarDays aria-hidden="true" />
+            <CalendarDaysIcon aria-hidden="true" />
             <span>{projection.departureDate}</span>
           </p>
         ) : null}
         {!projection.departureDate && projection.checkInDate ? (
           <p className="trip-brief__fact">
-            <CalendarDays aria-hidden="true" />
+            <CalendarDaysIcon aria-hidden="true" />
             <span>{projection.checkInDate}</span>
           </p>
         ) : null}
         {projection.travelers ? (
           <p className="trip-brief__fact">
-            <UsersRound aria-hidden="true" />
+            <UserGroupIcon aria-hidden="true" />
             <span>{projection.travelers}</span>
           </p>
         ) : null}
         {projection.cabinClass ? (
           <p className="trip-brief__fact">
-            <Armchair aria-hidden="true" />
+            <TicketIcon aria-hidden="true" />
             <span>{projection.cabinClass}</span>
           </p>
         ) : null}
@@ -124,7 +124,7 @@ export function TripBrief({
             onClick={() => setExpanded((value) => !value)}
             type="button"
           >
-            <ChevronDown aria-hidden="true" />
+            <ChevronDownIcon aria-hidden="true" />
           </button>
         ) : null}
       </div>

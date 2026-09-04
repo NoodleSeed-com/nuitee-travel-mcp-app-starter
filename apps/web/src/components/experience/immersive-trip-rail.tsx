@@ -1,12 +1,12 @@
 'use client';
 
 import {
-  BadgeCheck,
-  BedDouble,
-  ChevronRight,
-  PlaneTakeoff,
-  ShieldCheck,
-} from 'lucide-react';
+  BuildingOffice2Icon,
+  CheckBadgeIcon,
+  ChevronRightIcon,
+  PaperAirplaneIcon,
+  ShieldCheckIcon,
+} from '@heroicons/react/24/outline';
 import type { TripProjection } from '../../lib/trip-projection';
 import styles from './immersive-chat-page.module.css';
 
@@ -49,7 +49,7 @@ export function ImmersiveTripRail({
         onClick={() => onPrompt('Show my current flight selection.')}
         type="button"
       >
-        <span className={styles.tripRailIcon}><PlaneTakeoff aria-hidden="true" /></span>
+        <span className={styles.tripRailIcon}><PaperAirplaneIcon aria-hidden="true" /></span>
         <span>
           <strong>Flight</strong>
           <small>{flightState}</small>
@@ -59,20 +59,20 @@ export function ImmersiveTripRail({
             </small>
           ) : null}
         </span>
-        <ChevronRight aria-hidden="true" />
+        <ChevronRightIcon aria-hidden="true" />
       </button>
       <button
         disabled={busy}
         onClick={() => onPrompt('Help me add a stay to this trip.')}
         type="button"
       >
-        <span className={styles.tripRailIcon}><BedDouble aria-hidden="true" /></span>
+        <span className={styles.tripRailIcon}><BuildingOffice2Icon aria-hidden="true" /></span>
         <span>
           <strong>Stay</strong>
           <small>{stayState}</small>
           {stayDates ? <small className={styles.tripRailDetail}>{stayDates}</small> : null}
         </span>
-        <ChevronRight aria-hidden="true" />
+        <ChevronRightIcon aria-hidden="true" />
       </button>
       <button
         disabled={busy}
@@ -80,27 +80,27 @@ export function ImmersiveTripRail({
         type="button"
       >
         <span className={`${styles.tripRailIcon} ${styles.tripRailIconAccent}`}>
-          <BadgeCheck aria-hidden="true" />
+          <CheckBadgeIcon aria-hidden="true" />
         </span>
         <span>
           <strong>Rewards</strong>
           <small>{projection.hasRewardsReview ? 'Reviewed' : 'Review available'}</small>
         </span>
-        <ChevronRight aria-hidden="true" />
+        <ChevronRightIcon aria-hidden="true" />
       </button>
       <button
         disabled={busy}
         onClick={() => onPrompt('Compare illustrative travel protection for this trip.')}
         type="button"
       >
-        <span className={styles.tripRailIcon}><ShieldCheck aria-hidden="true" /></span>
+        <span className={styles.tripRailIcon}><ShieldCheckIcon aria-hidden="true" /></span>
         <span>
           <strong>Protection</strong>
           <small>{projection.hasInsuranceComparison
             ? 'Comparison available'
             : 'Not compared'}</small>
         </span>
-        <ChevronRight aria-hidden="true" />
+        <ChevronRightIcon aria-hidden="true" />
       </button>
       <div className={styles.tripRailSummary}>
         <span>Trip summary</span>

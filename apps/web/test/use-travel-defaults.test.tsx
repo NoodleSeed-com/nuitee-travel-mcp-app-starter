@@ -1,6 +1,7 @@
-import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, render, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useTravelDefaults } from '../src/hooks/use-travel-defaults';
+import type { SupportedCurrency } from '../src/lib/travel-defaults';
 
 afterEach(() => {
   cleanup();
@@ -24,6 +25,31 @@ function position(latitude: number, longitude: number): GeolocationPosition {
 }
 
 describe('useTravelDefaults', () => {
+  it('keeps the first render deterministic before applying the browser locale', async () => {
+    const originalLanguage = navigator.language;
+    Object.defineProperty(navigator, 'language', {
+      configurable: true,
+      value: 'en-GB',
+    });
+    const renders: SupportedCurrency[] = [];
+
+    function Probe() {
+      const defaults = useTravelDefaults({ geolocation: null });
+      renders.push(defaults.currency);
+      return <span>{defaults.currency}</span>;
+    }
+
+    const screen = render(<Probe />);
+
+    expect(renders[0]).toBe('USD');
+    await waitFor(() => expect(screen.getByText('GBP')).toBeVisible());
+
+    Object.defineProperty(navigator, 'language', {
+      configurable: true,
+      value: originalLanguage,
+    });
+  });
+
   it('requests low-accuracy location once and stores only the derived airport', async () => {
     const getCurrentPosition = vi.fn<Geolocation['getCurrentPosition']>(
       (success) => success(position(33.6167, 73.0992)),
