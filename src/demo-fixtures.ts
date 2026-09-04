@@ -39,6 +39,8 @@ interface HotelFixture {
   readonly city: string;
   readonly countryCode: string;
   readonly neighborhood: string;
+  readonly lat: number;
+  readonly lng: number;
   readonly description: string;
   readonly roomName: string;
   readonly category: number;
@@ -81,6 +83,8 @@ export const DEMO_HOTEL_CATALOG: Readonly<Record<string, readonly HotelFixture[]
       city: 'Lisbon',
       countryCode: 'PT',
       neighborhood: 'Baixa concept district',
+      lat: 38.7107,
+      lng: -9.1365,
       description: 'An illustrative central stay created for a bounded Wayfare comparison.',
       roomName: 'Lantern king room',
       category: 4,
@@ -94,6 +98,8 @@ export const DEMO_HOTEL_CATALOG: Readonly<Record<string, readonly HotelFixture[]
       city: 'Lisbon',
       countryCode: 'PT',
       neighborhood: 'Alfama concept district',
+      lat: 38.7117,
+      lng: -9.13,
       description: 'A fictional neighborhood property with illustrative rooms and amenities.',
       roomName: 'Cloud terrace room',
       category: 3,
@@ -107,6 +113,8 @@ export const DEMO_HOTEL_CATALOG: Readonly<Record<string, readonly HotelFixture[]
       city: 'Lisbon',
       countryCode: 'PT',
       neighborhood: 'Riverside concept district',
+      lat: 38.705,
+      lng: -9.145,
       description: 'An illustrative riverside stay included for bounded comparison.',
       roomName: 'Juniper river room',
       category: 5,
@@ -122,6 +130,8 @@ export const DEMO_HOTEL_CATALOG: Readonly<Record<string, readonly HotelFixture[]
       city: 'Toronto',
       countryCode: 'CA',
       neighborhood: 'Harbour concept district',
+      lat: 43.639,
+      lng: -79.382,
       description: 'An illustrative downtown stay created for consistent comparison.',
       roomName: 'Cedar city room',
       category: 4,
@@ -135,6 +145,8 @@ export const DEMO_HOTEL_CATALOG: Readonly<Record<string, readonly HotelFixture[]
       city: 'Toronto',
       countryCode: 'CA',
       neighborhood: 'King West concept district',
+      lat: 43.6445,
+      lng: -79.4,
       description: 'A fictional urban property with synthetic rates and availability.',
       roomName: 'Harbourglass studio',
       category: 4,
@@ -150,6 +162,8 @@ export const DEMO_HOTEL_CATALOG: Readonly<Record<string, readonly HotelFixture[]
       city: 'Vancouver',
       countryCode: 'CA',
       neighborhood: 'Coal Harbour concept district',
+      lat: 49.29,
+      lng: -123.123,
       description: 'An illustrative west-coast stay used for this travel-planning preview.',
       roomName: 'Fern harbour room',
       category: 4,
@@ -163,6 +177,8 @@ export const DEMO_HOTEL_CATALOG: Readonly<Record<string, readonly HotelFixture[]
       city: 'Vancouver',
       countryCode: 'CA',
       neighborhood: 'Gastown concept district',
+      lat: 49.276,
+      lng: -123.121,
       description: 'A fictional boutique stay with illustrative amenities and pricing.',
       roomName: 'Rainlight queen room',
       category: 3,
@@ -510,6 +526,8 @@ export function searchSyntheticHotels(input: DemoHotelSearchInput): DemoHotelSea
       city: fixture.city,
       countryCode: fixture.countryCode,
       neighborhood: fixture.neighborhood,
+      lat: fixture.lat,
+      lng: fixture.lng,
       description: fixture.description,
       roomName: fixture.roomName,
       category: fixture.category,

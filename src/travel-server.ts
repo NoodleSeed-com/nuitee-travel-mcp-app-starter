@@ -301,11 +301,29 @@ const flightViewPolicy = {
   },
 };
 
+const mapboxOrigins = [
+  'https://api.mapbox.com',
+  'https://events.mapbox.com',
+  'https://a.tiles.mapbox.com',
+  'https://b.tiles.mapbox.com',
+  'https://c.tiles.mapbox.com',
+  'https://d.tiles.mapbox.com',
+] as const;
+
+export const hotelDemoViewPolicy = {
+  ...sharedWidgetDomainPolicy,
+  csp: {
+    connectDomains: [...mapboxOrigins],
+    resourceDomains: ['https://snaphotelapi.com', ...mapboxOrigins],
+    frameDomains: [],
+  },
+};
+
 const demoViewPolicy = {
   ...sharedWidgetDomainPolicy,
   csp: {
     connectDomains: [],
-    resourceDomains: ['https://snaphotelapi.com'],
+    resourceDomains: [],
     frameDomains: [],
   },
 };
@@ -531,8 +549,8 @@ function createTravelCapabilities(live: boolean, profile: TravelServerProfile) {
   const verify = live ? liveVerifyFlightOffer() : offlineVerifyFlightOffer();
   const select = live ? liveSelectFlightOffer() : offlineSelectFlightOffer();
   const demo = profile === 'expanded-travel'
-    ? createDemoCapabilities({
-        hotel: demoViewPolicy,
+      ? createDemoCapabilities({
+        hotel: hotelDemoViewPolicy,
         insurance: demoViewPolicy,
         loyalty: demoViewPolicy,
       }, { liveHotels: live })
@@ -644,6 +662,30 @@ export function createTravelServer(
           radius: 'lg' as const,
           density: 'comfortable' as const,
         },
+        ...(demo ? {
+          use: {
+            demo: demoGateway,
+            state: noodleState,
+          },
+          state: {
+            handles: {
+              flight_selections: {
+                kind: 'selection' as const,
+                scope: 'caller' as const,
+                version: 'v2',
+                ttlSeconds: 1_800,
+                schema: selectionStateSchema,
+              },
+              demo_hotel_selections: {
+                kind: 'selection' as const,
+                scope: 'caller' as const,
+                version: 'v1',
+                ttlSeconds: 1_800,
+                schema: demoHotelSelectionStateSchema,
+              },
+            },
+          },
+        } : {}),
       };
 
   return server(

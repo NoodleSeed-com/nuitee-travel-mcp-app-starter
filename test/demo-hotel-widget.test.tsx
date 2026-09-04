@@ -51,6 +51,8 @@ const hotel = (index: number): DemoHotel => ({
   city: 'Lisbon',
   countryCode: 'PT',
   neighborhood: 'Baixa concept district',
+  lat: 38.71 + index * 0.001,
+  lng: -9.13 - index * 0.001,
   description: 'An illustrative central stay created for a bounded comparison.',
   roomName: 'Lantern king room',
   category: 4,
@@ -261,6 +263,8 @@ describe('Wayfare illustrative hotel widget', () => {
     expect(isDemoHotelSearchOutput(result)).toBe(true);
     expect(isDemoHotelSearchOutput({ ...result, hotels: Array.from({ length: 11 }, (_, index) => hotel(index)) })).toBe(false);
     expect(isDemoHotelSearchOutput({ ...result, hotels: [{ ...hotel(0), selectionId: 'provider-rate-id' }] })).toBe(false);
+    expect(isDemoHotelSearchOutput({ ...result, hotels: [{ ...hotel(0), lng: undefined }] })).toBe(false);
+    expect(isDemoHotelSearchOutput({ ...result, hotels: [{ ...hotel(0), lat: 91 }] })).toBe(false);
     expect(isDemoHotelSearchOutput({ ...result, status: 'empty' })).toBe(false);
     expect(isDemoHotelSearchOutput({ ...result, hotels: [{ ...hotel(0), amenities: Array(7).fill('Too many') }] })).toBe(false);
   });
@@ -287,5 +291,48 @@ describe('photo-led hotel card', () => {
       createElement(HotelResultsView, { displayMode: 'inline', result: sampleHotelResult }),
     );
     expect(html).toContain('Stay match');
+  });
+});
+
+describe('hotel screen model', () => {
+  it('offers list and map as one labelled choice', () => {
+    const html = render({ displayMode: 'inline', result: sampleHotelResult });
+    expect(html).toContain('role="radiogroup"');
+    expect(html).toContain('aria-label="Hotel result view"');
+    expect(html.match(/role="radio"/g)).toHaveLength(2);
+  });
+
+  it('hides the map choice when no stay has coordinates', () => {
+    const flat = {
+      ...sampleHotelResult,
+      hotels: sampleHotelResult.hotels.map(({ lat: _lat, lng: _lng, ...hotelWithoutMap }) => hotelWithoutMap),
+    } as DemoHotelSearchOutput;
+    expect(render({ displayMode: 'inline', result: flat })).not.toContain('Hotel result view');
+  });
+
+  it('renders the map board as the selected view', () => {
+    const html = render({
+      displayMode: 'inline',
+      initialBoardView: 'map',
+      result: sampleHotelResult,
+    });
+    expect(html).toContain('cc-map-board');
+    expect(html).toContain('Map hotel choices');
+  });
+
+  it('renders a comparison screen with two initial choices', () => {
+    const html = render({
+      displayMode: 'fullscreen',
+      initialScreen: 'compare',
+      result: sampleHotelResult,
+    });
+    expect(html).toContain('cc-compare-matrix');
+    expect(html).toContain('2 stays compared');
+  });
+
+  it('keeps cards white while compare selection is expressed by its button', () => {
+    const html = render({ displayMode: 'fullscreen', result: sampleHotelResult });
+    expect(html).toContain('Add Tagus Lantern Hotel 1 to comparison');
+    expect(html).not.toContain('cc-hotel-card-comparing');
   });
 });

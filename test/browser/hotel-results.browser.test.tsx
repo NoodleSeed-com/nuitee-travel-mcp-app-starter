@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 import type { DemoHotel, DemoHotelSearchOutput } from '../../src/demo-schemas.js';
 import { HotelResultsView } from '../../src/views/hotel-results.js';
+import { computeStayMatch } from '../../src/views/stay-match.js';
 
 const hotel = (index: number): DemoHotel => ({
   selectionId: `hsel_${String(index).padStart(32, '0')}`,
@@ -12,6 +13,8 @@ const hotel = (index: number): DemoHotel => ({
   city: 'Lisbon',
   countryCode: 'PT',
   neighborhood: 'Baixa concept district',
+  lat: 38.71 + index * 0.001,
+  lng: -9.13 - index * 0.001,
   description: 'An illustrative central stay created for a bounded comparison.',
   roomName: 'Lantern king room',
   category: 4,
@@ -125,5 +128,52 @@ describe('illustrative hotel widget in a real browser', () => {
     expect(after.boxShadow).toBe(unselectedBoxShadow);
     expect(selectedActionStyle.backgroundColor).toBe('rgb(102, 204, 255)');
     expect(selectedActionStyle.color).toBe('rgb(13, 13, 13)');
+  });
+
+  it('switches between list and map without making the selected hotel card blue', async () => {
+    await page.viewport(900, 1_200);
+    mount(<HotelResultsView displayMode="fullscreen" result={result} />);
+    await page.getByRole('radio', { name: 'Map' }).click();
+    await expect.element(page.getByRole('region', { name: 'Hotel map' })).toBeVisible();
+
+    const firstChoice = document.querySelector<HTMLButtonElement>('.cc-map-choice')!;
+    firstChoice.click();
+    await expect.poll(() => firstChoice.getAttribute('aria-pressed')).toBe('true');
+
+    const card = document.querySelector<HTMLElement>('.cc-map-detail .cc-hotel-card')!;
+    expect(getComputedStyle(card).backgroundColor).toBe('rgb(255, 255, 255)');
+    expect(getComputedStyle(firstChoice).backgroundColor).toBe('rgb(255, 255, 255)');
+  });
+
+  it('selects two compare buttons in blue and opens the comparison screen', async () => {
+    await page.viewport(900, 1_200);
+    const comparisonResult = { ...result, hotels: [...result.hotels, hotel(2)] };
+    mount(<HotelResultsView displayMode="fullscreen" result={comparisonResult} />);
+
+    const first = page.getByRole('button', { name: 'Add Tagus Lantern Hotel 1 to comparison' });
+    const second = page.getByRole('button', { name: 'Add Tagus Lantern Hotel 2 to comparison' });
+    await first.click();
+    await second.click();
+
+    const selectedButton = document.querySelector<HTMLButtonElement>(
+      '.cc-hotel-compare-action[aria-pressed="true"]',
+    )!;
+    expect(getComputedStyle(selectedButton).backgroundColor).toBe('rgb(102, 204, 255)');
+
+    await page.getByRole('button', { name: 'Compare' }).click();
+    await expect.element(page.getByText('2 stays compared')).toBeVisible();
+    expect(document.querySelector('.cc-compare-matrix')).not.toBeNull();
+    expect(document.activeElement?.textContent).toContain('Stay comparison');
+
+    const expectedScore = computeStayMatch(
+      comparisonResult.hotels[0]!,
+      comparisonResult.hotels,
+      undefined,
+      'en-CA',
+    ).score;
+    const matchCell = document.querySelector<HTMLTableCellElement>(
+      '.cc-compare-matrix tbody tr:last-child td[data-hotel="Tagus Lantern Hotel 1"]',
+    );
+    expect(matchCell?.textContent).toContain(`${expectedScore} of 100`);
   });
 });

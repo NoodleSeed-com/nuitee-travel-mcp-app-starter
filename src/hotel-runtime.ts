@@ -236,6 +236,8 @@ export function runHotelGateway(
     const address = string(content.address, 160);
     const city = string(content.city_name, 80) ?? destination;
     const safeCountry = (string(content.country_code, 2) ?? countryCode ?? 'ZZ').toUpperCase();
+    const latitude = number(content.latitude);
+    const longitude = number(content.longitude);
     const tags = array(content.tags).map((item) => string(item, 80)).filter((item): item is string => Boolean(item));
     const perks = array(rate.perks).map(object).map((item) => string(item?.name, 80)).filter((item): item is string => Boolean(item));
     const policies = object(rate.cancellationPolicies);
@@ -257,6 +259,11 @@ export function runHotelGateway(
       city,
       countryCode: /^[A-Z]{2}$/.test(safeCountry) ? safeCountry : 'ZZ',
       neighborhood: (address ?? `${city} area`).slice(0, 80),
+      ...(latitude !== undefined && longitude !== undefined
+        && latitude >= -90 && latitude <= 90
+        && longitude >= -180 && longitude <= 180
+        ? { lat: latitude, lng: longitude }
+        : {}),
       description: string(content.story, 240) ?? 'Current room availability returned by Nuitee Hotels.',
       roomName: string(rate.name, 80) ?? string(roomType.name, 80) ?? 'Available room',
       category: Math.max(1, Math.min(5, Math.round(number(content.stars) ?? 1))),

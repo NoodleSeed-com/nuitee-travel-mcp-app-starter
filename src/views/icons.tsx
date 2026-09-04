@@ -10,12 +10,15 @@ import {
   ClockIcon as HeroClockIcon,
   ExclamationCircleIcon as HeroExclamationCircleIcon,
   MagnifyingGlassIcon,
+  ListBulletIcon,
   MapIcon,
   MapPinIcon,
   PaperAirplaneIcon,
+  PlusIcon as HeroPlusIcon,
   StarIcon as HeroStarIcon,
   TagIcon as HeroTagIcon,
   TruckIcon,
+  XMarkIcon as HeroXMarkIcon,
 } from '@heroicons/react/24/outline';
 import type { ComponentType, SVGProps } from 'react';
 
@@ -49,5 +52,8 @@ export const BedIcon = wayfareIcon(BuildingOffice2Icon);
 export const StarIcon = wayfareIcon(HeroStarIcon);
 export const CarIcon = wayfareIcon(TruckIcon);
 export const CompassIcon = wayfareIcon(MapIcon);
+export const ListIcon = wayfareIcon(ListBulletIcon);
+export const PlusIcon = wayfareIcon(HeroPlusIcon);
 export const ChevronLeftIcon = wayfareIcon(HeroChevronLeftIcon);
 export const ChevronRightIcon = wayfareIcon(HeroChevronRightIcon);
+export const XMarkIcon = wayfareIcon(HeroXMarkIcon);

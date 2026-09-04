@@ -99,6 +99,8 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
       const key = string(fixture.key) ?? 'demo_hotel_unknown';
       const nightly = record(fixture.nightly) ?? {};
       const nightlyAmount = number(nightly[currency]) ?? 0;
+      const latitude = number(fixture.lat);
+      const longitude = number(fixture.lng);
       return {
         selectionId: opaque('hsel', `${searchId}:${key}`),
         dataSource: 'illustrative',
@@ -106,6 +108,11 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
         city: string(fixture.city) ?? destination,
         countryCode: string(fixture.countryCode) ?? 'ZZ',
         neighborhood: string(fixture.neighborhood) ?? 'Illustrative district',
+        ...(latitude !== undefined && longitude !== undefined
+          && latitude >= -90 && latitude <= 90
+          && longitude >= -180 && longitude <= 180
+          ? { lat: latitude, lng: longitude }
+          : {}),
         description: string(fixture.description) ?? 'Illustrative property.',
         roomName: string(fixture.roomName) ?? 'Illustrative room',
         category: number(fixture.category) ?? 1,

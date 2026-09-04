@@ -74,6 +74,8 @@ export const demoHotelSchema = z.object({
   city: z.string().trim().min(2).max(80),
   countryCode: z.string().regex(/^[A-Z]{2}$/),
   neighborhood: z.string().trim().min(2).max(80),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
   description: boundedPrintableTextSchema,
   roomName: z.string().trim().min(2).max(80),
   category: z.number().int().min(1).max(5),
@@ -87,7 +89,13 @@ export const demoHotelSchema = z.object({
   imageUrl: z.url().max(2_048).optional(),
   reviewScore: z.number().min(0).max(10).optional(),
   reviewCount: z.number().int().nonnegative().max(10_000_000).optional(),
-});
+}).refine(
+  ({ lat, lng }) => (lat === undefined) === (lng === undefined),
+  {
+    path: ['lng'],
+    message: 'A hotel needs both coordinates or neither; a half-located hotel is not mappable.',
+  },
+);
 
 export const hotelErrorSchema = z.object({
   code: z.enum([

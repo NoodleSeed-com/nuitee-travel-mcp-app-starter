@@ -42,6 +42,8 @@ const response = {
     address: '1 Harbour Street',
     country_code: 'PT',
     city_name: 'Lisbon',
+    latitude: 38.7107,
+    longitude: -9.1365,
     rating: 9.2,
     stars: 5,
     review_count: 725,
@@ -81,6 +83,8 @@ describe('Nuitee hotel gateway', () => {
         nightlyPrice: { amount: 300, currency: 'CAD' },
         staySubtotal: { amount: 900, currency: 'CAD' },
         taxesAndFeesIncluded: true,
+        lat: 38.7107,
+        lng: -9.1365,
         imageUrl: 'https://snaphotelapi.com/hotels/lp-test.jpg',
       }],
     });

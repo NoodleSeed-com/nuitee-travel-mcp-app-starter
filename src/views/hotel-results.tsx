@@ -1,6 +1,6 @@
 import '@fontsource-variable/host-grotesk';
 import '@noodleseed/one/react/styles.css';
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { DemoHotel, DemoHotelSearchOutput } from '../demo-schemas.js';
 import {
   Action,
@@ -17,7 +17,9 @@ import {
   useWidgetReady,
 } from '../helpers.js';
 import { Badge, MatchDetail, MatchScore, PhotoBand, Price, Rail, ScorePin } from './card-primitives.js';
-import { BedIcon, CheckIcon, StarIcon, TagIcon } from './icons.js';
+import { CompareMatrix, CompareTray, MAX_COMPARE } from './hotel-compare.js';
+import { MapBoard, mappableHotels } from './hotel-map-board.js';
+import { BedIcon, CheckIcon, CompassIcon, ListIcon, PlusIcon, StarIcon, TagIcon } from './icons.js';
 import { computeStayMatch } from './stay-match.js';
 import './travel.css';
 
@@ -58,6 +60,16 @@ function isDemoHotel(value: unknown): value is DemoHotel {
     typeof hotel.countryCode === 'string' &&
     /^[A-Z]{2}$/.test(hotel.countryCode) &&
     boundedString(hotel.neighborhood, 2, 80) &&
+    ((hotel.lat === undefined && hotel.lng === undefined) || (
+      typeof hotel.lat === 'number' &&
+      Number.isFinite(hotel.lat) &&
+      hotel.lat >= -90 &&
+      hotel.lat <= 90 &&
+      typeof hotel.lng === 'number' &&
+      Number.isFinite(hotel.lng) &&
+      hotel.lng >= -180 &&
+      hotel.lng <= 180
+    )) &&
     boundedString(hotel.description, 1, 240) &&
     boundedString(hotel.roomName, 2, 80) &&
     boundedInteger(hotel.category, 1, 5) &&
@@ -190,13 +202,24 @@ function HotelLoading() {
   );
 }
 
-function HotelCard({ hotel, allHotels, locale, selected, pending, onAdd }: {
+function HotelCard({
+  hotel,
+  allHotels,
+  locale,
+  selected,
+  pending,
+  comparing = false,
+  onAdd,
+  onToggleCompare,
+}: {
   readonly hotel: DemoHotel;
   readonly allHotels: readonly DemoHotel[];
   readonly locale: string;
   readonly selected: boolean;
   readonly pending: boolean;
+  readonly comparing?: boolean;
   readonly onAdd?: (selectionId: string) => void;
+  readonly onToggleCompare?: () => void;
 }) {
   const [matchOpen, setMatchOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -210,6 +233,20 @@ function HotelCard({ hotel, allHotels, locale, selected, pending, onAdd }: {
   return (
     <article className={`cc-card cc-hotel-card ${selected ? 'cc-hotel-card-selected' : ''}`}>
       <PhotoBand glyph={<BedIcon />} imageUrl={imageUrl} name={hotel.name}>
+        {onToggleCompare ? (
+          <button
+            aria-label={comparing
+              ? `Remove ${hotel.name} from comparison`
+              : `Add ${hotel.name} to comparison`}
+            aria-pressed={comparing}
+            className="cc-hotel-compare-action"
+            onClick={onToggleCompare}
+            type="button"
+          >
+            {comparing ? <CheckIcon /> : <PlusIcon />}
+            {comparing ? 'Selected' : 'Compare'}
+          </button>
+        ) : null}
         <ScorePin score={reviewScore} />
       </PhotoBand>
       <div className="cc-hotel-body">
@@ -329,12 +366,16 @@ export function HotelResultsView({
   result,
   state,
   displayMode,
+  theme = 'light',
   locale = 'en-CA',
   selectedSelectionId,
   pendingSelectionId,
   selectionError,
+  initialScreen = 'shortlist',
+  initialBoardView = 'list',
   onAdd,
   onExpand,
+  onScreenChange,
 }: {
   readonly result?: DemoHotelSearchOutput;
   readonly state?: HotelResultsState;
@@ -344,9 +385,24 @@ export function HotelResultsView({
   readonly selectedSelectionId?: string;
   readonly pendingSelectionId?: string;
   readonly selectionError?: string;
+  readonly initialScreen?: 'shortlist' | 'compare';
+  readonly initialBoardView?: 'list' | 'map';
   readonly onAdd?: (selectionId: string) => void;
   readonly onExpand?: () => void;
+  readonly onScreenChange?: (screen: 'shortlist' | 'compare') => void;
 }) {
+  const [screen, setScreen] = useState<'shortlist' | 'compare'>(initialScreen);
+  const [boardView, setBoardView] = useState<'list' | 'map'>(initialBoardView);
+  const [compareIds, setCompareIds] = useState<readonly string[]>(() =>
+    initialScreen === 'compare' ? result?.hotels.slice(0, 2).map((hotel) => hotel.selectionId) ?? [] : [],
+  );
+  const [mapSelectionId, setMapSelectionId] = useState<string | undefined>();
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, [screen]);
+
   if (state) return statusView(state);
   if (!result) return statusView('malformed');
 
@@ -381,6 +437,40 @@ export function HotelResultsView({
 
   const expanded = displayMode === 'fullscreen';
   const shown = result.hotels.slice(0, expanded ? 10 : 3);
+  const mappable = mappableHotels(result.hotels);
+  const compared = compareIds
+    .map((selectionId) => result.hotels.find((hotel) => hotel.selectionId === selectionId))
+    .filter((hotel): hotel is DemoHotel => hotel !== undefined);
+  const toggleCompare = (selectionId: string) => {
+    setCompareIds((current) => current.includes(selectionId)
+      ? current.filter((id) => id !== selectionId)
+      : current.length >= MAX_COMPARE ? current : [...current, selectionId]);
+  };
+  const changeScreen = (next: 'shortlist' | 'compare') => {
+    setScreen(next);
+    onScreenChange?.(next);
+  };
+
+  if (screen === 'compare' && compared.length >= 2) {
+    return (
+      <Frame
+        className={frameClassName}
+        displayMode="auto"
+        title="Compare stays"
+        subtitle={live ? 'Current options · verify before booking' : 'Illustrative options · no live availability'}
+        data-llm={result.fallback}
+      >
+        <h2 className="cc-visually-hidden" ref={headingRef} tabIndex={-1}>Stay comparison</h2>
+        <CompareMatrix
+          comparisonPool={result.hotels}
+          hotels={compared}
+          locale={locale}
+          onBack={() => changeScreen('shortlist')}
+        />
+      </Frame>
+    );
+  }
+
   return (
     <Frame
       className={frameClassName}
@@ -393,31 +483,84 @@ export function HotelResultsView({
     >
       <Flow variant="stack" density={expanded ? 'comfortable' : 'compact'}>
         <HotelDisclosure live={live} text={result.disclosure} />
+        <h2 className="cc-visually-hidden" ref={headingRef} tabIndex={-1}>Stay results</h2>
         <div className="cc-hotel-results-toolbar">
           <div>
             <strong>{result.searchContext.destination}</strong>
             <span>{result.searchContext.checkInDate} – {result.searchContext.checkOutDate} · {result.searchContext.rooms} room{result.searchContext.rooms === 1 ? '' : 's'}</span>
           </div>
-          <StatusBadge tone="info">{live ? 'Current prices' : 'Illustrative prices'}</StatusBadge>
+          <div className="cc-hotel-toolbar-actions">
+            <StatusBadge tone="info">{live ? 'Current prices' : 'Illustrative prices'}</StatusBadge>
+            {mappable.length > 0 ? (
+              <div aria-label="Hotel result view" className="cc-hotel-view-toggle" role="radiogroup">
+                <button
+                  aria-checked={boardView === 'list'}
+                  onClick={() => setBoardView('list')}
+                  role="radio"
+                  type="button"
+                >
+                  <ListIcon />List
+                </button>
+                <button
+                  aria-checked={boardView === 'map'}
+                  onClick={() => setBoardView('map')}
+                  role="radio"
+                  type="button"
+                >
+                  <CompassIcon />Map
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
-        <Rail ariaLabel="Stays">
-          {shown.map((hotel) => (
-            <HotelCard
-              allHotels={result.hotels}
-              hotel={hotel}
-              key={hotel.selectionId}
-              locale={locale}
-              onAdd={onAdd}
-              pending={pendingSelectionId === hotel.selectionId}
-              selected={selectedSelectionId === hotel.selectionId}
-            />
-          ))}
-        </Rail>
-        {!expanded && result.hotels.length > 3 ? (
+        {boardView === 'map' && mappable.length > 0 ? (
+          <MapBoard
+            hotels={result.hotels}
+            locale={locale}
+            onSelect={setMapSelectionId}
+            selectedId={mapSelectionId}
+            theme={theme}
+          >
+            {(hotel) => (
+              <HotelCard
+                allHotels={result.hotels}
+                comparing={compareIds.includes(hotel.selectionId)}
+                hotel={hotel}
+                locale={locale}
+                onAdd={onAdd}
+                onToggleCompare={() => toggleCompare(hotel.selectionId)}
+                pending={pendingSelectionId === hotel.selectionId}
+                selected={selectedSelectionId === hotel.selectionId}
+              />
+            )}
+          </MapBoard>
+        ) : (
+          <Rail ariaLabel="Stays">
+            {shown.map((hotel) => (
+              <HotelCard
+                allHotels={result.hotels}
+                comparing={compareIds.includes(hotel.selectionId)}
+                hotel={hotel}
+                key={hotel.selectionId}
+                locale={locale}
+                onAdd={onAdd}
+                onToggleCompare={() => toggleCompare(hotel.selectionId)}
+                pending={pendingSelectionId === hotel.selectionId}
+                selected={selectedSelectionId === hotel.selectionId}
+              />
+            ))}
+          </Rail>
+        )}
+        {boardView === 'list' && !expanded && result.hotels.length > 3 ? (
           onExpand
             ? <Action variant="quiet" onClick={onExpand}>Show all {Math.min(10, result.hotels.length)} hotels</Action>
             : <p className="cc-hotel-more-note">Open the App in expanded view to compare all {Math.min(10, result.hotels.length)} hotels.</p>
         ) : null}
+        <CompareTray
+          onOpen={() => changeScreen('compare')}
+          onRemove={toggleCompare}
+          selected={compared}
+        />
         {selectionError ? <Feedback status="error">{selectionError}</Feedback> : null}
         {selectedSelectionId ? (
           <p className="cc-hotel-selection-status" role="status">
@@ -461,6 +604,9 @@ export default function HotelResults() {
       pendingSelectionId={pendingSelectionId}
       selectionError={selectionError}
       onExpand={ready && layout.supports?.fullscreen ? () => { void requestDisplayMode('fullscreen'); } : undefined}
+      onScreenChange={ready && layout.supports?.fullscreen
+        ? (screen) => { void requestDisplayMode(screen === 'compare' ? 'fullscreen' : 'inline'); }
+        : undefined}
       onAdd={ready ? (selectionId) => {
         setSelectionError(undefined);
         setPendingSelectionId(selectionId);
