@@ -106,7 +106,7 @@ requires a new explicit product decision and an update to this contract.
 
 | State | Value | Meaning |
 | --- | --- | --- |
-| Selected | `#66CCFF` | The current choice or focused conversational surface |
+| Selected | `#66CCFF` | The current choice or selected item |
 | Confirmed | `#99FF99` | Completed, verified, or confirmed |
 | Action needed | `#FF6666` | Blocking issue or required user action |
 | Response activity | `#2F7391` | Legible base color for the live `Thinking…` shimmer |
@@ -120,8 +120,8 @@ Rules:
   verified. An error is not a warning.
 - User-authored or provider-supplied colors cannot replace Wayfare state
   colors. Carrier colors may remain inside factual carrier identity only.
-- Focus uses a high-contrast 2px ink core with the selected token as a visible
-  outer halo. The light selected blue is not sufficient against white alone.
+- Composer focus uses a high-contrast 2px ink outline. Selected blue is reserved
+  for genuine selection state and is never used as an input-focus color.
 - Text and icons must meet WCAG AA contrast at their rendered size. Colored
   surfaces should normally retain black text in light mode.
 
@@ -285,9 +285,9 @@ motion communicates active work rather than decorating the input.
   blue-hour blue, teal, and violet family plus a soft, localized bloom along
   the lower edge.
 - The input, placeholder, and controls remain static and readable.
-- Idle and focused: no moving beam; ordinary focus treatment remains visible.
+- Idle and focused: no moving beam; focused composers use an ink-only outline.
 - Error: static action-needed outline, no moving beam.
-- Reduced motion: static selected outline, no loop or traveling bloom.
+- Reduced motion: static neutral or ink outline, no loop or traveling bloom.
 
 ### Agent TextShimmer
 
@@ -337,8 +337,8 @@ requests to demonstrate that natural language is accepted.
 | State | Border | Agent status | Accessibility |
 | --- | --- | --- | --- |
 | Empty homepage | Static neutral | None | Ready for input |
-| Focused and empty | Static focus | None | Visible focus remains |
-| Focused with text | Static selected | None | Visible focus remains |
+| Focused and empty | Static ink | None | Visible focus remains |
+| Focused with text | Static ink | None | Visible focus remains |
 | Submitting | BorderBeam active | `Thinking…` begins after the user message | Announce once |
 | Responding | BorderBeam active | `Thinking…` stays before assistant content | Stable streamed answer |
 | Complete | Static neutral | Removed | Predictable focus |

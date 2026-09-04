@@ -42,7 +42,6 @@ export const siteConfig = {
     boundary: wayfareWebBrand.light.boundary,
     heroViewImagePath: '/images/immersive/wayfare-window-view-v1.png',
     heroCabinImagePath: '/images/immersive/wayfare-cabin-frame-v1.png',
-    heroImagePosition: '50% 50%',
   },
   disclosure: travelCompanionDemoConfig.disclosure,
   website: starterConfig.website,

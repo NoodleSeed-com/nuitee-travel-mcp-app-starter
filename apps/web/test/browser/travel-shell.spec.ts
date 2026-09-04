@@ -511,9 +511,17 @@ test('renders the exact Wayline and state-bound composer beam', async ({ page })
   await expect(beam).not.toHaveAttribute('data-active', '');
   await expect(input).toHaveCSS('box-shadow', 'none');
   await expect(wrapper.locator('.travel-composer')).toHaveCSS(
-    'box-shadow',
-    /rgb\(13, 13, 13\).*rgb\(102, 204, 255\)/u,
+    'border-color',
+    'rgb(13, 13, 13)',
   );
+  const focusedComposerStyle = await wrapper.locator('.travel-composer')
+    .evaluate((element) => ({
+      borderColor: getComputedStyle(element).borderColor,
+      boxShadow: getComputedStyle(element).boxShadow,
+    }));
+  expect(focusedComposerStyle.borderColor).toBe('rgb(13, 13, 13)');
+  expect(focusedComposerStyle.boxShadow).toContain('rgb(13, 13, 13)');
+  expect(focusedComposerStyle.boxShadow).not.toContain('rgb(102, 204, 255)');
   const focusedComposer = await wrapper.locator('.travel-composer').evaluate((element) => ({
     radius: Number.parseFloat(getComputedStyle(element).borderTopLeftRadius),
   }));

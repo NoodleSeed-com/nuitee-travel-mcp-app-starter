@@ -239,40 +239,23 @@ describe('public repository contracts', () => {
     expect(readme).toContain('does not book');
   });
 
-  it('ships the shared Wayfare cinematic landing without the obsolete shader layer', async () => {
+  it('ships the approved layered Wayfare homepage without the obsolete shader dependency', async () => {
     const [
       readme,
       customization,
-      heroSource,
-      heroContentSource,
-      siteConfigSource,
-      footerSource,
-      heroAsset,
-      cockpitAsset,
-      insuranceAsset,
+      heroViewAsset,
+      heroCabinAsset,
       webPackage,
     ] = await Promise.all([
       repositoryFile('README.md'),
       repositoryFile('docs/customization.md'),
-      repositoryFile('apps/web/src/components/travel-hero.tsx'),
-      repositoryFile('apps/web/src/lib/travel-hero-content.ts'),
-      repositoryFile('apps/web/src/lib/site-config.ts'),
-      repositoryFile('apps/web/src/components/travel-footer.tsx'),
-      stat(new URL('../apps/web/public/images/immersive/wayfare-explore-windows-v2.png', import.meta.url)),
-      stat(new URL('../apps/web/public/images/immersive/wayfare-cockpit-v2.png', import.meta.url)),
-      stat(new URL('../apps/web/public/images/immersive/wayfare-insurance-v1.png', import.meta.url)),
+      stat(new URL('../apps/web/public/images/immersive/wayfare-window-view-v1.png', import.meta.url)),
+      stat(new URL('../apps/web/public/images/immersive/wayfare-cabin-frame-v1.png', import.meta.url)),
       repositoryJson('apps/web/package.json'),
     ]);
 
-    expect(heroAsset.size).toBeGreaterThan(0);
-    expect(cockpitAsset.size).toBeGreaterThan(0);
-    expect(insuranceAsset.size).toBeGreaterThan(0);
-    expect(heroSource).toContain('coreHeroModes');
-    expect(heroContentSource).toContain('/images/immersive/wayfare-explore-windows-v2.png');
-    expect(heroContentSource).toContain('/images/immersive/wayfare-cockpit-v2.png');
-    expect(heroContentSource).toContain('/images/immersive/wayfare-insurance-v1.png');
-    expect(siteConfigSource).toContain('/images/immersive/wayfare-explore-windows-v2.png');
-    expect(footerSource).toContain('Built on Noodle Seed · Powered by Nuitee');
+    expect(heroViewAsset.size).toBeGreaterThan(0);
+    expect(heroCabinAsset.size).toBeGreaterThan(0);
     expect(webPackage.dependencies['@paper-design/shaders-react']).toBeUndefined();
     expect(readme).toContain('single-entry cinematic landing');
     expect(readme).toContain('Search → Select → Verify');

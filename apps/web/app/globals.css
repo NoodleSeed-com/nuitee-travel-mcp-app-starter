@@ -208,9 +208,7 @@ code {
 
 .travel-composer:focus-within {
   border-color: var(--travel-ink);
-  box-shadow:
-    0 0 0 2px var(--travel-ink),
-    0 0 0 5px var(--travel-focus);
+  box-shadow: 0 0 0 2px var(--travel-ink);
 }
 
 .travel-composer-beam[data-composer-state='error'] .travel-composer {
@@ -218,9 +216,14 @@ code {
   box-shadow: 0 0 0 1px var(--travel-action-needed);
 }
 
-.travel-composer-beam[data-composer-state='focused'] .travel-composer,
+.travel-composer-beam[data-composer-state='focused'] .travel-composer {
+  border-color: var(--travel-ink);
+  box-shadow: 0 0 0 2px var(--travel-ink);
+}
+
 .travel-composer-beam[data-composer-state='busy'] .travel-composer {
-  border-color: var(--travel-selected);
+  border-color: var(--travel-boundary);
+  box-shadow: none;
 }
 
 .travel-composer__input {
@@ -449,9 +452,7 @@ code {
 
 .travel-hero__panel .travel-composer--hero:focus-within {
   border-color: var(--travel-ink);
-  box-shadow:
-    0 0 0 2px var(--travel-ink),
-    0 0 0 5px var(--travel-focus);
+  box-shadow: 0 0 0 2px var(--travel-ink);
 }
 
 .travel-hero__panel .travel-composer-beam--hero {
@@ -2706,10 +2707,14 @@ code {
     animation: none !important;
   }
 
-  .travel-composer-beam[data-composer-state='focused'] .travel-composer,
+  .travel-composer-beam[data-composer-state='focused'] .travel-composer {
+    border-color: var(--travel-ink);
+    box-shadow: 0 0 0 2px var(--travel-ink);
+  }
+
   .travel-composer-beam[data-composer-state='busy'] .travel-composer {
-    border-color: var(--travel-selected);
-    box-shadow: 0 0 0 1px var(--travel-selected);
+    border-color: var(--travel-boundary);
+    box-shadow: none;
   }
 
   .text-shimmer {
