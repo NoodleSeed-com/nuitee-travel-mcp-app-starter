@@ -779,6 +779,9 @@ test('uses one rounded hover treatment for every secondary menu action', async (
   page,
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium');
+  // This assertion compares the settled visual treatment, not transition frames.
+  // Reduced motion makes the snapshot deterministic on slower CI runners.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await page.getByRole('button', { name: 'Open menu' }).click();
 
@@ -791,7 +794,6 @@ test('uses one rounded hover treatment for every secondary menu action', async (
   const hoverStates = [];
   for (const action of actions) {
     await action.hover();
-    await page.waitForTimeout(200);
     hoverStates.push(await action.evaluate((element) => {
       const style = getComputedStyle(element);
       const bounds = element.getBoundingClientRect();
