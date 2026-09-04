@@ -51,9 +51,12 @@ The `production` GitHub environment owns these deployment coordinates:
 - `FLY_API_TOKEN` environment secret: an app-scoped deploy token for
   `wayfare-experience`. It is never passed to the Docker build.
 
-The deployment job waits for `offline-quality-gates`, serializes production
-deployments, uses immutable action and Fly CLI versions, waits for the Fly
-rollout, and verifies both Fly status and an HTTP response from
+CI runs the core, widget-browser, and web suites in parallel. The stable
+`offline-quality-gates` check requires all three, so branch protection and the
+deployment dependency stay simple while individual failures remain easy to
+identify. The deployment job then serializes production deployments, uses
+immutable action and Fly CLI versions, waits for the Fly rollout, and verifies
+both Fly status and an HTTP response from
 `https://wayfare-experience.fly.dev`.
 
 Rotate the app-scoped token without printing it to the terminal:

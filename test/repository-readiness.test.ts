@@ -373,7 +373,12 @@ describe('public repository contracts', () => {
       'pnpm agent:check:live',
       'pnpm agent:check:assistant',
       'pnpm check:embedded-host',
-    ]) expect(rootPackage.scripts['ci:offline']).toContain(command);
+    ]) expect(rootPackage.scripts['ci:core']).toContain(command);
+    expect(rootPackage.scripts['ci:widget-browser']).toBe('pnpm test:browser');
+    expect(rootPackage.scripts['ci:web']).toBe('pnpm check:web');
+    expect(rootPackage.scripts['ci:offline']).toBe(
+      'pnpm ci:core && pnpm ci:widget-browser && pnpm ci:web',
+    );
   });
 
   it('runs the primary website in the offline repository gate', async () => {
@@ -400,10 +405,8 @@ describe('public repository contracts', () => {
     expect(rootPackage.scripts['check:web']).toContain(
       '@nuitee-travel-starter/web build',
     );
-    expect(rootPackage.scripts['ci:offline']).toContain('pnpm check:web');
-    expect(rootPackage.scripts['ci:offline']).toContain(
-      'pnpm check:embedded-host',
-    );
+    expect(rootPackage.scripts['ci:web']).toBe('pnpm check:web');
+    expect(rootPackage.scripts['ci:core']).toContain('pnpm check:embedded-host');
   });
 
   it('keeps website environment examples within the public credential boundary', async () => {
@@ -448,7 +451,10 @@ describe('public repository contracts', () => {
     expect(workflow).toContain('actions/setup-node@820762786026740c76f36085b0efc47a31fe5020');
     expect(workflow).toContain('persist-credentials: false');
     expect(workflow).toContain('merge_group:');
-    expect(workflow).toContain('run: pnpm ci:offline');
+    expect(workflow).toContain('suite: [core, widget-browser, web]');
+    expect(workflow).toContain('run: pnpm ci:${{ matrix.suite }}');
+    expect(workflow).toContain("if: matrix.suite != 'core'");
+    expect(workflow).toContain('needs: quality');
     expect(workflow).not.toMatch(/uses:\s+[^\s]+@v\d/);
     expect(dependabot).toContain('package-ecosystem: github-actions');
     expect(workspace).toContain('minimumReleaseAge: 1440');
