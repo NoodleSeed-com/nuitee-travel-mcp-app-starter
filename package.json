@@ -17,6 +17,7 @@
     "audit:licenses": "node scripts/audit-dependency-licenses.mjs",
     "audit:release": "pnpm audit:history && pnpm audit:generated-guidance && pnpm audit:licenses && pnpm audit --prod --audit-level=low",
     "test": "vitest run",
+    "typecheck:domain": "tsc --project tsconfig.domain.json --noEmit",
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "docs:previews": "node scripts/capture-widget-previews.mjs",
     "validate": "noodle validate",
@@ -42,7 +43,7 @@
     "build:web": "pnpm --filter @nuitee-travel-starter/web build",
     "test:web": "pnpm --filter @nuitee-travel-starter/web test",
     "check:web": "pnpm --filter @nuitee-travel-starter/web typecheck && pnpm --filter @nuitee-travel-starter/web test && pnpm --filter @nuitee-travel-starter/web test:browser && pnpm --filter @nuitee-travel-starter/web build",
-    "ci:core": "pnpm agent:doctor && pnpm customize:check && pnpm audit:history && pnpm audit:licenses && pnpm test && pnpm agent:check && pnpm agent:check:live && pnpm agent:check:assistant && pnpm check:embedded-host",
+    "ci:core": "pnpm agent:doctor && pnpm customize:check && pnpm audit:history && pnpm audit:licenses && pnpm typecheck:domain && pnpm test && pnpm agent:check && pnpm agent:check:live && pnpm agent:check:assistant && pnpm check:embedded-host",
     "ci:web": "pnpm --filter @nuitee-travel-starter/web typecheck && pnpm --filter @nuitee-travel-starter/web test && pnpm --filter @nuitee-travel-starter/web build",
     "ci:offline": "pnpm ci:core && pnpm ci:web",
     "agent:commands": "noodle commands --json"
@@ -50,6 +51,7 @@
   "devDependencies": {
     "@noodleseed/one": "0.151.1",
     "@vitest/browser-playwright": "4.1.10",
+    "@types/node": "26.2.0",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "@vitejs/plugin-react": "6.1.0",
@@ -57,7 +59,8 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "vite": "8.2.2",
-    "vitest": "4.1.10"
+    "vitest": "4.1.10",
+    "typescript": "7.0.2"
   },
   "dependencies": {
     "@fontsource-variable/inter": "5.3.0"
