@@ -84,8 +84,16 @@ jobs:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
           flyctl status --app "$FLY_APP"
+          response_file=$(mktemp)
           curl --fail --silent --show-error \
             --retry 12 \
             --retry-delay 5 \
             --retry-all-errors \
-            "$FLY_DEPLOY_URL" > /dev/null
+            --output "$response_file" \
+            "$FLY_DEPLOY_URL"
+          if grep --fixed-strings --quiet \
+            "Add NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID to start the travel assistant." \
+            "$response_file"; then
+            echo "::error::Fly rendered the assistant setup-required state."
+            exit 1
+          fi
