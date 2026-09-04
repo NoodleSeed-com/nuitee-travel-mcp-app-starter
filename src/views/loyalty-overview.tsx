@@ -1,12 +1,9 @@
-import '@fontsource-variable/inter';
+import '@fontsource-variable/host-grotesk';
 import '@noodleseed/one/react/styles.css';
-import type { CSSProperties } from 'react';
 import {
   Feedback,
   Flow,
   Frame,
-  StatusBadge,
-  useBranding,
   useLayout,
   useToolInfo,
   useWidgetReady,
@@ -16,9 +13,10 @@ import type {
   DemoTripReview,
 } from '../demo-schemas.js';
 import './travel.css';
+import { CardCarousel } from './card-carousel.js';
 
 export const WAYFARE_PREVIEW_DISCLOSURE =
-  'Flight results come from the connected flight provider. Stays and rewards are illustrative previews. Booking and redemption are unavailable.';
+  'Flight and stay results come from connected providers. Rewards are illustrative previews. Booking and redemption are unavailable.';
 
 type LoyaltyData = DemoLoyaltyOverview | DemoTripReview;
 type LoyaltyState = 'loading' | 'error' | 'malformed';
@@ -132,7 +130,7 @@ const isStaySelection = (value: unknown) => {
   const stay = record(value);
   return (
     stay !== undefined &&
-    stay?.dataSource === 'illustrative' &&
+    (stay?.dataSource === 'illustrative' || stay?.dataSource === 'live_nuitee') &&
     typeof stay.selectionId === 'string' &&
     /^hsel_[a-f0-9]{32}$/.test(stay.selectionId) &&
     boundedString(stay.propertyName, 2, 100) &&
@@ -168,29 +166,18 @@ export function isDemoTripReview(value: unknown): value is DemoTripReview {
   return true;
 }
 
-function Disclosure() {
-  return (
-    <aside className="cc-demo-disclosure" aria-label="Illustrative data disclosure">
-      <StatusBadge tone="info">Preview only</StatusBadge>
-      <p>{WAYFARE_PREVIEW_DISCLOSURE}</p>
-    </aside>
-  );
-}
+const rewardsLabel = (label: string) => label.replace(/\b(illustrative|simulated|synthetic|preview|concept)\b/gi, '').replace(/\s+/g, ' ').trim();
 
-function LoyaltySkeleton({ theme, brandStyle }: {
-  readonly theme: 'light' | 'dark';
-  readonly brandStyle?: CSSProperties;
-}) {
+function LoyaltySkeleton() {
   return (
     <Frame
-      className={`cc-app cc-loyalty ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
-      style={brandStyle}
+      className="cc-app cc-loyalty"
       displayMode="auto"
       title="Wayfare Rewards"
-      subtitle="Illustrative loyalty profile"
+      subtitle="Rewards overview"
     >
       <section className="cc-loyalty-skeleton" role="status" aria-live="polite" aria-busy="true">
-        <span className="cc-visually-hidden">Preparing the illustrative rewards profile…</span>
+        <span className="cc-visually-hidden">Preparing the rewards profile…</span>
         <div className="cc-demo-disclosure cc-loyalty-skeleton-disclosure" aria-hidden="true">
           <span className="cc-skeleton-block cc-shimmer" />
           <span className="cc-skeleton-block cc-shimmer" />
@@ -242,47 +229,43 @@ function LoyaltySummary({
   );
 
   return (
-    <>
+    <CardCarousel label="Rewards overview" itemName="rewards panel" className="cc-loyalty-summary">
       <section className="cc-loyalty-hero" aria-labelledby="cc-loyalty-balance-title">
         <div className="cc-loyalty-member">
-          <span>Illustrative rewards profile</span>
-          <strong>{loyalty.member.displayName}</strong>
-          <small>{loyalty.member.reference}</small>
+          <span>Rewards profile</span>
         </div>
         <div className="cc-loyalty-balance">
-          <span id="cc-loyalty-balance-title">Simulated points balance</span>
+          <span id="cc-loyalty-balance-title">Points balance</span>
           <strong>{points.format(loyalty.member.pointsBalance)}</strong>
           <span>points</span>
         </div>
-        <span className="cc-loyalty-tier">{loyalty.member.tier}</span>
+        <span>{rewardsLabel(loyalty.member.tier)}</span>
       </section>
 
       <section className="cc-loyalty-progress" aria-labelledby="cc-loyalty-progress-title">
         <div className="cc-loyalty-progress-copy">
-          <h2 id="cc-loyalty-progress-title">Concept tier progress</h2>
-          <span>{loyalty.progress.label}</span>
+          <h2 id="cc-loyalty-progress-title">Tier progress</h2>
+          <span>Progress toward the next tier</span>
         </div>
         <progress
-          aria-label={`${loyalty.progress.label}: ${loyalty.progress.current} of ${loyalty.progress.target}`}
+          aria-label={`Tier progress: ${loyalty.progress.current} of ${loyalty.progress.target}`}
           max={loyalty.progress.target}
           value={progressValue}
         />
         <small>
           {points.format(loyalty.progress.current)} of{' '}
-          {points.format(loyalty.progress.target)} illustrative progress units
+          {points.format(loyalty.progress.target)} progress units
         </small>
       </section>
 
-      <section aria-labelledby="cc-loyalty-benefits-title">
+      <section className="cc-loyalty-benefits-panel" aria-labelledby="cc-loyalty-benefits-title">
         <div className="cc-loyalty-section-heading">
-          <span>Synthetic benefits</span>
-          <h2 id="cc-loyalty-benefits-title">What this concept tier includes</h2>
+          <h2 id="cc-loyalty-benefits-title">Tier benefits</h2>
         </div>
         <ul className="cc-loyalty-benefits">
           {loyalty.benefits.map((benefit) => (
             <li className="cc-loyalty-benefit" key={benefit.name}>
-              <strong>{benefit.name}</strong>
-              <span>{benefit.description}</span>
+              <strong>{rewardsLabel(benefit.name)}</strong>
             </li>
           ))}
         </ul>
@@ -290,16 +273,14 @@ function LoyaltySummary({
 
       <section className="cc-loyalty-value" aria-labelledby="cc-loyalty-value-title">
         <div>
-          <span>Illustrative value only</span>
+          <span>Points value</span>
           <h2 id="cc-loyalty-value-title">
             {points.format(loyalty.illustrativePointsValue.points)} points ≈{' '}
             {value.format(loyalty.illustrativePointsValue.value.amount)}
           </h2>
         </div>
-        <p>{loyalty.illustrativePointsValue.explanation}</p>
-        <small>No points were earned, transferred, or redeemed.</small>
       </section>
-    </>
+    </CardCarousel>
   );
 }
 
@@ -309,10 +290,9 @@ function Overview({ data, locale }: {
 }) {
   return (
     <Flow variant="stack" density="comfortable">
-      <Disclosure />
       <LoyaltySummary loyalty={data} locale={locale} />
       <p className="cc-loyalty-footer">
-        Illustrative profile only · no real member account was accessed
+        Example rewards only · no real account was accessed and no points were earned or redeemed.
       </p>
     </Flow>
   );
@@ -327,14 +307,13 @@ function TripReview({ data, locale }: {
 
   return (
     <Flow variant="stack" density="comfortable">
-      <Disclosure />
 
       {data.status === 'incomplete' ? (
         <section className="cc-loyalty-missing" role="status" aria-labelledby="cc-loyalty-missing-title">
           <h2 id="cc-loyalty-missing-title">Trip review needs another selection</h2>
           <p>
-            Add {data.missing.map((item) => item === 'flight' ? 'a flight' : 'a hotel').join(' and ')}
-            {' '}in the conversation to complete this illustrative comparison.
+            Select {data.missing.map((item) => item === 'flight' ? 'a flight' : 'a hotel').join(' and ')}
+            {' '}in the conversation to complete this comparison.
           </p>
         </section>
       ) : null}
@@ -344,12 +323,12 @@ function TripReview({ data, locale }: {
           <span>Selected in this conversation</span>
           <h2 id="cc-loyalty-review-title">Trip selections</h2>
         </div>
-        <div className="cc-loyalty-selections">
+        <CardCarousel label="Trip selections" itemName="trip selection" className="cc-loyalty-selections">
           {data.flight ? (
             <article className="cc-loyalty-selection">
-              <StatusBadge className="cc-loyalty-provenance" tone="success">
+              <span>
                 Current Nuitee flight selection
-              </StatusBadge>
+              </span>
               <h3>Selected flight</h3>
               <strong>
                 {money(data.flight.searchPrice.total, data.flight.searchPrice.currency)}
@@ -360,9 +339,7 @@ function TripReview({ data, locale }: {
           ) : null}
           {data.stay ? (
             <article className="cc-loyalty-selection">
-              <StatusBadge className="cc-loyalty-provenance" tone="info">
-                Simulated hotel selection
-              </StatusBadge>
+              <span>{data.stay.dataSource === 'live_nuitee' ? 'Current Nuitee hotel selection' : 'Hotel selection'}</span>
               <h3>{data.stay.propertyName}</h3>
               <span>{data.stay.city}</span>
               <strong>
@@ -375,15 +352,12 @@ function TripReview({ data, locale }: {
               </p>
             </article>
           ) : null}
-        </div>
-        <p className="cc-loyalty-boundary">
-          Flight and hotel amounts retain separate provenance. They are not a bookable package total.
-        </p>
+        </CardCarousel>
       </section>
 
       <LoyaltySummary loyalty={data.loyalty} locale={locale} />
       <p className="cc-loyalty-footer">
-        Planning only · nothing booked, held, paid, or redeemed
+        Planning only · {data.stay?.dataSource === 'illustrative' ? 'stay and rewards are examples' : 'rewards are examples'}; not a bookable package total. Nothing booked, held, paid, or redeemed.
       </p>
     </Flow>
   );
@@ -392,24 +366,21 @@ function TripReview({ data, locale }: {
 export function LoyaltyOverviewView({
   data,
   state,
-  theme,
   locale = 'en-CA',
-  brandStyle,
 }: {
   readonly data?: LoyaltyData;
   readonly state?: LoyaltyState;
   readonly theme: 'light' | 'dark';
   readonly locale?: string;
-  readonly brandStyle?: CSSProperties;
 }) {
   if (state === 'loading') {
-    return <LoyaltySkeleton theme={theme} brandStyle={brandStyle} />;
+    return <LoyaltySkeleton />;
   }
 
-  const frameClassName = `cc-app cc-loyalty ${theme === 'dark' ? 'cc-theme-dark' : ''}`;
+  const frameClassName = 'cc-app cc-loyalty';
   if (state === 'error') {
     return (
-      <Frame className={frameClassName} style={brandStyle} displayMode="auto" title="Wayfare Rewards">
+      <Frame className={frameClassName} displayMode="auto" title="Wayfare Rewards">
         <Feedback status="error">
           The loyalty experience could not load. No account, points, booking, or payment was changed.
         </Feedback>
@@ -418,7 +389,7 @@ export function LoyaltyOverviewView({
   }
   if (state === 'malformed' || !data) {
     return (
-      <Frame className={frameClassName} style={brandStyle} displayMode="auto" title="Wayfare Rewards">
+      <Frame className={frameClassName} displayMode="auto" title="Wayfare Rewards">
         <Feedback status="error">
           The result was incomplete, so no balance, benefit, or trip value was inferred.
         </Feedback>
@@ -430,10 +401,9 @@ export function LoyaltyOverviewView({
   return (
     <Frame
       className={frameClassName}
-      style={brandStyle}
       displayMode="auto"
       title={review ? 'Trip and rewards review' : 'Wayfare Rewards'}
-      subtitle={review ? 'Current flight context with simulated hotels and rewards' : 'Illustrative loyalty profile'}
+      subtitle={review ? 'Selected travel and rewards' : 'Rewards overview'}
       data-llm={data.fallback}
     >
       {review ? (
@@ -448,7 +418,6 @@ export function LoyaltyOverviewView({
 export default function LoyaltyOverview() {
   const ready = useWidgetReady();
   const layout = useLayout();
-  const branding = useBranding();
   const toolInfo = useToolInfo();
   const pending = !ready || Object.keys(toolInfo).length === 0;
   const structured = toolInfo.structuredContent;
@@ -464,10 +433,6 @@ export default function LoyaltyOverview() {
       state={pending ? 'loading' : toolInfo.isError ? 'error' : data ? undefined : 'malformed'}
       theme={layout.theme === 'dark' ? 'dark' : 'light'}
       locale={layout.locale ?? 'en-CA'}
-      brandStyle={{
-        '--cc-accent': branding.theme?.[layout.theme]?.accent ?? branding.accent ?? '#006D84',
-        '--cc-focus': branding.theme?.[layout.theme]?.focus ?? '#007D95',
-      } as CSSProperties}
     />
   );
 }

@@ -1,6 +1,5 @@
-import '@fontsource-variable/inter';
+import '@fontsource-variable/host-grotesk';
 import '@noodleseed/one/react/styles.css';
-import type { CSSProperties } from 'react';
 import type {
   DemoInsuranceComparisonOutput,
   DemoInsurancePlan,
@@ -11,12 +10,12 @@ import {
   Frame,
   Region,
   StatusBadge,
-  useBranding,
   useLayout,
   useToolInfo,
   useWidgetReady,
 } from '../helpers.js';
 import { CheckIcon } from './icons.js';
+import { CardCarousel } from './card-carousel.js';
 import './travel.css';
 
 type InsuranceResultsState = 'loading' | 'error' | 'malformed';
@@ -175,14 +174,10 @@ function InsuranceSkeletonCard() {
   );
 }
 
-function InsuranceLoading({ theme, brandStyle }: {
-  readonly theme: 'light' | 'dark';
-  readonly brandStyle?: CSSProperties;
-}) {
+function InsuranceLoading() {
   return (
     <Frame
-      className={`cc-app cc-insurance-results ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
-      style={brandStyle}
+      className="cc-app cc-insurance-results"
       displayMode="auto"
       title="Travel protection"
       subtitle="Preparing illustrative travel protection"
@@ -197,7 +192,7 @@ function InsuranceLoading({ theme, brandStyle }: {
           <span className="cc-skeleton-block cc-shimmer" />
           <span className="cc-skeleton-block cc-shimmer" />
         </div>
-        <div className="cc-insurance-plan-grid" aria-hidden="true">
+        <div className="cc-insurance-plan-grid cc-card-carousel-track" aria-hidden="true">
           <InsuranceSkeletonCard />
           <InsuranceSkeletonCard />
           <InsuranceSkeletonCard />
@@ -209,14 +204,11 @@ function InsuranceLoading({ theme, brandStyle }: {
 
 function statusView(
   state: Exclude<InsuranceResultsState, 'loading'>,
-  theme: 'light' | 'dark',
-  brandStyle?: CSSProperties,
 ) {
   const malformed = state === 'malformed';
   return (
     <Frame
-      className={`cc-app cc-insurance-results ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
-      style={brandStyle}
+      className="cc-app cc-insurance-results"
       displayMode="auto"
       title="Travel protection"
     >
@@ -276,25 +268,21 @@ export function InsuranceResultsView({
   result,
   state,
   displayMode,
-  theme = 'light',
   locale = 'en-CA',
-  brandStyle,
 }: {
   readonly result?: DemoInsuranceComparisonOutput;
   readonly state?: InsuranceResultsState;
   readonly displayMode: string;
   readonly theme?: 'light' | 'dark';
   readonly locale?: string;
-  readonly brandStyle?: CSSProperties;
 }) {
-  if (state === 'loading') return <InsuranceLoading theme={theme} brandStyle={brandStyle} />;
-  if (state) return statusView(state, theme, brandStyle);
-  if (!result) return statusView('malformed', theme, brandStyle);
+  if (state === 'loading') return <InsuranceLoading />;
+  if (state) return statusView(state);
+  if (!result) return statusView('malformed');
 
   return (
     <Frame
-      className={`cc-app cc-insurance-results ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
-      style={brandStyle}
+      className="cc-app cc-insurance-results"
       displayMode="auto"
       title="Travel protection"
       subtitle="Three fictional concepts · no live policy check"
@@ -320,9 +308,9 @@ export function InsuranceResultsView({
             <strong>{result.searchContext.adults} adult{result.searchContext.adults === 1 ? '' : 's'} · {result.searchContext.children} child traveler{result.searchContext.children === 1 ? '' : 's'}</strong>
           </div>
         </section>
-        <section aria-label="Illustrative travel protection concepts" className="cc-insurance-plan-grid">
+        <CardCarousel label="Illustrative travel protection concepts" itemName="travel protection concept" className="cc-insurance-plan-grid">
           {result.plans.map((plan) => <PlanCard key={plan.planId} locale={locale} plan={plan} />)}
-        </section>
+        </CardCarousel>
         <Region
           title="What to check before buying elsewhere"
           description="These concepts cannot establish whether any real product is suitable or available."
@@ -342,7 +330,6 @@ export function InsuranceResultsView({
 export default function InsuranceResults() {
   const ready = useWidgetReady();
   const layout = useLayout();
-  const branding = useBranding();
   const toolInfo = useToolInfo('compare_travel_insurance');
   const pending = !ready || Object.keys(toolInfo).length === 0;
   const result = isDemoInsuranceComparisonOutput(toolInfo.structuredContent)
@@ -356,10 +343,6 @@ export default function InsuranceResults() {
       displayMode={layout.displayMode}
       theme={layout.theme === 'dark' ? 'dark' : 'light'}
       locale={layout.locale ?? 'en-CA'}
-      brandStyle={{
-        '--cc-accent': branding.theme?.[layout.theme]?.accent ?? branding.accent ?? '#006D84',
-        '--cc-focus': branding.theme?.[layout.theme]?.focus ?? '#007D95',
-      } as CSSProperties}
     />
   );
 }

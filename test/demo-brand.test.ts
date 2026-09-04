@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { travelCompanionDemoConfig } from '../src/demo-config.js';
 
@@ -36,13 +37,13 @@ describe('Wayfare expanded travel brand contract', () => {
   it('keeps the live and synthetic data boundary persistently visible', () => {
     expect(travelCompanionDemoConfig.dataSources).toEqual({
       flights: { mode: 'live_sandbox', label: 'Current flight fares' },
-      hotels: { mode: 'synthetic_fixture', label: 'Illustrative stays' },
+      hotels: { mode: 'live_nuitee', label: 'Current hotel rates' },
       loyalty: { mode: 'synthetic_fixture', label: 'Illustrative rewards' },
       insurance: { mode: 'synthetic_fixture', label: 'Illustrative travel protection' },
     });
     expect(travelCompanionDemoConfig.disclosure.badge).toBe('Preview only');
-    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/connected flight provider/u);
-    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Stays, rewards, and travel protection are illustrative/u);
+    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Flight and stay results come from connected providers/u);
+    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Rewards and travel protection are illustrative/u);
     expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Booking, redemption, and policy purchase are unavailable/u);
     expect(travelCompanionDemoConfig.disclosure.persistent).not.toMatch(/\bdemo\b|\bsandbox\b/iu);
   });
@@ -73,5 +74,65 @@ describe('Wayfare expanded travel brand contract', () => {
       provenanceRecordPath: 'docs/visual-assets/wayfare-premium-concierge.md',
       reviewedBinaryBlob: true,
     });
+  });
+});
+
+describe('ported card design tokens', () => {
+  const css = readFileSync(new URL('../src/views/travel.css', import.meta.url), 'utf8');
+
+  it('defines the card token layer on .cc-app', () => {
+    for (const token of [
+      '--cc-radius-card:',
+      '--cc-shadow-card:',
+      '--cc-shadow-card-hover:',
+      '--cc-good:',
+      '--cc-rail-gap:',
+    ]) {
+      expect(css).toContain(token);
+    }
+  });
+
+  it('never introduces the Tribe brand blue', () => {
+    expect(css.toLowerCase()).not.toContain('#1570ef');
+  });
+
+  it('uses a neutral card shadow rather than a decorative semantic tint', () => {
+    expect(css).toMatch(/--cc-shadow-card-hover:[^;]*rgb\(13 13 13/);
+  });
+
+  it('hides the rail scrollbar on all three engines', () => {
+    expect(css).toContain('scrollbar-width: none');
+    expect(css).toContain('-ms-overflow-style: none');
+    expect(css).toMatch(/\.cc-rail::-webkit-scrollbar\s*\{\s*display:\s*none/);
+  });
+
+  it('shows rail arrows only at 640px and up', () => {
+    expect(css).toMatch(/@media \(min-width: 640px\)\s*\{\s*\.cc-app \.cc-rail-arrow\s*\{\s*display:\s*grid/);
+  });
+
+  it('keeps the rail arrow at the global 44px tap target', () => {
+    expect(css).toContain('.cc-app .cc-rail-arrow');
+    expect(css).not.toMatch(/^\.cc-rail-arrow\s*\{/m);
+    expect(css).toMatch(/\.cc-app \.cc-rail-arrow\s*\{[^}]*width:\s*44px[^}]*height:\s*44px/s);
+  });
+
+  it('qualifies the hotel card and its neutral selected state so they outrank .cc-card', () => {
+    // .cc-card sets border/border-radius/background at (0,1,0) and is
+    // declared later in this file; a bare .cc-hotel-card or
+    // .cc-hotel-card-selected at equal specificity would silently lose to
+    // it on source order, making the selected card diverge from its neutral shell.
+    expect(css).toContain('.cc-app .cc-hotel-card {');
+    expect(css).toContain('.cc-app .cc-hotel-card-selected {');
+    expect(css).not.toMatch(/^\.cc-hotel-card-selected\s*\{/m);
+  });
+
+  it('reasserts display:none under [hidden] for panels that also set an author display', () => {
+    // Origin beats specificity: an author `display` rule on the very same
+    // element unconditionally outranks the UA stylesheet's
+    // `[hidden] { display: none }`, regardless of selector specificity. Any
+    // selector that sets `display` AND is toggled via the `hidden`
+    // attribute needs its own `[hidden] { display: none }` reassertion, or
+    // the "collapsed" state silently renders visible.
+    expect(css).toContain('.cc-hotel-detail-content[hidden]');
   });
 });

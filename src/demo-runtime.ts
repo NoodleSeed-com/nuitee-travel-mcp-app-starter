@@ -99,6 +99,8 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
       const key = string(fixture.key) ?? 'demo_hotel_unknown';
       const nightly = record(fixture.nightly) ?? {};
       const nightlyAmount = number(nightly[currency]) ?? 0;
+      const latitude = number(fixture.lat);
+      const longitude = number(fixture.lng);
       return {
         selectionId: opaque('hsel', `${searchId}:${key}`),
         dataSource: 'illustrative',
@@ -106,6 +108,11 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
         city: string(fixture.city) ?? destination,
         countryCode: string(fixture.countryCode) ?? 'ZZ',
         neighborhood: string(fixture.neighborhood) ?? 'Illustrative district',
+        ...(latitude !== undefined && longitude !== undefined
+          && latitude >= -90 && latitude <= 90
+          && longitude >= -180 && longitude <= 180
+          ? { lat: latitude, lng: longitude }
+          : {}),
         description: string(fixture.description) ?? 'Illustrative property.',
         roomName: string(fixture.roomName) ?? 'Illustrative room',
         category: number(fixture.category) ?? 1,
@@ -115,7 +122,7 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
         nightlyPrice: { amount: nightlyAmount, currency },
         staySubtotal: { amount: nightlyAmount * nights * rooms, currency },
         taxesAndFeesIncluded: false,
-        illustrativePolicy: string(fixture.illustrativePolicy) ?? 'Illustrative terms only; no reservation is available.',
+        policySummary: string(fixture.illustrativePolicy) ?? 'Illustrative terms only; no reservation is available.',
       };
     });
     const destinationLabel = string(record(fixtures[0])?.city) ?? destination;
@@ -136,6 +143,7 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
     const records = hotels.map((hotel, index) => ({
       selectionId: hotel.selectionId,
       searchId,
+      dataSource: 'illustrative',
       fixtureKey: string(record(fixtures[index])?.key) ?? 'demo_hotel_unknown',
       propertyName: hotel.name,
       city: hotel.city,
@@ -319,22 +327,24 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
   if (input.kind === 'select') {
     const state = record(input.hotelState) ?? {};
     const records = array(state.records).map(record).filter((entry): entry is Record<string, unknown> => Boolean(entry));
-    const known = records.some((entry) => entry.selectionId === input.selectionId);
-    if (!known) {
+    const selected = records.find((entry) => entry.selectionId === input.selectionId);
+    if (!selected) {
       return {
         kind: 'select',
         selection: {
           status: 'unavailable',
           message: 'That stay is no longer in the current comparison. Search the stays again.',
         },
-        nextHotelState: state,
+        ...(input.hotelState ? { nextHotelState: state } : {}),
       };
     }
     return {
       kind: 'select',
       selection: {
         status: 'selected',
-        message: 'The illustrative stay is ready for the trip review.',
+        message: selected.dataSource === 'live_nuitee'
+          ? 'The current hotel option is ready for the trip review. No room was held or reserved.'
+          : 'The illustrative stay is ready for the trip review.',
         selectionId: input.selectionId,
       },
       nextHotelState: { ...state, activeSelectionId: input.selectionId },
@@ -365,8 +375,9 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
     ...(typeof flight.expiresAt === 'string' ? { expiresAt: flight.expiresAt } : {}),
     disclosure: 'Live Nuitee search price selected in this session; it still requires fare verification.',
   } : undefined;
+  const stayDataSource = stay?.dataSource === 'live_nuitee' ? 'live_nuitee' : 'illustrative';
   const stayReview = stay ? {
-    dataSource: 'illustrative',
+    dataSource: stayDataSource,
     selectionId: stay.selectionId,
     propertyName: stay.propertyName,
     city: stay.city,
@@ -381,9 +392,13 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
     review: {
       status: missing.length === 0 ? 'ready' : 'incomplete',
       dataSource: 'illustrative',
-      disclosure: 'The flight remains a current provider selection. Stay and rewards values are illustrative; this is not a bookable package and no payment or points action is available.',
+      disclosure: stayDataSource === 'live_nuitee'
+        ? 'Flight and stay selections came from current provider searches. Rewards remain illustrative; prices stay separate and nothing was booked or paid.'
+        : 'The flight remains a current provider selection. Stay and rewards values are illustrative; this is not a bookable package and no payment or points action is available.',
       fallback: missing.length === 0
-        ? 'Trip review ready: the flight remains a live Nuitee search selection, while the stay and rewards information is synthetic. Prices remain separate and nothing was booked or paid.'
+        ? stayDataSource === 'live_nuitee'
+          ? 'Trip review ready: flight and stay are current Nuitee search selections, while rewards are illustrative. Prices remain separate and nothing was booked or paid.'
+          : 'Trip review ready: the flight remains a live Nuitee search selection, while the stay and rewards information is synthetic. Prices remain separate and nothing was booked or paid.'
         : `Trip review needs a current ${missing.join(' and ')} selection. No booking, payment, or points action occurred.`,
       ...(flightReview ? { flight: flightReview } : {}),
       ...(stayReview ? { stay: stayReview } : {}),

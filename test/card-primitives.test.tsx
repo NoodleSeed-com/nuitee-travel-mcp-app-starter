@@ -1,0 +1,175 @@
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { describe, expect, it } from 'vitest';
+import {
+  Badge,
+  MatchDetail,
+  MatchScore,
+  PhotoBand,
+  Price,
+  Rail,
+  ScorePin,
+  gradientForName,
+} from '../src/views/card-primitives.js';
+
+describe('gradientForName', () => {
+  it('is deterministic for the same name', () => {
+    expect(gradientForName('Tagus Lantern Hotel')).toBe(gradientForName('Tagus Lantern Hotel'));
+  });
+
+  it('differs between hotels', () => {
+    expect(gradientForName('Tagus Lantern Hotel')).not.toBe(gradientForName('Alfama Cloud House'));
+  });
+
+  it('produces a css linear-gradient', () => {
+    expect(gradientForName('Rainlight Vancouver')).toMatch(/^linear-gradient\(/);
+  });
+});
+
+describe('ScorePin', () => {
+  it('renders nothing when no score is supplied', () => {
+    expect(renderToStaticMarkup(<ScorePin />)).toBe('');
+  });
+
+  it('renders the score with a text alternative when supplied', () => {
+    const html = renderToStaticMarkup(<ScorePin score={8.9} />);
+    expect(html).toContain('8.9');
+    expect(html).toContain('Guest rating 8.9 out of 10');
+  });
+});
+
+describe('PhotoBand', () => {
+  it('paints the deterministic gradient when no image is available', () => {
+    const html = renderToStaticMarkup(<PhotoBand name="Tagus Lantern Hotel" />);
+    expect(html).toContain('linear-gradient(');
+    expect(html).not.toContain('<img');
+  });
+
+  it('renders the image when one is supplied, keeping the gradient beneath', () => {
+    const html = renderToStaticMarkup(
+      <PhotoBand name="Tagus Lantern Hotel" imageUrl="https://snaphotelapi.com/a.jpg" />,
+    );
+    expect(html).toContain('<img');
+    expect(html).toContain('https://snaphotelapi.com/a.jpg');
+    expect(html).toContain('linear-gradient(');
+  });
+
+  it('is decoration, so it is hidden from assistive technology', () => {
+    expect(renderToStaticMarkup(<PhotoBand name="X" />)).toContain('aria-hidden="true"');
+  });
+
+  it('keeps children out of the aria-hidden decorative layer', () => {
+    const html = renderToStaticMarkup(
+      <PhotoBand name="Tagus Lantern Hotel">
+        <button type="button">Compare</button>
+      </PhotoBand>,
+    );
+    // The decor layer is hidden; the button must NOT be inside it.
+    const decorStart = html.indexOf('cc-photo-decor');
+    const decorEnd = html.indexOf('</div>', decorStart);
+    const buttonAt = html.indexOf('<button');
+    expect(decorStart).toBeGreaterThan(-1);
+    expect(buttonAt).toBeGreaterThan(decorEnd);
+  });
+
+  it('centers the category glyph on the gradient when no image is available', () => {
+    const html = renderToStaticMarkup(
+      <PhotoBand glyph={<span data-testid="glyph-mark">bed</span>} name="Tagus Lantern Hotel" />,
+    );
+    expect(html).toContain('cc-photo-glyph');
+    expect(html).toContain('glyph-mark');
+  });
+
+  it('never shows the glyph once a real photo is available', () => {
+    const html = renderToStaticMarkup(
+      <PhotoBand
+        glyph={<span data-testid="glyph-mark">bed</span>}
+        imageUrl="https://snaphotelapi.com/a.jpg"
+        name="Tagus Lantern Hotel"
+      />,
+    );
+    expect(html).toContain('<img');
+    expect(html).not.toContain('cc-photo-glyph');
+    expect(html).not.toContain('glyph-mark');
+  });
+
+  it('renders no glyph wrapper when neither an image nor a glyph is supplied', () => {
+    const html = renderToStaticMarkup(<PhotoBand name="Tagus Lantern Hotel" />);
+    expect(html).not.toContain('cc-photo-glyph');
+  });
+});
+
+describe('Price', () => {
+  it('shows total and per-night in the given currency', () => {
+    const html = renderToStaticMarkup(
+      <Price total={1716} perNight={286} currency="CAD" locale="en-CA" />,
+    );
+    expect(html).toContain('1,716');
+    expect(html).toContain('286');
+  });
+});
+
+describe('Rail', () => {
+  it('labels the scroll region and renders both arrows', () => {
+    const html = renderToStaticMarkup(<Rail ariaLabel="Stays"><div>card</div></Rail>);
+    expect(html).toContain('aria-label="Stays"');
+    expect(html).toContain('cc-rail-arrow-prev');
+    expect(html).toContain('cc-rail-arrow-next');
+  });
+
+  it('exposes role="group" so the aria-label is announced, not ignored', () => {
+    // aria-label on an implicit role=generic element (a bare <div>) is
+    // dropped by assistive tech; role="group" gives it a labellable role.
+    const html = renderToStaticMarkup(<Rail ariaLabel="Stays"><div>card</div></Rail>);
+    const railOpenTag = html.match(/<div[^>]*class="cc-rail"[^>]*>/u)?.[0] ?? '';
+    expect(railOpenTag).not.toBe('');
+    expect(railOpenTag).toContain('role="group"');
+    expect(railOpenTag).toContain('aria-label="Stays"');
+  });
+});
+
+describe('Badge', () => {
+  it('applies the tone modifier class', () => {
+    expect(renderToStaticMarkup(<Badge tone="good">Flexible</Badge>)).toContain('cc-badge-good');
+  });
+});
+
+describe('MatchScore', () => {
+  it('exposes the score as a text alternative, not colour alone', () => {
+    const html = renderToStaticMarkup(<MatchScore score={82} />);
+    expect(html).toContain('82');
+    expect(html).toContain('Stay match 82 out of 100');
+  });
+
+  it('renders a plain score pill without a custom SVG data ring', () => {
+    const full = renderToStaticMarkup(<MatchScore score={100} />);
+    const half = renderToStaticMarkup(<MatchScore score={50} />);
+    expect(full).not.toBe(half);
+    expect(full).not.toContain('<svg');
+    expect(full).toContain('cc-match-score');
+  });
+});
+
+describe('MatchDetail', () => {
+  it('renders one row per supplied line and shows the footnote', () => {
+    const html = renderToStaticMarkup(
+      <MatchDetail
+        footnote="Guest rating omitted — not returned."
+        match={{
+          score: 82,
+          lines: [
+            { key: 'price', label: 'Price', detail: 'CA$1,716 total', status: 'ok' },
+            { key: 'category', label: 'Category', detail: '4-star', status: 'partial' },
+          ],
+        }}
+      />,
+    );
+    expect(html).toContain('Price');
+    expect(html).toContain('Category');
+    expect(html).toContain('Matches');
+    expect(html).toContain('Consider');
+    expect(html).not.toContain('✓');
+    expect(html).not.toContain('~');
+    expect(html).toContain('Guest rating omitted');
+  });
+});

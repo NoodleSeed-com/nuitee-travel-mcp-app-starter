@@ -8,13 +8,16 @@ importers:
 
   .:
     dependencies:
-      '@fontsource-variable/inter':
+      '@fontsource-variable/host-grotesk':
         specifier: 5.3.0
         version: 5.3.0
+      '@heroicons/react':
+        specifier: 2.2.0
+        version: 2.2.0(react@19.2.8)
     devDependencies:
       '@noodleseed/one':
-        specifier: 0.151.1
-        version: 0.151.1
+        specifier: 0.161.2
+        version: 0.161.2
       '@types/react':
         specifier: 19.2.18
         version: 19.2.18
@@ -255,9 +258,6 @@ packages:
 
   '@fontsource-variable/host-grotesk@5.3.0':
     resolution: {integrity: sha512-WvdqilphrdjYLeCHXny9gkdpIZgzyeHpgRWB8T4LSKs5nVnCs6pYYeCeMiRshxcuB6djqL6CSdF1Hq0BvMNCwA==}
-
-  '@fontsource-variable/inter@5.3.0':
-    resolution: {integrity: sha512-OupL48va4JNofb97w6NYeF9S7W/kHNKM0Er8Dem5nqi4jeOLrVJDoE8tZEpnMJmtkvNbB1EIPPwHcdkF6b1oUA==}
 
   '@heroicons/react@2.2.0':
     resolution: {integrity: sha512-LMcepvRaS9LYHJGsF0zzmgKCUim/X3N/DQKc4jepAXJ7l8QxJ1PmxJzqplF2Z3FE4PqBAIGyJAQ/w4B5dsqbtQ==}
@@ -523,8 +523,8 @@ packages:
       react:
         optional: true
 
-  '@noodleseed/one@0.151.1':
-    resolution: {integrity: sha512-visKej85FyTtkm1qb5NOdKqj0Dmbw+G3iLKiZkn299k17ssRqSPgF7gzYB6zYn5HRMs2dhwFo4YqkbboM3dg4Q==}
+  '@noodleseed/one@0.161.2':
+    resolution: {integrity: sha512-Wg3T9g5bHaBS7VvwsjrCJAPfwKiXnO2N1qbh7HliSDXbcOna3BbGC9I3x4YbGT5arxm9k5o7dXdZIpZqZ+stIg==}
     engines: {node: '>=24'}
     hasBin: true
     bundledDependencies:
@@ -2351,8 +2351,6 @@ snapshots:
 
   '@fontsource-variable/host-grotesk@5.3.0': {}
 
-  '@fontsource-variable/inter@5.3.0': {}
-
   '@heroicons/react@2.2.0(react@19.2.8)':
     dependencies:
       react: 19.2.8
@@ -2543,7 +2541,7 @@ snapshots:
       - '@modelcontextprotocol/sdk'
       - react-dom
 
-  '@noodleseed/one@0.151.1': {}
+  '@noodleseed/one@0.161.2': {}
 
   '@opentelemetry/api@1.9.1': {}
 

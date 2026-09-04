@@ -219,10 +219,9 @@ describe('server contract', () => {
       error: {
         code: 'mcp_error',
         detail: {
-          data: {
-            reason: 'invalid_tool_arguments',
-            validation: [expect.objectContaining({ path: 'origin' })],
-          },
+          reason: 'rpc_error',
+          rpcCode: -32602,
+          status: 400,
         },
       },
     });
@@ -321,6 +320,7 @@ describe('server contract', () => {
       'http://localhost:3000',
       'http://localhost:3001',
       'https://wayfare-experience.fly.dev',
+      'https://gowayfare.io',
     ]);
     for (const origin of starterConfig.embeddedAssistant.origins) expect(wire).toContain(origin);
     expect(wire).not.toContain('https://app.example.com');

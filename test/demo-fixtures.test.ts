@@ -379,6 +379,8 @@ describe('synthetic Wayfare travel fixtures', () => {
       searchContext: searchInput,
     });
     expect(gateway.records).toHaveLength(3);
+    expect(gateway.result?.hotels.every((hotel) =>
+      typeof hotel.lat === 'number' && typeof hotel.lng === 'number')).toBe(true);
     expect(JSON.stringify(gateway.result)).not.toContain('fixtureKey');
   });
 
@@ -437,6 +439,15 @@ describe('synthetic Wayfare travel fixtures', () => {
     expect(gateway.result?.hotels[0]).toMatchObject({ nights: 3 });
   });
 
+  it('returns unavailable without inventing state for a fresh hotel selection', () => {
+    const result = demoGatewayOutputSchema.parse(runDemoGateway({
+      kind: 'select',
+      selectionId: 'hsel_ffffffffffffffffffffffffffffffff',
+    }));
+    expect(result.selection).toMatchObject({ status: 'unavailable' });
+    expect(result.nextHotelState).toBeUndefined();
+  });
+
   it('rejects stale hotel selections and reviews only active server-owned records', () => {
     const searched = demoGatewayOutputSchema.parse(runDemoGateway({
       kind: 'search',
@@ -487,5 +498,44 @@ describe('synthetic Wayfare travel fixtures', () => {
       stay: { dataSource: 'illustrative' },
     });
     expect(JSON.stringify(review.review)).not.toContain('private-upstream-offer');
+  });
+});
+
+describe('hotel coordinates', () => {
+  it('gives every hotel fixture a mappable coordinate pair', () => {
+    for (const fixtures of Object.values(DEMO_HOTEL_CATALOG)) {
+      for (const fixture of fixtures) {
+        expect(typeof fixture.lat).toBe('number');
+        expect(typeof fixture.lng).toBe('number');
+        expect(fixture.lat).toBeGreaterThanOrEqual(-90);
+        expect(fixture.lat).toBeLessThanOrEqual(90);
+        expect(fixture.lng).toBeGreaterThanOrEqual(-180);
+        expect(fixture.lng).toBeLessThanOrEqual(180);
+      }
+    }
+  });
+
+  it('threads coordinates through a synthetic search', () => {
+    const output = searchSyntheticHotels(searchInput);
+    expect(output.hotels.length).toBeGreaterThan(0);
+    for (const hotel of output.hotels) {
+      expect(typeof hotel.lat).toBe('number');
+      expect(typeof hotel.lng).toBe('number');
+    }
+  });
+
+  it('rejects a hotel carrying only one half of a coordinate pair', () => {
+    const base = searchSyntheticHotels(searchInput).hotels[0]!;
+    expect(() => demoHotelSchema.parse({ ...base, lng: undefined })).toThrow();
+    expect(() => demoHotelSchema.parse({ ...base, lat: undefined })).toThrow();
+  });
+
+  it('accepts a hotel with neither coordinate', () => {
+    const base = searchSyntheticHotels(searchInput).hotels[0]!;
+    const { lat: _lat, lng: _lng, ...withoutCoordinates } = base as typeof base & {
+      lat?: number;
+      lng?: number;
+    };
+    expect(() => demoHotelSchema.parse(withoutCoordinates)).not.toThrow();
   });
 });

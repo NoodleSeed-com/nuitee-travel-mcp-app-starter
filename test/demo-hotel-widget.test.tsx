@@ -51,6 +51,8 @@ const hotel = (index: number): DemoHotel => ({
   city: 'Lisbon',
   countryCode: 'PT',
   neighborhood: 'Baixa concept district',
+  lat: 38.71 + index * 0.001,
+  lng: -9.13 - index * 0.001,
   description: 'An illustrative central stay created for a bounded comparison.',
   roomName: 'Lantern king room',
   category: 4,
@@ -60,7 +62,7 @@ const hotel = (index: number): DemoHotel => ({
   nightlyPrice: { amount: 286 + index, currency: 'CAD' },
   staySubtotal: { amount: (286 + index) * 3, currency: 'CAD' },
   taxesAndFeesIncluded: false,
-  illustrativePolicy: 'Illustrative flexible terms; no transaction can be created.',
+  policySummary: 'Illustrative flexible terms; no transaction can be created.',
 });
 
 const result: DemoHotelSearchOutput = {
@@ -84,110 +86,92 @@ const result: DemoHotelSearchOutput = {
   hotels: Array.from({ length: 4 }, (_, index) => hotel(index)),
 };
 
+// Alias for the photo-led card tests below, which name the fixture this way.
+const sampleHotelResult = result;
+
 const render = (props: Parameters<typeof HotelResultsView>[0]) =>
   renderToStaticMarkup(createElement(HotelResultsView, props));
 
 const visibleText = (markup: string) => markup.replace(/<[^>]*>/gu, ' ');
 
-describe('Wayfare illustrative hotel widget', () => {
-  it('renders a geometry-matched shimmer skeleton with a next-card peek', () => {
-    const markup = render({ state: 'loading', displayMode: 'inline', theme: 'light' });
-
-    expect(markup).toContain('cc-hotel-skeleton');
-    expect(markup).toContain('cc-hotel-skeleton-disclosure');
-    expect(markup).toContain('cc-hotel-results-toolbar');
-    expect(markup).toContain('cc-hotel-carousel-stage');
-    expect(markup).toContain('cc-hotel-carousel-window');
-    expect(markup).toContain('cc-hotel-carousel-track');
-    expect(markup).toContain('cc-hotel-carousel-peek-slide');
-    expect((markup.match(/cc-hotel-skeleton-card/g) ?? [])).toHaveLength(2);
-    expect(markup).toContain('cc-hotel-skeleton-details');
-    expect(markup).toContain('cc-shimmer');
-    expect(markup).toContain('aria-busy="true"');
-    expect(markup).toContain('Preparing synthetic hotel comparisons');
+describe('Wayfare conversational hotel widget', () => {
+  it('renders loading without actionable fake hotels', () => {
+    const html = render({ state: 'loading', displayMode: 'inline' });
+    expect(html).toContain('aria-busy="true"');
+    expect(html).not.toContain('View stay:');
   });
-
-  it('renders bounded error, malformed, and honest empty states', () => {
-    const failed = render({ state: 'error', displayMode: 'inline', theme: 'dark' });
-    const malformed = render({ state: 'malformed', displayMode: 'inline' });
-    const empty = render({
-      result: { ...result, status: 'empty', hotels: [], message: 'No synthetic stay fixtures are available for Banff.' },
-      displayMode: 'inline',
-    });
-
-    expect(failed).toContain('The hotel comparison could not load');
-    expect(failed).toContain('No live hotel search was attempted');
-    expect(malformed).toContain('could not be shown safely');
-    expect(malformed).toContain('No hotel, rate, or availability was inferred');
-    expect(empty).toContain('No illustrative stays matched');
-    expect(empty).toContain('No synthetic stay fixtures are available for Banff');
-    expect(empty).not.toContain('Add to trip');
+  it('renders bounded errors and empty results', () => {
+    expect(render({ state: 'error', displayMode: 'inline' })).toContain('nothing was selected');
+    expect(render({ state: 'malformed', displayMode: 'inline' })).toContain('could not be shown safely');
+    const html = render({ result: { ...result, status: 'empty', hotels: [], message: 'No stays matched Banff.' }, displayMode: 'inline' });
+    expect(html).toContain('No stays matched Banff');
+    expect(html).not.toContain('View stay:');
   });
-
-  it('shows three bounded inline options through a non-circular carousel', () => {
-    const markup = render({ result, displayMode: 'inline', onAdd: vi.fn() });
-
-    expect(markup).toContain(result.disclosure);
-    expect(markup).toContain('Illustrative stays');
-    expect(markup).toContain('Illustrative prices');
-    expect(markup).toContain('aria-label="Hotel options carousel"');
-    expect(markup).toContain('Hotel 1 of 3');
-    const previous = markup.match(/<button[^>]*aria-label="Previous hotel"[^>]*>/u)?.[0] ?? '';
-    const next = markup.match(/<button[^>]*aria-label="Next hotel"[^>]*>/u)?.[0] ?? '';
-    expect(previous).toContain('disabled');
-    expect(next).not.toContain('disabled');
-    expect((markup.match(/>Add to trip<\/button>/gu) ?? [])).toHaveLength(2);
-    expect(markup).toContain('Open the App in expanded view to compare all 4 hotels');
-    expect(markup).not.toContain('<img');
-    expect(visibleText(markup)).not.toMatch(/\bdemo\b|\bsandbox\b/iu);
-    expect(markup).not.toMatch(/Book now|Reserve now|Pay now|Checkout/iu);
+  it('limits the initial shortlist to three inspectable options in either display mode', () => {
+    for (const displayMode of ['inline', 'fullscreen']) {
+      const html = render({ result, displayMode });
+      expect((html.match(/aria-label="View stay:/g) ?? [])).toHaveLength(3);
+      expect(html).not.toContain('Tagus Lantern Hotel 4');
+      expect(html).toContain('Show 1 more stay');
+      expect(html).toContain(result.disclosure);
+      expect(html).not.toMatch(/Book now|Reserve now|Pay now|Checkout/);
+    }
   });
-
-  it('uses a 1.3-card expanded-carousel hook while retaining all bounded results', () => {
-    const markup = render({ result, displayMode: 'fullscreen', onAdd: vi.fn() });
-
-    expect(markup).toContain('cc-hotel-carousel-expanded');
-    expect(markup).toContain('Hotel 1 of 4');
-    expect(markup).toContain('cc-hotel-carousel-peek-slide');
-    expect(markup).not.toContain('Open the App in expanded view');
-    expect(markup).not.toContain('Hotel 1 of 5');
+  it('keeps policy and tax qualifiers visible without inline match controls', () => {
+    const html = render({ result, displayMode: 'inline' });
+    expect(html).toContain(hotel(0).policySummary);
+    expect(html).toContain('Taxes and fees not included');
+    expect(html).not.toContain('cc-match-score');
+    expect(html).not.toContain('Hotel result view');
+    expect(html).not.toContain('Lantern king room');
   });
-
-  it('provides fixed-face detail hooks without exposing a transactional action', () => {
-    const markup = render({ result: { ...result, hotels: [hotel(0)] }, displayMode: 'inline', onAdd: vi.fn() });
-
-    expect(markup).toContain('cc-hotel-face-stack');
-    expect(markup).toContain('cc-hotel-face-front');
-    expect(markup).toContain('cc-hotel-face-back');
-    expect(markup).toContain('cc-hotel-face-is-hidden');
-    expect(markup).toContain('aria-expanded="false"');
-    expect(markup).toContain('Hotel and rate details');
-    expect(markup).toContain('Back to hotel');
-    expect(markup).toContain('Not included in subtotal');
-    expect(markup).toContain('Add to trip');
-    expect(markup).not.toMatch(/Book now|Reserve now|Pay now|Redeem now|Checkout/iu);
+  it('preserves subtotal precision and locale', () => {
+    const precise = { ...hotel(0), staySubtotal: { amount: 858.49, currency: 'CAD' as const } };
+    expect(render({ result: { ...result, hotels: [precise] }, displayMode: 'inline' })).toContain('858.49');
+    expect(render({ result: { ...result, hotels: [precise] }, displayMode: 'inline', locale: 'fr-CA' })).toContain('858,49');
   });
-
-  it('renders pending, selected, and safe selection-error states', () => {
-    const selectionId = result.hotels[0]!.selectionId;
-    const selected = render({
-      result: { ...result, hotels: [result.hotels[0]!] },
-      displayMode: 'inline',
-      selectedSelectionId: selectionId,
-      pendingSelectionId: selectionId,
-      selectionError: 'The illustrative stay could not be added to this trip. Try again.',
-      onAdd: vi.fn(),
-    });
-
-    expect(selected).toContain('Added to trip');
-    expect(selected).toContain('Nothing was booked, held, or paid');
-    expect(selected).toContain('could not be added to this trip');
+  it('does not turn an unconfirmed live tax flag into a claim of exclusion', () => {
+    const live = { ...result, dataSource: 'live_nuitee' as const, hotels: [{ ...hotel(0), dataSource: 'live_nuitee' as const }] };
+    const html = render({ result: live, displayMode: 'inline' });
+    expect(html).toContain('Tax and fee inclusion requires review');
+    expect(html).not.toContain('Taxes and fees not included');
   });
-
-  it('rejects malformed or over-bounded output at the widget boundary', () => {
+  it('restores focused details with the full returned amenities', () => {
+    const html = render({ result, displayMode: 'inline', experience: { searchId: result.searchId, screen: 'detail', detailId: hotel(0).selectionId, compareIds: [], shown: 3 }, onAdd: vi.fn() });
+    expect(html).toContain('Lantern king room');
+    expect(html).toContain(hotel(0).description);
+    for (const amenity of hotel(0).amenities) expect(html).toContain(amenity);
+    expect(html).toContain('Choose this stay');
+    expect(html).not.toContain('Tagus Lantern Hotel 2');
+  });
+  it('ignores presentation state from an older search', () => {
+    const html = render({ result, displayMode: 'inline', experience: { searchId: 'old-search', screen: 'detail', detailId: hotel(0).selectionId, compareIds: [], shown: 10 } });
+    expect((html.match(/aria-label="View stay:/g) ?? [])).toHaveLength(3);
+    expect(html).not.toContain('Choose this stay');
+  });
+  it('does not show selection success for an ID outside current results', () => {
+    const html = render({ result, displayMode: 'inline', selectedSelectionId: 'hsel_99999999999999999999999999999999' });
+    expect(html).not.toContain('Nothing was booked');
+    expect(html).not.toContain('View selected stay');
+  });
+  it('preserves the previous selection alongside a selection error', () => {
+    const html = render({ result, displayMode: 'inline', selectedSelectionId: hotel(0).selectionId, selectionError: 'Could not select the other stay.' });
+    expect(html).toContain('View selected stay: Tagus Lantern Hotel 1');
+    expect(html).toContain('Could not select the other stay');
+    expect(html).toContain('Nothing was booked, held, or paid');
+  });
+  it('uses a truthful no-photo fallback without inventing guest ratings', () => {
+    const html = render({ result, displayMode: 'inline' });
+    expect(html).toContain('Photo not provided');
+    expect(html).not.toContain('Guest rating');
+    expect(html).not.toContain('linear-gradient');
+  });
+  it('rejects malformed or over-bounded output', () => {
     expect(isDemoHotelSearchOutput(result)).toBe(true);
     expect(isDemoHotelSearchOutput({ ...result, hotels: Array.from({ length: 11 }, (_, index) => hotel(index)) })).toBe(false);
     expect(isDemoHotelSearchOutput({ ...result, hotels: [{ ...hotel(0), selectionId: 'provider-rate-id' }] })).toBe(false);
+    expect(isDemoHotelSearchOutput({ ...result, hotels: [{ ...hotel(0), lng: undefined }] })).toBe(false);
+    expect(isDemoHotelSearchOutput({ ...result, hotels: [{ ...hotel(0), lat: 91 }] })).toBe(false);
     expect(isDemoHotelSearchOutput({ ...result, status: 'empty' })).toBe(false);
     expect(isDemoHotelSearchOutput({ ...result, hotels: [{ ...hotel(0), amenities: Array(7).fill('Too many') }] })).toBe(false);
   });

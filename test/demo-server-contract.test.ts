@@ -2,8 +2,10 @@ import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import demoEmbeddedApp from '../src/demo-embedded-server.js';
 import demoLiveApp from '../src/demo-live-server.js';
+import demoPreviewApp from '../src/demo-preview-server.js';
 import embeddedApp from '../src/embedded-server.js';
 import liveApp from '../src/live-server.js';
+import { hotelDemoViewPolicy } from '../src/travel-server.js';
 
 const starterTools = [
   'open_travel_starter',
@@ -37,6 +39,16 @@ function modelVisible(manifest: any) {
 }
 
 describe('Wayfare expanded travel profile', () => {
+  it('provides a credential-free local preview of every widget tool', async () => {
+    const manifest = await demoPreviewApp.toManifest() as any;
+    expect(manifest.tools.map((entry: any) => entry.name)).toEqual(demoTools);
+    expect(manifest.tools.find((entry: any) => entry.name === 'search_hotels')?.description)
+      .toContain('illustrative');
+    expect(Object.keys(manifest.connectors)).toEqual(['demo', 'state']);
+    expect(manifest.provides).toBeUndefined();
+    expect(manifest.state.handles.demo_hotel_selections).toBeDefined();
+  });
+
   it('keeps capability choice inside one agent-led journey', async () => {
     const manifest = await demoLiveApp.toManifest() as any;
     const guide = manifest.server.agentGuide;
@@ -49,7 +61,7 @@ describe('Wayfare expanded travel profile', () => {
     expect(wire).toContain('at most one contextually relevant next step');
     expect(wire).toContain('registered in the active profile');
     expect(wire).toContain('explicit traveler instruction always wins');
-    expect(wire).toContain('Flight results come from the connected provider');
+    expect(wire).toContain('Flight and hotel results come from connected Nuitee provider searches');
     expect(wire).toContain('illustrative');
     expect(wire).not.toContain('plan_everything');
   });
@@ -114,9 +126,13 @@ describe('Wayfare expanded travel profile', () => {
     expect(demoFlightTools).toEqual(liveFlightTools);
     const liveCatalog = liveApp.toConnectorCatalog();
     const demoCatalog = demoLiveApp.toConnectorCatalog();
-    const liveNuitee = liveCatalog?.connectors.filter((entry: any) => entry.id.startsWith('nuitee_'));
-    const demoNuitee = demoCatalog?.connectors.filter((entry: any) => entry.id.startsWith('nuitee_'));
+    const liveNuitee = liveCatalog?.connectors.filter((entry: any) => entry.id.startsWith('nuitee_flights_'));
+    const demoNuitee = demoCatalog?.connectors.filter((entry: any) => entry.id.startsWith('nuitee_flights_'));
     expect(demoNuitee).toEqual(liveNuitee);
+    expect(demoCatalog?.connectors.find((entry: any) => entry.id === 'nuitee_hotels_gateway'))
+      .toMatchObject({ kind: 'custom', operations: { execute: { type: 'read' } } });
+    expect(demoCatalog?.connectors.find((entry: any) => entry.id === 'nuitee_hotels_http'))
+      .toMatchObject({ kind: 'custom', operations: { search: { type: 'read', path: '/hotels/rates' } } });
     expect(demoCatalog?.connectors.find((entry: any) => entry.id === 'wayfare_preview_gateway'))
       .toMatchObject({ kind: 'custom', operations: { execute: { type: 'read' } } });
 
@@ -193,5 +209,31 @@ describe('Wayfare expanded travel profile', () => {
     })).not.toMatch(
       /purchaseUrl|checkoutUrl|policyNumber|insurer|underwriter/iu,
     );
+  });
+});
+
+describe('hotel widget map CSP', () => {
+  it('allows each required Mapbox origin without wildcards', () => {
+    const expected = [
+      'https://api.mapbox.com',
+      'https://events.mapbox.com',
+      'https://a.tiles.mapbox.com',
+      'https://b.tiles.mapbox.com',
+      'https://c.tiles.mapbox.com',
+      'https://d.tiles.mapbox.com',
+    ];
+
+    for (const origin of expected) {
+      expect(hotelDemoViewPolicy.csp.connectDomains).toContain(origin);
+      expect(hotelDemoViewPolicy.csp.resourceDomains).toContain(origin);
+    }
+    expect([
+      ...hotelDemoViewPolicy.csp.connectDomains,
+      ...hotelDemoViewPolicy.csp.resourceDomains,
+    ].some((origin) => origin.includes('*'))).toBe(false);
+  });
+
+  it('retains the bounded Nuitee hotel-image origin', () => {
+    expect(hotelDemoViewPolicy.csp.resourceDomains).toContain('https://snaphotelapi.com');
   });
 });

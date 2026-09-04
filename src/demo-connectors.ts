@@ -1,6 +1,7 @@
 import { connector, z } from '@noodleseed/one';
 import { selectionStateSchema } from './flight-schemas.js';
 import { runDemoGateway } from './demo-runtime.js';
+import { prepareSelectionStates } from './selection-state.js';
 import {
   demoHotelSearchInputSchema,
   demoHotelSearchOutputSchema,
@@ -44,6 +45,13 @@ export const demoGatewayOutputSchema = z.object({
 
 export const demoGateway = connector('wayfare_preview_gateway')
   .version('1.0.0')
+  .compute('prepare_states', {
+    type: 'read',
+    input: z.object({ flightState: z.unknown().optional(), hotelState: z.unknown().optional() }),
+    output: z.object({ flightState: selectionStateSchema.optional(), hotelState: demoHotelSelectionStateSchema.optional() }),
+    limits: { timeoutMs: 1_000 },
+    run: prepareSelectionStates,
+  })
   .compute('execute', {
     type: 'read',
     input: demoGatewayInputSchema,

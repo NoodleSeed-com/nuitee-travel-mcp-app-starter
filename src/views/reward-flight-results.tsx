@@ -1,13 +1,12 @@
-import '@fontsource-variable/inter';
+import '@fontsource-variable/host-grotesk';
 import '@noodleseed/one/react/styles.css';
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
+import { useHorizontalSwipe } from './card-carousel.js';
 import {
   Action,
   Feedback,
   Flow,
   Frame,
-  StatusBadge,
-  useBranding,
   useLayout,
   useToolInfo,
   useWidgetReady,
@@ -16,6 +15,7 @@ import type {
   DemoRewardFlightOption,
   DemoRewardFlightSearchOutput,
 } from '../demo-schemas.js';
+import { ArrowLeftIcon, PlaneIcon } from './icons.js';
 import './travel.css';
 
 type RewardFlightState = 'loading' | 'error' | 'malformed';
@@ -101,23 +101,6 @@ export function isDemoRewardFlightSearchOutput(
   return root.options.every((option) => isRewardFlightOption(option, points.available as number));
 }
 
-function ArrowLeftIcon() {
-  return (
-    <svg aria-hidden="true" className="cc-icon" fill="none" viewBox="0 0 24 24">
-      <path d="m15 18-6-6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
-    </svg>
-  );
-}
-
-function PlaneIcon() {
-  return (
-    <svg aria-hidden="true" className="cc-icon" fill="none" viewBox="0 0 24 24">
-      <path d="m3.5 11.2 17-7-7 17-2.8-7.9-7.2-2.1Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.7" />
-      <path d="m10.7 13.3 4.2-4.2" stroke="currentColor" strokeLinecap="round" strokeWidth="1.7" />
-    </svg>
-  );
-}
-
 function RewardFlightCard({ option, locale }: {
   readonly option: DemoRewardFlightOption;
   readonly locale: string;
@@ -134,7 +117,6 @@ function RewardFlightCard({ option, locale }: {
       <header className="cc-reward-flight-card-header">
         <div className="cc-reward-flight-partner-mark" aria-hidden="true"><PlaneIcon /></div>
         <div>
-          <StatusBadge tone="info">Illustrative reward idea</StatusBadge>
           <strong>{option.partnerLabel}</strong>
           <span>{option.cabinClass === 'PREMIUM_ECONOMY' ? 'Premium economy' : 'Economy'}</span>
         </div>
@@ -154,20 +136,18 @@ function RewardFlightCard({ option, locale }: {
 
       <div className="cc-reward-flight-points">
         <div>
-          <span>Illustrative total</span>
+          <span>Total points</span>
           <strong>{points.format(option.totalPoints)} points</strong>
           <small>{points.format(option.pointsPerAdult)} per adult</small>
         </div>
         <div>
           <span>Estimated taxes</span>
           <strong>{money.format(option.estimatedTaxes.amount)}</strong>
-          <small>No live quote</small>
         </div>
       </div>
 
       <footer className="cc-reward-flight-card-footer">
         <span>{points.format(option.balanceAfter)} points would remain</span>
-        <small>No reward seat was checked, held, or redeemed.</small>
       </footer>
     </article>
   );
@@ -187,6 +167,7 @@ function RewardFlightCarousel({ options, locale }: {
   const peekIndex = hasNext ? activeIndex + 1 : activeIndex - 1;
   const peek = options[peekIndex] ?? active;
   const previousPeek = !hasNext && hasPrevious;
+  const swipe = useHorizontalSwipe(direction => moveTo(activeIndex + direction));
 
   return (
     <section
@@ -201,7 +182,7 @@ function RewardFlightCarousel({ options, locale }: {
       <div className="cc-reward-flight-carousel-count" aria-live="polite" role="status">
         Idea {activeIndex + 1} of {options.length}
       </div>
-      <div className="cc-reward-flight-carousel-stage">
+      <div className="cc-reward-flight-carousel-stage" {...swipe}>
         <Action
           aria-label="Previous reward flight"
           className="cc-reward-flight-arrow cc-reward-flight-arrow-previous"
@@ -255,20 +236,16 @@ function RewardFlightCarousel({ options, locale }: {
   );
 }
 
-function RewardFlightSkeleton({ theme, brandStyle }: {
-  readonly theme: 'light' | 'dark';
-  readonly brandStyle?: CSSProperties;
-}) {
+function RewardFlightSkeleton() {
   return (
     <Frame
-      className={`cc-app cc-reward-flights ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
+      className="cc-app cc-reward-flights"
       displayMode="auto"
-      style={brandStyle}
-      title="Illustrative reward flights"
+      title="Reward flights"
       subtitle="Comparing points ideas"
     >
       <section className="cc-reward-flight-skeleton" role="status" aria-live="polite" aria-busy="true">
-        <span className="cc-visually-hidden">Preparing illustrative reward-flight ideas…</span>
+        <span className="cc-visually-hidden">Preparing reward-flight ideas…</span>
         <div className="cc-reward-flight-disclosure" aria-hidden="true">
           <span className="cc-skeleton-block cc-shimmer" />
           <span className="cc-skeleton-block cc-shimmer" />
@@ -290,19 +267,18 @@ function RewardFlightSkeleton({ theme, brandStyle }: {
   );
 }
 
-function statusView(state: RewardFlightState, theme: 'light' | 'dark', brandStyle?: CSSProperties) {
-  if (state === 'loading') return <RewardFlightSkeleton theme={theme} brandStyle={brandStyle} />;
+function statusView(state: RewardFlightState) {
+  if (state === 'loading') return <RewardFlightSkeleton />;
   return (
     <Frame
-      className={`cc-app cc-reward-flights ${theme === 'dark' ? 'cc-theme-dark' : ''}`}
+      className="cc-app cc-reward-flights"
       displayMode="auto"
-      style={brandStyle}
-      title="Illustrative reward flights"
+      title="Reward flights"
     >
       <Feedback status="error">
         {state === 'malformed'
           ? 'The reward-flight result was incomplete and could not be shown safely.'
-          : 'The illustrative reward-flight comparison could not load.'}
+          : 'The reward-flight comparison could not load.'}
       </Feedback>
       <p className="cc-reward-flight-status-note">No points, booking, payment, or account data was changed.</p>
     </Frame>
@@ -313,32 +289,27 @@ export function RewardFlightResultsView({
   result,
   state,
   displayMode: _displayMode,
-  theme = 'light',
   locale = 'en-CA',
-  brandStyle,
 }: {
   readonly result?: DemoRewardFlightSearchOutput;
   readonly state?: RewardFlightState;
   readonly displayMode: string;
   readonly theme?: 'light' | 'dark';
   readonly locale?: string;
-  readonly brandStyle?: CSSProperties;
 }) {
-  if (state) return statusView(state, theme, brandStyle);
-  if (!result) return statusView('malformed', theme, brandStyle);
+  if (state) return statusView(state);
+  if (!result) return statusView('malformed');
   const points = new Intl.NumberFormat(locale);
-  const frameClassName = `cc-app cc-reward-flights ${theme === 'dark' ? 'cc-theme-dark' : ''}`;
+  const frameClassName = 'cc-app cc-reward-flights';
   if (result.status === 'empty') {
     return (
-      <Frame className={frameClassName} displayMode="auto" style={brandStyle} title="Illustrative reward flights" data-llm={result.fallback}>
+      <Frame className={frameClassName} displayMode="auto" title="Reward flights" data-llm={result.fallback}>
         <Flow variant="stack" density="comfortable">
-          <aside className="cc-reward-flight-disclosure" aria-label="Illustrative reward-flight disclosure">
-            <StatusBadge tone="info">Illustrative rewards</StatusBadge><p>{result.disclosure}</p>
-          </aside>
           <section className="cc-reward-flight-empty">
-            <h2>No illustrative reward-flight ideas fit</h2>
-            <p>{result.message}</p>
+            <h2>No reward-flight ideas fit</h2>
+            <p>Try a different destination or points budget.</p>
           </section>
+          <p className="cc-reward-flight-boundary">Comparison only · no points were applied and no reward seat was checked or held.</p>
         </Flow>
       </Frame>
     );
@@ -347,15 +318,11 @@ export function RewardFlightResultsView({
     <Frame
       className={frameClassName}
       displayMode="auto"
-      style={brandStyle}
-      title="Illustrative reward flights"
-      subtitle={`${points.format(result.pointsContext.available)} points available · no live reward inventory`}
+      title="Reward flights"
+      subtitle={`${points.format(result.pointsContext.available)} points available`}
       data-llm={result.fallback}
     >
       <Flow variant="stack" density="compact">
-        <aside className="cc-reward-flight-disclosure" aria-label="Illustrative reward-flight disclosure">
-          <StatusBadge tone="info">Illustrative rewards</StatusBadge><p>{result.disclosure}</p>
-        </aside>
         <div className="cc-reward-flight-toolbar">
           <div><span>Starting point</span><strong>{result.searchContext.origin}</strong></div>
           <div><span>Points budget</span><strong>{points.format(result.pointsContext.available)} points available</strong></div>
@@ -370,7 +337,6 @@ export function RewardFlightResultsView({
 export default function RewardFlightResults() {
   const ready = useWidgetReady();
   const layout = useLayout();
-  const branding = useBranding();
   const toolInfo = useToolInfo('compare_reward_flights');
   const pending = !ready || Object.keys(toolInfo).length === 0;
   const result = isDemoRewardFlightSearchOutput(toolInfo.structuredContent)
@@ -383,10 +349,6 @@ export default function RewardFlightResults() {
       displayMode={layout.displayMode}
       theme={layout.theme === 'dark' ? 'dark' : 'light'}
       locale={layout.locale ?? 'en-CA'}
-      brandStyle={{
-        '--cc-accent': branding.theme?.[layout.theme]?.accent ?? branding.accent ?? '#006D84',
-        '--cc-focus': branding.theme?.[layout.theme]?.focus ?? '#007D95',
-      } as CSSProperties}
     />
   );
 }

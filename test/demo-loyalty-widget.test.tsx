@@ -116,6 +116,15 @@ const render = (
 const visibleText = (markup: string) => markup.replace(/<[^>]*>/gu, ' ');
 
 describe('Wayfare loyalty widget', () => {
+  it('accepts a real hotel selection and preserves its live provenance in trip review', () => {
+    const liveReview = { ...review, stay: { ...review.stay!, dataSource: 'live_nuitee' as const } };
+    expect(isDemoTripReview(liveReview)).toBe(true);
+    const markup = render({ data: liveReview, theme: 'light' });
+    expect(markup).toContain('Current Nuitee hotel selection');
+    expect(markup).not.toContain('Simulated hotel selection');
+    expect(markup).not.toContain('simulated hotels');
+    expect(markup).toContain('rewards are examples');
+  });
   it('uses a geometry-matched, accessible loading skeleton', () => {
     const markup = render({ state: 'loading', theme: 'light' });
 
@@ -126,7 +135,7 @@ describe('Wayfare loyalty widget', () => {
     expect(markup).toContain('cc-loyalty-skeleton-value');
     expect(markup).toContain('role="status"');
     expect(markup).toContain('aria-busy="true"');
-    expect(markup).toContain('Preparing the illustrative rewards profile');
+    expect(markup).toContain('Preparing the rewards profile');
   });
 
   it('renders bounded tool-error and malformed-result states without inventing loyalty facts', () => {
@@ -134,6 +143,7 @@ describe('Wayfare loyalty widget', () => {
     const malformed = render({ state: 'malformed', theme: 'light' });
 
     expect(failed).toContain('The loyalty experience could not load');
+    expect(failed).not.toContain('cc-theme-dark');
     expect(failed).toContain('No account, points, booking, or payment was changed');
     expect(failed).not.toContain('84,500');
     expect(malformed).toContain('no balance, benefit, or trip value was inferred');
@@ -143,20 +153,21 @@ describe('Wayfare loyalty widget', () => {
   it('shows the synthetic overview with disclosure, tier progress, benefits, and no action CTA', () => {
     const markup = render({ data: loyalty, theme: 'light', locale: 'en-CA' });
 
-    expect(markup).toContain(WAYFARE_PREVIEW_DISCLOSURE);
-    expect(markup).toContain('Preview only');
-    expect(markup).toContain('Simulated points balance');
+    expect(markup).not.toContain('Preview only');
+    expect(markup).toContain('Points balance');
     expect(markup).toContain('84,500');
-    expect(markup).toContain('Explorer concept tier');
-    expect(markup).toContain('Three of five illustrative trips');
+    expect(markup).toContain('Explorer tier');
     expect(markup).toContain('<progress');
-    expect(markup).toContain('Flexible planning preview');
+    expect(markup).toContain('Flexible planning');
     expect(markup).toContain('25,000 points');
     expect(markup).toContain('125.00');
-    expect(markup).toContain('No points were earned, transferred, or redeemed');
+    expect(markup.match(/Example rewards only/g)).toHaveLength(1);
+    expect(markup).toContain('no real account was accessed');
+    expect(visibleText(markup)).not.toMatch(/illustrative|simulated|synthetic|preview/iu);
     expect(markup).toContain('cc-loyalty-benefits');
     expect(visibleText(markup)).not.toMatch(/\bdemo\b|\bsandbox\b/iu);
-    expect(markup).not.toMatch(/<button|<a\s|<form/i);
+    expect(markup).not.toMatch(/<a\s|<form/i);
+    expect([...markup.matchAll(/<button[^>]*aria-label="([^"]+)"/g)].every(match => /^(Previous|Next) /.test(match[1]!))).toBe(true);
     expect(markup).not.toMatch(/Redeem now|Book now|Pay now|Apply points/i);
   });
 
@@ -164,15 +175,17 @@ describe('Wayfare loyalty widget', () => {
     const markup = render({ data: review, theme: 'dark', locale: 'en-CA' });
 
     expect(markup).toContain('Trip and rewards review');
+    expect(markup).not.toContain('cc-theme-dark');
     expect(markup).toContain('Current Nuitee flight selection');
-    expect(markup).toContain('Simulated hotel selection');
+    expect(markup).toContain('stay and rewards are examples');
     expect(markup).toContain('610.40');
     expect(markup).toContain('Harbour Paper Plane Hotel');
     expect(markup).toContain('720.00');
     expect(markup).toContain('not a bookable package total');
-    expect(markup).toContain('nothing booked, held, paid, or redeemed');
+    expect(markup).toContain('Nothing booked, held, paid, or redeemed');
     expect(markup).not.toContain('1,330.40');
-    expect(markup).not.toMatch(/<button|<a\s|<form/i);
+    expect(markup).not.toMatch(/<a\s|<form/i);
+    expect([...markup.matchAll(/<button[^>]*aria-label="([^"]+)"/g)].every(match => /^(Previous|Next) /.test(match[1]!))).toBe(true);
   });
 
   it('renders an incomplete review as a safe conversational next step', () => {
@@ -185,8 +198,8 @@ describe('Wayfare loyalty widget', () => {
     const markup = render({ data: incomplete, theme: 'light' });
 
     expect(markup).toContain('Trip review needs another selection');
-    expect(markup).toContain('Add a flight in the conversation');
-    expect(markup).toContain('Simulated hotel selection');
+    expect(markup).toContain('Select a flight in the conversation');
+    expect(markup).toContain('stay and rewards are examples');
     expect(markup).not.toContain('Current Nuitee flight selection');
   });
 

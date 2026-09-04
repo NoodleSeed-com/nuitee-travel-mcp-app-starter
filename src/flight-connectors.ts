@@ -1,10 +1,13 @@
 import { connector, secret, z } from '@noodleseed/one';
 import { runNuiteeGateway } from './flight-runtime.js';
+import { selectStoredFlight } from './selection-state.js';
 import {
   errorSchema,
   itinerarySchema,
   searchInputSchema,
   selectionRecordSchema,
+  selectionIdSchema,
+  selectFlightOutputSchema,
   verificationSchema,
 } from './flight-schemas.js';
 
@@ -26,7 +29,7 @@ const searchRequestSchema = z.object({
 });
 
 export const nuiteeHttp = connector('nuitee_flights_http')
-  .version('1.0.0')
+  .version('1.0.1')
   .http({
     baseUrl: 'https://api.liteapi.travel/v3.0',
     allowedOrigins: ['https://api.liteapi.travel'],
@@ -93,7 +96,14 @@ export const gatewayOutputSchema = z.object({
 });
 
 export const nuiteeGateway = connector('nuitee_flights_gateway')
-  .version('1.0.0')
+  .version('1.0.1')
+  .compute('select', {
+    type: 'read',
+    input: z.object({ state: z.unknown(), selectionId: selectionIdSchema }),
+    output: selectFlightOutputSchema,
+    limits: { timeoutMs: 1_000 },
+    run: selectStoredFlight,
+  })
   .compute('execute', {
     type: 'read',
     input: gatewayInputSchema,

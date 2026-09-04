@@ -303,8 +303,7 @@ code {
   transition:
     background-color 160ms var(--travel-ease-out),
     color 160ms var(--travel-ease-out),
-    opacity 160ms var(--travel-ease-out),
-    transform 160ms var(--travel-ease-out);
+    opacity 160ms var(--travel-ease-out);
 }
 
 .travel-composer__send:disabled {
@@ -1190,15 +1189,9 @@ code {
 .travel-workspace button,
 .travel-wordmark {
   transition:
-    transform 160ms var(--travel-ease-out),
     border-color 160ms var(--travel-ease-out),
     background-color 160ms var(--travel-ease-out),
     color 160ms var(--travel-ease-out);
-}
-
-.travel-workspace button:not(:disabled):active,
-.travel-wordmark:active {
-  transform: scale(0.97);
 }
 
 .travel-conversation__header .assistant-identity {
@@ -1476,8 +1469,7 @@ code {
     border-color 160ms var(--travel-ease-out),
     background-color 160ms var(--travel-ease-out),
     color 160ms var(--travel-ease-out),
-    opacity 160ms var(--travel-ease-out),
-    transform 160ms var(--travel-ease-out);
+    opacity 160ms var(--travel-ease-out);
 }
 
 .assistant-error {
@@ -2493,12 +2485,7 @@ code {
   color: var(--travel-muted);
   transition:
     background-color 180ms var(--travel-ease-out),
-    color 180ms var(--travel-ease-out),
-    transform 180ms var(--travel-ease-out);
-}
-
-.trip-brief__toggle:active {
-  transform: scale(0.96);
+    color 180ms var(--travel-ease-out);
 }
 
 .trip-brief__toggle svg {
@@ -3095,15 +3082,6 @@ code {
   .trip-progress span {
     transform: none;
     transition-property: color, background-color, border-color, opacity;
-  }
-
-  .travel-workspace button:not(:disabled):active,
-  .travel-wordmark:active {
-    transform: none;
-  }
-
-  .trip-brief__toggle:active {
-    transform: none;
   }
 
   .trip-brief__toggle,
