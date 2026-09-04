@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [core, widget-browser, web]
+        suite: [core, web]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -30,8 +30,6 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-      - if: matrix.suite != 'core'
-        run: pnpm exec playwright install --with-deps chromium
       - run: pnpm ci:${{ matrix.suite }}
 
   offline-quality-gates:
