@@ -44,6 +44,7 @@ import {
 import { SearchEditor, searchPrompt } from '../src/views/search-editor.js';
 import { isHome, TravelHomeView } from '../src/views/travel-home.js';
 import { starterConfig } from '../src/starter-config.js';
+import { demoHomeOutputSchema } from '../src/demo-schemas.js';
 
 const home = {
   status: 'ready' as const,
@@ -116,6 +117,38 @@ const sampleSearchOutput = {
 };
 
 describe('TravelHome', () => {
+  const expandedHome = (stays: 'available' | 'illustrative') => demoHomeOutputSchema.parse({
+    ...home,
+    disclosure: 'Current flights, clearly sourced stays, and illustrative rewards. Booking is unavailable.',
+    domains: home.domains.map((domain) => ({
+      ...domain,
+      availability: domain.name === 'Stays' ? stays : domain.name === 'Loyalty' ? 'illustrative' : domain.availability,
+      label: domain.name === 'Stays' ? (stays === 'available' ? 'Current stays' : 'Illustrative stays') : 'Capability status',
+    })),
+  });
+
+  it.each(['available', 'illustrative'] as const)('accepts the schema-supported expanded home with %s stays', (stays) => {
+    const data = expandedHome(stays);
+    expect(isHome(data)).toBe(true);
+    const html = renderToStaticMarkup(<TravelHomeView data={data} theme="light" />);
+    expect(html).toContain(stays === 'available' ? 'Current flights and stays' : 'Flights, illustrative stays');
+    expect(html).toContain(data.fallback);
+    expect(html).toContain(data.disclosure);
+  });
+
+  it('rejects unsupported home availability combinations and malformed expanded labels or disclosures', () => {
+    const data = expandedHome('illustrative');
+    for (const patch of [{ label: '' }, { label: 'x'.repeat(81) }, { label: 42 }, { label: undefined }]) {
+      expect(isHome({ ...data, domains: data.domains.map((domain, index) => index === 1 ? { ...domain, ...patch } : domain) })).toBe(false);
+    }
+    for (const disclosure of ['', ' '.repeat(30), 'x'.repeat(321), 42, undefined]) {
+      expect(isHome({ ...data, disclosure })).toBe(false);
+    }
+    for (const [index, availability] of [[0, 'illustrative'], [1, 'coming_soon'], [2, 'available'], [3, 'available'], [4, 'illustrative']] as const) {
+      expect(isHome({ ...data, domains: data.domains.map((domain, position) => position === index ? { ...domain, availability } : domain) })).toBe(false);
+    }
+  });
+
   it('keeps the starter chat first while showing capability availability', () => {
     const html = renderToStaticMarkup(<TravelHomeView data={home} theme="light" />);
     expect(html).toContain('Flight search');

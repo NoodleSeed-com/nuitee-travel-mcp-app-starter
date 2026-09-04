@@ -2152,7 +2152,7 @@
 }
 
 @media (max-width: 520px) {
-  .cc-home-intro { align-items: flex-start; flex-direction: column; }
+  .cc-home-intro { align-items: flex-start; flex-direction: column; flex-wrap: nowrap; }
   .cc-scan-header { align-items: flex-start; flex-direction: column; }
   .cc-route-fields { grid-template-columns: 1fr; }
   .cc-route-swap { transform: rotate(90deg); justify-self: center; margin-top: 0; }

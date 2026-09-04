@@ -5,6 +5,8 @@ import type {
   DemoLoyaltyOverview,
   DemoTripReview,
 } from '../src/demo-schemas.js';
+import { demoTripReviewSchema } from '../src/demo-schemas.js';
+import { runDemoGateway } from '../src/demo-runtime.js';
 
 vi.mock('../src/helpers.js', () => {
   const Frame = ({
@@ -115,7 +117,71 @@ const render = (
 
 const visibleText = (markup: string) => markup.replace(/<[^>]*>/gu, ' ');
 
+// Exercise actual review projection from synthetic state, without provider calls.
+const projectedReview = (source: 'live_nuitee' | 'illustrative' | undefined, withFlight = true) => {
+  const result = runDemoGateway({
+    kind: 'review',
+    flightState: withFlight ? {
+      activeSelectionId: review.flight!.selectionId,
+      records: [{ selectionId: review.flight!.selectionId, originalTotal: 610.4, currency: 'CAD' }],
+    } : {},
+    hotelState: source ? {
+      activeSelectionId: review.stay!.selectionId,
+      records: [{ ...review.stay!, dataSource: source }],
+    } : {},
+    loyalty,
+  });
+  return demoTripReviewSchema.parse(result.review);
+};
+
 describe('Wayfare loyalty widget', () => {
+  it.each(['live_nuitee', 'illustrative'] as const)('accepts the actual review projection with %s stays and preserves its source', (source) => {
+    const data = projectedReview(source);
+    expect(isDemoTripReview(data)).toBe(true);
+    const text = visibleText(render({ data, theme: 'light' }));
+    expect(text).toContain('Current Nuitee flight selection');
+    expect(text).toContain(source === 'live_nuitee' ? 'Current Nuitee hotel selection' : 'Simulated hotel selection');
+    expect(text).toContain(source === 'live_nuitee' ? 'Hotel rates still require verification' : 'The hotel selection is illustrative');
+    expect(text).toContain('Rewards are illustrative');
+    expect(text).not.toContain('Flight and stay results come from connected providers');
+    expect(text).not.toContain(source === 'live_nuitee' ? 'simulated hotels' : 'Current Nuitee hotel selection');
+    expect(render({ data, theme: 'light' })).toContain(data.fallback);
+  });
+
+  it.each([['live_nuitee', false], ['illustrative', false], [undefined, true], [undefined, false]] as const)(
+    'does not invent absent source context for stay %s and flight %s', (source, withFlight) => {
+      const data = projectedReview(source, withFlight);
+      expect(isDemoTripReview(data)).toBe(true);
+      const text = visibleText(render({ data, theme: 'light' }));
+      if (!withFlight) {
+        expect(text).toContain('No flight is selected');
+        expect(text).not.toMatch(/Current flight context|Current Nuitee flight selection/);
+      }
+      if (!source) {
+        expect(text).toContain('No hotel is selected');
+        expect(text).not.toMatch(/simulated hotels|Simulated hotel selection|Current Nuitee hotel selection/);
+      }
+    },
+  );
+
+  it('keeps standalone rewards disclosure independent of any provider search', () => {
+    const text = visibleText(render({ data: loyalty, theme: 'light' }));
+    expect(text).not.toMatch(/Flight and stay results|connected providers/);
+    expect(text).toContain('Booking and redemption are unavailable');
+  });
+
+  it('rejects unsupported stay sources and retains all existing stay bounds for live results', () => {
+    const data = projectedReview('live_nuitee');
+    for (const patch of [
+      { dataSource: 'confirmed' }, { dataSource: 'live_nuitee_selection' }, { dataSource: ['live_nuitee'] },
+      { selectionId: 'provider-id' }, { propertyName: '' }, { city: 'x'.repeat(81) },
+      { checkInDate: 'tomorrow' }, { nights: 31 }, { rooms: 0 },
+      { staySubtotal: { amount: -1, currency: 'CAD' } },
+    ]) {
+      expect(isDemoTripReview({ ...data, stay: { ...data.stay, ...patch } })).toBe(false);
+    }
+  });
+
   it('uses a geometry-matched, accessible loading skeleton', () => {
     const markup = render({ state: 'loading', theme: 'light' });
 
