@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const publicRoot = join(import.meta.dirname, '..', 'public');
+const appRoot = join(import.meta.dirname, '..', 'app');
 
 const expectedMasters = [
   '/images/immersive/wayfare-window-view-v1.png',
@@ -64,5 +65,19 @@ describe('editorial landing imagery', () => {
     );
     expect(statSync(path).size).toBeGreaterThan(500_000);
     expect(statSync(path).size).toBeLessThan(4_000_000);
+  });
+});
+
+describe('Wayfare social preview', () => {
+  it('is a production-sized 1200 by 630 PNG', () => {
+    const path = join(appRoot, 'opengraph-image.png');
+    const bytes = readFileSync(path);
+
+    expect([...bytes.subarray(0, 8)]).toEqual([
+      137, 80, 78, 71, 13, 10, 26, 10,
+    ]);
+    expect(pngDimensions(bytes)).toEqual({ width: 1200, height: 630 });
+    expect(statSync(path).size).toBeGreaterThan(100_000);
+    expect(statSync(path).size).toBeLessThan(2_000_000);
   });
 });

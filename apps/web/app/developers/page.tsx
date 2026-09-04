@@ -1,5 +1,13 @@
+import type { Metadata } from 'next';
 import { WayfareMark } from '../../src/components/wayfare-mark';
+import { routeMetadata } from '../../src/lib/seo-config';
 import { siteConfig } from '../../src/lib/site-config';
+
+export const metadata: Metadata = {
+  title: 'Developer preview',
+  description: 'Integration notes for the private Wayfare partner preview.',
+  ...routeMetadata.developers,
+};
 
 const setupSteps = [
   {
