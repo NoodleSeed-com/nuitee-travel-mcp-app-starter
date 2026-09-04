@@ -275,11 +275,13 @@ describe('real-browser widget readiness', () => {
     expect(back.hasAttribute('inert')).toBe(false);
     await expect.element(backButton).toHaveFocus();
     const backHeaderCopy = document.querySelector<HTMLElement>('.cc-fare-back-header > div')!.getBoundingClientRect();
-    const backHeader = document.querySelector<HTMLElement>('.cc-fare-back-header')!.getBoundingClientRect();
+    const backHeader = document.querySelector<HTMLElement>('.cc-fare-back-header')!;
     const backButtonBounds = (await backButton.element()).getBoundingClientRect();
     const backButtonStyle = getComputedStyle(await backButton.element());
     expect(backButtonBounds.left >= backHeaderCopy.right || backButtonBounds.top >= backHeaderCopy.bottom).toBe(true);
-    expect(Math.abs(backHeader.left - frontContentLeft)).toBeLessThanOrEqual(1);
+    await expect.poll(() => (
+      Math.abs(backHeader.getBoundingClientRect().left - frontContentLeft)
+    )).toBeLessThanOrEqual(1);
     expect(backButtonStyle.borderTopWidth).toBe('0px');
     expect(backButtonStyle.backgroundColor).toBe('rgba(0, 0, 0, 0)');
     expect(card.classList.contains('cc-fare-card-details')).toBe(true);
