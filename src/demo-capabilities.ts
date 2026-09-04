@@ -211,13 +211,12 @@ function reviewDemoTrip(viewPolicy: Readonly<Record<string, unknown>>) {
     input: z.object({}),
     output: demoTripReviewSchema,
     fulfil: ({ connectors }) => {
-      const flights = connectors.state.readState({ handle: 'flight_selections' }).value;
-      const hotels = connectors.state.readState({ handle: 'demo_hotel_selections' }).value;
-      const states = connectors.demo.prepare_states({ flightState: flights, hotelState: hotels });
-      const gateway = connectors.demo.execute({
-        kind: 'review',
-        flightState: states.flightState.optional(),
-        hotelState: states.hotelState.optional(),
+      const flights = connectors.state.readState({ handle: 'flight_selections' });
+      const hotels = connectors.state.readState({ handle: 'demo_hotel_selections' });
+      const gateway = connectors.demo.review({
+        kind: 'review_state',
+        flightRead: flights,
+        hotelRead: hotels,
         loyalty: getSyntheticLoyaltyOverview(),
       });
       return {

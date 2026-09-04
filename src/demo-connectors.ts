@@ -32,6 +32,25 @@ const demoGatewayInputSchema = z.object({
   insuranceCatalog: z.unknown().optional(),
 });
 
+function reviewStateReadSchema(
+  handle: 'flight_selections' | 'demo_hotel_selections',
+  storedValue: typeof selectionStateSchema | typeof demoHotelSelectionStateSchema,
+) {
+  const metadata = z.object({
+    ok: z.literal(true),
+    handle: z.literal(handle),
+    revision: z.number().int().nonnegative(),
+    status: z.string(),
+    expiresAt: z.string().optional(),
+  });
+  return z.union([
+    // The native store returns an exact empty value on a fresh successful read.
+    // Never accept a failed read or an empty value after a stored revision.
+    metadata.extend({ revision: z.literal(0), value: z.object({}).strict() }),
+    metadata.extend({ value: storedValue }),
+  ]);
+}
+
 export const demoGatewayOutputSchema = z.object({
   kind: z.enum(['search', 'reward_search', 'insurance_compare', 'review', 'select']),
   result: demoHotelSearchOutputSchema.optional(),
@@ -45,6 +64,18 @@ export const demoGatewayOutputSchema = z.object({
 
 export const demoGateway = connector('wayfare_preview_gateway')
   .version('1.0.0')
+  .compute('review', {
+    type: 'read',
+    input: z.object({
+      kind: z.literal('review_state'),
+      flightRead: reviewStateReadSchema('flight_selections', selectionStateSchema),
+      hotelRead: reviewStateReadSchema('demo_hotel_selections', demoHotelSelectionStateSchema),
+      loyalty: demoLoyaltyOverviewSchema,
+    }),
+    output: z.object({ kind: z.literal('review'), review: demoTripReviewSchema }),
+    limits: { timeoutMs: 1_000 },
+    run: runDemoGateway,
+  })
   .compute('prepare_states', {
     type: 'read',
     input: z.object({ flightState: z.unknown().optional(), hotelState: z.unknown().optional() }),

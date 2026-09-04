@@ -12,6 +12,12 @@ export type DemoGatewayInput =
       readonly loyalty: Readonly<Record<string, unknown>>;
     }
   | {
+      readonly kind: 'review_state';
+      readonly flightRead: Readonly<{ value: unknown }>;
+      readonly hotelRead: Readonly<{ value: unknown }>;
+      readonly loyalty: Readonly<Record<string, unknown>>;
+    }
+  | {
       readonly kind: 'reward_search';
       readonly rewardSearch: Readonly<Record<string, unknown>>;
       readonly rewardCatalog?: readonly Readonly<Record<string, unknown>>[];
@@ -351,8 +357,10 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
     };
   }
 
-  const flightState = record(input.flightState) ?? {};
-  const hotelState = record(input.hotelState) ?? {};
+  // review_state reaches this function only after the native read-envelope
+  // union has checked success, revision, and the complete stored value.
+  const flightState = record(input.kind === 'review_state' ? input.flightRead.value : input.flightState) ?? {};
+  const hotelState = record(input.kind === 'review_state' ? input.hotelRead.value : input.hotelState) ?? {};
   const activeFlightId = string(flightState.activeSelectionId);
   const activeHotelId = string(hotelState.activeSelectionId);
   const flight = array(flightState.records)
@@ -387,14 +395,24 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
     rooms: stay.rooms,
     staySubtotal: stay.staySubtotal,
   } : undefined;
+  let disclosure = stayDataSource === 'live_nuitee'
+    ? 'Flight and stay selections came from current provider searches. Rewards remain illustrative; prices stay separate and nothing was booked or paid.'
+    : 'The flight remains a current provider selection. Stay and rewards values are illustrative; this is not a bookable package and no payment or points action is available.';
+  if (!flight && !stay) {
+    disclosure = 'No flight or stay is selected. Rewards remain illustrative; no booking, payment, or points action is available.';
+  } else if (!flight) {
+    disclosure = stayDataSource === 'live_nuitee'
+      ? 'No flight is selected. The stay came from a current provider search. Rewards remain illustrative; nothing was booked or paid.'
+      : 'No flight is selected. Stay and rewards values are illustrative; no booking, payment, or points action is available.';
+  } else if (!stay) {
+    disclosure = 'No stay is selected. The flight remains a current provider selection and requires fare verification. Rewards remain illustrative; nothing was booked or paid.';
+  }
   return {
     kind: 'review',
     review: {
       status: missing.length === 0 ? 'ready' : 'incomplete',
       dataSource: 'illustrative',
-      disclosure: stayDataSource === 'live_nuitee'
-        ? 'Flight and stay selections came from current provider searches. Rewards remain illustrative; prices stay separate and nothing was booked or paid.'
-        : 'The flight remains a current provider selection. Stay and rewards values are illustrative; this is not a bookable package and no payment or points action is available.',
+      disclosure,
       fallback: missing.length === 0
         ? stayDataSource === 'live_nuitee'
           ? 'Trip review ready: flight and stay are current Nuitee search selections, while rewards are illustrative. Prices remain separate and nothing was booked or paid.'
