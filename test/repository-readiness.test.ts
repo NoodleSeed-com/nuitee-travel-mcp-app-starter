@@ -495,6 +495,24 @@ describe('public repository contracts', () => {
     expect(workflow).toContain('flyctl deploy --remote-only');
     expect(workflow).toContain('flyctl status --app "$FLY_APP"');
     expect(workflow).toContain('curl --fail --silent --show-error');
+    expect(workflow).toContain('Fly rendered the assistant setup-required state.');
+    expect(workflow).toContain(
+      'Add NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID to start the travel assistant.',
+    );
+  });
+
+  it('propagates public assistant coordinates into the Fly runtime image', async () => {
+    const dockerfile = await repositoryFile('Dockerfile');
+    const runnerStage = dockerfile.slice(dockerfile.indexOf(' AS runner'));
+
+    expect(runnerStage).toContain('ARG NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID');
+    expect(runnerStage).toContain('ARG NEXT_PUBLIC_NOODLE_SERVICE_URL');
+    expect(runnerStage).toContain(
+      'ENV NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID=$NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID',
+    );
+    expect(runnerStage).toContain(
+      'ENV NEXT_PUBLIC_NOODLE_SERVICE_URL=$NEXT_PUBLIC_NOODLE_SERVICE_URL',
+    );
   });
 
   it('ships sanitized community intake and identifies generated guidance', async () => {
