@@ -13,7 +13,7 @@ export function useHorizontalSwipe(move: (direction: number) => void) {
     onTouchEnd(event: TouchEvent) {
       const origin = start.current;
       start.current = undefined;
-      const touch = [...event.changedTouches].find(item => item.identifier === origin?.id);
+      const touch = Array.from(event.changedTouches).find(item => item.identifier === origin?.id);
       if (!origin || !touch) return;
       const dx = touch.clientX - origin.x;
       const dy = touch.clientY - origin.y;
