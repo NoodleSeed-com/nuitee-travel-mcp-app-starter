@@ -163,7 +163,7 @@ describe('travel header', () => {
       .not.toBeInTheDocument();
   });
 
-  it('keeps configured developer, support, and legal fallback navigation in the menu', () => {
+  it('keeps configured developer, support, and legal navigation in the menu', () => {
     render(
       <TravelHeader
         currency="USD"
@@ -181,17 +181,15 @@ describe('travel header', () => {
       .toHaveAttribute('href', starterConfig.website.developerPath);
     expect(within(dialog).getByRole('link', { name: 'Support' }))
       .toHaveAttribute('href', starterConfig.website.supportPath);
-    expect(within(dialog).queryByRole('link', { name: 'Privacy' }))
-      .not.toBeInTheDocument();
-    expect(within(dialog).queryByRole('link', { name: 'Terms' }))
-      .not.toBeInTheDocument();
+    expect(within(dialog).getByRole('link', { name: 'Privacy' }))
+      .toHaveAttribute('href', '/privacy');
+    expect(within(dialog).getByRole('link', { name: 'Terms' }))
+      .toHaveAttribute('href', '/terms');
     const legalAvailability = within(dialog).getByRole('group', {
       name: 'Legal availability',
     });
-    expect(within(legalAvailability).getByText('Privacy').parentElement)
-      .toHaveTextContent('PrivacyNot configured');
-    expect(within(legalAvailability).getByText('Terms').parentElement)
-      .toHaveTextContent('TermsNot configured');
+    expect(within(legalAvailability).queryByText('Not configured'))
+      .not.toBeInTheDocument();
   });
 
   it('does not expose unsupported travel utilities', () => {

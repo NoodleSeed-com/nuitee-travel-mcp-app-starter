@@ -60,34 +60,7 @@ async function noodleValidate() {
 }
 
 describe('public repository contracts', () => {
-  it('ships a pinned public-domain airport catalog without runtime lookup', async () => {
-    const [guide, catalog, generator, resolver] = await Promise.all([
-      repositoryFile('docs/airport-data.md'),
-      repositoryFile('apps/web/src/data/airports.generated.ts'),
-      repositoryFile('scripts/generate-airport-catalog.mjs'),
-      repositoryFile('apps/web/src/lib/travel-defaults.ts'),
-    ]);
-
-    for (const artifact of [guide, catalog]) {
-      expect(artifact).toContain('https://ourairports.com/data/');
-      expect(artifact).toContain(
-        'https://github.com/davidmegginson/ourairports-data/blob/main/LICENSE',
-      );
-      expect(artifact).toContain('2026-08-31');
-      expect(artifact).toContain(
-        'e56b20ecaa187ef954f3cce670a5559147ad071ff962915fdd72fb885f826da4',
-      );
-    }
-    expect(guide).toContain('`large_airport`');
-    expect(guide).toContain('`scheduled_service=yes`');
-    expect(guide).toContain('ISB');
-    expect(guide).toContain('Islamabad');
-    expect(generator).toContain('CITY_OVERRIDES');
-    expect(resolver).not.toContain('ourairports.com');
-    expect(resolver).not.toMatch(/fetch\s*\(/u);
-  });
-
-  it('documents the optional browser-location privacy boundary', async () => {
+  it('documents the permission-free coarse-country privacy boundary', async () => {
     const [privacy, architecture, embed, customization] = await Promise.all([
       repositoryFile('docs/privacy.md'),
       repositoryFile('docs/architecture.md'),
@@ -95,12 +68,12 @@ describe('public repository contracts', () => {
       repositoryFile('docs/customization.md'),
     ]);
 
-    expect(privacy).toMatch(/optional browser location permission/i);
-    expect(privacy).toMatch(/coordinates[^.]*memory/i);
-    expect(privacy).toMatch(/derived[^.]*airport[^.]*currency/i);
-    expect(privacy).toMatch(/no[^.]*third-party[^.]*location lookup/i);
-    expect(privacy).toMatch(/not persisted|no application persistence/i);
-    expect(privacy).toMatch(/den(?:y|ied|ial)[^.]*flight search/i);
+    expect(privacy).toMatch(/does not request browser location permission/i);
+    expect(privacy).toMatch(/coarse country code/i);
+    expect(privacy).toMatch(/raw IP address[^.]*client props/i);
+    expect(privacy).toMatch(/IPinfo Lite/i);
+    expect(privacy).toMatch(/not persisted|does not store/i);
+    expect(privacy).toMatch(/browser locale[^.]*USD/i);
     for (const guide of [architecture, embed, customization]) {
       expect(guide).toContain('docs/privacy.md');
       expect(guide).toContain('untrusted');
@@ -444,8 +417,10 @@ describe('public repository contracts', () => {
     expect(websiteEnvironment.trim().split('\n')).toEqual([
       'NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID=',
       'NEXT_PUBLIC_NOODLE_SERVICE_URL=https://cloud.noodleseed.dev',
+      'IPINFO_TOKEN=',
     ]);
     expect(websiteEnvironment).not.toMatch(/CLIENT_(?:ID|SECRET)|NUITEE_API_KEY/);
+    expect(websiteEnvironment).not.toContain('NEXT_PUBLIC_IPINFO_TOKEN');
   });
 
   it('keeps mutable generated examples behind a fail-closed release-only gate', async () => {

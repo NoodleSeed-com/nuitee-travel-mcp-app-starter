@@ -12,10 +12,12 @@ import { TravelZeroState } from './travel-zero-state';
 type PageMode = 'zero' | 'starting';
 
 interface TravelAssistantPageProps {
+  readonly initialCountry?: string;
   readonly runtime: PublicAssistantRuntime;
 }
 
 export function TravelAssistantPage({
+  initialCountry,
   runtime,
 }: Readonly<TravelAssistantPageProps>) {
   const [mode, setMode] = useState<PageMode>('zero');
@@ -24,7 +26,9 @@ export function TravelAssistantPage({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const heroInputRef = useRef<HTMLTextAreaElement>(null);
-  const { setCurrency, ...defaults } = useTravelDefaults();
+  const { setCurrency, ...defaults } = useTravelDefaults({
+    country: initialCountry,
+  });
 
   useEffect(() => {
     setHydrated(true);

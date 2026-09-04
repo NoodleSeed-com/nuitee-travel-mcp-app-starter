@@ -15,7 +15,8 @@ describe('safe starter customization', () => {
     expect(starterConfig.embeddedAssistant.origins).toContain('http://localhost:3000');
     expect(starterConfig.prompts).toHaveLength(3);
     expect(starterConfig.website.developerPath).toBe('/developers');
-    expect(starterConfig.website.privacyUrl).toBeNull();
+    expect(starterConfig.website.privacyUrl).toBe('/privacy');
+    expect(starterConfig.website.termsUrl).toBe('/terms');
     const canonicalSource = await readFile(
       new URL('../src/starter-config.ts', import.meta.url),
       'utf8',
@@ -139,6 +140,10 @@ describe('safe starter customization', () => {
       ...starterConfig,
       website: { ...starterConfig.website, privacyUrl: 'http://travel.example.co/privacy' },
     })).toThrow();
+    expect(validateStarterConfig({
+      ...starterConfig,
+      website: { ...starterConfig.website, privacyUrl: '/privacy', termsUrl: '/terms' },
+    }).website).toMatchObject({ privacyUrl: '/privacy', termsUrl: '/terms' });
   });
 
   it('rejects unknown and credential-shaped configuration fields', () => {

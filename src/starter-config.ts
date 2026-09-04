@@ -16,8 +16,8 @@ export const starterConfig = {
   website: {
     developerPath: '/developers',
     supportPath: '/developers#support',
-    privacyUrl: null,
-    termsUrl: null,
+    privacyUrl: '/privacy',
+    termsUrl: '/terms',
   },
   prompts: [
     'Find a weekend flight to Rome',

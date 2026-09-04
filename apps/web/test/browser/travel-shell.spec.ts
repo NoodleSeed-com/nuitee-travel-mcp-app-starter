@@ -1,9 +1,6 @@
 import { access, readFile, writeFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
 
-const browserTestPort = Number.parseInt(process.env.PLAYWRIGHT_PORT ?? '3108', 10);
-const browserTestOrigin = `http://localhost:${browserTestPort}`;
-
 function renderedContrastRatio(
   foreground: string,
   background: string,
@@ -297,45 +294,21 @@ test('renders a branded flag-rich currency selector at every viewport', async ({
   expect(listboxBounds.right).toBeLessThanOrEqual(listboxBounds.viewportWidth);
 });
 
-test('uses a granted browser location for the visible origin and currency defaults', async ({
-  context,
-  page,
-}) => {
-  await context.grantPermissions(['geolocation'], {
-    origin: browserTestOrigin,
-  });
-  await context.setGeolocation({ latitude: 33.6167, longitude: 73.0992 });
-
-  await page.goto('/');
-
-  await expect(page.getByRole('combobox', { name: 'Currency' }))
-    .toHaveAttribute('data-value', 'PKR');
-  await expect(page.getByRole('textbox', { name: 'Ask the travel assistant' }))
-    .not.toHaveAttribute('placeholder');
-  await expect(page.locator('[data-typewriter-prompts]'))
-    .toHaveAttribute('data-typewriter-prompts', /Islamabad to Tokyo next spring/);
-});
-
-test('keeps neutral travel defaults when browser location is denied', async ({
+test('never requests browser geolocation and keeps locale currency fallback', async ({
   page,
 }) => {
   await page.addInitScript(() => {
+    let locationRequests = 0;
     Object.defineProperty(navigator, 'geolocation', {
       configurable: true,
       value: {
-        getCurrentPosition(
-          _success: PositionCallback,
-          error?: PositionErrorCallback,
-        ) {
-          error?.({
-            code: 1,
-            message: 'Permission denied',
-            PERMISSION_DENIED: 1,
-            POSITION_UNAVAILABLE: 2,
-            TIMEOUT: 3,
-          } as GeolocationPositionError);
+        getCurrentPosition() {
+          locationRequests += 1;
         },
       },
+    });
+    Object.defineProperty(window, '__wayfareLocationRequests', {
+      get: () => locationRequests,
     });
   });
 
@@ -347,6 +320,9 @@ test('keeps neutral travel defaults when browser location is denied', async ({
     .not.toHaveAttribute('placeholder');
   await expect(page.locator('[data-typewriter-prompts]'))
     .toHaveAttribute('data-typewriter-prompts', /Tokyo in spring/);
+  expect(await page.evaluate(() => (window as typeof window & {
+    __wayfareLocationRequests: number;
+  }).__wayfareLocationRequests)).toBe(0);
 });
 
 test('keeps the agent-led hero centered with rounded visual surfaces', async ({
@@ -2365,9 +2341,38 @@ test('keeps the developer route static, legal-safe, and set in Host Grotesk', as
   await expect(page.locator('body')).toHaveCSS('font-family', /Host Grotesk Variable/);
   await expect(page.getByRole('link', { name: 'Support' }))
     .toHaveAttribute('href', '/developers#support');
-  await expect(page.getByRole('link', { name: 'Privacy' })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Terms' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Privacy' }))
+    .toHaveAttribute('href', '/privacy');
+  await expect(page.getByRole('link', { name: 'Terms' }))
+    .toHaveAttribute('href', '/terms');
   expect(assistantRequests).toEqual([]);
+});
+
+test('keeps the branded legal pages readable and contained on desktop and mobile', async ({
+  page,
+}, testInfo) => {
+  const width = testInfo.project.name === 'mobile-chromium' ? 320 : 1280;
+  await page.setViewportSize({ width, height: testInfo.project.name === 'mobile-chromium' ? 720 : 800 });
+
+  for (const legalPage of [
+    { path: '/privacy', title: 'Privacy policy', alternate: 'Terms of service' },
+    { path: '/terms', title: 'Terms of service', alternate: 'Privacy policy' },
+  ]) {
+    await page.goto(legalPage.path);
+    await expect(page.getByRole('heading', { level: 1, name: legalPage.title }))
+      .toBeVisible();
+    await expect(page.getByRole('link', { name: 'Wayfare home' })).toBeVisible();
+    await expect(page.getByRole('link', { name: legalPage.alternate }).last())
+      .toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth))
+      .toBe(width);
+
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = '200%';
+    });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth))
+      .toBe(width);
+  }
 });
 
 test('fits 320px, 390px, and 200 percent text zoom without orphaning the headline', async ({
@@ -2538,8 +2543,10 @@ test('keeps 390px passive inspiration and editorial content contained', async ({
   expect(footerBounds).not.toBeNull();
   expect(footerBounds!.x).toBeGreaterThanOrEqual(0);
   expect(footerBounds!.x + footerBounds!.width).toBeLessThanOrEqual(390);
-  await expect(footer.getByText('Privacy')).toHaveCount(0);
-  await expect(footer.getByText('Terms')).toHaveCount(0);
+  await expect(footer.getByRole('link', { name: 'Privacy' }))
+    .toHaveAttribute('href', '/privacy');
+  await expect(footer.getByRole('link', { name: 'Terms' }))
+    .toHaveAttribute('href', '/terms');
   await expect(footer.getByText('Guest session')).toHaveCount(0);
   await expect(footer.getByText('Planning note')).toHaveCount(0);
   await expect(footer.locator('[data-wayfare-mark="true"]')).toHaveCount(1);

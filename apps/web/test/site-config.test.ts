@@ -12,6 +12,11 @@ describe('Wayfare companion website identity', () => {
       .toBe(travelCompanionDemoConfig.brand.assistantName);
   });
 
+  it('publishes product-owned privacy and terms destinations', () => {
+    expect(siteConfig.website.privacyUrl).toBe('/privacy');
+    expect(siteConfig.website.termsUrl).toBe('/terms');
+  });
+
   it('keeps every prompt within the supported demo boundary', () => {
     expect(siteConfig.prompts).toHaveLength(4);
     expect(siteConfig.prompts.join(' ')).toMatch(/flights/i);

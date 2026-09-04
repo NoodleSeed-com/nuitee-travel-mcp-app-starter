@@ -153,7 +153,7 @@ describe('travel assistant zero state', () => {
     );
   });
 
-  it('uses location only as a bounded starting hint', () => {
+  it('uses a generic prompt even when a coarse country default is available', () => {
     const { rerender } = render(
       <TravelZeroState inputRef={createRef()} onStart={vi.fn()} />,
     );
@@ -165,9 +165,9 @@ describe('travel assistant zero state', () => {
     rerender(
       <TravelZeroState
         defaults={{
-          origin: { iata: 'ISB', city: 'Islamabad', country: 'PK' },
           currency: 'PKR',
-          source: 'browser-geolocation',
+          marketCountry: 'PK',
+          source: 'ip-country',
         }}
         inputRef={createRef()}
         onStart={vi.fn()}
@@ -178,7 +178,7 @@ describe('travel assistant zero state', () => {
     expect(document.querySelector('[data-typewriter-prompts]'))
       .toHaveAttribute(
         'data-typewriter-prompts',
-        expect.stringContaining('Islamabad to Tokyo next spring'),
+        expect.stringContaining('Tokyo in spring'),
       );
   });
 
@@ -280,10 +280,10 @@ describe('travel assistant zero state', () => {
       .toHaveAttribute('href', siteConfig.website.developerPath);
     expect(within(footer).getByRole('link', { name: 'Support' }))
       .toHaveAttribute('href', siteConfig.website.supportPath);
-    expect(within(footer).queryByText('Privacy'))
-      .not.toBeInTheDocument();
-    expect(within(footer).queryByText('Terms'))
-      .not.toBeInTheDocument();
+    expect(within(footer).getByRole('link', { name: 'Privacy' }))
+      .toHaveAttribute('href', '/privacy');
+    expect(within(footer).getByRole('link', { name: 'Terms' }))
+      .toHaveAttribute('href', '/terms');
     expect(within(footer).queryByText('Not configured')).not.toBeInTheDocument();
     expect(within(footer).queryByText('Guest session')).not.toBeInTheDocument();
     expect(within(footer).queryByText('Planning note')).not.toBeInTheDocument();

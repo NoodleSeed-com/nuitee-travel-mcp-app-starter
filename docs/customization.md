@@ -14,8 +14,7 @@ AVIF/WebP derivatives from the local files; preserve the explicit `sizes`, focal
 positions, priority behavior, and responsive crop checks when replacing one.
 
 The default hero copy is intentionally limited to one H1. Its empty composer
-cycles short, visual-only sample requests and uses a location-aware first prompt
-when a bounded browser origin is available. Keep the samples within supported
+cycles short, visual-only sample requests. Keep the samples within supported
 travel intent, stop them on focus or text entry, and preserve the static
 reduced-motion fallback. The surrounding ocean BorderBeam remains active while
 the composer is empty and stops after the traveler enters text; its submit

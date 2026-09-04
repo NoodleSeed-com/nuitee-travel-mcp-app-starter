@@ -29,11 +29,8 @@ export function TravelHero({
   const [imageState, setImageState] = useState<'loading' | 'loaded' | 'error'>(
     'loading',
   );
-  const promptOrigin = defaults.origin?.city ?? 'Your departure';
   const animatedPlaceholders = [
-    defaults.origin?.city
-      ? `${promptOrigin} to Tokyo next spring`
-      : 'Tokyo in spring',
+    'Tokyo in spring',
     'A long weekend in New York',
     'Return flights to London',
     'Three nights in Lisbon',

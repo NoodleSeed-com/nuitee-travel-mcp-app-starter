@@ -74,9 +74,7 @@ export function ImmersiveExplorePage({
   const imageState = failedImages.has(activeScene.imageSrc)
     ? 'error'
     : loadedImages.has(activeScene.imageSrc) ? 'loaded' : 'loading';
-  const placeholder = mode === 'explore'
-    ? `${defaults.origin?.city ?? 'Your departure'} ${activeScene.placeholder}`
-    : activeScene.placeholder;
+  const placeholder = activeScene.placeholder;
 
   function start(prompt: string) {
     if (runtime.status === 'setup-required') {

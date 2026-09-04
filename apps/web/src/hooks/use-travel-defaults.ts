@@ -4,14 +4,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   resolveInitialCurrency,
   resolveInitialMarketCountry,
-  resolveNearestAirport,
   type SupportedCurrency,
   type TravelDefaults,
 } from '../lib/travel-defaults';
 
 interface UseTravelDefaultsOptions {
+  readonly country?: string;
   readonly locale?: string;
-  readonly geolocation?: Pick<Geolocation, 'getCurrentPosition'> | null;
 }
 
 export interface TravelDefaultsController extends TravelDefaults {
@@ -24,18 +23,15 @@ export function useTravelDefaults(
   // Keep the server and the browser's hydration render identical. Browser-only
   // locale information is applied in an effect immediately after hydration.
   const locale = options.locale ?? 'en-US';
-  const geolocation = options.geolocation === undefined
-    ? (typeof navigator === 'undefined' ? null : navigator.geolocation)
-    : options.geolocation;
+  const country = options.country?.toUpperCase().match(/^[A-Z]{2}$/)?.[0];
   const initialLocaleRef = useRef(locale);
-  const geolocationRef = useRef(geolocation);
   const userSelectedCurrencyRef = useRef(false);
   const [defaults, setDefaults] = useState<TravelDefaults>(() => {
-    const marketCountry = resolveInitialMarketCountry(locale);
+    const marketCountry = country ?? resolveInitialMarketCountry(locale);
     return {
-      currency: resolveInitialCurrency({ locale }),
+      currency: resolveInitialCurrency({ locale, country }),
       ...(marketCountry ? { marketCountry } : {}),
-      source: 'fallback',
+      source: country ? 'ip-country' : 'fallback',
     };
   });
 
@@ -63,42 +59,6 @@ export function useTravelDefaults(
       };
     });
   }, [options.locale]);
-
-  useEffect(() => {
-    const initialGeolocation = geolocationRef.current;
-    if (!initialGeolocation) return;
-    let active = true;
-    initialGeolocation.getCurrentPosition(
-      ({ coords }) => {
-        if (!active) return;
-        const origin = resolveNearestAirport({
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-        });
-        if (!origin) return;
-        setDefaults((current) => ({
-          origin,
-          marketCountry: origin.country,
-          currency: userSelectedCurrencyRef.current
-            ? current.currency
-            : resolveInitialCurrency({
-                locale: initialLocaleRef.current,
-                airportCountry: origin.country,
-              }),
-          source: 'browser-geolocation',
-        }));
-      },
-      () => undefined,
-      {
-        enableHighAccuracy: false,
-        timeout: 7_000,
-        maximumAge: 86_400_000,
-      },
-    );
-    return () => {
-      active = false;
-    };
-  }, []);
 
   return { ...defaults, setCurrency };
 }

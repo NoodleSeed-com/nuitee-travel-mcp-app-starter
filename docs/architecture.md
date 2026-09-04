@@ -163,11 +163,11 @@ The terminal product state is a verified fare review. No provider ID is retained
 | Provider `offerId` | Private caller-scoped Noodle state | Never |
 | Application `selectionId` | Public tool/App output bound to private caller state | Yes |
 | Optional Assistant client secret | Authenticated website backend only | Never |
-| Browser coordinates | Top-level browser callback memory only | Never; only the derived travel default may reach untrusted page context |
+| Request IP | Fly.io proxy and the server-side IPinfo Lite lookup | Never sent to client props or assistant context; only a coarse country code may reach untrusted page context |
 
 The browser receives no model key, Nuitee key, Assistant client secret, raw provider response, server continuation, provider transaction identifier, or direct MCP credential. Content Security Policy must allow the exact Noodle service origin in `script-src`, `connect-src`, and `frame-src`; all other public runtime origins remain application-owned.
 
-The optional location and currency flow is documented in [`docs/privacy.md`](privacy.md). Geolocation is same-origin only, uses a bundled public-domain airport catalog, has no third-party lookup or application persistence, and never supplies authorization or overrides a traveler-stated route.
+The permission-free country and currency flow is documented in [`docs/privacy.md`](privacy.md). Browser geolocation is disabled. A server-side IPinfo Lite lookup may derive only a coarse country code from Fly.io's trusted request header; it never supplies authorization, infers an airport, or overrides a traveler-stated route or manual currency choice.
 
 ## Optional authenticated extension
 
