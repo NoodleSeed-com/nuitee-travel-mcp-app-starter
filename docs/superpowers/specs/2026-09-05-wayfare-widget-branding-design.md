@@ -76,8 +76,10 @@ Flight and hotel rails remain horizontally scrollable with snap alignment.
 Desktop rail controls become 44-pixel circular Heroicon buttons. Cards retain
 their existing fare/detail disclosures and bounded selection callbacks.
 
-Selection uses selected blue with black text and the literal labels `Select`,
-`Selecting…`, and `Selected`. A selected item is never styled as confirmed.
+Selection keeps the result card on its neutral white surface and moves selected
+blue with black text to the card's action button only, using the literal labels
+`Select`, `Selecting…`, and `Selected`. A selected item is never styled as
+confirmed.
 Provider verification may use confirmed green only after the verification
 response explicitly reports availability without a price change. Price change,
 expiry, or blocking provider failure uses action-needed styling and plain copy.
@@ -125,4 +127,3 @@ behavior.
   `noodle check src/demo-live-server.ts --json` pass.
 - Expanded live provider smoke remains credential-dependent and is reported
   separately if `NUITEE_API_KEY` is unavailable.
-

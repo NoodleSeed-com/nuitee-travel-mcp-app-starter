@@ -642,12 +642,13 @@ describe('real-browser widget readiness', () => {
     expect(option.getBoundingClientRect().width).toBeGreaterThanOrEqual(44);
   });
 
-  it('renders the compact card selected state after choosing a fare', async () => {
+  it('keeps the compact fare card neutral and moves selected blue to its button', async () => {
     await page.viewport(720, 1_200);
     mount(<InteractiveResults />);
     await expect.element(page.getByRole('button', { name: /Select fare from QZX to QZY/ })).toBeVisible();
     const card = document.querySelector<HTMLElement>('.cc-fare-card')!;
     const before = getComputedStyle(card);
+    const unselectedBackgroundColor = before.backgroundColor;
     const unselectedBorderColor = before.borderColor;
     const unselectedBoxShadow = before.boxShadow;
 
@@ -657,12 +658,13 @@ describe('real-browser widget readiness', () => {
     // 120ms; wait for it to settle before reading the final computed value.
     await new Promise((resolve) => setTimeout(resolve, 200));
     const after = getComputedStyle(card);
+    const selectedAction = await page.getByRole('button', { name: /Selected fare from QZX to QZY/ }).element();
+    const selectedActionStyle = getComputedStyle(selectedAction);
 
-    expect(after.borderColor).not.toBe(unselectedBorderColor);
-    expect(after.boxShadow).not.toBe(unselectedBoxShadow);
-    expect(after.backgroundColor).toBe('rgb(102, 204, 255)');
-    expect(after.borderColor).toBe('rgb(13, 13, 13)');
-    expect(after.boxShadow).toContain('inset');
-    expect(after.boxShadow).toContain('rgb(13, 13, 13)');
+    expect(after.backgroundColor).toBe(unselectedBackgroundColor);
+    expect(after.borderColor).toBe(unselectedBorderColor);
+    expect(after.boxShadow).toBe(unselectedBoxShadow);
+    expect(selectedActionStyle.backgroundColor).toBe('rgb(102, 204, 255)');
+    expect(selectedActionStyle.color).toBe('rgb(13, 13, 13)');
   });
 });

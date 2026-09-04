@@ -116,11 +116,11 @@ describe('ported card design tokens', () => {
     expect(css).toMatch(/\.cc-app \.cc-rail-arrow\s*\{[^}]*width:\s*44px[^}]*height:\s*44px/s);
   });
 
-  it('qualifies the hotel card and its selected state so they outrank .cc-card', () => {
+  it('qualifies the hotel card and its neutral selected state so they outrank .cc-card', () => {
     // .cc-card sets border/border-radius/background at (0,1,0) and is
     // declared later in this file; a bare .cc-hotel-card or
     // .cc-hotel-card-selected at equal specificity would silently lose to
-    // it on source order, erasing the selected-state border-color cue.
+    // it on source order, making the selected card diverge from its neutral shell.
     expect(css).toContain('.cc-app .cc-hotel-card {');
     expect(css).toContain('.cc-app .cc-hotel-card-selected {');
     expect(css).not.toMatch(/^\.cc-hotel-card-selected\s*\{/m);

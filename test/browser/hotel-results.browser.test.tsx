@@ -1,5 +1,5 @@
 import { createRoot, type Root } from 'react-dom/client';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { page } from 'vitest/browser';
 import type { DemoHotel, DemoHotelSearchOutput } from '../../src/demo-schemas.js';
@@ -55,6 +55,18 @@ function mount(view: ReactNode) {
   root.render(view);
 }
 
+function InteractiveHotels() {
+  const [selected, setSelected] = useState<string>();
+  return (
+    <HotelResultsView
+      displayMode="inline"
+      result={{ ...result, hotels: [result.hotels[0]!] }}
+      selectedSelectionId={selected}
+      onAdd={setSelected}
+    />
+  );
+}
+
 afterEach(() => {
   root?.unmount();
   host?.remove();
@@ -88,5 +100,30 @@ describe('illustrative hotel widget in a real browser', () => {
     expect(style.backgroundColor).toBe('rgb(13, 13, 13)');
     expect(style.color).toBe('rgb(255, 255, 255)');
     expect(Number.parseFloat(style.borderRadius)).toBeGreaterThanOrEqual(22);
+  });
+
+  it('keeps the hotel card neutral and moves selected blue to its button', async () => {
+    await page.viewport(720, 1_200);
+    mount(<InteractiveHotels />);
+    await expect.element(page.getByRole('button', { name: /Select Tagus Lantern Hotel 1/u })).toBeVisible();
+
+    const card = document.querySelector<HTMLElement>('.cc-hotel-card')!;
+    const before = getComputedStyle(card);
+    const unselectedBackgroundColor = before.backgroundColor;
+    const unselectedBorderColor = before.borderColor;
+    const unselectedBoxShadow = before.boxShadow;
+
+    await page.getByRole('button', { name: /Select Tagus Lantern Hotel 1/u }).click();
+    await expect.poll(() => card.classList.contains('cc-hotel-card-selected')).toBe(true);
+
+    const after = getComputedStyle(card);
+    const selectedAction = await page.getByRole('button', { name: /Selected Tagus Lantern Hotel 1/u }).element();
+    const selectedActionStyle = getComputedStyle(selectedAction);
+
+    expect(after.backgroundColor).toBe(unselectedBackgroundColor);
+    expect(after.borderColor).toBe(unselectedBorderColor);
+    expect(after.boxShadow).toBe(unselectedBoxShadow);
+    expect(selectedActionStyle.backgroundColor).toBe('rgb(102, 204, 255)');
+    expect(selectedActionStyle.color).toBe('rgb(13, 13, 13)');
   });
 });

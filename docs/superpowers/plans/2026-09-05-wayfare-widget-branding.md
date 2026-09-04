@@ -199,14 +199,16 @@ git commit -m "feat(widgets): make the travel starter chat first"
 - [x] **Step 1: Write failing decision-state tests**
 
 Add behavior assertions for `Select`, `Selecting…`, and `Selected`; selected
-cards use `rgb(102, 204, 255)`; verified availability uses confirmed styling;
-price change and expiry use action-needed styling; hotel selection never says
-`Add`, `Added`, or `Adding`.
+cards retain their neutral surface while only the selected action uses
+`rgb(102, 204, 255)` with black text; verified availability uses confirmed
+styling; price change and expiry use action-needed styling; hotel selection
+never says `Add`, `Added`, or `Adding`.
 
 ```tsx
 expect(selectedMarkup).toContain('Selected');
 expect(selectedMarkup).not.toMatch(/Added|Adding/);
-expect(getComputedStyle(selectedCard).backgroundColor).toBe('rgb(102, 204, 255)');
+expect(getComputedStyle(selectedCard).backgroundColor).toBe(unselectedBackgroundColor);
+expect(getComputedStyle(selectedAction).backgroundColor).toBe('rgb(102, 204, 255)');
 ```
 
 - [x] **Step 2: Run focused tests and observe the expected failures**
@@ -218,17 +220,19 @@ accent styling fail the new assertions.
 
 - [x] **Step 3: Implement flight semantic states**
 
-Use selected blue only for current fare selection. Reserve confirmed green for
-the provider-verified, unchanged fare state. Use action-needed treatment for
-changed price, expiry, and blocking verification failures. Keep best-value and
-shortest labels neutral unless they report a selected state.
+Keep fare cards neutral and use selected blue only on the current fare's
+`Selected` action. Reserve confirmed green for the provider-verified, unchanged
+fare state. Use action-needed treatment for changed price, expiry, and blocking
+verification failures. Keep best-value and shortest labels neutral unless they
+report a selected state.
 
 - [x] **Step 4: Implement hotel semantic states**
 
 Rename the callback-facing labels to `Select`, `Selecting…`, and `Selected`;
 replace `MatchRing` with `MatchScore`; keep stay-match disclosure explicit;
-make hotel detail controls pills; and render the selected card in selected blue
-without confirmation language.
+make hotel detail controls pills; keep the selected card neutral; and put
+selected blue with black text only on its `Selected` action without confirmation
+language.
 
 - [x] **Step 5: Run decision unit and browser tests**
 
@@ -362,10 +366,11 @@ creating a second pull request.
 ## Verification Record
 
 - `env CI=true pnpm test`: 16 files and 303 tests passed.
-- `env CI=true pnpm test:browser`: 3 Chromium files and 28 tests passed.
+- `env CI=true pnpm test:browser`: 3 Chromium files and 29 tests passed after the selected-action correction.
 - `./node_modules/.bin/noodle validate --json`: returned `{"ok":true,"data":{}}`.
 - `./node_modules/.bin/noodle test --json`: returned `ok: true` for the five offline travel tools.
 - `./node_modules/.bin/noodle check src/demo-live-server.ts --json`: returned `ok: true`, with seven widget resources, nine model-visible tools, and two app-only helpers.
 - Seven fixture-only surfaces were captured and inspected at 720px and 320px with reduced motion and blocked network access.
 - The global `noodle` binary is version 0.98.0 and fails the project-version guard; verification therefore used the repository-local CLI matched to `@noodleseed/one` 0.161.2.
 - Credentialed live Nuitee search, host rendering, deployment, and production behavior remain unproven and were not inferred from local validation.
+- User review corrected selection emphasis after the initial delivery: flight and hotel cards now stay neutral, and selected blue appears only on the disabled `Selected` action. Focused browser tests cover both widgets.

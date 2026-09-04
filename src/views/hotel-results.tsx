@@ -261,8 +261,9 @@ function HotelCard({ hotel, allHotels, locale, selected, pending, onAdd }: {
         <div className="cc-hotel-actions">
           {onAdd ? (
             <Action
-              aria-label={`Select ${hotel.name} for this trip`}
+              aria-label={`${selected ? 'Selected' : 'Select'} ${hotel.name} for this trip`}
               aria-pressed={selected}
+              className={selected ? 'cc-selection-action-selected' : undefined}
               disabled={selected}
               onClick={() => onAdd(hotel.selectionId)}
               pending={pending}

@@ -555,24 +555,23 @@ function FareCard({ itinerary, pending = false, searchContext, selected, onSelec
             <div className="cc-compact-fare-main">
               <header className="cc-fare-header cc-compact-fare-carrier">
                 <CarrierIdentity carrier={itinerary.carrier} />
-                {selected ? <StatusBadge className="cc-fare-selected-badge" tone="info"><CheckIcon />Selected</StatusBadge> : null}
               </header>
               <RouteTimeline itinerary={itinerary} />
               <div className="cc-compact-fare-price">
                 <strong>{money(itinerary.price.total, itinerary.price.currency)}</strong>
                 <span>Total for {searchContext ? travellerLabel(searchContext) : 'this trip'}</span>
-                {!selected ? (
-                  <Action
-                    variant="primary"
-                    aria-label={`Select fare from ${itinerary.route.origin} to ${itinerary.route.destination} with ${itinerary.carrier.name}`}
-                    disabled={pending}
-                    onClick={() => onSelect?.(itinerary.selectionId)}
-                    pending={pending}
-                    pendingLabel="Selecting…"
-                  >
-                    Select fare
-                  </Action>
-                ) : null}
+                <Action
+                  variant={selected ? 'secondary' : 'primary'}
+                  className={selected ? 'cc-selection-action-selected' : undefined}
+                  aria-label={`${selected ? 'Selected' : 'Select'} fare from ${itinerary.route.origin} to ${itinerary.route.destination} with ${itinerary.carrier.name}`}
+                  aria-pressed={selected}
+                  disabled={selected || pending}
+                  onClick={() => onSelect?.(itinerary.selectionId)}
+                  pending={pending}
+                  pendingLabel="Selecting…"
+                >
+                  {selected ? <><CheckIcon />Selected</> : 'Select fare'}
+                </Action>
               </div>
             </div>
             <footer className="cc-fare-footer cc-compact-fare-footer">
