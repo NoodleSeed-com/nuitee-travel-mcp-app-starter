@@ -1,6 +1,6 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useEffect, useRef } from 'react';
 import { siteConfig } from '../lib/site-config';
 
@@ -85,7 +85,7 @@ export function SettingsSheet({
           ref={closeRef}
           type="button"
         >
-          <X aria-hidden="true" />
+          <XMarkIcon aria-hidden="true" />
         </button>
       </header>
 

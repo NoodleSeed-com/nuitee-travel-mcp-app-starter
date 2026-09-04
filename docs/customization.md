@@ -4,7 +4,7 @@ Customize the existing flights-first product before adding scope. Keep Wayfare f
 
 ## Wayfare image system
 
-The light, Inter-only default homepage uses the existing Explore master, one
+The high-contrast Host Grotesk homepage uses the configured layered jet-window hero, one
 shared promise, one composer, passive destination inspiration, and passive
 editorial copy. The optional `/experience` visual-reference route consumes the
 complete Explore, Flights, Stays, Flight + Stay, and Insurance catalog declared
@@ -13,19 +13,37 @@ native `1672 × 941` master—not a literal 4K source. Next.js makes responsive
 AVIF/WebP derivatives from the local files; preserve the explicit `sizes`, focal
 positions, priority behavior, and responsive crop checks when replacing one.
 
+The default hero copy is intentionally limited to one H1. Its empty composer
+cycles short, visual-only sample requests. Keep the samples within supported
+travel intent, stop them on focus or text entry, and preserve the static
+reduced-motion fallback. The surrounding ocean BorderBeam remains active while
+the composer is empty and stops after the traveler enters text; its submit
+control remains an accessible arrow-only button. The compact header exposes only currency and the menu
+beside the Wayfare lockup; do not restore direct planning or developer links to
+that row.
+
+The attribution row below the hero uses the unmodified official files
+`apps/web/public/images/partners/noodle-seed.svg` and
+`apps/web/public/images/partners/nuitee.svg`. These third-party wordmarks are an
+identity exception to the Heroicons-only functional icon rule. Do not recolor,
+redraw, animate, use them as controls, or imply a commercial endorsement beyond
+the truthful `Built on` and `Powered by` labels. Confirm trademark and public
+redistribution rights during the repository's public-release audit.
+
 Read [the Wayfare provenance ledger](visual-assets/wayfare-premium-concierge.md) before changing an image. It records the accepted paths, native dimensions, byte counts, SHA-256 hashes, crop decisions, visual review, and rejected variants. Keep replacements local and owned, licensed, or generated; do not introduce a remote image origin, airline trademarks, liveries, copyrighted campaign art, or an image-based fare, availability, partnership, or destination guarantee. Every changed binary needs its own exact reviewed blob/path pair in `security/reviewed-binary-blobs.txt`; a filename or directory exception is not enough.
 
 ## Bundled typography
 
-The website and repository-owned MCP Apps bundle Inter Variable through exact
-dependency `@fontsource-variable/inter@5.3.0`; browsers do not fetch the font
+The Next.js website bundles Host Grotesk Variable through exact dependency
+`@fontsource-variable/host-grotesk@5.3.0`; browsers do not fetch the font
 from Google or another runtime font host. The package declares the SIL Open
 Font License 1.1 (`OFL-1.1`) and includes its license text. Code and command
 samples retain a semantic monospace stack.
 
-If you replace Inter, update both package boundaries, the website import, both
-MCP App entry imports, the shared `--font-sans` widget token, browser-computed
-font tests, and the dependency-license evidence together. The bundled license
+If you replace Host Grotesk, update the website package and import,
+browser-computed font tests, and dependency-license evidence together. MCP App
+typography is deferred to Wahab's later implementation and must be reconciled
+against the canonical brand guideline at that point. The bundled license
 record is evidence of the current dependency metadata, not a completed legal
 approval: copyright, NOTICE treatment, dependency provenance/compatibility,
 and public redistribution still require owner/legal review before release.
@@ -106,9 +124,13 @@ The browser receives only the public embed ID and public service origin. Brandin
 The command deliberately does not rename the package, server ID, tool names, Nuitee connector, state handles, provider limits, fixture carriers, or historical product documents. Those identifiers and security boundaries are not consumer branding.
 
 - Use your own name, short copy, and restrained accent token; keep structural surfaces and text host-neutral.
-- `apps/web/src/components/wayfare-mark.tsx` owns the deterministic route-line SVG mark. Keep its continuous rounded route path, terminal dot, `currentColor` treatment, and accessible wordmark pairing; do not replace it with a generated raster, an airline lookalike, or a decorative ambient route motif.
+- `apps/web/src/components/wayfare-mark.tsx` owns the exact Wayline SVG mark. Preserve its `64 × 64` geometry, continuous rounded route path, two endpoint circles, `currentColor` treatment, and accessible wordmark pairing; do not replace it with an angular W, generated raster, airline lookalike, or decorative ambient route motif.
 - Let the host-supplied app identity carry the logo. Do not repeat a brand mark inside a compact response widget.
-- Keep bundled Inter for repository-owned non-code UI, the compact type scale, and semantic monospace only for code. The primary website stays light-only; portable MCP widgets retain semantic light/dark colors for external hosts that own their presentation. Use installed Lucide icons at the documented 20px/18px sizes only for familiar supported actions, with named 44px icon-only controls.
+- Keep bundled Host Grotesk for Next.js non-code UI, the compact type scale, and semantic monospace only for code. The website uses the exact light-only Wayfare tokens and does not inherit the operating system's dark preference. Use only the installed Heroicons React package for its functional interface iconography: `24/outline` is the default set, `20/solid` is reserved for compact status emphasis, and icon-only controls retain an accessible name and a 44px target. Do not add another icon library or hand-author a utility SVG. The repository-owned Wayline logo is the sole repository-authored SVG brand-asset exception; unmodified official third-party wordmarks may appear only for truthful identity attribution. MCP App visual implementation is deferred to Wahab and must follow the same canonical guideline when undertaken.
+
+The complete normative system is in the
+[Wayfare brand guidelines](brand/wayfare-brand-guidelines.md). Coding agents
+must read it before designing, implementing, or reviewing a user-facing change.
 - Follow the current [OpenAI Apps SDK UI guidelines](https://developers.openai.com/plugins/concepts/ui-guidelines) when changing typography, color, spacing, actions, or navigation.
 - Do not bundle airline/provider logos. FlightResults may render the documented `marketingLogo` from a live result only after the runtime accepts its exact Nuitee Flights asset origin/path; keep carrier text and initials as the failure fallback. A remote image request still reveals normal network metadata to the Nuitee asset host, so disable the image path if that tradeoff does not fit the deployment's privacy policy.
 - Never imply a partnership or call this an “official Nuitee connector” without authorization.

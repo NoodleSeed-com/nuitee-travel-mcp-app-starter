@@ -13,7 +13,7 @@ describe('travel assistant zero state', () => {
   it('uses the Wayfare identity with the expanded travel experience', () => {
     expect(siteConfig.brand).toMatchObject({
       name: 'Wayfare',
-      tagline: 'Travel, planned around you.',
+      tagline: 'One conversation. The whole journey.',
     });
   });
 
@@ -28,21 +28,29 @@ describe('travel assistant zero state', () => {
       level: 1,
       name: 'Tell us the trip you have in mind',
     })).toBeVisible();
-    expect(screen.getByText(
-      'Describe the journey once. Wayfare will bring in the relevant travel options as they become useful.',
-    )).toBeVisible();
+    expect(screen.queryByText('Your journey starts here')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Describe the journey once/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/For example:/)).not.toBeInTheDocument();
     expect(screen.getAllByRole('form', { name: 'Plan a trip' })).toHaveLength(1);
     expect(screen.getAllByText(siteConfig.brand.name)).toHaveLength(2);
     expect(screen.queryByText('Guest trip')).not.toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: 'For developers' }))
-      .toHaveLength(2);
+      .toHaveLength(1);
     for (const link of screen.getAllByRole('link', { name: 'For developers' })) {
       expect(link).toHaveAttribute('href', siteConfig.website.developerPath);
     }
-    expect(screen.getByText('Built on Noodle Seed · Powered by Nuitee'))
+    const partners = screen.getByRole('complementary', {
+      name: 'Technology partners',
+    });
+    expect(within(partners).getByText('Built on')).toBeVisible();
+    expect(within(partners).getByRole('img', { name: 'Noodle Seed' }))
+      .toBeVisible();
+    expect(within(partners).getByText('Powered by')).toBeVisible();
+    expect(within(partners).getByRole('img', { name: 'Nuitée' }))
       .toBeVisible();
     expect(screen.getByRole('button', { name: 'Submit trip request' }))
       .toBeDisabled();
+    expect(screen.queryByText('Plan my trip')).not.toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute('id', 'travel-prompt');
     expect(screen.queryByText('No trip started')).not.toBeInTheDocument();
@@ -70,7 +78,47 @@ describe('travel assistant zero state', () => {
     expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
     expect(screen.queryByRole('list', { name: 'Suggested trips' }))
       .not.toBeInTheDocument();
-    expect(container.querySelector('.travel-capabilities')).not.toBeInTheDocument();
+    const capabilities = screen.getByRole('region', {
+      name: 'Wayfare capabilities',
+    });
+    expect(within(capabilities).getAllByRole('listitem')).toHaveLength(6);
+    expect(within(capabilities).getByText('Flights')).toBeVisible();
+    expect(within(capabilities).getByText(
+      'Search and compare one-way or return fares.',
+    )).toBeVisible();
+    expect(within(capabilities).getByText('Hotels')).toBeVisible();
+    expect(within(capabilities).getByText(
+      'Find stays, rooms, rates, and cancellation terms.',
+    )).toBeVisible();
+    expect(within(capabilities).getByText('Experiences')).toBeVisible();
+    expect(within(capabilities).getByText(
+      'Add curated activities around your itinerary.',
+    )).toBeVisible();
+    expect(within(capabilities).getByText('Loyalty')).toBeVisible();
+    expect(within(capabilities).getByText(
+      'Review points and preview redemptions.',
+    )).toBeVisible();
+    expect(within(capabilities).getByText('Vouchers')).toBeVisible();
+    expect(within(capabilities).getByText(
+      'Find and apply eligible trip value.',
+    )).toBeVisible();
+    expect(within(capabilities).getByText('Booking & trip care')).toBeVisible();
+    expect(within(capabilities).getByText(
+      'Review, confirm, change, or cancel conversationally.',
+    )).toBeVisible();
+    expect(within(capabilities).getByText(
+      'Live flight results come from the connected provider. The starter’s other capabilities use clearly labeled Wayfare demo data.',
+    )).toBeVisible();
+    expect(within(capabilities).queryByRole('button')).not.toBeInTheDocument();
+    expect(within(capabilities).queryByRole('link')).not.toBeInTheDocument();
+    const liquidIcons = capabilities.querySelectorAll(
+      '[data-wayfare-liquid-icon="true"]',
+    );
+    expect(liquidIcons).toHaveLength(6);
+    for (const liquidIcon of liquidIcons) {
+      expect(liquidIcon.querySelector('canvas')).not.toBeNull();
+      expect(liquidIcon.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    }
 
     const inspiration = screen.getByRole('region', {
       name: 'Where the journey could take you',
@@ -81,46 +129,56 @@ describe('travel assistant zero state', () => {
     const editorial = screen.getByRole('region', {
       name: 'One conversation, every part of the trip.',
     });
+    const liquidMark = editorial.querySelector('[data-wayfare-liquid="true"]');
+    expect(liquidMark).not.toBeNull();
+    expect(liquidMark?.querySelector('canvas')).not.toBeNull();
+    expect(liquidMark?.querySelector('[data-wayfare-mark="true"]')).not.toBeNull();
+    expect(editorial.querySelector('[data-wayfare-gradient="animated"]')).toBeNull();
     expect(within(editorial).queryByRole('button')).not.toBeInTheDocument();
     expect(onStart).not.toHaveBeenCalled();
   });
 
-  it('keeps the existing Explore image master behind the single composer', () => {
+  it('layers the outside view behind the fixed cabin and single composer', () => {
     const { container } = render(
       <TravelZeroState inputRef={createRef()} onStart={vi.fn()} />,
     );
 
-    expect(container.querySelector('.travel-hero img[alt=""]')).toHaveAttribute(
+    expect(container.querySelector('.travel-hero__view')).toHaveAttribute(
       'src',
-      expect.stringContaining('wayfare-explore-windows-v2'),
+      expect.stringContaining('wayfare-window-view-v1'),
+    );
+    expect(container.querySelector('.travel-hero__cabin')).toHaveAttribute(
+      'src',
+      expect.stringContaining('wayfare-cabin-frame-v1'),
     );
   });
 
-  it('uses location only as a bounded starting hint', () => {
+  it('uses a generic prompt even when a coarse country default is available', () => {
     const { rerender } = render(
       <TravelZeroState inputRef={createRef()} onStart={vi.fn()} />,
     );
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
-      .toHaveAttribute(
-        'placeholder',
-        'Your departure — describe the trip you have in mind',
-      );
+      .not.toHaveAttribute('placeholder');
+    expect(document.querySelector('[data-typewriter-prompts]'))
+      .toHaveAttribute('data-typewriter-prompts', expect.stringContaining('Tokyo'));
 
     rerender(
       <TravelZeroState
         defaults={{
-          origin: { iata: 'ISB', city: 'Islamabad', country: 'PK' },
           currency: 'PKR',
-          source: 'browser-geolocation',
+          marketCountry: 'PK',
+          source: 'ip-country',
         }}
         inputRef={createRef()}
         onStart={vi.fn()}
       />,
     );
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
+      .not.toHaveAttribute('placeholder');
+    expect(document.querySelector('[data-typewriter-prompts]'))
       .toHaveAttribute(
-        'placeholder',
-        'Islamabad — describe the trip you have in mind',
+        'data-typewriter-prompts',
+        expect.stringContaining('Tokyo in spring'),
       );
   });
 
@@ -168,7 +226,7 @@ describe('travel assistant zero state', () => {
       level: 2,
       name: 'One conversation, every part of the trip.',
     })).toBeVisible();
-    expect(screen.getByText('Travel inspiration')).toBeVisible();
+    expect(screen.queryByText('Travel inspiration')).not.toBeInTheDocument();
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
 
     const main = container.querySelector<HTMLElement>('main#travel-canvas');
@@ -177,6 +235,7 @@ describe('travel assistant zero state', () => {
     expect(landing).not.toBeNull();
     const orderedRegions = [
       '.travel-hero',
+      '.travel-capabilities',
       '.destination-inspiration',
       '.travel-editorial',
     ].map((selector) => landing!.querySelector(selector));
@@ -209,7 +268,7 @@ describe('travel assistant zero state', () => {
     expect(container.querySelectorAll('.destination-card button')).toHaveLength(0);
   });
 
-  it('renders developer and support links with legal fallbacks', () => {
+  it('renders a professional footer without internal setup or planning notes', () => {
     render(
       <TravelAssistantPage
         runtime={{ status: 'setup-required', message: 'setup' }}
@@ -221,14 +280,17 @@ describe('travel assistant zero state', () => {
       .toHaveAttribute('href', siteConfig.website.developerPath);
     expect(within(footer).getByRole('link', { name: 'Support' }))
       .toHaveAttribute('href', siteConfig.website.supportPath);
-    expect(within(footer).queryByRole('link', { name: 'Privacy' }))
+    expect(within(footer).getByRole('link', { name: 'Privacy' }))
+      .toHaveAttribute('href', '/privacy');
+    expect(within(footer).getByRole('link', { name: 'Terms' }))
+      .toHaveAttribute('href', '/terms');
+    expect(within(footer).queryByText('Not configured')).not.toBeInTheDocument();
+    expect(within(footer).queryByText('Guest session')).not.toBeInTheDocument();
+    expect(within(footer).queryByText('Planning note')).not.toBeInTheDocument();
+    expect(within(footer).queryByText(siteConfig.disclosure.persistent))
       .not.toBeInTheDocument();
-    expect(within(footer).queryByRole('link', { name: 'Terms' }))
-      .not.toBeInTheDocument();
-    expect(screen.getByText('Privacy').parentElement)
-      .toHaveTextContent('PrivacyNot configured');
-    expect(screen.getByText('Terms').parentElement)
-      .toHaveTextContent('TermsNot configured');
+    expect(footer.querySelector('[data-wayfare-mark="true"]')).not.toBeNull();
+    expect(within(footer).getByText(/© \d{4} Wayfare/u)).toBeVisible();
   });
 
   it('submits a typed prompt on Enter', () => {

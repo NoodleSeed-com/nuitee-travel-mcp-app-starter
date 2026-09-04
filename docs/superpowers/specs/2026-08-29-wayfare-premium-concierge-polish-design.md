@@ -1,5 +1,10 @@
 # Wayfare Premium Concierge Polish Design
 
+> **Iconography update — 2026-09-04:** The current Wayfare brand guideline
+> supersedes every Lucide or custom utility-icon instruction in this historical
+> design record. Product iconography now uses Heroicons exclusively; the
+> original Wayfare route-line logo remains the sole custom SVG exception.
+
 ## Status
 
 Approved by the user on 2026-08-29.

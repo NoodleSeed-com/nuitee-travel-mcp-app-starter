@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import {
-  BadgeCheck,
-  BedDouble,
-  Home,
-  Menu,
-  PlaneTakeoff,
-  ShieldCheck,
-} from 'lucide-react';
+  Bars3Icon,
+  BuildingOffice2Icon,
+  CheckBadgeIcon,
+  HomeIcon,
+  PaperAirplaneIcon,
+  ShieldCheckIcon,
+} from '@heroicons/react/24/outline';
 import { useEffect, useRef, useState } from 'react';
 import type { PublicAssistantRuntime } from '../../lib/assistant-config';
 import {
@@ -30,25 +30,25 @@ interface ImmersiveChatPageProps {
 const startingIntents = [
   {
     label: 'Find a flight',
-    icon: PlaneTakeoff,
+    icon: PaperAirplaneIcon,
     prompt: siteConfig.prompts[0],
     support: 'Compare current schedules and fares.',
   },
   {
     label: 'Compare stays',
-    icon: BedDouble,
+    icon: BuildingOffice2Icon,
     prompt: siteConfig.prompts[1],
     support: 'Explore available stay previews.',
   },
   {
     label: 'Review rewards',
-    icon: BadgeCheck,
+    icon: CheckBadgeIcon,
     prompt: siteConfig.prompts[2],
     support: 'See how rewards complement the trip.',
   },
   {
     label: 'Compare protection',
-    icon: ShieldCheck,
+    icon: ShieldCheckIcon,
     prompt: siteConfig.prompts[3],
     support: 'Compare illustrative protection concepts.',
   },
@@ -115,11 +115,11 @@ export function ImmersiveChatPage({
           id="immersive-chat-navigation"
         >
           <Link href="/experience" onClick={() => setMenuOpen(false)}>
-            <Home aria-hidden="true" />Home
+            <HomeIcon aria-hidden="true" />Home
           </Link>
-          <button onClick={reset} type="button"><PlaneTakeoff aria-hidden="true" />Trips</button>
+          <button onClick={reset} type="button"><PaperAirplaneIcon aria-hidden="true" />Trips</button>
           <button onClick={() => start(siteConfig.prompts[2])} type="button">
-            <BadgeCheck aria-hidden="true" />Rewards
+            <CheckBadgeIcon aria-hidden="true" />Rewards
           </button>
           <Link href={siteConfig.website.supportPath} onClick={() => setMenuOpen(false)}>
             Support
@@ -133,7 +133,7 @@ export function ImmersiveChatPage({
           onClick={() => setMenuOpen((open) => !open)}
           type="button"
         >
-          <Menu aria-hidden="true" />
+          <Bars3Icon aria-hidden="true" />
         </button>
       </header>
 

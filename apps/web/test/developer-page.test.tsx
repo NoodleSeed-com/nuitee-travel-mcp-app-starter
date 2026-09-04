@@ -39,34 +39,16 @@ describe('developer guide page', () => {
     })).not.toBeInTheDocument();
   });
 
-  it('renders configured help links and omits unconfigured legal links', () => {
+  it('renders configured help and legal links', () => {
     render(<DevelopersPage />);
 
     expect(screen.getByRole('link', { name: 'Support' })).toHaveAttribute(
       'href',
       starterConfig.website.supportPath,
     );
-    expect(starterConfig.website.privacyUrl).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Privacy' })).not.toBeInTheDocument();
-    expect(starterConfig.website.termsUrl).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Terms' })).not.toBeInTheDocument();
-  });
-
-  it('renders a configured Terms destination in developer help', () => {
-    const website = starterConfig.website as {
-      termsUrl: string | null;
-    };
-    const originalTermsUrl = website.termsUrl;
-    website.termsUrl = 'https://travel.example.co/terms';
-    try {
-      render(<DevelopersPage />);
-
-      expect(screen.getByRole('link', { name: 'Terms' })).toHaveAttribute(
-        'href',
-        'https://travel.example.co/terms',
-      );
-    } finally {
-      website.termsUrl = originalTermsUrl;
-    }
+    expect(screen.getByRole('link', { name: 'Privacy' }))
+      .toHaveAttribute('href', '/privacy');
+    expect(screen.getByRole('link', { name: 'Terms' }))
+      .toHaveAttribute('href', '/terms');
   });
 });

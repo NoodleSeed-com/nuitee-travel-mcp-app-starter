@@ -2,7 +2,7 @@
 
 import type React from 'react';
 import { landingEditorialFeature } from '../lib/landing-content';
-import { WayfareMark } from './wayfare-mark';
+import { WayfareLiquidMark } from './wayfare-liquid-mark';
 
 export function TravelEditorialFeature(): React.JSX.Element {
   return (
@@ -10,7 +10,7 @@ export function TravelEditorialFeature(): React.JSX.Element {
       aria-labelledby="travel-editorial-title"
       className="travel-editorial travel-landing__section"
     >
-      <WayfareMark className="travel-editorial__mark" />
+      <WayfareLiquidMark className="travel-editorial__mark" />
       <div className="travel-editorial__copy">
         <h2 id="travel-editorial-title">
           {landingEditorialFeature.heading}

@@ -36,3 +36,16 @@ The exact `--json`/exit-code contract is in the `noodle-seed` skill and its `ref
 
 Generated Noodle agent files are project-local and non-secret. Refresh them with `noodle agents setup --write`.
 <!-- END NOODLE AGENT CONTEXT -->
+
+# Wayfare brand preflight
+
+Before designing, implementing, or reviewing any new or changed user-facing
+capability, read `docs/brand/wayfare-brand-guidelines.md` in full. Treat it as
+the normative contract for the Wayline logo, Host Grotesk typography, the
+light-only token system, semantic state colors, rounded interaction geometry, Heroicons,
+jet-window imagery, motion, voice, chat-first composition, and accessibility.
+
+Cite the guideline in the task plan or implementation notes. Do not substitute
+a new visual direction or silently deviate from a non-negotiable brand rule. If
+a product need conflicts with the contract, explain the exact conflict and get
+the user's approval before implementing the deviation.

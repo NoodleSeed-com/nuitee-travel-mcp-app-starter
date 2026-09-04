@@ -65,19 +65,20 @@ function internalPath(value, label) {
   return value;
 }
 
-function httpsUrlOrNull(value, label) {
+function websiteUrlOrNull(value, label) {
   if (value === null) return null;
   if (typeof value !== 'string' || value !== value.trim() || CONTROL_CHARACTERS.test(value)) {
-    fail(`${label} must be null or an exact HTTPS URL.`);
+    fail(`${label} must be null, an internal path, or an exact HTTPS URL.`);
   }
+  if (value.startsWith('/') && !value.startsWith('//')) return internalPath(value, label);
   let parsed;
   try {
     parsed = new URL(value);
   } catch {
-    fail(`${label} must be null or an exact HTTPS URL.`);
+    fail(`${label} must be null, an internal path, or an exact HTTPS URL.`);
   }
   if (parsed.protocol !== 'https:' || parsed.username || parsed.password || value !== parsed.href) {
-    fail(`${label} must be null or an exact HTTPS URL.`);
+    fail(`${label} must be null, an internal path, or an exact HTTPS URL.`);
   }
   return value;
 }
@@ -166,8 +167,8 @@ export function validateStarterConfig(input) {
     website: {
       developerPath: internalPath(website.developerPath, 'Developer path'),
       supportPath: internalPath(website.supportPath, 'Support path'),
-      privacyUrl: httpsUrlOrNull(website.privacyUrl, 'Privacy URL'),
-      termsUrl: httpsUrlOrNull(website.termsUrl, 'Terms URL'),
+      privacyUrl: websiteUrlOrNull(website.privacyUrl, 'Privacy URL'),
+      termsUrl: websiteUrlOrNull(website.termsUrl, 'Terms URL'),
     },
     prompts,
     widgets: { domain: validateWidgetDomain(widgets.domain) },

@@ -12,6 +12,11 @@ describe('Wayfare companion website identity', () => {
       .toBe(travelCompanionDemoConfig.brand.assistantName);
   });
 
+  it('publishes product-owned privacy and terms destinations', () => {
+    expect(siteConfig.website.privacyUrl).toBe('/privacy');
+    expect(siteConfig.website.termsUrl).toBe('/terms');
+  });
+
   it('keeps every prompt within the supported demo boundary', () => {
     expect(siteConfig.prompts).toHaveLength(4);
     expect(siteConfig.prompts.join(' ')).toMatch(/flights/i);
@@ -24,8 +29,10 @@ describe('Wayfare companion website identity', () => {
   });
 
   it('uses the canonical Wayfare hero and vector brand mark', () => {
-    expect(siteConfig.brand.heroImagePath)
-      .toBe('/images/immersive/wayfare-explore-windows-v2.png');
+    expect(siteConfig.brand.heroViewImagePath)
+      .toBe('/images/immersive/wayfare-window-view-v1.png');
+    expect(siteConfig.brand.heroCabinImagePath)
+      .toBe('/images/immersive/wayfare-cabin-frame-v1.png');
     expect(travelCompanionDemoConfig.assets.logo.status)
       .toBe('repository_vector_component');
     expect(travelCompanionDemoConfig.assets.hero.status)

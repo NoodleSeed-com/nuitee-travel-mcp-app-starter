@@ -1,7 +1,7 @@
 .page {
   min-height: 100dvh;
-  background: #0a1420;
-  color: #fff;
+  background: var(--travel-canvas);
+  color: var(--travel-ink);
   overflow-x: clip;
 }
 
@@ -48,6 +48,7 @@
   min-height: 44px;
   padding: 0.5rem;
   text-decoration: none;
+  border-radius: 999px;
 }
 
 .currency {
@@ -60,7 +61,7 @@
   padding: 0.5rem 1rem;
 }
 
-.currency option { color: #0b1f33; }
+.currency option { color: #0d0d0d; }
 
 .mobileCurrency { display: none; }
 
@@ -84,6 +85,7 @@
   overflow: hidden;
   padding: clamp(8rem, 13vh, 10rem) 1.25rem clamp(11rem, 23vh, 15rem);
   position: relative;
+  color: #fff;
 }
 
 .background,
@@ -139,7 +141,7 @@
   background: transparent;
   border: 0;
   border-radius: 999px;
-  color: #0b1f33;
+  color: #0d0d0d;
   display: inline-flex;
   font: inherit;
   font-size: 0.8rem;
@@ -153,9 +155,9 @@
 }
 
 .modes button[aria-selected='true'] {
-  background: rgba(11, 31, 51, 0.94);
+  background: var(--travel-selected);
   box-shadow: 0 0.5rem 1.2rem rgba(4, 16, 28, 0.24);
-  color: #fff;
+  color: #0d0d0d;
 }
 
 .modes svg { flex: 0 0 auto; width: 1rem; }
@@ -204,12 +206,12 @@
   background: rgba(255, 255, 255, 0.84);
   border: 0.55rem solid rgba(255, 255, 255, 0.34);
   box-shadow: 0 1.3rem 4rem rgba(0, 0, 0, 0.28);
-  color: #0b1f33;
+  color: #0d0d0d;
 }
 
 .composer :global(.travel-composer__send) {
-  background: #22cbd1;
-  color: #071b24;
+  background: var(--travel-ink);
+  color: var(--travel-canvas);
 }
 
 .detail {
@@ -222,14 +224,15 @@
 }
 
 .error {
-  background: rgba(103, 22, 22, 0.9);
-  border-radius: 0.75rem;
+  background: var(--travel-action-needed);
+  border-radius: 1rem;
+  color: #0d0d0d;
   margin-top: 1rem;
   padding: 0.75rem 1rem;
 }
 
 .destinationTray {
-  background: #fff;
+  background: var(--travel-canvas);
   border-radius: 2rem 2rem 0 0;
   bottom: 0;
   display: grid;
@@ -244,21 +247,22 @@
 }
 
 .destinationTray button {
-  aspect-ratio: 16 / 7;
-  background: #cbd4dd;
+  aspect-ratio: 3 / 4;
+  background: var(--travel-surface);
   border: 0;
-  border-radius: 1.15rem;
+  border: 0.55rem solid var(--travel-boundary);
+  border-radius: 48% / 18%;
   color: #fff;
   cursor: pointer;
-  min-height: 8rem;
+  min-height: 16rem;
   overflow: hidden;
   position: relative;
-  text-align: left;
+  text-align: center;
 }
 
 .destinationTray img { object-fit: cover; }
 .destinationScrim { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 38%, rgba(5, 16, 28, 0.82)); }
-.destinationTray button > span:last-child { bottom: 1rem; display: grid; left: 1rem; position: absolute; z-index: 1; }
+.destinationTray button > span:last-child { bottom: 1.5rem; display: grid; left: 8%; right: 8%; position: absolute; text-align: center; z-index: 1; }
 .destinationTray strong { font-size: 1.25rem; }
 
 @keyframes explore-shimmer { to { background-position: -220% 0; } }
@@ -283,7 +287,7 @@
   }
   .navigationOpen { display: flex; }
   .navigation a,
-  .navigation button { border-radius: 0.7rem; padding: 0.75rem; text-align: left; }
+  .navigation button { border-radius: 999px; padding: 0.75rem; text-align: left; }
   .navigation a:focus-visible,
   .navigation button:focus-visible { background: rgba(255, 255, 255, 0.12); }
   .mobileCurrency {
@@ -298,7 +302,7 @@
     background: #fff;
     border: 0;
     border-radius: 999px;
-    color: #0b1f33;
+    color: #0d0d0d;
     min-height: 44px;
     padding: 0.45rem 0.8rem;
   }

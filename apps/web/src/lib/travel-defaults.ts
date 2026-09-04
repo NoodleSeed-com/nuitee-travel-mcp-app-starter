@@ -1,5 +1,3 @@
-import { AIRPORTS } from '../data/airports.generated';
-
 export const SUPPORTED_CURRENCIES = [
   'USD',
   'EUR',
@@ -18,34 +16,16 @@ export const SUPPORTED_CURRENCIES = [
 
 export type SupportedCurrency = typeof SUPPORTED_CURRENCIES[number];
 
-export interface AirportRecord {
-  readonly iata: string;
-  readonly city: string;
-  readonly country: string;
-  readonly latitude: number;
-  readonly longitude: number;
-}
-
-export interface AirportDefault {
-  readonly iata: string;
-  readonly city: string;
-  readonly country: string;
-}
-
 export interface TravelDefaults {
-  readonly origin?: AirportDefault;
   readonly currency: SupportedCurrency;
   readonly marketCountry?: string;
-  readonly source: 'browser-geolocation' | 'fallback';
+  readonly source: 'ip-country' | 'fallback';
 }
 
 export const NEUTRAL_TRAVEL_DEFAULTS: TravelDefaults = {
   currency: 'USD',
   source: 'fallback',
 };
-
-const EARTH_RADIUS_KM = 6_371;
-const MAX_DEFAULT_AIRPORT_DISTANCE_KM = 250;
 
 const COUNTRY_CURRENCIES: Readonly<Record<string, SupportedCurrency>> = {
   AE: 'AED',
@@ -82,63 +62,6 @@ const COUNTRY_CURRENCIES: Readonly<Record<string, SupportedCurrency>> = {
   US: 'USD',
 };
 
-function degreesToRadians(value: number) {
-  return value * Math.PI / 180;
-}
-
-function distanceKm(
-  latitude: number,
-  longitude: number,
-  airport: AirportRecord,
-) {
-  const latitudeDelta = degreesToRadians(airport.latitude - latitude);
-  const longitudeDelta = degreesToRadians(airport.longitude - longitude);
-  const originLatitude = degreesToRadians(latitude);
-  const airportLatitude = degreesToRadians(airport.latitude);
-  const halfLatitude = Math.sin(latitudeDelta / 2);
-  const halfLongitude = Math.sin(longitudeDelta / 2);
-  const haversine = halfLatitude * halfLatitude
-    + Math.cos(originLatitude) * Math.cos(airportLatitude)
-    * halfLongitude * halfLongitude;
-  return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(haversine));
-}
-
-export function resolveNearestAirport(
-  position: Readonly<{ latitude: number; longitude: number }>,
-  catalog: readonly AirportRecord[] = AIRPORTS,
-  maximumDistanceKm = MAX_DEFAULT_AIRPORT_DISTANCE_KM,
-): AirportDefault | undefined {
-  const { latitude, longitude } = position;
-  if (
-    !Number.isFinite(latitude)
-    || !Number.isFinite(longitude)
-    || latitude < -90
-    || latitude > 90
-    || longitude < -180
-    || longitude > 180
-    || !Number.isFinite(maximumDistanceKm)
-    || maximumDistanceKm <= 0
-  ) {
-    return undefined;
-  }
-
-  let nearest: AirportRecord | undefined;
-  let nearestDistance = Number.POSITIVE_INFINITY;
-  for (const airport of catalog) {
-    const currentDistance = distanceKm(latitude, longitude, airport);
-    if (currentDistance < nearestDistance) {
-      nearest = airport;
-      nearestDistance = currentDistance;
-    }
-  }
-  if (!nearest || nearestDistance > maximumDistanceKm) return undefined;
-  return {
-    iata: nearest.iata,
-    city: nearest.city,
-    country: nearest.country,
-  };
-}
-
 function localeRegion(locale: string) {
   try {
     return new Intl.Locale(locale).maximize().region?.toUpperCase();
@@ -158,27 +81,22 @@ export function resolveInitialMarketCountry(locale: string) {
 
 export function resolveInitialCurrency({
   locale,
-  airportCountry,
+  country,
 }: Readonly<{
   locale: string;
-  airportCountry?: string;
+  country?: string;
 }>): SupportedCurrency {
-  const country = airportCountry?.toUpperCase();
-  if (country && COUNTRY_CURRENCIES[country]) {
-    return COUNTRY_CURRENCIES[country];
+  const normalizedCountry = country?.toUpperCase();
+  if (normalizedCountry && COUNTRY_CURRENCIES[normalizedCountry]) {
+    return COUNTRY_CURRENCIES[normalizedCountry];
   }
   const region = localeRegion(locale);
   return region ? COUNTRY_CURRENCIES[region] ?? 'USD' : 'USD';
 }
 
 export function toTravelPageContext(defaults: TravelDefaults) {
-  const travelCountry = defaults.origin?.country ?? defaults.marketCountry;
   return {
-    ...(defaults.origin ? {
-      travelOrigin: defaults.origin.iata,
-      travelOriginLabel: defaults.origin.city,
-    } : {}),
-    ...(travelCountry ? { travelCountry } : {}),
+    ...(defaults.marketCountry ? { travelCountry: defaults.marketCountry } : {}),
     travelCurrency: defaults.currency,
     travelDefaultSource: defaults.source,
   } as const;

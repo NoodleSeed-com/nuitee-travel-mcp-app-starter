@@ -3,6 +3,7 @@
 import { useNoodleAssistant } from '@noodleseed/assistant/react/client';
 import type { AssistantUIMessage } from '@noodleseed/assistant/client';
 import {
+  Fragment,
   useEffect,
   useMemo,
   useRef,
@@ -22,6 +23,7 @@ import {
   type ToolActivity,
 } from '../lib/travel-progress';
 import { TravelComposer } from './travel-composer';
+import { TextShimmer } from './ui/text-shimmer';
 import { TravelMessage } from './travel-message';
 import { TripBrief } from './trip-brief';
 import {
@@ -180,7 +182,7 @@ export function TravelConversation({
   const [activity, setActivity] = useState<ToolActivity | null>(null);
   const [initialPromptState, setInitialPromptState] = useState<
     'pending' | 'sending' | 'failed' | 'sent'
-  >(() => durableInitialPrompt ? 'pending' : 'sent');
+  >('pending');
   const [stopRequested, setStopRequested] = useState(false);
   const stopRequestedRef = useRef(false);
   const busy = status === 'submitted' || status === 'streaming';
@@ -197,13 +199,19 @@ export function TravelConversation({
           !active
           || initialPromptSendingRef.current
           || initialPromptAcceptedRef.current
+          || stopRequestedRef.current
         ) return;
         initialPromptSendingRef.current = true;
-        initialPromptAcceptedRef.current = true;
+        setInitialPromptState('sending');
         lastPromptRef.current = initialPrompt;
         followLatestRef.current = true;
-        void client.sendMessage(initialPrompt).catch(() => undefined).finally(() => {
+        void client.sendMessage(initialPrompt).then(() => {
+          initialPromptAcceptedRef.current = true;
           initialPromptSendingRef.current = false;
+          setInitialPromptState('sent');
+        }).catch(() => {
+          initialPromptSendingRef.current = false;
+          setInitialPromptState('failed');
         });
       });
       return () => {
@@ -295,11 +303,17 @@ export function TravelConversation({
       if (event.event === 'tool_completed') {
         activeActivities.delete(event.data.id);
         setActivity(newestActivity(activeActivities));
+        if (activeActivities.size === 0) {
+          initialPromptAcceptedRef.current = true;
+          setInitialPromptState('sent');
+        }
         return;
       }
       if (event.event === 'done' || event.event === 'error') {
         activeActivities.clear();
         setActivity(null);
+        initialPromptAcceptedRef.current = true;
+        setInitialPromptState('sent');
       }
     });
     return () => {
@@ -353,24 +367,49 @@ export function TravelConversation({
     setInitialPromptState('pending');
   }
 
-  const initialPromptProgress = durableInitialPrompt
-    && (initialPromptState === 'pending' || initialPromptState === 'sending')
-    ? 'Starting your trip…'
-    : '';
-  const statusLabel = terminal
+  const initialPromptIsSending = initialPromptState === 'pending'
+    || initialPromptState === 'sending';
+  const showOptimisticInitialPrompt = visibleMessages.length === 0
+    && initialPromptState !== 'failed';
+  const initialPromptProgress = visibleMessages.length === 0
+    && initialPromptIsSending
+    && !terminal
+    && !stopRequested;
+  const responseInProgress = !stopRequested
+    && (initialPromptProgress || Boolean(activity) || busy);
+  const statusLabel = terminal || stopRequested || !responseInProgress
     ? ''
-    : stopRequested
-      ? ''
-      : initialPromptProgress
-        || activity?.label
-        || (busy ? 'Assistant is responding' : '');
+    : 'Thinking…';
+  let activityInsertionIndex = visibleMessages.length;
+  for (let index = visibleMessages.length - 1; index >= 0; index -= 1) {
+    if (visibleMessages[index]?.role === 'user') {
+      activityInsertionIndex = index + 1;
+      break;
+    }
+  }
   const errorPresentation = error && !hasToolError
     ? presentAssistantError(error)
     : null;
 
+  const activityRow = (
+    <li
+      className="travel-conversation__activity"
+      data-active={statusLabel ? 'true' : 'false'}
+      key="assistant-activity"
+    >
+      <p
+        aria-live="polite"
+        className="travel-conversation__activity-status"
+        role="status"
+      >
+        {statusLabel ? <TextShimmer>{statusLabel}</TextShimmer> : null}
+      </p>
+    </li>
+  );
+
   return (
     <section
-      aria-busy={busy}
+      aria-busy={responseInProgress}
       aria-label="Travel conversation"
       className={[
         'travel-conversation-shell',
@@ -402,11 +441,27 @@ export function TravelConversation({
           ref={transcriptContentRef}
           role="log"
         >
-          {visibleMessages.map((message) => (
-            <li key={message.id}>
-              <TravelMessage client={client} message={message} />
+          {showOptimisticInitialPrompt ? (
+            <li data-optimistic-initial-prompt="true">
+              <article
+                aria-label="Traveler message"
+                className="travel-message travel-message--user"
+              >
+                <p>{initialPrompt}</p>
+              </article>
             </li>
+          ) : null}
+          {visibleMessages.map((message, index) => (
+            <Fragment key={message.id}>
+              {index === activityInsertionIndex ? activityRow : null}
+              <li>
+                <TravelMessage client={client} message={message} />
+              </li>
+            </Fragment>
           ))}
+          {activityInsertionIndex === visibleMessages.length
+            ? activityRow
+            : null}
         </ol>
         {awaitingAssistantContent ? <ImmersiveConversationSkeleton /> : null}
         <div aria-hidden="true" data-testid="conversation-end" ref={conversationEndRef} />
@@ -480,9 +535,6 @@ export function TravelConversation({
             </button>
           </div>
         ) : null}
-        <p aria-live="polite" role="status">
-          {statusLabel}
-        </p>
         {errorPresentation && !(durableInitialPrompt && initialPromptState === 'failed') ? (
           <section className="assistant-error" role="alert">
             <h2>{errorPresentation.title}</h2>
@@ -499,7 +551,8 @@ export function TravelConversation({
         ) : null}
       </div>
       <TravelComposer
-        busy={busy}
+        busy={responseInProgress}
+        error={Boolean(errorPresentation || hasToolError || projection.phase === 'error')}
         formLabel="Continue trip"
         onStop={stopGenerating}
         onSubmit={sendFollowUp}

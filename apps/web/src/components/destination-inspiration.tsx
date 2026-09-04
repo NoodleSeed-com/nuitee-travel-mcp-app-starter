@@ -49,7 +49,6 @@ export function DestinationInspiration(): JSX.Element {
       ref={sectionRef}
     >
       <header className="travel-section-heading">
-        <span>Travel inspiration</span>
         <h2 id="travel-inspiration-title">Where the journey could take you</h2>
       </header>
       <ul

@@ -2,7 +2,7 @@
 
 A guest-first Next.js developer template for building a chat-first flight experience with a Noodle embedded assistant and the official Nuitee Connect Flights API. The fictional customer-facing brand is **Wayfare**.
 
-The primary guest website guides a traveler through **Search → Select → Verify** and stops at a verified fare. Wayfare resolves useful relative timing such as `next week`, applies visible one-way/adult/Economy and location-aware currency defaults, and searches without asking the traveler to confirm every provider field. A clear route with no usable date clue still produces one structured date decision. It does not book, hold inventory, collect passenger details, take payment, or issue tickets. The repository also exposes the same bounded MCP tools and linked Apps to external MCP hosts; there is no website-only copy of the travel product.
+The primary guest website guides a traveler through **Search → Select → Verify** and stops at a verified fare. Wayfare resolves useful relative timing such as `next week`, applies visible one-way/adult/Economy defaults, and may suggest a currency from a permission-free coarse-country lookup. It searches without asking the traveler to confirm every provider field. A clear route with no usable date clue still produces one structured date decision. It does not book, hold inventory, collect passenger details, take payment, or issue tickets. The repository also exposes the same bounded MCP tools and linked Apps to external MCP hosts; there is no website-only copy of the travel product.
 
 This is an independent starter, not an official Nuitee connector, airline partnership, booking product, or endorsement.
 
@@ -11,7 +11,7 @@ This is an independent starter, not an official Nuitee connector, airline partne
 ## Primary guest website
 
 The Next.js application in `apps/web/` is the main developer path. Wayfare uses
-a light, Inter-only single-entry cinematic landing with one natural-language
+a high-contrast, Host Grotesk single-entry cinematic landing with one natural-language
 composer. The homepage keeps capability choice inside the assistant while the
 existing conversation, inline widgets, and Search → Select → Verify flight
 boundary remain unchanged. The alternate `/experience` route is an optional
@@ -21,6 +21,12 @@ with delayed anonymous Assistant admission and plain-language progress. The comp
 disclosure is absent until validated facts exist, stays collapsed by default,
 and is derived only from structured tool results—never conversation prose.
 
+Before changing any user-facing capability, read the canonical
+[Wayfare brand guidelines](docs/brand/wayfare-brand-guidelines.md). They define
+the exact Wayline logo, typography, light-only tokens, semantic colors,
+rounded controls, Heroicons policy, jet-window device, motion, voice, and
+accessibility requirements for the website and MCP Apps.
+
 Official inline MCP Apps render at the exact chronological message part that
 needs interaction. Every distinct view ID remains in history; the website
 neither reconstructs App output as fare cards nor creates a second results
@@ -29,9 +35,10 @@ illustrative stay results, loyalty overview, reward-flight comparison, trip
 review, and travel-protection comparison views. A tool/URI mismatch never
 reaches `NoodleAppView`.
 
-The route-line SVG in `apps/web/src/components/wayfare-mark.tsx` is the
-repository-owned Wayfare mark. Use the installed Lucide icons only for familiar,
-supported actions; do not introduce icons suggesting attachments, payment,
+The exact Wayline SVG in `apps/web/src/components/wayfare-mark.tsx` is the
+repository-owned Wayfare logo asset. Use only the installed Heroicons React
+library for functional interface iconography; do not hand-author utility SVGs,
+mix icon libraries, or introduce symbols suggesting attachments, payment,
 booking, voice, or account management. The shared core hero and editorial
 destination masters are truthful native `1672 × 941` high-resolution web
 images, not literal 4K sources. Next.js serves responsive AVIF/WebP derivatives;
@@ -57,9 +64,10 @@ After a separately authorized assistant-enabled deployment provides a stable pub
 ```text
 NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID=<real-public-embed-id>
 NEXT_PUBLIC_NOODLE_SERVICE_URL=<exact-service-origin>
+IPINFO_TOKEN=<server-only-ipinfo-lite-token>
 ```
 
-Both values are public deployment coordinates. Never place `NUITEE_API_KEY`, an Assistant client secret, or model credentials in a `NEXT_PUBLIC_` variable. The optional service URL must be one exact HTTPS origin, or an explicit loopback origin with a port for local development.
+The two `NEXT_PUBLIC_` values are public deployment coordinates. `IPINFO_TOKEN` is optional and server-only; on Fly.io it enables a coarse country lookup for the initial currency without browser location permission. Never put it, `NUITEE_API_KEY`, an Assistant client secret, or model credentials in a `NEXT_PUBLIC_` variable. The optional service URL must be one exact HTTPS origin, or an explicit loopback origin with a port for local development.
 
 For a small scale-to-zero website deployment, follow the checked-in [Fly.io Experience guide](docs/FLY_DEPLOYMENT.md). It keeps the Next.js shell on Fly while the Assistant, MCP server, provider credentials, and caller state remain on Noodle Cloud.
 
@@ -184,7 +192,7 @@ pnpm customize -- --production-origin "https://<your-exact-domain>"
 pnpm customize:check
 ```
 
-The customizer does not rename packages, server IDs, tool names, connector contracts, state handles, provider limits, or fixtures. Review light/dark contrast and browser layout after visual changes. Full constraints are in [docs/customization.md](docs/customization.md).
+The customizer does not rename packages, server IDs, tool names, connector contracts, state handles, provider limits, or fixtures. Review light-theme contrast and browser layout after visual changes. Full constraints are in [docs/customization.md](docs/customization.md).
 
 ## Architecture and security
 

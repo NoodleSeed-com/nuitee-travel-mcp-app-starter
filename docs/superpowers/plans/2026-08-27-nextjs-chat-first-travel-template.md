@@ -1,5 +1,10 @@
 # Next.js Chat-First Travel Template Implementation Plan
 
+> **Iconography update — 2026-09-04:** The current Wayfare brand guideline
+> supersedes the historical Lucide dependency in this plan. Product iconography
+> now uses Heroicons exclusively; the original Wayfare route-line logo remains
+> the sole custom SVG exception.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Build the repository's primary guest-first Next.js travel website with the approved Brightdesk-derived chat experience while preserving the existing Nuitee Search → Select → Verify MCP boundary.

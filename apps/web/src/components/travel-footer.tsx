@@ -1,44 +1,26 @@
 import type React from 'react';
 import { siteConfig } from '../lib/site-config';
+import { WayfareMark } from './wayfare-mark';
 
 export function TravelFooter(): React.JSX.Element {
   return (
     <footer className="travel-footer travel-landing__section">
       <div className="travel-footer__brand">
-        <p>{siteConfig.brand.name}</p>
-        <span>{siteConfig.brand.tagline}</span>
+        <a aria-label="Wayfare home" className="travel-footer__lockup" href="/">
+          <span aria-hidden="true" className="travel-footer__mark">
+            <WayfareMark />
+          </span>
+          <span>{siteConfig.brand.name}</span>
+        </a>
+        <p>{siteConfig.brand.tagline}</p>
       </div>
       <nav aria-label="Travel footer">
         <a href={siteConfig.website.developerPath}>For developers</a>
         <a href={siteConfig.website.supportPath}>Support</a>
-        {siteConfig.website.privacyUrl ? (
-          <a href={siteConfig.website.privacyUrl}>Privacy</a>
-        ) : (
-          <span className="travel-footer__unconfigured">
-            <span>Privacy</span>
-            <small>Not configured</small>
-          </span>
-        )}
-        {siteConfig.website.termsUrl ? (
-          <a href={siteConfig.website.termsUrl}>Terms</a>
-        ) : (
-          <span className="travel-footer__unconfigured">
-            <span>Terms</span>
-            <small>Not configured</small>
-          </span>
-        )}
+        {siteConfig.website.privacyUrl ? <a href={siteConfig.website.privacyUrl}>Privacy</a> : null}
+        {siteConfig.website.termsUrl ? <a href={siteConfig.website.termsUrl}>Terms</a> : null}
       </nav>
-      <div className="travel-footer__session">
-        <p>Guest session</p>
-        <span>No account is required to plan a trip.</span>
-      </div>
-      <p className="travel-footer__limitations">
-        <strong>Planning note</strong>
-        <span>{siteConfig.disclosure.persistent}</span>
-      </p>
-      <p className="travel-footer__attribution">
-        Built on Noodle Seed · Powered by Nuitee
-      </p>
+      <p className="travel-footer__meta">© {new Date().getFullYear()} Wayfare</p>
     </footer>
   );
 }
