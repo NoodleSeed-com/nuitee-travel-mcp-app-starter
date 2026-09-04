@@ -19,15 +19,17 @@ const domainIcons = {
 } as const;
 
 export function isHome(value: unknown): value is TravelHomeOutput {
-  if (value === null || typeof value !== 'object') return false;
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
   const candidate = value as Partial<TravelHomeOutput>;
-  const expanded = Array.isArray(candidate.domains) && candidate.domains.some(
-    (domain) => domain?.availability === 'illustrative',
-  );
+  const boundedText = (text: unknown, min: number, max: number) =>
+    typeof text === 'string' && text.trim().length >= min && text.length <= max;
+  const expanded = Array.isArray(candidate.domains) && candidate.domains[2]?.availability === 'illustrative';
+  const stays = candidate.domains?.[1]?.availability;
+  if (expanded && stays !== 'available' && stays !== 'illustrative') return false;
   const expected = expanded
     ? [
         ['Flights', 'available'],
-        ['Stays', 'illustrative'],
+        ['Stays', stays],
         ['Loyalty', 'illustrative'],
         ['Ground travel', 'coming_soon'],
         ['Experiences', 'coming_soon'],
@@ -41,11 +43,15 @@ export function isHome(value: unknown): value is TravelHomeOutput {
       ] as const;
   return candidate.status === 'ready' &&
     candidate.brand === starterConfig.brand.name &&
-    typeof candidate.message === 'string' && candidate.message.length <= 300 &&
-    typeof candidate.fallback === 'string' && candidate.fallback.length <= 700 &&
+    boundedText(candidate.message, 1, 300) &&
+    boundedText(candidate.fallback, expanded ? 20 : 1, 700) &&
     Array.isArray(candidate.domains) && candidate.domains.length === expected.length && candidate.domains.every((domain, index) =>
-      domain !== null && typeof domain === 'object' && domain.name === expected[index][0] && domain.availability === expected[index][1]) &&
-    (!expanded || ('disclosure' in candidate && typeof candidate.disclosure === 'string' && candidate.disclosure.length <= 320));
+      domain !== null && typeof domain === 'object' && !Array.isArray(domain) &&
+      domain.name === expected[index][0] && domain.availability === expected[index][1] &&
+      (expanded ? 'label' in domain && boundedText(domain.label, 2, 80)
+        : !('label' in domain) || boundedText(domain.label, 2, 80))) &&
+    (expanded ? 'disclosure' in candidate && boundedText(candidate.disclosure, 20, 320)
+      : !('disclosure' in candidate));
 }
 
 export function TravelHomeView({

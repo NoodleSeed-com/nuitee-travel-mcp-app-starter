@@ -66,6 +66,10 @@ const liveDemoHome = {
 
 const previewDemoHome = {
   ...liveDemoHome,
+  message:
+    'Compare illustrative stays, rewards, and travel protection in one conversation. Current flight and hotel searches require configured provider access.',
+  disclosure:
+    'Stays, rewards, and travel protection are illustrative. Current flight and hotel searches require configured provider access. Booking, redemption, and policy purchase are unavailable.',
   domains: liveDemoHome.domains.map((domain) => domain.name === 'Stays'
     ? { ...domain, availability: 'illustrative' as const, label: 'Illustrative stays' }
     : domain),

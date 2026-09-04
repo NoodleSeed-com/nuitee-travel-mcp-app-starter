@@ -16,7 +16,7 @@ import type {
 import './travel.css';
 
 export const WAYFARE_PREVIEW_DISCLOSURE =
-  'Flight and stay results come from connected providers. Rewards are illustrative previews. Booking and redemption are unavailable.';
+  'Rewards are illustrative previews, not a real member account. Booking and redemption are unavailable.';
 
 type LoyaltyData = DemoLoyaltyOverview | DemoTripReview;
 type LoyaltyState = 'loading' | 'error' | 'malformed';
@@ -130,7 +130,7 @@ const isStaySelection = (value: unknown) => {
   const stay = record(value);
   return (
     stay !== undefined &&
-    stay?.dataSource === 'illustrative' &&
+    (stay.dataSource === 'illustrative' || stay.dataSource === 'live_nuitee') &&
     typeof stay.selectionId === 'string' &&
     /^hsel_[a-f0-9]{32}$/.test(stay.selectionId) &&
     boundedString(stay.propertyName, 2, 100) &&
@@ -166,10 +166,27 @@ export function isDemoTripReview(value: unknown): value is DemoTripReview {
   return true;
 }
 
-function Disclosure() {
+function reviewSourceSummary(data: DemoTripReview) {
+  const flight = data.flight ? 'Current flight selection' : 'No flight is selected';
+  const stay = data.stay
+    ? data.stay.dataSource === 'live_nuitee' ? 'current hotel selection' : 'illustrative hotel selection'
+    : 'no hotel is selected';
+  return `${flight}; ${stay}; illustrative rewards`;
+}
+
+function Disclosure({ review }: { readonly review?: DemoTripReview }) {
+  const flight = review?.flight
+    ? 'The flight is a Nuitee search selection, not a verified fare.'
+    : 'No flight is selected.';
+  const stay = review?.stay
+    ? review.stay.dataSource === 'live_nuitee'
+      ? 'The hotel is a Nuitee search selection. Hotel rates still require verification; no room is held.'
+      : 'The hotel selection is illustrative, not provider inventory.'
+    : 'No hotel is selected.';
   return (
-    <aside className="cc-demo-disclosure" aria-label="Illustrative data disclosure">
-      <StatusBadge tone="info">Preview only</StatusBadge>
+    <aside className="cc-demo-disclosure" aria-label={review ? 'Trip source disclosure' : 'Illustrative data disclosure'}>
+      <StatusBadge tone="info">{review ? 'Planning only' : 'Preview only'}</StatusBadge>
+      {review ? <p>{flight} {stay}</p> : null}
       <p>{WAYFARE_PREVIEW_DISCLOSURE}</p>
     </aside>
   );
@@ -321,7 +338,7 @@ function TripReview({ data, locale }: {
 
   return (
     <Flow variant="stack" density="comfortable">
-      <Disclosure />
+      <Disclosure review={data} />
 
       {data.status === 'incomplete' ? (
         <section className="cc-loyalty-missing" role="status" aria-labelledby="cc-loyalty-missing-title">
@@ -355,7 +372,7 @@ function TripReview({ data, locale }: {
           {data.stay ? (
             <article className="cc-loyalty-selection">
               <StatusBadge className="cc-loyalty-provenance" tone="info">
-                Simulated hotel selection
+                {data.stay.dataSource === 'live_nuitee' ? 'Current Nuitee hotel selection' : 'Simulated hotel selection'}
               </StatusBadge>
               <h3>{data.stay.propertyName}</h3>
               <span>{data.stay.city}</span>
@@ -423,7 +440,7 @@ export function LoyaltyOverviewView({
       className={frameClassName}
       displayMode="auto"
       title={review ? 'Trip and rewards review' : 'Wayfare Rewards'}
-      subtitle={review ? 'Current flight context with simulated hotels and rewards' : 'Illustrative loyalty profile'}
+      subtitle={review ? reviewSourceSummary(data) : 'Illustrative loyalty profile'}
       data-llm={data.fallback}
     >
       {review ? (

@@ -6,6 +6,8 @@ import demoPreviewApp from '../src/demo-preview-server.js';
 import embeddedApp from '../src/embedded-server.js';
 import liveApp from '../src/live-server.js';
 import { hotelDemoViewPolicy } from '../src/travel-server.js';
+import { travelCompanionDemoConfig } from '../src/demo-config.js';
+import { demoHomeOutputSchema } from '../src/demo-schemas.js';
 
 const starterTools = [
   'open_travel_starter',
@@ -39,6 +41,29 @@ function modelVisible(manifest: any) {
 }
 
 describe('Wayfare expanded travel profile', () => {
+  it('keeps preview home output explicit about illustrative data and configured provider access', async () => {
+    const manifest = await demoPreviewApp.toManifest() as any;
+    const home = manifest.tools.find((entry: any) => entry.name === 'open_travel_starter');
+    // Public authored output, not a copied widget fixture or tool description.
+    expect(home.fulfilment.steps).toEqual([]);
+    const output = demoHomeOutputSchema.parse(home.fulfilment.output);
+    expect(output.message).toContain('illustrative stays, rewards, and travel protection');
+    expect(output.disclosure).toContain('Stays, rewards, and travel protection are illustrative.');
+    for (const text of [output.message, output.disclosure]) {
+      expect(text).toContain('Current flight and hotel searches require configured provider access.');
+      expect(text).not.toMatch(/Search current flights and stays|results come from connected providers/);
+    }
+    expect(output.disclosure).toContain('Booking, redemption, and policy purchase are unavailable.');
+    expect(output.domains.find((domain) => domain.name === 'Stays')?.availability).toBe('illustrative');
+
+    const liveManifest = await demoLiveApp.toManifest() as any;
+    const liveHome = liveManifest.tools.find((entry: any) => entry.name === 'open_travel_starter');
+    const liveOutput = demoHomeOutputSchema.parse(liveHome.fulfilment.output);
+    expect(liveOutput.message).toBe(travelCompanionDemoConfig.brand.intro);
+    expect(liveOutput.disclosure).toBe(travelCompanionDemoConfig.disclosure.persistent);
+    expect(liveOutput.domains.find((domain) => domain.name === 'Stays')?.availability).toBe('available');
+  });
+
   it('provides a credential-free local preview of every widget tool', async () => {
     const manifest = await demoPreviewApp.toManifest() as any;
     expect(manifest.tools.map((entry: any) => entry.name)).toEqual(demoTools);
