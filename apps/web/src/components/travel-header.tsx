@@ -16,7 +16,11 @@ import {
   US,
 } from 'country-flag-icons/react/3x2';
 import { CheckIcon } from '@heroicons/react/20/solid';
-import { Bars3Icon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import {
+  Bars3Icon,
+  ChevronDownIcon,
+  PlusIcon,
+} from '@heroicons/react/24/outline';
 import { useEffect, useId, useRef, useState } from 'react';
 import { siteConfig } from '../lib/site-config';
 import {
@@ -191,6 +195,16 @@ export function TravelHeader({
         </span>
         <span>{siteConfig.brand.name}</span>
       </a>
+      {mode === 'conversation' ? (
+        <button
+          className="travel-header__new-trip"
+          onClick={onNewTrip}
+          type="button"
+        >
+          <PlusIcon aria-hidden="true" strokeWidth={2} />
+          <span>New trip</span>
+        </button>
+      ) : null}
       <div
         className="travel-header__currency-control"
         ref={currencyControlRef}

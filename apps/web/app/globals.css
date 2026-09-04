@@ -1979,6 +1979,37 @@ code {
   background: var(--travel-raised);
 }
 
+.travel-header--conversation {
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+}
+
+.travel-header__new-trip {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0 0.85rem;
+  border: 1px solid var(--travel-boundary);
+  border-radius: 999px;
+  background: var(--travel-raised);
+  color: var(--travel-ink);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.travel-header__new-trip > svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.travel-header__new-trip:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--travel-selected) 72%, transparent);
+  outline-offset: 2px;
+}
+
 .travel-header__currency-control {
   position: relative;
   display: grid;
@@ -2162,6 +2193,7 @@ code {
 }
 
 @media (hover: hover) and (pointer: fine) {
+  .travel-header__new-trip:hover,
   .travel-header__currency:hover {
     border-color: var(--travel-ink);
   }
@@ -2524,6 +2556,64 @@ code {
     grid-template-columns: minmax(0, 1fr) auto auto;
     gap: 0.35rem;
     padding: 0.5rem 0.75rem;
+  }
+
+  .travel-header--conversation {
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+  }
+
+  .travel-header--conversation .travel-wordmark {
+    width: 44px;
+    min-width: 44px;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .travel-header--conversation .travel-wordmark > span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .travel-header--conversation .travel-header__currency-control {
+    width: 44px;
+    min-width: 44px;
+  }
+
+  .travel-header--conversation .travel-header__currency {
+    grid-template-columns: 20px;
+    gap: 0;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  .travel-header--conversation .travel-header__currency-flag {
+    width: 20px;
+    height: 13.333px;
+  }
+
+  .travel-header--conversation .travel-header__currency-code,
+  .travel-header--conversation .travel-header__currency-chevron {
+    display: none;
+  }
+
+  .travel-header__new-trip {
+    width: 44px;
+    padding: 0;
+  }
+
+  .travel-header__new-trip > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .travel-header .travel-wordmark {

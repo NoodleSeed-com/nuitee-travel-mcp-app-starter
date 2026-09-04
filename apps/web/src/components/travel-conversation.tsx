@@ -182,7 +182,7 @@ export function TravelConversation({
   const [activity, setActivity] = useState<ToolActivity | null>(null);
   const [initialPromptState, setInitialPromptState] = useState<
     'pending' | 'sending' | 'failed' | 'sent'
-  >(() => durableInitialPrompt ? 'pending' : 'sent');
+  >('pending');
   const [stopRequested, setStopRequested] = useState(false);
   const stopRequestedRef = useRef(false);
   const busy = status === 'submitted' || status === 'streaming';
@@ -199,13 +199,19 @@ export function TravelConversation({
           !active
           || initialPromptSendingRef.current
           || initialPromptAcceptedRef.current
+          || stopRequestedRef.current
         ) return;
         initialPromptSendingRef.current = true;
-        initialPromptAcceptedRef.current = true;
+        setInitialPromptState('sending');
         lastPromptRef.current = initialPrompt;
         followLatestRef.current = true;
-        void client.sendMessage(initialPrompt).catch(() => undefined).finally(() => {
+        void client.sendMessage(initialPrompt).then(() => {
+          initialPromptAcceptedRef.current = true;
           initialPromptSendingRef.current = false;
+          setInitialPromptState('sent');
+        }).catch(() => {
+          initialPromptSendingRef.current = false;
+          setInitialPromptState('failed');
         });
       });
       return () => {
@@ -297,11 +303,17 @@ export function TravelConversation({
       if (event.event === 'tool_completed') {
         activeActivities.delete(event.data.id);
         setActivity(newestActivity(activeActivities));
+        if (activeActivities.size === 0) {
+          initialPromptAcceptedRef.current = true;
+          setInitialPromptState('sent');
+        }
         return;
       }
       if (event.event === 'done' || event.event === 'error') {
         activeActivities.clear();
         setActivity(null);
+        initialPromptAcceptedRef.current = true;
+        setInitialPromptState('sent');
       }
     });
     return () => {
@@ -355,11 +367,16 @@ export function TravelConversation({
     setInitialPromptState('pending');
   }
 
-  const initialPromptProgress = Boolean(
-    durableInitialPrompt
-      && (initialPromptState === 'pending' || initialPromptState === 'sending'),
-  );
-  const responseInProgress = initialPromptProgress || Boolean(activity) || busy;
+  const initialPromptIsSending = initialPromptState === 'pending'
+    || initialPromptState === 'sending';
+  const showOptimisticInitialPrompt = visibleMessages.length === 0
+    && initialPromptState !== 'failed';
+  const initialPromptProgress = visibleMessages.length === 0
+    && initialPromptIsSending
+    && !terminal
+    && !stopRequested;
+  const responseInProgress = !stopRequested
+    && (initialPromptProgress || Boolean(activity) || busy);
   const statusLabel = terminal || stopRequested || !responseInProgress
     ? ''
     : 'Thinking…';
@@ -392,7 +409,7 @@ export function TravelConversation({
 
   return (
     <section
-      aria-busy={busy}
+      aria-busy={responseInProgress}
       aria-label="Travel conversation"
       className={[
         'travel-conversation-shell',
@@ -424,6 +441,16 @@ export function TravelConversation({
           ref={transcriptContentRef}
           role="log"
         >
+          {showOptimisticInitialPrompt ? (
+            <li data-optimistic-initial-prompt="true">
+              <article
+                aria-label="Traveler message"
+                className="travel-message travel-message--user"
+              >
+                <p>{initialPrompt}</p>
+              </article>
+            </li>
+          ) : null}
           {visibleMessages.map((message, index) => (
             <Fragment key={message.id}>
               {index === activityInsertionIndex ? activityRow : null}
@@ -524,7 +551,7 @@ export function TravelConversation({
         ) : null}
       </div>
       <TravelComposer
-        busy={busy}
+        busy={responseInProgress}
         error={Boolean(errorPresentation || hasToolError || projection.phase === 'error')}
         formLabel="Continue trip"
         onStop={stopGenerating}

@@ -193,8 +193,7 @@ describe('guest travel conversation lifecycle', () => {
     expect(client.sendMessage).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('button', { name: 'Reset conversation' }))
       .not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'New trip' }))
-      .not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'New trip' })).toBeVisible();
     expect(screen.getByRole('textbox', { name: 'Ask the travel assistant' }))
       .toHaveAttribute('placeholder', 'Tell Wayfare what you need…');
     expect(screen.getAllByRole('region', { name: 'Travel conversation' }))
@@ -234,6 +233,27 @@ describe('guest travel conversation lifecycle', () => {
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
     expect(options.clientContext()).not.toHaveProperty('principalKey');
+  });
+
+  it('shows the submitted trip and response progress before the public session is ready', async () => {
+    client.sendMessage.mockImplementation(() => new Promise<void>(() => {}));
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+
+    submitPrompt('JFK to Tokyo next month');
+
+    const conversation = screen.getByRole('region', {
+      name: 'Travel conversation',
+    });
+    expect(within(conversation).getByRole('article', {
+      name: 'Traveler message',
+    })).toHaveTextContent('JFK to Tokyo next month');
+    expect(within(conversation).getByRole('status')).toHaveTextContent(
+      'Thinking…',
+    );
+    expect(conversation).toHaveAttribute('aria-busy', 'true');
+    expect(within(conversation).getByRole('form', { name: 'Continue trip' })
+      .closest('[data-wayfare-composer-beam="true"]'))
+      .toHaveAttribute('data-composer-state', 'busy');
   });
 
   it('recomputes user-selected currency in untrusted page context', async () => {

@@ -1008,11 +1008,16 @@ test('places the blue response cue in transcript flow and animates only the busy
 }, testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium');
 
+  let releaseSession = () => {};
+  const sessionGate = new Promise<void>((resolve) => {
+    releaseSession = resolve;
+  });
   let releaseTurn = () => {};
   const turnGate = new Promise<void>((resolve) => {
     releaseTurn = resolve;
   });
   await page.route('**/v1/assistant/public-sessions', async (route) => {
+    await sessionGate;
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -1054,9 +1059,17 @@ test('places the blue response cue in transcript flow and animates only the busy
     const shimmer = status.locator('.text-shimmer');
     const composer = conversation.locator('[data-wayfare-composer-beam="true"]');
     const beam = composer.locator('[data-beam]');
+    const newTrip = page.getByRole('button', { name: 'New trip' });
+    const currency = page.getByRole('combobox', { name: 'Currency' });
 
+    await expect(traveler).toHaveText('Find return flights to Tokyo');
     await expect(status).toHaveText('Thinking…');
     await expect(beam).toHaveAttribute('data-active', '');
+    await expect(newTrip).toBeVisible();
+    expect(await newTrip.evaluate((button, currencyElement) => (
+      Boolean(button.compareDocumentPosition(currencyElement as Node)
+        & Node.DOCUMENT_POSITION_FOLLOWING)
+    ), await currency.elementHandle())).toBe(true);
     await expect.poll(() => status.evaluate((element) => (
       Number.parseFloat(getComputedStyle(element).fontSize)
     ))).toBeGreaterThan(14);
@@ -1074,12 +1087,114 @@ test('places the blue response cue in transcript flow and animates only the busy
       );
     })).toBe(true);
 
+    releaseSession();
     releaseTurn();
     await expect(conversation.getByText('Here are your options.')).toBeVisible();
     await expect(status).toBeEmpty();
     await expect(beam).not.toHaveAttribute('data-active', '');
   } finally {
+    releaseSession();
     releaseTurn();
+  }
+});
+
+test('keeps immediate chat progress and the New trip control usable on narrow screens', async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium');
+
+  let releaseSession = () => {};
+  const sessionGate = new Promise<void>((resolve) => {
+    releaseSession = resolve;
+  });
+  await page.route('**/v1/assistant/public-sessions', async (route) => {
+    await sessionGate;
+    await route.abort();
+  });
+
+  try {
+    await page.setViewportSize({ width: 320, height: 720 });
+    await page.goto('/');
+    await page.getByRole('textbox', { name: 'Ask the travel assistant' })
+      .fill('A weekend in Lisbon');
+    await page.getByRole('button', { name: 'Submit trip request' }).click();
+
+    const conversation = page.getByRole('region', { name: 'Travel conversation' });
+    const newTrip = page.getByRole('button', { name: 'New trip' });
+    const currency = page.getByRole('combobox', { name: 'Currency' });
+    const menu = page.getByRole('button', { name: 'Open menu' });
+    const composer = conversation.getByRole('form', { name: 'Continue trip' });
+
+    await expect(conversation.getByRole('article', { name: 'Traveler message' }))
+      .toHaveText('A weekend in Lisbon');
+    await expect(conversation.getByRole('status')).toHaveText('Thinking…');
+    await expect(newTrip).toBeVisible();
+    await expectMinimumTargetSize(newTrip);
+    await expectMinimumTargetSize(currency);
+    await expectMinimumTargetSize(menu);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
+
+    const [newTripBounds, currencyBounds, composerBounds] = await Promise.all([
+      newTrip.boundingBox(),
+      currency.boundingBox(),
+      composer.boundingBox(),
+    ]);
+    expect(newTripBounds).not.toBeNull();
+    expect(currencyBounds).not.toBeNull();
+    expect(composerBounds).not.toBeNull();
+    expect(newTripBounds!.x + newTripBounds!.width)
+      .toBeLessThanOrEqual(currencyBounds!.x);
+    expect(composerBounds!.x).toBeGreaterThanOrEqual(0);
+    expect(composerBounds!.x + composerBounds!.width).toBeLessThanOrEqual(320);
+    expect(newTripBounds!.width).toBe(44);
+
+    await page.screenshot({
+      animations: 'disabled',
+      path: testInfo.outputPath('active-chat-progress-320x720.png'),
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = '200%';
+    });
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth))
+      .toBe(390);
+    await expect(newTrip).toBeVisible();
+    await expectMinimumTargetSize(newTrip);
+    await expectMinimumTargetSize(currency);
+    await expectMinimumTargetSize(menu);
+    const zoomedHeaderBounds = await Promise.all([
+      page.getByRole('link', { name: 'Wayfare' }).boundingBox(),
+      newTrip.boundingBox(),
+      currency.boundingBox(),
+      menu.boundingBox(),
+    ]);
+    for (const bounds of zoomedHeaderBounds) expect(bounds).not.toBeNull();
+    for (let index = 1; index < zoomedHeaderBounds.length; index += 1) {
+      const previous = zoomedHeaderBounds[index - 1]!;
+      const current = zoomedHeaderBounds[index]!;
+      expect(previous!.x + previous!.width).toBeLessThanOrEqual(current!.x);
+    }
+    expect(await page.getByRole('link', { name: 'Wayfare' }).evaluate((link) => (
+      link.scrollWidth <= link.clientWidth
+    ))).toBe(true);
+
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const animated = await conversation.locator(':scope, :scope *')
+      .evaluateAll((elements) => elements.filter((element) => {
+        if (element.getClientRects().length === 0) return false;
+        const style = getComputedStyle(element);
+        return style.animationDuration.split(',').some((duration) => (
+          Number.parseFloat(duration) > 0
+        ));
+      }).length);
+    expect(animated).toBe(0);
+    await page.screenshot({
+      animations: 'disabled',
+      path: testInfo.outputPath('active-chat-progress-zoom-390x844.png'),
+    });
+  } finally {
+    releaseSession();
   }
 });
 

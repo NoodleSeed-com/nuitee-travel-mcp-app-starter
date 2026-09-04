@@ -194,9 +194,15 @@ reusable brand device for places and inspiration—not a universal card shape.
 - The homepage hero contains one visible message only: the H1 promise. Do not
   add an eyebrow, supporting paragraph, example sentence, or competing callout
   over the jet-window image.
-- The primary header contains the Wayfare lockup, currency selector, and menu
-  control only. Planning, developer, support, settings, and legal navigation
-  live inside the menu. Do not add a separator line below the header.
+- Before a conversation starts, the primary header contains the Wayfare lockup,
+  currency selector, and menu control only. During an active conversation, add
+  one neutral `New trip` pill immediately before the currency selector. Collapse
+  it to an accessible circular Heroicons plus control on narrow screens, and
+  use the standalone Wayfare mark and flag-only currency trigger in the active
+  mobile header so 200% text zoom does not crowd or overlap the four header
+  controls. Preserve the full accessible names for both compact controls.
+  Planning, developer, support, settings, and legal navigation live inside the
+  menu. Do not add a separator line below the header.
 - The menu is a white, softly elevated sheet with a 24px outer radius, a compact
   title, and a 20px Heroicons close glyph inside a 44px circular target. Its
   primary action is a black pill. Secondary navigation uses unboxed text rows
@@ -297,6 +303,9 @@ preparing or streaming a response.
 - Place the label in chronological conversation flow immediately after the
   latest traveler message and before incoming assistant content. Never place
   it against the composer.
+- After a homepage submit, render the traveler message and activity state
+  optimistically while the public session connects, then reconcile them with
+  the canonical transcript without showing a duplicate traveler message.
 - Render it slightly larger than supporting metadata using the legible
   blue-response token (`#2F7391`) with selected blue (`#66CCFF`) as the moving
   highlight.

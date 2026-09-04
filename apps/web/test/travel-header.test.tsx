@@ -129,6 +129,40 @@ describe('travel header', () => {
       .not.toBeInTheDocument();
   });
 
+  it('offers a direct New trip action beside the conversation controls', () => {
+    const onNewTrip = vi.fn();
+    const { rerender } = render(
+      <TravelHeader
+        currency="USD"
+        mode="conversation"
+        onCurrencyChange={vi.fn()}
+        onNewTrip={onNewTrip}
+        onOpenSettings={vi.fn()}
+        onPlanTrip={vi.fn()}
+      />,
+    );
+
+    const newTrip = screen.getByRole('button', { name: 'New trip' });
+    const currency = screen.getByRole('combobox', { name: 'Currency' });
+    expect(newTrip.compareDocumentPosition(currency))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    fireEvent.click(newTrip);
+    expect(onNewTrip).toHaveBeenCalledOnce();
+
+    rerender(
+      <TravelHeader
+        currency="USD"
+        mode="hero"
+        onCurrencyChange={vi.fn()}
+        onNewTrip={onNewTrip}
+        onOpenSettings={vi.fn()}
+        onPlanTrip={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'New trip' }))
+      .not.toBeInTheDocument();
+  });
+
   it('keeps configured developer, support, and legal fallback navigation in the menu', () => {
     render(
       <TravelHeader
