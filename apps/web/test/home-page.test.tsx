@@ -1,4 +1,9 @@
-import { Children, isValidElement, type ReactElement } from 'react';
+import {
+  Children,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const requestHeaders = vi.hoisted(() => vi.fn());
@@ -8,7 +13,7 @@ vi.mock('next/headers', () => ({ headers: requestHeaders }));
 import HomePage from '../app/page';
 import { TravelAssistantPage } from '../src/components/travel-assistant-page';
 
-function travelAssistantProps(page: ReactElement) {
+function travelAssistantProps(page: ReactElement<{ children?: ReactNode }>) {
   const assistant = Children.toArray(page.props.children).find((child) => (
     isValidElement(child) && child.type === TravelAssistantPage
   )) as ReactElement<{ initialCountry?: string }> | undefined;

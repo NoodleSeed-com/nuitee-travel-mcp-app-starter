@@ -13,7 +13,7 @@ describe('Wayfare rendered metadata contract', () => {
       viewport: Viewport;
     };
 
-    expect(layout.metadata.metadataBase?.href).toBe('https://gowayfare.io/');
+    expect(layout.metadata.metadataBase?.toString()).toBe('https://gowayfare.io/');
     expect(layout.metadata.title).toEqual({
       default: 'Wayfare — Plan your trip in one conversation',
       template: '%s | Wayfare',
