@@ -62,7 +62,9 @@ async function expectHorizontalFit(page: Page, width: number) {
 
 async function expectDestinationWindowsSettled(page: Page) {
   const section = page.locator('#places-to-start');
-  await section.scrollIntoViewIfNeeded();
+  await section.evaluate((element) => {
+    element.scrollIntoView({ block: 'center', inline: 'nearest' });
+  });
   await expect(section).toHaveAttribute('data-revealed', 'true');
   await expect.poll(() => section.locator('.destination-inspiration__grid > li')
     .evaluateAll((items) => items.every((item) => {
