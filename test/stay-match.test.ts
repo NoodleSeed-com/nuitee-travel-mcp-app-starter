@@ -19,7 +19,7 @@ function hotel(overrides: Partial<DemoHotel> = {}): DemoHotel {
     nightlyPrice: { amount: 286, currency: 'CAD' },
     staySubtotal: { amount: 1716, currency: 'CAD' },
     taxesAndFeesIncluded: false,
-    illustrativePolicy: 'Illustrative flexible terms; no reservation can be created.',
+    policySummary: 'Illustrative flexible terms; no reservation can be created.',
     ...overrides,
   } as DemoHotel;
 }
@@ -71,7 +71,7 @@ describe('computeStayMatch', () => {
   });
 
   it('reports flexibility from the illustrative policy text', () => {
-    const rigid = hotel({ illustrativePolicy: 'Illustrative terms only; no room is held or reserved.' });
+    const rigid = hotel({ policySummary: 'Illustrative terms only; no room is held or reserved.' });
     expect(computeStayMatch(rigid, [rigid]).lines.find((l) => l.key === 'flexibility')?.status)
       .toBe('partial');
   });

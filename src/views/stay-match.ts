@@ -57,12 +57,12 @@ export function computeStayMatch(
   weights.push(priceWeight);
 
   // Flexibility — read from the policy text the fixture or provider supplied.
-  const policy = hotel.illustrativePolicy.toLowerCase();
+  const policy = hotel.policySummary.toLowerCase();
   const flexible = policy.includes('flexible');
   lines.push({
     key: 'flexibility',
     label: 'Flexibility',
-    detail: hotel.illustrativePolicy.replace(/;.*$/, ''),
+    detail: hotel.policySummary.replace(/;.*$/, ''),
     status: flexible ? 'ok' : 'partial',
   });
   weights.push(flexible ? 1 : 0.45);

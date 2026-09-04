@@ -240,7 +240,11 @@ function HotelCard({ hotel, allHotels, locale, selected, pending, onAdd }: {
           perNight={hotel.nightlyPrice.amount}
           total={hotel.staySubtotal.amount}
         />
-        <small className="cc-price-note">Illustrative subtotal · taxes and fees not included</small>
+        <small className="cc-price-note">
+          {hotel.dataSource === 'live_nuitee'
+            ? `Current total · ${hotel.taxesAndFeesIncluded ? 'shown taxes included' : 'verify taxes and fees'}`
+            : 'Illustrative subtotal · taxes and fees not included'}
+        </small>
         <button
           aria-controls={hotelDetailsId}
           aria-expanded={detailsOpen}
@@ -279,13 +283,15 @@ function HotelCard({ hotel, allHotels, locale, selected, pending, onAdd }: {
           <div><span>Room</span><strong>{hotel.roomName}</strong></div>
           <div><span>Stay</span><strong>{hotel.nights} night{hotel.nights === 1 ? '' : 's'} · {hotel.rooms} room{hotel.rooms === 1 ? '' : 's'}</strong></div>
           <div><span>Location</span><strong>{hotel.neighborhood}</strong></div>
-          <div><span>Taxes and fees</span><strong>Not included in subtotal</strong></div>
+          <div><span>Taxes and fees</span><strong>{hotel.taxesAndFeesIncluded
+            ? 'Included in shown total'
+            : hotel.dataSource === 'live_nuitee' ? 'Review before booking' : 'Not included in subtotal'}</strong></div>
         </div>
         <p>{hotel.description}</p>
-        <ul className="cc-hotel-detail-amenities" aria-label="Synthetic hotel amenities">
+        <ul className="cc-hotel-detail-amenities" aria-label="Hotel amenity highlights">
           {hotel.amenities.map((amenity) => <li key={amenity}><CheckIcon />{amenity}</li>)}
         </ul>
-        <p className="cc-hotel-policy">{hotel.illustrativePolicy}</p>
+        <p className="cc-hotel-policy">{hotel.policySummary}</p>
       </div>
     </article>
   );
