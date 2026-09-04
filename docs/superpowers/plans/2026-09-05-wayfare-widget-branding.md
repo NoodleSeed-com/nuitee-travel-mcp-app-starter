@@ -352,7 +352,7 @@ git add docs/superpowers/specs/2026-09-05-wayfare-widget-branding-design.md docs
 git commit -m "docs: record Wayfare widget branding delivery"
 ```
 
-- [ ] **Step 5: Push the exact PR branch**
+- [x] **Step 5: Push the exact PR branch**
 
 Run: `git push origin codex/tribe-widget-wayfare-local`
 
