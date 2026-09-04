@@ -26,7 +26,7 @@ const searchRequestSchema = z.object({
 });
 
 export const nuiteeHttp = connector('nuitee_flights_http')
-  .version('1.0.0')
+  .version('1.0.1')
   .http({
     baseUrl: 'https://api.liteapi.travel/v3.0',
     allowedOrigins: ['https://api.liteapi.travel'],
@@ -93,7 +93,7 @@ export const gatewayOutputSchema = z.object({
 });
 
 export const nuiteeGateway = connector('nuitee_flights_gateway')
-  .version('1.0.0')
+  .version('1.0.1')
   .compute('execute', {
     type: 'read',
     input: gatewayInputSchema,

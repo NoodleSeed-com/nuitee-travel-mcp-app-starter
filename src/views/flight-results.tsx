@@ -818,6 +818,7 @@ export function FlightResultsView({
   pendingFareSelectionId,
   pendingSelectionId,
   selectedSelectionId,
+  selectionErrorSelectionId,
   selectionError,
   verification,
   verificationError,
@@ -837,6 +838,7 @@ export function FlightResultsView({
   readonly pendingFareSelectionId?: string;
   readonly pendingSelectionId?: string;
   readonly selectedSelectionId?: string;
+  readonly selectionErrorSelectionId?: string;
   readonly selectionError?: string;
   readonly verification?: Verification;
   readonly verificationError?: GatewayError;
@@ -967,6 +969,11 @@ export function FlightResultsView({
           <div className="cc-verification cc-verification-error" role="alert">
             <strong>Fare was not added</strong>
             <span>{selectionError}</span>
+            {selectionErrorSelectionId ? (
+              <Action onClick={() => onVerify(selectionErrorSelectionId)}>
+                Verify current fare
+              </Action>
+            ) : null}
           </div>
         ) : null}
         {verificationError ? (
@@ -998,6 +1005,7 @@ export default function FlightResults() {
   const [savedVerification, setSavedVerification] = useViewState<Verification | undefined>('verified_fare', undefined);
   const [pendingFareSelectionId, setPendingFareSelectionId] = useState<string>();
   const [selectionError, setSelectionError] = useState<string>();
+  const [selectionErrorSelectionId, setSelectionErrorSelectionId] = useState<string>();
   const pending = !ready || Object.keys(toolInfo).length === 0;
   const result = isSearchOutput(toolInfo.structuredContent) ? toolInfo.structuredContent : undefined;
   const verifyContent = verify.data?.structuredContent as Record<string, unknown> | undefined;
@@ -1023,6 +1031,7 @@ export default function FlightResults() {
     selectionRequest.current = undefined;
     setPendingFareSelectionId(undefined);
     setSelectionError(undefined);
+    setSelectionErrorSelectionId(undefined);
   }, [result]);
 
   const rememberSelection = (selectionId: string) => {
@@ -1048,6 +1057,7 @@ export default function FlightResults() {
       pendingFareSelectionId={pendingFareSelectionId}
       pendingSelectionId={verify.isPending ? selected : undefined}
       selectedSelectionId={selected}
+      selectionErrorSelectionId={selectionErrorSelectionId}
       selectionError={selectionError}
       verification={verification}
       verificationError={structuredError ?? transportError}
@@ -1055,10 +1065,12 @@ export default function FlightResults() {
         if (!ready || pendingFareSelectionId) return;
         setPendingFareSelectionId(selectionId);
         setSelectionError(undefined);
+        setSelectionErrorSelectionId(undefined);
         void rememberSelection(selectionId).then((response) => {
           const transition = selectionTransition(response, selectionId, selected);
           if (!transition.confirmed) {
             setSelectionError(transition.message);
+            setSelectionErrorSelectionId(selectionId);
             return;
           }
           if (transition.resetVerification) {
@@ -1068,6 +1080,7 @@ export default function FlightResults() {
           setSelected(transition.nextSelectionId);
         }).catch(() => {
           setSelectionError('The fare could not be added to this trip. Your previous selection is unchanged.');
+          setSelectionErrorSelectionId(selectionId);
         }).finally(() => {
           setPendingFareSelectionId((current) => current === selectionId ? undefined : current);
         });
@@ -1081,11 +1094,16 @@ export default function FlightResults() {
       onVerify={(selectionId) => {
         if (!ready) return;
         setSelectionError(undefined);
+        setSelectionErrorSelectionId(undefined);
         void rememberSelection(selectionId).then((selectionResponse) => {
           const outcome = selectionOutcome(selectionResponse, selectionId);
           if (!outcome.confirmed) {
             setSelectionError(outcome.message);
+            setSelectionErrorSelectionId(selectionId);
             return undefined;
+          }
+          if (selected !== selectionId) {
+            setSelected(selectionId);
           }
           return verify.callToolAsync({
             selectionId,

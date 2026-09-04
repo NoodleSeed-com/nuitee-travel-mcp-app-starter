@@ -37,13 +37,13 @@ describe('Wayfare expanded travel brand contract', () => {
   it('keeps the live and synthetic data boundary persistently visible', () => {
     expect(travelCompanionDemoConfig.dataSources).toEqual({
       flights: { mode: 'live_sandbox', label: 'Current flight fares' },
-      hotels: { mode: 'synthetic_fixture', label: 'Illustrative stays' },
+      hotels: { mode: 'live_nuitee', label: 'Current hotel rates' },
       loyalty: { mode: 'synthetic_fixture', label: 'Illustrative rewards' },
       insurance: { mode: 'synthetic_fixture', label: 'Illustrative travel protection' },
     });
     expect(travelCompanionDemoConfig.disclosure.badge).toBe('Preview only');
-    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/connected flight provider/u);
-    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Stays, rewards, and travel protection are illustrative/u);
+    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Flight and stay results come from connected providers/u);
+    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Rewards and travel protection are illustrative/u);
     expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Booking, redemption, and policy purchase are unavailable/u);
     expect(travelCompanionDemoConfig.disclosure.persistent).not.toMatch(/\bdemo\b|\bsandbox\b/iu);
   });

@@ -522,7 +522,7 @@ export function searchSyntheticHotels(input: DemoHotelSearchInput): DemoHotelSea
         currency: searchContext.currency,
       },
       taxesAndFeesIncluded: false as const,
-      illustrativePolicy: fixture.illustrativePolicy,
+      policySummary: fixture.illustrativePolicy,
     };
   });
 
@@ -557,6 +557,7 @@ export function hotelSelectionRecords(
   return validated.hotels.map((hotel) => ({
     selectionId: hotel.selectionId,
     searchId: validated.searchId,
+    dataSource: 'illustrative',
     fixtureKey: fixtureBySelectionId.get(hotel.selectionId)!.key,
     propertyName: hotel.name,
     city: hotel.city,

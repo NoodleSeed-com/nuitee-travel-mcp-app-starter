@@ -41,10 +41,10 @@ describe('Wayfare companion website identity', () => {
 
   it('keeps the mixed-source disclosure persistent and explicit', () => {
     expect(siteConfig.disclosure.persistent).toContain(
-      'Flight results come from the connected flight provider.',
+      'Flight and stay results come from connected providers.',
     );
     expect(siteConfig.disclosure.persistent).toContain(
-      'Stays, rewards, and travel protection are illustrative previews.',
+      'Rewards and travel protection are illustrative previews.',
     );
     expect(siteConfig.disclosure.persistent).toContain(
       'Booking, redemption, and policy purchase are unavailable.',

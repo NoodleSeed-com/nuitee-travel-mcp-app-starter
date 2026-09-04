@@ -49,7 +49,7 @@ describe('Wayfare expanded travel profile', () => {
     expect(wire).toContain('at most one contextually relevant next step');
     expect(wire).toContain('registered in the active profile');
     expect(wire).toContain('explicit traveler instruction always wins');
-    expect(wire).toContain('Flight results come from the connected provider');
+    expect(wire).toContain('Flight and hotel results come from connected Nuitee provider searches');
     expect(wire).toContain('illustrative');
     expect(wire).not.toContain('plan_everything');
   });
@@ -114,9 +114,13 @@ describe('Wayfare expanded travel profile', () => {
     expect(demoFlightTools).toEqual(liveFlightTools);
     const liveCatalog = liveApp.toConnectorCatalog();
     const demoCatalog = demoLiveApp.toConnectorCatalog();
-    const liveNuitee = liveCatalog?.connectors.filter((entry: any) => entry.id.startsWith('nuitee_'));
-    const demoNuitee = demoCatalog?.connectors.filter((entry: any) => entry.id.startsWith('nuitee_'));
+    const liveNuitee = liveCatalog?.connectors.filter((entry: any) => entry.id.startsWith('nuitee_flights_'));
+    const demoNuitee = demoCatalog?.connectors.filter((entry: any) => entry.id.startsWith('nuitee_flights_'));
     expect(demoNuitee).toEqual(liveNuitee);
+    expect(demoCatalog?.connectors.find((entry: any) => entry.id === 'nuitee_hotels_gateway'))
+      .toMatchObject({ kind: 'custom', operations: { execute: { type: 'read' } } });
+    expect(demoCatalog?.connectors.find((entry: any) => entry.id === 'nuitee_hotels_http'))
+      .toMatchObject({ kind: 'custom', operations: { search: { type: 'read', path: '/hotels/rates' } } });
     expect(demoCatalog?.connectors.find((entry: any) => entry.id === 'wayfare_preview_gateway'))
       .toMatchObject({ kind: 'custom', operations: { execute: { type: 'read' } } });
 

@@ -60,7 +60,7 @@ const hotel = (index: number): DemoHotel => ({
   nightlyPrice: { amount: 286 + index, currency: 'CAD' },
   staySubtotal: { amount: (286 + index) * 3, currency: 'CAD' },
   taxesAndFeesIncluded: false,
-  illustrativePolicy: 'Illustrative flexible terms; no transaction can be created.',
+  policySummary: 'Illustrative flexible terms; no transaction can be created.',
 });
 
 const result: DemoHotelSearchOutput = {
@@ -110,7 +110,7 @@ describe('Wayfare illustrative hotel widget', () => {
     expect(markup).toContain('cc-hotel-skeleton-details');
     expect(markup).toContain('cc-shimmer');
     expect(markup).toContain('aria-busy="true"');
-    expect(markup).toContain('Preparing synthetic hotel comparisons');
+    expect(markup).toContain('Preparing hotel comparisons');
   });
 
   it('renders bounded error, malformed, and honest empty states', () => {

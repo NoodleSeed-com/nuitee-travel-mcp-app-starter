@@ -12,7 +12,7 @@ const host = vi.hoisted(() => ({
 
 vi.mock('../../../src/helpers.js', async () => {
   const ReactModule = await import('react');
-  const passthrough = ({ children, title, subtitle, ...props }: any) => ReactModule.createElement(
+  const passthrough = ({ children, title, subtitle, displayMode: _displayMode, ...props }: any) => ReactModule.createElement(
     'section',
     props,
     title ? ReactModule.createElement('h1', null, title) : null,

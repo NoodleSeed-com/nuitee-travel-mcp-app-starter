@@ -18,7 +18,7 @@ import type {
 import './travel.css';
 
 export const WAYFARE_PREVIEW_DISCLOSURE =
-  'Flight results come from the connected flight provider. Stays and rewards are illustrative previews. Booking and redemption are unavailable.';
+  'Flight and stay results come from connected providers. Rewards are illustrative previews. Booking and redemption are unavailable.';
 
 type LoyaltyData = DemoLoyaltyOverview | DemoTripReview;
 type LoyaltyState = 'loading' | 'error' | 'malformed';

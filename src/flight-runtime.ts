@@ -68,7 +68,7 @@ export type GatewayInput =
     };
 
 export type GatewayContext = {
-  readonly callOperation: (name: 'search' | 'verify', input: unknown) => unknown;
+  readonly callOperation: (name: string, input: Readonly<Record<string, unknown>>) => unknown;
 };
 
 export type GatewayResult = {
@@ -212,13 +212,36 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
     }
   };
 
+  const statusFrom = (value: unknown, depth = 0): number | undefined => {
+    if (depth > 4) return undefined;
+    const candidate = object(value);
+    if (!candidate) return undefined;
+    for (const key of ['status', 'statusCode', 'httpStatus', 'code']) {
+      const direct = finiteNumber(candidate[key]);
+      if (direct !== undefined && direct >= 100 && direct <= 599) return direct;
+      if (typeof candidate[key] === 'string' && /^\d{3}$/.test(candidate[key])) return Number(candidate[key]);
+    }
+    for (const key of ['cause', 'error', 'details', 'response']) {
+      const nested = statusFrom(candidate[key], depth + 1);
+      if (nested !== undefined) return nested;
+    }
+    return undefined;
+  };
+
+  const errorSignal = (value: unknown, depth = 0): string => {
+    if (depth > 4) return '';
+    const candidate = object(value);
+    if (!candidate) return typeof value === 'string' ? value.slice(0, 240) : '';
+    return ['code', 'message', 'name', 'cause', 'error', 'details', 'response']
+      .map((key) => errorSignal(candidate[key], depth + 1))
+      .filter(Boolean)
+      .join(' ')
+      .slice(0, 1_000);
+  };
+
   const classify = (caught: unknown, kind: GatewayResult['kind']): ErrorCode => {
-    const value = object(caught);
-    const nested = object(value?.cause);
-    const status = finiteNumber(value?.status) ?? finiteNumber(value?.statusCode) ?? finiteNumber(nested?.status);
-    const code = `${text(value?.code, 80) ?? ''} ${text(nested?.code, 80) ?? ''}`.toLowerCase();
-    const message = `${text(value?.message, 200) ?? ''} ${text(nested?.message, 200) ?? ''}`.toLowerCase();
-    const signal = `${code} ${message}`;
+    const status = statusFrom(caught);
+    const signal = errorSignal(caught).toLowerCase();
     if (status === 400) return 'invalid_request';
     if (status === 401) return 'authentication';
     if (status === 403) return 'entitlement';

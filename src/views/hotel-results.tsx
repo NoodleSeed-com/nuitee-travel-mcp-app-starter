@@ -53,7 +53,7 @@ function isDemoHotel(value: unknown): value is DemoHotel {
     hotel &&
     typeof hotel.selectionId === 'string' &&
     /^hsel_[a-f0-9]{32}$/.test(hotel.selectionId) &&
-    hotel.dataSource === 'illustrative' &&
+    (hotel.dataSource === 'illustrative' || hotel.dataSource === 'live_nuitee') &&
     boundedString(hotel.name, 2, 100) &&
     boundedString(hotel.city, 2, 80) &&
     typeof hotel.countryCode === 'string' &&
@@ -69,8 +69,11 @@ function isDemoHotel(value: unknown): value is DemoHotel {
     boundedInteger(hotel.rooms, 1, 4) &&
     isDemoMoney(hotel.nightlyPrice) &&
     isDemoMoney(hotel.staySubtotal) &&
-    hotel.taxesAndFeesIncluded === false &&
-    boundedString(hotel.illustrativePolicy, 2, 160)
+    typeof hotel.taxesAndFeesIncluded === 'boolean' &&
+    boundedString(hotel.policySummary, 2, 200) &&
+    (hotel.imageUrl === undefined || (boundedString(hotel.imageUrl, 1, 2_048) && /^https:\/\/snaphotelapi\.com\//i.test(hotel.imageUrl))) &&
+    (hotel.reviewScore === undefined || (typeof hotel.reviewScore === 'number' && hotel.reviewScore >= 0 && hotel.reviewScore <= 10)) &&
+    (hotel.reviewCount === undefined || boundedInteger(hotel.reviewCount, 0, 10_000_000))
   );
 }
 
@@ -95,8 +98,8 @@ export function isDemoHotelSearchOutput(value: unknown): value is DemoHotelSearc
   const result = record(value);
   if (
     !result ||
-    (result.status !== 'success' && result.status !== 'empty') ||
-    result.dataSource !== 'illustrative' ||
+    !['success', 'partial', 'empty', 'error'].includes(String(result.status)) ||
+    (result.dataSource !== 'illustrative' && result.dataSource !== 'live_nuitee') ||
     !boundedString(result.disclosure, 20, 320) ||
     !boundedString(result.message, 2, 320) ||
     !boundedString(result.fallback, 20, 500) ||
@@ -108,13 +111,19 @@ export function isDemoHotelSearchOutput(value: unknown): value is DemoHotelSearc
     !result.hotels.every(isDemoHotel)
   ) return false;
 
-  return result.status === 'success' ? result.hotels.length > 0 : result.hotels.length === 0;
+  const hasResults = result.status === 'success' || result.status === 'partial';
+  if (hasResults !== (result.hotels.length > 0)) return false;
+  if (result.status === 'error') {
+    const error = record(result.error);
+    return Boolean(error && boundedString(error.code, 2, 80) && boundedString(error.message, 2, 320) && typeof error.retryable === 'boolean');
+  }
+  return result.error === undefined;
 }
 
 function HotelDisclosure({ text, live }: { readonly text: string; readonly live: boolean }) {
   return (
-    <aside className="cc-demo-disclosure cc-hotel-disclosure" aria-label="Illustrative hotel data disclosure">
-      <StatusBadge tone="info">Illustrative stays</StatusBadge>
+    <aside className="cc-demo-disclosure cc-hotel-disclosure" aria-label={live ? 'Current hotel data disclosure' : 'Illustrative hotel data disclosure'}>
+      <StatusBadge tone="info">{live ? 'Current Nuitee rates' : 'Illustrative stays'}</StatusBadge>
       <p>{text}</p>
     </aside>
   );
@@ -161,10 +170,10 @@ function HotelLoading({ theme, brandStyle }: {
       style={brandStyle}
       displayMode="auto"
       title="Hotel results"
-      subtitle="Preparing illustrative stay comparisons"
+      subtitle="Preparing hotel comparisons"
     >
       <section className="cc-hotel-skeleton" role="status" aria-live="polite" aria-busy="true">
-        <span className="cc-visually-hidden">Preparing synthetic hotel comparisons…</span>
+        <span className="cc-visually-hidden">Preparing hotel comparisons…</span>
         <div className="cc-demo-disclosure cc-hotel-skeleton-disclosure" aria-hidden="true">
           <span className="cc-skeleton-block cc-shimmer" />
           <span className="cc-skeleton-block cc-shimmer" />
@@ -350,12 +359,27 @@ export function HotelResultsView({
   if (!result) return statusView('malformed', theme, brandStyle);
 
   const frameClassName = `cc-app cc-hotel-results ${theme === 'dark' ? 'cc-theme-dark' : ''}`;
+  const live = result.dataSource === 'live_nuitee';
+  if (result.status === 'error') {
+    return (
+      <Frame className={frameClassName} style={brandStyle} displayMode="auto" title="Hotel search needs attention" data-llm={result.fallback}>
+        <Flow variant="stack" density="comfortable">
+          <HotelDisclosure live={live} text={result.disclosure} />
+          <Feedback status="error">{result.error?.message ?? result.message}</Feedback>
+          <p className="cc-hotel-status-note">No room was held, reserved, or added to the trip.</p>
+        </Flow>
+      </Frame>
+    );
+  }
   if (result.status === 'empty') {
     return (
       <Frame className={frameClassName} style={brandStyle} displayMode="auto" title="No hotels found" data-llm={result.fallback}>
         <Flow variant="stack" density="comfortable">
-          <DemoDisclosure text={result.disclosure} />
-          <Region title="No illustrative stays matched" description="Try Lisbon, Toronto, or Vancouver for this bounded preview.">
+          <HotelDisclosure live={live} text={result.disclosure} />
+          <Region
+            title={live ? 'No current stays matched' : 'No illustrative stays matched'}
+            description={live ? 'Try different dates or a nearby destination.' : 'Try Lisbon, Toronto, or Vancouver for this bounded preview.'}
+          >
             <p className="cc-hotel-empty">{result.message}</p>
           </Region>
         </Flow>
@@ -371,17 +395,19 @@ export function HotelResultsView({
       style={brandStyle}
       displayMode="auto"
       title="Hotel results"
-      subtitle={`${result.hotels.length} fictional option${result.hotels.length === 1 ? '' : 's'} · no live availability`}
+      subtitle={live
+        ? `${result.hotels.length} current option${result.hotels.length === 1 ? '' : 's'} · verify before booking`
+        : `${result.hotels.length} fictional option${result.hotels.length === 1 ? '' : 's'} · no live availability`}
       data-llm={result.fallback}
     >
       <Flow variant="stack" density={expanded ? 'comfortable' : 'compact'}>
-        <DemoDisclosure text={result.disclosure} />
+        <HotelDisclosure live={live} text={result.disclosure} />
         <div className="cc-hotel-results-toolbar">
           <div>
             <strong>{result.searchContext.destination}</strong>
             <span>{result.searchContext.checkInDate} – {result.searchContext.checkOutDate} · {result.searchContext.rooms} room{result.searchContext.rooms === 1 ? '' : 's'}</span>
           </div>
-          <StatusBadge tone="info">Illustrative prices</StatusBadge>
+          <StatusBadge tone="info">{live ? 'Current prices' : 'Illustrative prices'}</StatusBadge>
         </div>
         <Rail ariaLabel="Stays">
           {shown.map((hotel) => (
@@ -404,7 +430,7 @@ export function HotelResultsView({
         {selectionError ? <Feedback status="error">{selectionError}</Feedback> : null}
         {selectedSelectionId ? (
           <p className="cc-hotel-selection-status" role="status">
-            The illustrative stay was added to this trip. Nothing was booked, held, or paid.
+            {live ? 'The current hotel option' : 'The illustrative stay'} was added to this trip. Nothing was booked, held, or paid.
           </p>
         ) : null}
       </Flow>
@@ -453,9 +479,13 @@ export default function HotelResults() {
             setSelected(selectionId);
             return;
           }
-          setSelectionError('That illustrative stay is no longer available in this search. Choose another hotel.');
+          setSelectionError(result?.dataSource === 'live_nuitee'
+            ? 'That hotel option is no longer available in this search. Choose another hotel.'
+            : 'That illustrative stay is no longer available in this search. Choose another hotel.');
         }).catch(() => {
-          setSelectionError('The illustrative stay could not be added to this trip. Try again.');
+          setSelectionError(result?.dataSource === 'live_nuitee'
+            ? 'The hotel option could not be added to this trip. Try again.'
+            : 'The illustrative stay could not be added to this trip. Try again.');
         }).finally(() => setPendingSelectionId(undefined));
       } : undefined}
       brandStyle={{
