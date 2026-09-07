@@ -77,6 +77,7 @@ describe('Wayfare experience comparison widget', () => {
     expect(compareHtml).toContain('Compare two ideas');
     expect(compareHtml).toContain(result.experiences[0]!.cancellationPolicy);
     expect(compareHtml).toContain(result.experiences[1]!.accessibility.summary);
+    expect((compareHtml.match(/cc-photo-image/g) ?? [])).toHaveLength(2);
   });
 
   it('renders details and a conversational action without a transaction', () => {

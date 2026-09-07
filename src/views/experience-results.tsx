@@ -224,6 +224,31 @@ function CompareTray({ selected, locale, onRemove, onOpen }: {
   </footer>;
 }
 
+function ExperienceCompareCard({ experience, locale, onDetail }: {
+  readonly experience: DemoExperience;
+  readonly locale: string;
+  readonly onDetail?: () => void;
+}) {
+  const photo = experiencePhoto(experience);
+  return <article>
+    <PhotoBand name={experience.title} imageUrl={photo.url} glyph={<CompassIcon />} height={150}>
+      <span className="cc-experience-photo-credit">{photo.credit}</span>
+    </PhotoBand>
+    <div className="cc-experience-compare-body">
+      <h3>{experience.title}</h3>
+      <dl className="cc-experience-compare-rows">
+        <div><dt>Price</dt><dd>{formatMoney(experience, locale)} per adult</dd></div>
+        <div><dt>Duration</dt><dd>{durationLabel(experience.durationMinutes)}</dd></div>
+        <div><dt>Sample times</dt><dd>{slotLabel(experience)}</dd></div>
+        <div><dt>Area</dt><dd>{experience.meetingArea}</dd></div>
+        <div><dt>Accessibility</dt><dd>{experience.accessibility.summary}</dd></div>
+        <div><dt>Cancellation</dt><dd>{experience.cancellationPolicy}</dd></div>
+      </dl>
+      <Action className="cc-experience-detail-action" type="button" variant="primary" aria-label={`View details for ${experience.title}`} onClick={onDetail}>View details</Action>
+    </div>
+  </article>;
+}
+
 export function ExperienceResultsView({ result, state, displayMode, locale = 'en-CA', journey, onJourneyChange, onAsk }: {
   readonly result?: DemoExperienceSearchOutput;
   readonly state?: ExperienceState;
@@ -270,7 +295,7 @@ export function ExperienceResultsView({ result, state, displayMode, locale = 'en
     return <Frame className="cc-app cc-experiences" displayMode="auto" data-llm={result.fallback}>
       <header className="cc-experience-heading"><div><h2>Compare two ideas</h2><p>{selected[0]?.city} · fictional Wayfare catalog</p></div><span>WAYFARE DEMO</span></header>
       <button className="cc-experience-back" type="button" onClick={() => change({ screen: 'results' })}>← Back to results</button>
-      <section className="cc-experience-compare-grid">{selected.map((experience) => <article key={experience.experienceId}><h3>{experience.title}</h3><dl className="cc-experience-compare-rows"><div><dt>Price</dt><dd>{formatMoney(experience, locale)} per adult</dd></div><div><dt>Duration</dt><dd>{durationLabel(experience.durationMinutes)}</dd></div><div><dt>Sample times</dt><dd>{slotLabel(experience)}</dd></div><div><dt>Area</dt><dd>{experience.meetingArea}</dd></div><div><dt>Accessibility</dt><dd>{experience.accessibility.summary}</dd></div><div><dt>Cancellation</dt><dd>{experience.cancellationPolicy}</dd></div></dl><Action className="cc-experience-detail-action" type="button" variant="primary" aria-label={`View details for ${experience.title}`} onClick={() => change({ screen: 'detail', detailId: experience.experienceId })}>View details</Action></article>)}</section>
+      <section className="cc-experience-compare-grid">{selected.map((experience) => <ExperienceCompareCard key={experience.experienceId} experience={experience} locale={locale} onDetail={() => change({ screen: 'detail', detailId: experience.experienceId })} />)}</section>
       <p className="cc-experience-disclosure">Comparison uses only the current fictional results. Nothing was selected, saved, or booked.</p>
     </Frame>;
   }

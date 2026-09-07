@@ -69,6 +69,8 @@ receives the same bounded facts and can continue the conversation.
   each photograph visibly clear. The comparison footer keeps selected cards on
   the left and its action on the right, then stacks without overflow on narrow
   hosts.
+- The comparison screen repeats each selected experience photograph above its
+  fact table and keeps “Back to results” explicitly left-aligned.
 
 ## Image provenance
 

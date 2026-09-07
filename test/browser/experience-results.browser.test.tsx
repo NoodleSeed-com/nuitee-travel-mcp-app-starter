@@ -114,6 +114,13 @@ it('supports carousel controls, compare thumbnails, details, and narrow layouts'
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(320);
   await page.getByRole('button', { name: 'Compare selected' }).click();
   await expect.element(page.getByRole('heading', { name: 'Compare two ideas' })).toBeVisible();
+  const comparisonImages = [...document.querySelectorAll<HTMLImageElement>('.cc-experience-compare-grid .cc-photo-image')];
+  expect(comparisonImages).toHaveLength(2);
+  expect(new Set(comparisonImages.map((image) => image.src)).size).toBe(2);
+  const comparisonGrid = document.querySelector<HTMLElement>('.cc-experience-compare-grid')!;
+  const backToResults = await page.getByRole('button', { name: '← Back to results' }).element();
+  expect(Math.abs(backToResults.getBoundingClientRect().left - comparisonGrid.getBoundingClientRect().left)).toBeLessThanOrEqual(1);
+  expect(backToResults.getBoundingClientRect().right).toBeLessThan(comparisonGrid.getBoundingClientRect().left + comparisonGrid.getBoundingClientRect().width / 2);
   await page.getByRole('button', { name: /View details for/ }).first().click();
   await expect.element(page.getByRole('heading', { name: 'Experience details' })).toBeVisible();
   await page.getByRole('button', { name: 'Ask about this experience' }).click();
