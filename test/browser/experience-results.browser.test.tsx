@@ -67,6 +67,7 @@ it('supports carousel controls, compare thumbnails, details, and narrow layouts'
   const nextCenter = next.getBoundingClientRect().top + next.getBoundingClientRect().height / 2;
   expect(Math.abs(previousCenter - cardCenter)).toBeLessThanOrEqual(5);
   expect(Math.abs(nextCenter - cardCenter)).toBeLessThanOrEqual(5);
+  expect(firstCard.querySelector<HTMLElement>('.cc-photo-band')!.getBoundingClientRect().height).toBeGreaterThanOrEqual(180);
   expect(new Set([...document.querySelectorAll<HTMLImageElement>('.cc-experience-card .cc-photo-image')]
     .map((image) => image.src)).size).toBe(3);
   expect(getComputedStyle(carousel).scrollbarWidth).toBe('none');
@@ -82,10 +83,17 @@ it('supports carousel controls, compare thumbnails, details, and narrow layouts'
   await compareButtons.nth(1).click();
   expect(document.querySelectorAll('.cc-experience-thumb')).toHaveLength(2);
   const tray = document.querySelector<HTMLElement>('.cc-experience-tray')!;
+  const thumbs = document.querySelector<HTMLElement>('.cc-experience-thumbs')!;
   const compare = await page.getByRole('button', { name: 'Compare selected' }).element();
-  expect(compare.getBoundingClientRect().left).toBeGreaterThanOrEqual(tray.getBoundingClientRect().left);
-  expect(compare.getBoundingClientRect().right).toBeLessThanOrEqual(tray.getBoundingClientRect().right);
-  expect(Math.abs(compare.getBoundingClientRect().width - tray.getBoundingClientRect().width)).toBeLessThanOrEqual(1);
+  expect(Math.abs(compare.getBoundingClientRect().right - tray.getBoundingClientRect().right)).toBeLessThanOrEqual(1);
+  expect(compare.getBoundingClientRect().left).toBeGreaterThan(thumbs.getBoundingClientRect().right);
+  expect(Math.abs((compare.getBoundingClientRect().top + compare.getBoundingClientRect().bottom) / 2 -
+    (thumbs.getBoundingClientRect().top + thumbs.getBoundingClientRect().bottom) / 2)).toBeLessThanOrEqual(5);
+  for (const thumb of document.querySelectorAll<HTMLElement>('.cc-experience-thumb')) {
+    const remove = thumb.querySelector<HTMLButtonElement>('button')!;
+    expect(remove.getBoundingClientRect().left).toBeGreaterThanOrEqual(thumb.getBoundingClientRect().left);
+    expect(remove.getBoundingClientRect().right).toBeLessThanOrEqual(thumb.getBoundingClientRect().right);
+  }
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(900);
 
   await page.viewport(320, 1_200);

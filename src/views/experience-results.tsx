@@ -187,7 +187,7 @@ function ExperienceCard({ experience, selected, locale, onCompare, onDetail }: {
 }) {
   const photo = experiencePhoto(experience);
   return <article className="cc-experience-card">
-    <PhotoBand name={experience.title} imageUrl={photo.url} glyph={<CompassIcon />} height={126}>
+    <PhotoBand name={experience.title} imageUrl={photo.url} glyph={<CompassIcon />} height={190}>
       <StatusBadge tone="info">{experience.categories.slice(0, 2).map((category) => category.toLowerCase()).join(' · ')}</StatusBadge>
       <span className="cc-experience-photo-credit">{photo.credit}</span>
       <Action className="cc-experience-compare-toggle" type="button" variant={selected ? 'primary' : 'secondary'} aria-pressed={selected} aria-label={`${selected ? 'Remove' : 'Compare'} ${experience.title}`} onClick={onCompare}>
@@ -256,7 +256,7 @@ export function ExperienceResultsView({ result, state, displayMode, locale = 'en
     return <Frame className="cc-app cc-experiences" displayMode="auto" data-llm={result.fallback}>
       <header className="cc-experience-heading"><div><h2>Experience details</h2><p>Fictional Wayfare catalog</p></div><span>WAYFARE DEMO</span></header>
       <button className="cc-experience-back" type="button" onClick={() => change({ screen: 'results', detailId: undefined })}>← Back to results</button>
-      <PhotoBand name={experience.title} imageUrl={photo.url} glyph={<CompassIcon />} height={180}><StatusBadge tone="info">{experience.categories.map((category) => category.toLowerCase()).join(' · ')}</StatusBadge><span className="cc-experience-photo-credit">{photo.credit}</span></PhotoBand>
+      <PhotoBand name={experience.title} imageUrl={photo.url} glyph={<CompassIcon />} height={220}><StatusBadge tone="info">{experience.categories.map((category) => category.toLowerCase()).join(' · ')}</StatusBadge><span className="cc-experience-photo-credit">{photo.credit}</span></PhotoBand>
       <div className="cc-experience-detail-grid"><section><h3>{experience.title}</h3><p>{experience.shortDescription}</p><p className="cc-experience-operator">Fictional operator: {experience.operatorLabel}</p><h4>Included</h4><ul>{experience.inclusions.map((item) => <li key={item}>{item}</li>)}</ul><h4>Important to know</h4><ul>{experience.restrictions.map((item) => <li key={item}>{item}</li>)}</ul></section><aside>
         <dl className="cc-experience-facts"><div><dt>Duration</dt><dd>{durationLabel(experience.durationMinutes)}</dd></div><div><dt>Area</dt><dd>{experience.meetingArea}</dd></div><div><dt>Sample times</dt><dd>{slotLabel(experience)}</dd></div><div><dt>Access</dt><dd>{experience.accessibility.summary}</dd></div><div><dt>Policy</dt><dd>{experience.cancellationPolicy}</dd></div></dl>
         <p className="cc-experience-price"><strong>{formatMoney(experience, locale)}</strong><span> fictional · per adult</span></p>

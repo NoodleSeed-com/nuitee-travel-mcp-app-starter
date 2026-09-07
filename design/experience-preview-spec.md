@@ -64,6 +64,11 @@ receives the same bounded facts and can continue the conversation.
   and becomes the visible fallback when an image cannot load. Photographs
   establish city atmosphere; they do not depict the fictional operators or
   promise a specific activity.
+- Result-card photographs use a 190px band. Edge-only shading protects the
+  overlaid comparison control, category, and credit while leaving the center of
+  each photograph visibly clear. The comparison footer keeps selected cards on
+  the left and its action on the right, then stacks without overflow on narrow
+  hosts.
 
 ## Image provenance
 
