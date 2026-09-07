@@ -56,6 +56,23 @@ receives the same bounded facts and can continue the conversation.
   and an “Add to trip” action.
 - Each card keeps its detail action bottom-aligned and full width so cards with
   different copy retain one consistent action rhythm.
+- The card rail uses arrow, keyboard, and touch carousel navigation without a
+  visible native scrollbar. The comparison action is a contained full-width
+  footer row below its two thumbnail cards.
+- Lisbon and Tokyo use bounded city photographs from Unsplash. The deterministic
+  Wayfare gradient remains underneath each image and becomes the visible
+  fallback when an image cannot load. Photographs establish city atmosphere;
+  they do not depict the fictional operators or promise a specific activity.
+
+## Image provenance
+
+- Lisbon cityscape: Colin + Meg, Unsplash,
+  <https://unsplash.com/photos/MJEAR06oAko>.
+- Tokyo cityscape: Emile Guillemot, Unsplash,
+  <https://unsplash.com/photos/B_6CSQqgvHE>.
+
+The widget requests resized images only from `https://images.unsplash.com`,
+which is the sole additional experience-widget resource origin.
 
 ## States
 

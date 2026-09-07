@@ -40,6 +40,21 @@ const integer = (value: unknown, minimum: number, maximum: number): value is num
 const currencies = new Set(['CAD', 'USD', 'EUR', 'GBP', 'JPY']);
 const categories = new Set(['FOOD', 'CULTURE', 'WATER', 'DESIGN', 'FAMILY', 'EVENING', 'CRAFT', 'TEA']);
 
+const EXPERIENCE_CITY_PHOTOS = {
+  Lisbon: {
+    url: 'https://images.unsplash.com/photo-1651237170873-0445e48bf802?auto=format&fit=crop&w=900&q=82',
+    credit: 'Photo: Colin + Meg · Unsplash',
+  },
+  Tokyo: {
+    url: 'https://images.unsplash.com/photo-1545830017-e4c7878841d0?auto=format&fit=crop&w=900&q=82',
+    credit: 'Photo: Emile Guillemot · Unsplash',
+  },
+} as const;
+
+function cityPhoto(experience: DemoExperience) {
+  return EXPERIENCE_CITY_PHOTOS[experience.city];
+}
+
 function isExperience(value: unknown): value is DemoExperience {
   const experience = record(value);
   const accessibility = record(experience?.accessibility);
@@ -144,9 +159,11 @@ function ExperienceCard({ experience, selected, locale, onCompare, onDetail }: {
   readonly onCompare?: () => void;
   readonly onDetail?: () => void;
 }) {
+  const photo = cityPhoto(experience);
   return <article className="cc-experience-card">
-    <PhotoBand name={experience.title} glyph={<CompassIcon />} height={126}>
+    <PhotoBand name={experience.title} imageUrl={photo.url} glyph={<CompassIcon />} height={126}>
       <StatusBadge tone="info">{experience.categories.slice(0, 2).map((category) => category.toLowerCase()).join(' · ')}</StatusBadge>
+      <span className="cc-experience-photo-credit">{photo.credit}</span>
       <Action className="cc-experience-compare-toggle" type="button" variant={selected ? 'primary' : 'secondary'} aria-pressed={selected} aria-label={`${selected ? 'Remove' : 'Compare'} ${experience.title}`} onClick={onCompare}>
         {selected ? '✓ Comparing' : '+ Compare'}
       </Action>
@@ -171,7 +188,7 @@ function CompareTray({ selected, locale, onRemove, onOpen }: {
   return <footer className="cc-experience-tray">
     {selected.length === 0 ? <p>Select two cards to compare schedule, access, and cancellation terms.</p> : <div className="cc-experience-thumbs">
       {selected.map((experience) => <article className="cc-experience-thumb" key={experience.experienceId}>
-        <span className="cc-experience-thumb-art" aria-hidden="true"><CompassIcon /></span>
+        <span className="cc-experience-thumb-art" aria-hidden="true" style={{ backgroundImage: `linear-gradient(rgb(13 13 13 / .18), rgb(13 13 13 / .38)), url(${cityPhoto(experience).url})` }}><CompassIcon /></span>
         <span><strong>{experience.title}</strong><small>{durationLabel(experience.durationMinutes)} · {formatMoney(experience, locale)}</small></span>
         <button aria-label={`Remove ${experience.title} from comparison`} onClick={() => onRemove?.(experience.experienceId)} type="button"><XMarkIcon /></button>
       </article>)}
@@ -209,10 +226,11 @@ export function ExperienceResultsView({ result, state, displayMode, locale = 'en
 
   if (current.screen === 'detail') {
     const experience = result.experiences.find((candidate) => candidate.experienceId === current.detailId)!;
+    const photo = cityPhoto(experience);
     return <Frame className="cc-app cc-experiences" displayMode="auto" data-llm={result.fallback}>
       <header className="cc-experience-heading"><div><h2>Experience details</h2><p>Fictional Wayfare catalog</p></div><span>WAYFARE DEMO</span></header>
       <button className="cc-experience-back" type="button" onClick={() => change({ screen: 'results', detailId: undefined })}>← Back to results</button>
-      <PhotoBand name={experience.title} glyph={<CompassIcon />} height={180}><StatusBadge tone="info">{experience.categories.map((category) => category.toLowerCase()).join(' · ')}</StatusBadge></PhotoBand>
+      <PhotoBand name={experience.title} imageUrl={photo.url} glyph={<CompassIcon />} height={180}><StatusBadge tone="info">{experience.categories.map((category) => category.toLowerCase()).join(' · ')}</StatusBadge><span className="cc-experience-photo-credit">{photo.credit}</span></PhotoBand>
       <div className="cc-experience-detail-grid"><section><h3>{experience.title}</h3><p>{experience.shortDescription}</p><p className="cc-experience-operator">Fictional operator: {experience.operatorLabel}</p><h4>Included</h4><ul>{experience.inclusions.map((item) => <li key={item}>{item}</li>)}</ul><h4>Important to know</h4><ul>{experience.restrictions.map((item) => <li key={item}>{item}</li>)}</ul></section><aside>
         <dl className="cc-experience-facts"><div><dt>Duration</dt><dd>{durationLabel(experience.durationMinutes)}</dd></div><div><dt>Area</dt><dd>{experience.meetingArea}</dd></div><div><dt>Sample times</dt><dd>{slotLabel(experience)}</dd></div><div><dt>Access</dt><dd>{experience.accessibility.summary}</dd></div><div><dt>Policy</dt><dd>{experience.cancellationPolicy}</dd></div></dl>
         <p className="cc-experience-price"><strong>{formatMoney(experience, locale)}</strong><span> fictional · per adult</span></p>

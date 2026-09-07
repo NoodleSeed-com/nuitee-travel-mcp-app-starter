@@ -53,6 +53,8 @@ describe('Wayfare experience comparison widget', () => {
     expect((html.match(/>View details</g) ?? [])).toHaveLength(3);
     expect(html).toContain('Select two cards to compare');
     expect(html).toContain('Next experience');
+    expect(html).toContain('https://images.unsplash.com/');
+    expect(html).toContain('Photo: Colin + Meg · Unsplash');
     expect(html).not.toMatch(/Book now|Reserve|Checkout|Add to trip/iu);
   });
 

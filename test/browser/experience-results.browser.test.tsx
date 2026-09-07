@@ -52,12 +52,16 @@ function InteractiveExperiences() {
 }
 
 it('supports carousel controls, compare thumbnails, details, and narrow layouts', async () => {
-  await page.viewport(320, 1_200);
+  await page.viewport(900, 1_200);
   const host = document.createElement('div'); document.body.append(host);
   root = createRoot(host); root.render(<InteractiveExperiences />);
 
   await expect.element(page.getByRole('heading', { name: 'Tokyo experience ideas' })).toBeVisible();
   await expect.element(page.getByRole('button', { name: 'Next experience' })).toBeEnabled();
+  const carousel = document.querySelector<HTMLElement>('.cc-card-carousel-track')!;
+  expect(getComputedStyle(carousel).scrollbarWidth).toBe('none');
+  await page.getByRole('button', { name: 'Next experience' }).click();
+  expect(carousel.scrollLeft).toBeGreaterThan(0);
   const detailButtons = page.getByRole('button', { name: /View details/ });
   const first = await detailButtons.first().element();
   const body = first.closest('.cc-experience-card-body')!;
@@ -67,6 +71,15 @@ it('supports carousel controls, compare thumbnails, details, and narrow layouts'
   await compareButtons.nth(0).click();
   await compareButtons.nth(1).click();
   expect(document.querySelectorAll('.cc-experience-thumb')).toHaveLength(2);
+  const tray = document.querySelector<HTMLElement>('.cc-experience-tray')!;
+  const compare = await page.getByRole('button', { name: 'Compare selected' }).element();
+  expect(compare.getBoundingClientRect().left).toBeGreaterThanOrEqual(tray.getBoundingClientRect().left);
+  expect(compare.getBoundingClientRect().right).toBeLessThanOrEqual(tray.getBoundingClientRect().right);
+  expect(Math.abs(compare.getBoundingClientRect().width - tray.getBoundingClientRect().width)).toBeLessThanOrEqual(1);
+  expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(900);
+
+  await page.viewport(320, 1_200);
+  expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(320);
   await page.getByRole('button', { name: 'Compare selected' }).click();
   await expect.element(page.getByRole('heading', { name: 'Compare two ideas' })).toBeVisible();
   await page.getByRole('button', { name: /View details for/ }).first().click();

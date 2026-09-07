@@ -351,6 +351,15 @@ const demoViewPolicy = {
   },
 };
 
+export const experienceDemoViewPolicy = {
+  ...sharedWidgetDomainPolicy,
+  csp: {
+    connectDomains: [],
+    resourceDomains: ['https://images.unsplash.com'],
+    frameDomains: [],
+  },
+};
+
 function openTravelStarter(profile: TravelServerProfile, live: boolean) {
   const demo = profile === 'expanded-travel';
   const brand = demo ? travelCompanionDemoConfig.brand.name : starterConfig.brand.name;
@@ -575,7 +584,7 @@ function createTravelCapabilities(live: boolean, profile: TravelServerProfile) {
   const demo = profile === 'expanded-travel'
       ? createDemoCapabilities({
         hotel: hotelDemoViewPolicy,
-        experience: demoViewPolicy,
+        experience: experienceDemoViewPolicy,
         insurance: demoViewPolicy,
         loyalty: demoViewPolicy,
       }, { liveHotels: live })

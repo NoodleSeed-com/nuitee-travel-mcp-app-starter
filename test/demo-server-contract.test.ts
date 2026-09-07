@@ -5,7 +5,7 @@ import demoLiveApp from '../src/demo-live-server.js';
 import demoPreviewApp from '../src/demo-preview-server.js';
 import embeddedApp from '../src/embedded-server.js';
 import liveApp from '../src/live-server.js';
-import { hotelDemoViewPolicy } from '../src/travel-server.js';
+import { experienceDemoViewPolicy, hotelDemoViewPolicy } from '../src/travel-server.js';
 
 const starterTools = [
   'open_travel_starter',
@@ -254,5 +254,13 @@ describe('hotel widget map CSP', () => {
 
   it('retains the bounded Nuitee hotel-image origin', () => {
     expect(hotelDemoViewPolicy.csp.resourceDomains).toContain('https://snaphotelapi.com');
+  });
+});
+
+describe('experience widget image CSP', () => {
+  it('allows only the bounded Unsplash image origin', () => {
+    expect(experienceDemoViewPolicy.csp.connectDomains).toEqual([]);
+    expect(experienceDemoViewPolicy.csp.resourceDomains).toEqual(['https://images.unsplash.com']);
+    expect(experienceDemoViewPolicy.csp.frameDomains).toEqual([]);
   });
 });
