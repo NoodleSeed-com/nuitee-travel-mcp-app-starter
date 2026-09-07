@@ -40,19 +40,45 @@ const integer = (value: unknown, minimum: number, maximum: number): value is num
 const currencies = new Set(['CAD', 'USD', 'EUR', 'GBP', 'JPY']);
 const categories = new Set(['FOOD', 'CULTURE', 'WATER', 'DESIGN', 'FAMILY', 'EVENING', 'CRAFT', 'TEA']);
 
-const EXPERIENCE_CITY_PHOTOS = {
-  Lisbon: {
+interface ExperiencePhoto {
+  readonly url: string;
+  readonly credit: string;
+}
+
+const EXPERIENCE_PHOTOS: Readonly<Record<string, ExperiencePhoto>> = {
+  'Alfama Tastes & Tiles Walk': {
     url: 'https://images.unsplash.com/photo-1651237170873-0445e48bf802?auto=format&fit=crop&w=900&q=82',
     credit: 'Photo: Colin + Meg · Unsplash',
   },
-  Tokyo: {
+  'Tagus Sunset Sailing Circle': {
+    url: 'https://images.unsplash.com/photo-1681204620631-3c4c8d29b882?auto=format&fit=crop&w=900&q=82',
+    credit: 'Photo: Abigail Prowse · Unsplash',
+  },
+  'Belém Makers Morning': {
+    url: 'https://images.unsplash.com/photo-1585334954347-e50fe83cc6ce?auto=format&fit=crop&w=900&q=82',
+    credit: 'Photo: gemmmm · Unsplash',
+  },
+  'Yanaka Food & Craft Walk': {
+    url: 'https://images.unsplash.com/photo-1590582917892-a6e11d1b32bc?auto=format&fit=crop&w=900&q=82',
+    credit: 'Photo: Michael Wu · Unsplash',
+  },
+  'Sumida Evening Waterways': {
+    url: 'https://images.unsplash.com/photo-1692080355318-2ed92347877d?auto=format&fit=crop&w=900&q=82',
+    credit: 'Photo: Taro Ohtani · Unsplash',
+  },
+  'Quiet Tea & Design Studio': {
     url: 'https://images.unsplash.com/photo-1545830017-e4c7878841d0?auto=format&fit=crop&w=900&q=82',
     credit: 'Photo: Emile Guillemot · Unsplash',
   },
-} as const;
+};
 
-function cityPhoto(experience: DemoExperience) {
-  return EXPERIENCE_CITY_PHOTOS[experience.city];
+const EXPERIENCE_CITY_FALLBACK_PHOTOS: Readonly<Record<DemoExperience['city'], ExperiencePhoto>> = {
+  Lisbon: EXPERIENCE_PHOTOS['Alfama Tastes & Tiles Walk']!,
+  Tokyo: EXPERIENCE_PHOTOS['Quiet Tea & Design Studio']!,
+};
+
+function experiencePhoto(experience: DemoExperience) {
+  return EXPERIENCE_PHOTOS[experience.title] ?? EXPERIENCE_CITY_FALLBACK_PHOTOS[experience.city];
 }
 
 function isExperience(value: unknown): value is DemoExperience {
@@ -159,7 +185,7 @@ function ExperienceCard({ experience, selected, locale, onCompare, onDetail }: {
   readonly onCompare?: () => void;
   readonly onDetail?: () => void;
 }) {
-  const photo = cityPhoto(experience);
+  const photo = experiencePhoto(experience);
   return <article className="cc-experience-card">
     <PhotoBand name={experience.title} imageUrl={photo.url} glyph={<CompassIcon />} height={126}>
       <StatusBadge tone="info">{experience.categories.slice(0, 2).map((category) => category.toLowerCase()).join(' · ')}</StatusBadge>
@@ -188,7 +214,7 @@ function CompareTray({ selected, locale, onRemove, onOpen }: {
   return <footer className="cc-experience-tray">
     {selected.length === 0 ? <p>Select two cards to compare schedule, access, and cancellation terms.</p> : <div className="cc-experience-thumbs">
       {selected.map((experience) => <article className="cc-experience-thumb" key={experience.experienceId}>
-        <span className="cc-experience-thumb-art" aria-hidden="true" style={{ backgroundImage: `linear-gradient(rgb(13 13 13 / .18), rgb(13 13 13 / .38)), url(${cityPhoto(experience).url})` }}><CompassIcon /></span>
+        <span className="cc-experience-thumb-art" aria-hidden="true" style={{ backgroundImage: `linear-gradient(rgb(13 13 13 / .18), rgb(13 13 13 / .38)), url(${experiencePhoto(experience).url})` }}><CompassIcon /></span>
         <span><strong>{experience.title}</strong><small>{durationLabel(experience.durationMinutes)} · {formatMoney(experience, locale)}</small></span>
         <button aria-label={`Remove ${experience.title} from comparison`} onClick={() => onRemove?.(experience.experienceId)} type="button"><XMarkIcon /></button>
       </article>)}
@@ -226,7 +252,7 @@ export function ExperienceResultsView({ result, state, displayMode, locale = 'en
 
   if (current.screen === 'detail') {
     const experience = result.experiences.find((candidate) => candidate.experienceId === current.detailId)!;
-    const photo = cityPhoto(experience);
+    const photo = experiencePhoto(experience);
     return <Frame className="cc-app cc-experiences" displayMode="auto" data-llm={result.fallback}>
       <header className="cc-experience-heading"><div><h2>Experience details</h2><p>Fictional Wayfare catalog</p></div><span>WAYFARE DEMO</span></header>
       <button className="cc-experience-back" type="button" onClick={() => change({ screen: 'results', detailId: undefined })}>← Back to results</button>

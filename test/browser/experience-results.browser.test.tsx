@@ -59,6 +59,16 @@ it('supports carousel controls, compare thumbnails, details, and narrow layouts'
   await expect.element(page.getByRole('heading', { name: 'Tokyo experience ideas' })).toBeVisible();
   await expect.element(page.getByRole('button', { name: 'Next experience' })).toBeEnabled();
   const carousel = document.querySelector<HTMLElement>('.cc-card-carousel-track')!;
+  const firstCard = document.querySelector<HTMLElement>('.cc-experience-card')!;
+  const previous = await page.getByRole('button', { name: 'Previous experience' }).element();
+  const next = await page.getByRole('button', { name: 'Next experience' }).element();
+  const cardCenter = firstCard.getBoundingClientRect().top + firstCard.getBoundingClientRect().height / 2;
+  const previousCenter = previous.getBoundingClientRect().top + previous.getBoundingClientRect().height / 2;
+  const nextCenter = next.getBoundingClientRect().top + next.getBoundingClientRect().height / 2;
+  expect(Math.abs(previousCenter - cardCenter)).toBeLessThanOrEqual(5);
+  expect(Math.abs(nextCenter - cardCenter)).toBeLessThanOrEqual(5);
+  expect(new Set([...document.querySelectorAll<HTMLImageElement>('.cc-experience-card .cc-photo-image')]
+    .map((image) => image.src)).size).toBe(3);
   expect(getComputedStyle(carousel).scrollbarWidth).toBe('none');
   await page.getByRole('button', { name: 'Next experience' }).click();
   expect(carousel.scrollLeft).toBeGreaterThan(0);

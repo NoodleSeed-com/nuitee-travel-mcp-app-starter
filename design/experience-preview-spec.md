@@ -59,16 +59,25 @@ receives the same bounded facts and can continue the conversation.
 - The card rail uses arrow, keyboard, and touch carousel navigation without a
   visible native scrollbar. The comparison action is a contained full-width
   footer row below its two thumbnail cards.
-- Lisbon and Tokyo use bounded city photographs from Unsplash. The deterministic
-  Wayfare gradient remains underneath each image and becomes the visible
-  fallback when an image cannot load. Photographs establish city atmosphere;
-  they do not depict the fictional operators or promise a specific activity.
+- Every Lisbon and Tokyo card uses a different bounded photograph from
+  Unsplash. The deterministic Wayfare gradient remains underneath each image
+  and becomes the visible fallback when an image cannot load. Photographs
+  establish city atmosphere; they do not depict the fictional operators or
+  promise a specific activity.
 
 ## Image provenance
 
-- Lisbon cityscape: Colin + Meg, Unsplash,
+- Alfama, Lisbon: Colin + Meg, Unsplash,
   <https://unsplash.com/photos/MJEAR06oAko>.
-- Tokyo cityscape: Emile Guillemot, Unsplash,
+- Tagus, Lisbon: Abigail Prowse, Unsplash,
+  <https://unsplash.com/photos/z72mX-esrC8>.
+- Belém, Lisbon: gemmmm, Unsplash,
+  <https://unsplash.com/photos/BWmtnSBbBuk>.
+- Yanaka, Tokyo: Michael Wu, Unsplash,
+  <https://unsplash.com/photos/NsH4kE9zocY>.
+- Sumida, Tokyo: Taro Ohtani, Unsplash,
+  <https://unsplash.com/photos/stMdbuD1Rh8>.
+- Tea and design, Tokyo: Emile Guillemot, Unsplash,
   <https://unsplash.com/photos/B_6CSQqgvHE>.
 
 The widget requests resized images only from `https://images.unsplash.com`,
