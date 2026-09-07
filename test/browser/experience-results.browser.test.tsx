@@ -104,6 +104,9 @@ it('supports carousel controls, compare thumbnails, details, and narrow layouts'
     expect(remove.getBoundingClientRect().left).toBeGreaterThanOrEqual(thumb.getBoundingClientRect().left);
     expect(remove.getBoundingClientRect().right).toBeLessThanOrEqual(thumb.getBoundingClientRect().right);
     expectIconCentered(remove);
+    expect(remove.getBoundingClientRect().width).toBeGreaterThanOrEqual(44);
+    expect(Number.parseFloat(getComputedStyle(remove, '::before').width)).toBe(30);
+    expect(Number.parseFloat(getComputedStyle(remove, '::before').height)).toBe(30);
   }
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(900);
 
