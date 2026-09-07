@@ -1811,8 +1811,8 @@ code {
   }
 
   .travel-composer--hero {
-    grid-template-columns: minmax(0, 1fr);
-    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    align-items: center;
     gap: 0.35rem;
     padding: 0.65rem;
     border-radius: 999px;
@@ -1827,9 +1827,8 @@ code {
   }
 
   .travel-composer--hero .travel-composer__controls {
-    width: 100%;
-    align-items: stretch;
-    flex-direction: column;
+    width: 44px;
+    align-items: center;
   }
 
   .travel-composer--hero .travel-composer__controls:not(:has(.travel-composer__send span)) {
@@ -1837,11 +1836,23 @@ code {
   }
 
   .travel-composer--hero button[type='submit']:has(span) {
-    width: 100%;
-    height: auto;
+    width: 44px;
+    height: 44px;
     min-height: 44px;
-    padding-block: 0.55rem;
+    padding: 0;
     line-height: 1.2;
+  }
+
+  .travel-composer--hero .travel-composer__send span {
+    display: none;
+  }
+
+  .travel-composer__input {
+    font-size: max(16px, 1rem);
+  }
+
+  .travel-composer__input:placeholder-shown {
+    height: 44px;
   }
 
   .destination-inspiration {
@@ -2672,15 +2683,15 @@ code {
 
   .travel-composer--conversation {
     min-height: max-content;
-    grid-template-columns: minmax(0, 1fr);
-    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    align-items: center;
     gap: 0.35rem;
     padding: 0.65rem;
     border-radius: 999px;
   }
 
   .travel-composer--conversation .travel-composer__controls {
-    width: 100%;
+    width: 44px;
     justify-content: flex-end;
   }
 
