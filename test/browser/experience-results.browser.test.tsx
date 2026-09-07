@@ -51,6 +51,14 @@ function InteractiveExperiences() {
   />;
 }
 
+function expectIconCentered(button: HTMLButtonElement) {
+  const icon = button.querySelector<HTMLElement>('.cc-icon')!;
+  const buttonRect = button.getBoundingClientRect();
+  const iconRect = icon.getBoundingClientRect();
+  expect(Math.abs((buttonRect.left + buttonRect.right) / 2 - (iconRect.left + iconRect.right) / 2)).toBeLessThanOrEqual(1);
+  expect(Math.abs((buttonRect.top + buttonRect.bottom) / 2 - (iconRect.top + iconRect.bottom) / 2)).toBeLessThanOrEqual(1);
+}
+
 it('supports carousel controls, compare thumbnails, details, and narrow layouts', async () => {
   await page.viewport(900, 1_200);
   const host = document.createElement('div'); document.body.append(host);
@@ -67,6 +75,8 @@ it('supports carousel controls, compare thumbnails, details, and narrow layouts'
   const nextCenter = next.getBoundingClientRect().top + next.getBoundingClientRect().height / 2;
   expect(Math.abs(previousCenter - cardCenter)).toBeLessThanOrEqual(5);
   expect(Math.abs(nextCenter - cardCenter)).toBeLessThanOrEqual(5);
+  expectIconCentered(previous);
+  expectIconCentered(next);
   expect(firstCard.querySelector<HTMLElement>('.cc-photo-band')!.getBoundingClientRect().height).toBeGreaterThanOrEqual(180);
   expect(new Set([...document.querySelectorAll<HTMLImageElement>('.cc-experience-card .cc-photo-image')]
     .map((image) => image.src)).size).toBe(3);
@@ -93,6 +103,7 @@ it('supports carousel controls, compare thumbnails, details, and narrow layouts'
     const remove = thumb.querySelector<HTMLButtonElement>('button')!;
     expect(remove.getBoundingClientRect().left).toBeGreaterThanOrEqual(thumb.getBoundingClientRect().left);
     expect(remove.getBoundingClientRect().right).toBeLessThanOrEqual(thumb.getBoundingClientRect().right);
+    expectIconCentered(remove);
   }
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(900);
 
