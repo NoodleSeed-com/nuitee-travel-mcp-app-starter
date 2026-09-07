@@ -1,6 +1,20 @@
 # Wayfare two-city experience preview
 
-Status: visual prototype only; no runtime capability is implemented
+Status: approved visual contract and implemented local branch slice
+
+## Implementation record
+
+- Visual contract: approved in the standalone prototype.
+- Data contract: implemented as deterministic fictional Lisbon and Tokyo
+  fixtures with explicit unsupported-destination and filtered-empty outcomes.
+- Widget: implemented with result, compare-two, detail, loading, empty, and
+  malformed/error states; comparison is local presentation state only.
+- Server exposure: registered only in the expanded travel demo profile as a
+  read-only capability. The starter profiles are unchanged.
+- Agent guidance: the TypeScript product guide now covers context reuse,
+  fictional provenance, unsupported destinations, and the no-booking boundary.
+- Verification: tracked through focused contract, widget, browser, and server
+  tests. Full project and Noodle lifecycle checks remain the final branch gate.
 
 ## Funnel boundary
 
@@ -17,7 +31,7 @@ The visual UI earns its place by making schedule, duration, price, neighborhood,
 accessibility, and cancellation differences scannable. A text-only host still
 receives the same bounded facts and can continue the conversation.
 
-## Proposed capability
+## Capability
 
 `search_experiences`
 
@@ -62,10 +76,23 @@ receives the same bounded facts and can continue the conversation.
 
 ## Product-guide decision
 
-The eventual two-city capability should be covered by the Wayfare product guide
+The two-city capability is covered by the TypeScript Wayfare product guide
 because the agent must preserve trip context, disclose fictional provenance,
 handle unsupported destinations as a normal empty state, and avoid booking
-claims. This visual preview does not change the current guide.
+claims. Generated product-skill artifacts are deliberately unchanged; changing
+those requires its separate governed regeneration workflow.
+
+## Deliberately not implemented
+
+- Live experience-provider discovery or authoritative inventory.
+- Saving an experience into the trip-review state.
+- Holds, admission checks, checkout, payment, booking, or cancellation actions.
+- More destinations, pagination, or a hotel-style multi-page result carousel.
+
+For this bounded three-result catalog, the existing card carousel supplies
+navigation when the viewport cannot show every card. A larger live catalog
+would require a separate pagination and ranking design rather than silently
+expanding this demo contract.
 
 ## Approval questions answered by the preview
 

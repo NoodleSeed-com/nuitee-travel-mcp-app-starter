@@ -7,6 +7,12 @@ import {
   getSyntheticLoyaltyOverview,
 } from './demo-fixtures.js';
 import {
+  DEMO_EXPERIENCE_ALIASES,
+  DEMO_EXPERIENCE_CATALOG,
+} from './experience-fixtures.js';
+import {
+  demoExperienceSearchInputSchema,
+  demoExperienceSearchOutputSchema,
   demoHotelSearchInputSchema,
   demoHotelSearchOutputSchema,
   demoInsuranceComparisonInputSchema,
@@ -21,8 +27,48 @@ import { demoHotelSelectionIdSchema } from './demo-schemas.js';
 
 interface DemoViewPolicies {
   readonly hotel: Readonly<Record<string, unknown>>;
+  readonly experience: Readonly<Record<string, unknown>>;
   readonly insurance: Readonly<Record<string, unknown>>;
   readonly loyalty: Readonly<Record<string, unknown>>;
+}
+
+function searchDemoExperiences(viewPolicy: Readonly<Record<string, unknown>>) {
+  return tool('search_experiences', {
+    title: 'Explore experience ideas',
+    description:
+      'Explore bounded fictional Wayfare experience ideas for Lisbon or Tokyo using exact stay dates, party size, and optional interests or step-free filtering. Results are deterministic demo content, not live operator inventory, and cannot be saved, held, or booked.',
+    annotations: annotations.readOnly(),
+    input: demoExperienceSearchInputSchema,
+    output: demoExperienceSearchOutputSchema,
+    fulfil: ({ input, connectors }) => {
+      const gateway = connectors.demo.execute({
+        kind: 'experience_search',
+        experienceSearch: input,
+        experienceCatalog: DEMO_EXPERIENCE_CATALOG,
+        experienceAliases: DEMO_EXPERIENCE_ALIASES,
+      });
+      return {
+        status: gateway.experienceResult.status,
+        dataSource: gateway.experienceResult.dataSource,
+        source: gateway.experienceResult.source,
+        isFictional: gateway.experienceResult.isFictional,
+        disclosure: gateway.experienceResult.disclosure,
+        message: gateway.experienceResult.message,
+        fallback: gateway.experienceResult.fallback,
+        searchId: gateway.experienceResult.searchId,
+        searchContext: gateway.experienceResult.searchContext,
+        supportedDestination: gateway.experienceResult.supportedDestination,
+        emptyReason: gateway.experienceResult.emptyReason.optional(),
+        experiences: gateway.experienceResult.experiences,
+      };
+    },
+    viewTitle: 'Fictional experience ideas',
+    viewDescription: 'Compare fictional Lisbon and Tokyo experience ideas with visible demo provenance and no booking action.',
+    invoking: 'Finding fictional experience ideas…',
+    invoked: 'Experience ideas ready',
+    view: { component: 'experience-results', entry: './views/experience-results.tsx' },
+    ...viewPolicy,
+  });
 }
 
 function searchDemoHotels(viewPolicy: Readonly<Record<string, unknown>>) {
@@ -280,13 +326,14 @@ export function createDemoCapabilities(
   const searchHotels = options.liveHotels
     ? searchLiveHotels(viewPolicies.hotel)
     : searchDemoHotels(viewPolicies.hotel);
+  const experiences = searchDemoExperiences(viewPolicies.experience);
   const loyalty = openDemoLoyalty(viewPolicies.loyalty);
   const rewardFlights = compareDemoRewardFlights(viewPolicies.loyalty);
   const insurance = compareDemoTravelInsurance(viewPolicies.insurance);
   const review = reviewDemoTrip(viewPolicies.loyalty);
   const selectHotel = selectDemoHotel();
   return {
-    all: [searchHotels, loyalty, rewardFlights, insurance, review, selectHotel] as const,
-    publicSurface: [searchHotels, loyalty, rewardFlights, insurance, review, selectHotel] as const,
+    all: [searchHotels, experiences, loyalty, rewardFlights, insurance, review, selectHotel] as const,
+    publicSurface: [searchHotels, experiences, loyalty, rewardFlights, insurance, review, selectHotel] as const,
   };
 }

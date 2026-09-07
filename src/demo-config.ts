@@ -5,7 +5,7 @@ export const travelCompanionDemoConfig = {
     assistantName: 'Wayfare travel assistant',
     tagline: 'Travel, planned around you.',
     intro:
-      'Search current flights and stays, compare travel protection concepts, and preview rewards in one conversation.',
+      'Search current flights and stays, explore fictional Lisbon and Tokyo experiences, compare travel protection concepts, and preview rewards in one conversation.',
     palette: {
       light: {
         ink: '#0B1F33',
@@ -55,11 +55,15 @@ export const travelCompanionDemoConfig = {
       mode: 'synthetic_fixture',
       label: 'Illustrative travel protection',
     },
+    experiences: {
+      mode: 'synthetic_fixture',
+      label: 'Fictional Lisbon and Tokyo ideas',
+    },
   },
   disclosure: {
     badge: 'Preview only',
     persistent:
-      'Flight and stay results come from connected providers. Rewards and travel protection are illustrative previews. Booking, redemption, and policy purchase are unavailable.',
+      'Flight and stay results come from connected providers. Lisbon and Tokyo experiences, rewards, and travel protection are fictional or illustrative previews. Booking, experience reservations, redemption, and policy purchase are unavailable.',
   },
   assets: {
     logo: {
