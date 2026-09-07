@@ -34,17 +34,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Approved static blue/teal identity accent, separate from semantic states. */
-.cc-app::before {
-  content: '';
-  display: block;
-  width: 64px;
-  height: 4px;
-  margin: 16px 16px 0;
-  border-radius: 999px;
-  background: linear-gradient(100deg, var(--cc-brand-blue), var(--cc-brand-teal));
-}
-
 /* Hotel map board — adapted from Tribe's stay board to the Wayfare light-only contract. */
 .cc-map-wrap { display: flex; flex-direction: column; gap: 14px; }
 .cc-map-layout { display: flex; flex-direction: column; gap: 14px; }
@@ -645,7 +634,7 @@
 
 .cc-search-skeleton {
   display: grid;
-  gap: 14px;
+  gap: 12px;
   width: 100%;
   min-width: 0;
 }
@@ -669,10 +658,57 @@
 .cc-skeleton-fare {
   block-size: var(--cc-fare-card-size, 15.5rem);
   min-block-size: var(--cc-fare-card-size, 15.5rem);
-  display: grid;
-  gap: 6px;
-  align-content: stretch;
   overflow: hidden;
+}
+
+.cc-skeleton-copy {
+  display: inline-block;
+  max-width: 100%;
+  border-radius: 6px;
+  color: transparent !important;
+  background-color: color-mix(in srgb, var(--cc-text) 7%, var(--cc-surface));
+  user-select: none;
+}
+.cc-skeleton-fare .cc-compact-fare-price { justify-items: end; }
+.cc-skeleton-fare .cc-skeleton-details { margin-block: 0; height: auto; width: auto; }
+.cc-skeleton-fare button:disabled { background: var(--cc-surface-muted); color: transparent; border-color: transparent; opacity: 1; }
+.cc-skeleton-fare .cc-details-toggle:disabled { background: transparent; }
+.cc-skeleton-fare .cc-compact-fare-carrier .cc-carrier-mark { background-color: color-mix(in srgb, var(--cc-text) 7%, var(--cc-surface)); }
+.cc-skeleton-fare .cc-flight-path-line { opacity: 0.25; }
+
+.cc-search-recovery {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 16px;
+  background: var(--cc-surface-muted);
+}
+.cc-search-recovery-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--cc-surface);
+  color: var(--cc-muted);
+}
+.cc-search-recovery-copy { flex: 1; min-width: 0; }
+.cc-search-recovery-copy h2 { font-size: 1.05rem; margin-bottom: 6px; }
+.cc-search-recovery-copy p { font-size: 0.88rem; color: var(--cc-muted); }
+.cc-search-recovery-status:empty { display: none; }
+.cc-search-recovery-status:not(:empty) { margin-top: 8px; }
+.cc-search-recovery-actions { flex-shrink: 0; }
+.cc-search-recovery-actions button { min-width: 168px; }
+.cc-search-recovery-actions button:disabled { color: var(--cc-muted); opacity: 1; background: var(--cc-surface); }
+@media (max-width: 720px) {
+  .cc-skeleton-fare .cc-compact-fare-price { justify-items: start; }
+  .cc-skeleton-fare .cc-compact-fare-price > button { justify-self: end; }
+  .cc-search-recovery { align-items: flex-start; flex-wrap: wrap; padding: 20px; gap: 12px; }
+  .cc-search-recovery-copy { flex-basis: calc(100% - 60px); }
+  .cc-search-recovery-actions { width: 100%; }
+  .cc-search-recovery-actions button { width: 100%; }
 }
 
 .cc-skeleton-carrier-stack,
@@ -753,9 +789,6 @@
 .cc-skeleton-footer { align-items: end; margin-top: 2px; padding-top: 14px; border-top: 1px solid var(--cc-border); }
 .cc-skeleton-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .cc-skeleton-chip { width: clamp(86px, 22%, 142px); height: 28px; }
-.cc-skeleton-arrow { position: absolute; z-index: 2; top: 50%; width: 44px; height: 44px; border-radius: 50%; transform: translateY(-50%); }
-.cc-skeleton-arrow-previous { left: 4px; }
-.cc-skeleton-arrow-next { right: 4px; }
 
 @keyframes cc-shimmer {
   from { background-position: 110% 0; }

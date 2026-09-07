@@ -93,8 +93,7 @@ describe('illustrative travel-protection widget in a real browser', () => {
     expect(track.scrollHeight).toBeLessThanOrEqual(track.clientHeight + 1);
     expect(getComputedStyle(cards[0]!).backgroundColor).toBe('rgb(255, 255, 255)');
     const accent = getComputedStyle(document.querySelector('.cc-app')!, '::before').backgroundImage;
-    expect(accent).toContain('rgb(102, 204, 255)');
-    expect(accent).toContain('rgb(42, 166, 164)');
+    expect(accent).toBe('none');
   });
 
   it('matches loading and result grid geometry without exposing synthetic values early', async () => {

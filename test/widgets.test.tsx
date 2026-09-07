@@ -203,8 +203,8 @@ describe('FlightResults', () => {
       <FlightResultsView result={errorResult} displayMode="inline" onVerify={vi.fn()} />,
     );
 
-    expect(html).toContain('Search needs attention');
-    expect(html).toContain('Adjust an airport or travel date');
+    expect(html).toContain('Let’s check your search details');
+    expect(html).toContain('Review your airports, dates, and travelers');
     expect(html).not.toContain('<h1>Flight results</h1>');
   });
 
@@ -336,7 +336,7 @@ describe('FlightResults', () => {
     ['loading', { state: 'loading' as const }, 'Searching'],
     ['empty', { result: { status: 'empty' as const, itineraries: [], fallback: 'No flights', retrievedAt: itinerary.retrievedAt } }, 'No flights'],
     ['partial', { result: { status: 'partial' as const, itineraries: [itinerary], fallback: 'Partial', retrievedAt: itinerary.retrievedAt } }, 'Some provider results'],
-    ['error', { result: { status: 'error' as const, itineraries: [], fallback: 'Try again', retrievedAt: itinerary.retrievedAt, error: { code: 'service_unavailable' as const, message: 'Unavailable', retryable: true } } }, 'Unavailable'],
+    ['error', { result: { status: 'error' as const, itineraries: [], fallback: 'Try again', retrievedAt: itinerary.retrievedAt, error: { code: 'service_unavailable' as const, message: 'Unavailable', retryable: true } } }, 'We couldn’t load your flight options'],
   ])('renders %s state', (_name, props, text) => {
     expect(renderToStaticMarkup(<FlightResultsView displayMode="inline" onVerify={vi.fn()} {...props} />)).toContain(text);
   });
@@ -349,7 +349,7 @@ describe('FlightResults', () => {
     expect(html).toContain('cc-carousel-stage');
     expect(html).toContain('cc-carousel-window');
     expect(html).toContain('cc-carousel-track');
-    expect(html).not.toContain('cc-results-toolbar');
+    expect(html).toContain('cc-results-toolbar');
     expect(html).toContain('cc-fare-card cc-skeleton-fare');
     expect(html).toContain('cc-skeleton-leg');
     expect((html.match(/cc-skeleton-price-stack"/g) ?? [])).toHaveLength(2);
