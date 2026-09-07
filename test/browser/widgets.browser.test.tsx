@@ -115,6 +115,7 @@ function InteractiveResults({ theme = 'light' }: { readonly theme?: 'light' | 'd
 }
 
 afterEach(() => {
+  vi.restoreAllMocks();
   root?.unmount();
   host?.remove();
   root = undefined;
@@ -510,14 +511,14 @@ describe('real-browser widget readiness', () => {
     expect(hasHorizontalOverflow()).toBe(false);
   });
 
-  it('keeps the loading skeleton and result card on the same carousel geometry', async () => {
-    await page.viewport(720, 1_200);
-    mount(<FlightResultsView state="loading" displayMode="inline" onVerify={vi.fn()} />);
+  it.each([390, 720, 1280])('keeps loading and result geometry aligned at %ipx', async (width) => {
+    await page.viewport(width, 1_200);
+    mount(<FlightResultsView result={search} state="loading" displayMode="inline" onEdit={vi.fn()} onVerify={vi.fn()} />);
     await expect.element(page.getByText('Searching current fares', { exact: true })).toBeVisible();
     const skeletonBounds = document.querySelector<HTMLElement>('.cc-skeleton-fare')!
       .getBoundingClientRect();
 
-    root?.render(<FlightResultsView result={search} displayMode="inline" onVerify={vi.fn()} />);
+    root?.render(<FlightResultsView result={search} displayMode="inline" onEdit={vi.fn()} onVerify={vi.fn()} />);
     await expect.element(page.getByRole('article')).toBeVisible();
     await expect.poll(() => Math.abs(
       skeletonBounds.left - document.querySelector<HTMLElement>('.cc-fare-card')!.getBoundingClientRect().left,
@@ -528,6 +529,7 @@ describe('real-browser widget readiness', () => {
     expect(Math.abs(skeletonBounds.width - resultBounds.width)).toBeLessThanOrEqual(1);
     expect(Math.abs(skeletonBounds.left - resultBounds.left)).toBeLessThanOrEqual(1);
     expect(Math.abs(skeletonBounds.height - resultBounds.height)).toBeLessThanOrEqual(1);
+    expect(Math.abs(skeletonBounds.top - resultBounds.top)).toBeLessThanOrEqual(1);
     expect(hasHorizontalOverflow()).toBe(false);
   });
 
@@ -545,6 +547,49 @@ describe('real-browser widget readiness', () => {
 
     const row = document.querySelector<HTMLElement>('.cc-skeleton-fare .cc-skeleton-row')!;
     expect(row.getBoundingClientRect().left).toBeGreaterThan(skeleton.getBoundingClientRect().left + 1);
+  });
+
+  it('waits 60 seconds for an explicit retry and does not submit twice', async () => {
+    const now = Date.now();
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(now);
+    const retry = vi.fn(async () => {});
+    mount(<FlightResultsView state="malformed" displayMode="inline" onVerify={vi.fn()} onRetry={retry} />);
+    await expect.element(page.getByRole('button', { name: 'Try again in 60s' })).toBeDisabled();
+    expect(retry).not.toHaveBeenCalled();
+    clock.mockReturnValue(now + 59_000);
+    await expect.element(page.getByRole('button', { name: 'Try again in 1s' })).toBeDisabled();
+    clock.mockReturnValue(now + 60_000);
+    const button = page.getByRole('button', { name: 'Try again', exact: true });
+    await expect.element(button).toBeEnabled();
+    expect(retry).not.toHaveBeenCalled();
+    await button.click();
+    await expect.element(page.getByRole('button', { name: 'Search requested' })).toBeDisabled();
+    expect(retry).toHaveBeenCalledTimes(1);
+  });
+
+  it('restarts the cooldown if requesting a retry fails', async () => {
+    const now = Date.now();
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(now);
+    const retry = vi.fn(async () => { throw new Error('Transport failed'); });
+    mount(<FlightResultsView state="malformed" displayMode="inline" onVerify={vi.fn()} onRetry={retry} />);
+    await expect.element(page.getByRole('button', { name: 'Try again in 60s' })).toBeDisabled();
+    clock.mockReturnValue(now + 60_000);
+    const button = page.getByRole('button', { name: 'Try again', exact: true });
+    await expect.element(button).toBeEnabled();
+    await button.click();
+    await expect.element(page.getByText('The retry didn’t go through. Please wait a moment before trying again.')).toBeVisible();
+    await expect.element(page.getByRole('button', { name: 'Try again in 60s' })).toBeDisabled();
+    expect(retry).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers editing instead of retrying an invalid search', async () => {
+    const retry = vi.fn(async () => {});
+    const edit = vi.fn();
+    mount(<FlightResultsView result={{ ...search, status: 'error', itineraries: [], error: { code: 'invalid_request', message: 'Invalid input', retryable: false } }} displayMode="inline" onVerify={vi.fn()} onRetry={retry} onEdit={edit} />);
+    await page.getByRole('button', { name: 'Edit search' }).click();
+    expect(edit).toHaveBeenCalledTimes(1);
+    expect(retry).not.toHaveBeenCalled();
+    expect(document.querySelector('.cc-search-recovery')?.textContent).not.toContain('Try again');
   });
 
   it('keeps secondary verified-fare details collapsed until requested', async () => {

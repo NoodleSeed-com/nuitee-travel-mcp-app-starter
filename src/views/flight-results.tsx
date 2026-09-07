@@ -5,7 +5,6 @@ import { useHorizontalSwipe } from './card-carousel.js';
 import {
   Action,
   ActionBar,
-  Feedback,
   Frame,
   Region,
   StatusBadge,
@@ -28,6 +27,7 @@ import {
   TagIcon,
 } from './icons.js';
 import { SearchEditor, searchPrompt, type SearchDraft } from './search-editor.js';
+import { FlightSearchRecovery } from './flight-search-recovery.js';
 import './travel.css';
 
 type ResultsState = 'loading' | 'malformed';
@@ -342,82 +342,92 @@ function CarrierIdentity({ carrier, compact = false }: { readonly carrier: Itine
   );
 }
 
-function FareCardSkeleton() {
+function SkeletonCopy({ children }: { readonly children: string }) {
+  return <span className="cc-skeleton-copy cc-shimmer">{children}</span>;
+}
+
+function FareCardSkeleton({ roundTrip = false }: { readonly roundTrip?: boolean }) {
   return (
     <div className="cc-carousel-slide">
-      <article className="cc-fare-card cc-skeleton-fare">
+      <article className={`cc-fare-card cc-skeleton-fare ${roundTrip ? 'cc-fare-card-round-trip' : ''}`}>
+        <div className="cc-fare-face-stack"><div className="cc-fare-face cc-fare-face-front"><div className="cc-fare-front-scroll cc-compact-fare-front">
         <div className="cc-compact-fare-main">
-          <div className="cc-skeleton-carrier-stack">
-            <span className="cc-skeleton-carrier-group">
-              <span className="cc-skeleton-block cc-shimmer cc-skeleton-logo" />
-              <span className="cc-skeleton-block cc-shimmer cc-skeleton-carrier" />
+          <header className="cc-fare-header cc-compact-fare-carrier">
+            <span className="cc-carrier-identity">
+              <span className="cc-carrier-mark cc-skeleton-copy cc-shimmer" />
+              <span className="cc-carrier-copy"><strong><SkeletonCopy>Airline name</SkeletonCopy></strong><small><SkeletonCopy>XX</SkeletonCopy></small></span>
             </span>
-            <span className="cc-skeleton-block cc-shimmer cc-skeleton-badge" />
+          </header>
+          <div className="cc-leg-list">
+            {Array.from({ length: roundTrip ? 2 : 1 }, (_, index) => <section className="cc-leg cc-skeleton-leg" key={index}>
+              <div className="cc-flight-segment-row">
+                <div className="cc-flight-endpoint"><strong><SkeletonCopy>09:00</SkeletonCopy></strong><span><SkeletonCopy>XXX</SkeletonCopy></span><small><SkeletonCopy>Mon, 8 Sep</SkeletonCopy></small></div>
+                <div className="cc-flight-path"><span><SkeletonCopy>7h 15m</SkeletonCopy></span><span className="cc-flight-path-line"><PlaneIcon /></span><strong><SkeletonCopy>Nonstop</SkeletonCopy></strong></div>
+                <div className="cc-flight-endpoint cc-flight-endpoint-arrival"><strong><SkeletonCopy>16:15</SkeletonCopy></strong><span><SkeletonCopy>XXX</SkeletonCopy></span><small><SkeletonCopy>Mon, 8 Sep</SkeletonCopy></small></div>
+              </div>
+            </section>)}
           </div>
-          <section className="cc-leg cc-skeleton-leg">
-            <div className="cc-skeleton-times">
-              <span className="cc-skeleton-block cc-shimmer" />
-              <span className="cc-skeleton-block cc-shimmer" />
-              <span className="cc-skeleton-block cc-shimmer" />
+          <div className="cc-compact-fare-price cc-skeleton-price-stack">
+            <strong><SkeletonCopy>CA$607.45</SkeletonCopy></strong>
+            <span><SkeletonCopy>Total for 2 travelers</SkeletonCopy></span>
+            <Action disabled><SkeletonCopy>Select fare</SkeletonCopy></Action>
+          </div>
+        </div>
+        <footer className="cc-fare-footer cc-skeleton-row cc-compact-fare-footer">
+          <span className="cc-skeleton-details"><SkeletonCopy>Airline name · XX 811</SkeletonCopy></span>
+          <div className="cc-compact-fare-actions">
+            <span className="cc-skeleton-copy cc-shimmer cc-skeleton-badge" />
+            <button className="cc-details-toggle" disabled type="button"><SkeletonCopy>Details</SkeletonCopy><span className="cc-details-chevron" /></button>
             </div>
-          </section>
-          <div className="cc-skeleton-price-stack">
-            <span className="cc-skeleton-block cc-shimmer cc-skeleton-price" />
-            <span className="cc-skeleton-block cc-shimmer cc-skeleton-action" />
-          </div>
-        </div>
-        <div className="cc-skeleton-row cc-compact-fare-footer">
-          <span className="cc-skeleton-block cc-shimmer cc-skeleton-details" />
-          <span className="cc-skeleton-block cc-shimmer cc-skeleton-badge" />
-        </div>
+        </footer>
+        </div></div></div>
       </article>
     </div>
   );
 }
 
-function FlightSearchSkeleton() {
+function searchSummary(context: SearchContext) {
+  return `${context.origin} → ${context.destination} · ${context.departureDate}${context.returnDate ? ` – ${context.returnDate}` : ' · One way'} · ${travellerLabel(context)} · ${context.cabinClass.replaceAll('_', ' ').toLowerCase()} · ${context.currency}`;
+}
+
+function FlightSearchSkeleton({ context }: { readonly context?: SearchContext }) {
   return (
     <section className="cc-search-skeleton" role="status" aria-live="polite" aria-busy="true">
       <span className="cc-visually-hidden">Searching current fares…</span>
 
-      <section className="cc-carousel cc-skeleton-carousel" aria-hidden="true">
+      <div className="cc-results-toolbar" aria-hidden="true">
+        <div className="cc-results-summary"><h2>Flight options</h2><span><SkeletonCopy>{context ? searchSummary(context) : 'Departure → Destination · Travel dates · Travelers'}</SkeletonCopy></span><small>Searching current fares</small></div>
+        <Action variant="quiet" disabled><SkeletonCopy>Edit search</SkeletonCopy></Action>
+      </div>
+      <section className="cc-carousel cc-skeleton-carousel" aria-hidden="true" inert>
         <div className="cc-carousel-controls">
-          <span className="cc-skeleton-block cc-shimmer cc-skeleton-position" />
+          <span><SkeletonCopy>Option 1 of 3</SkeletonCopy></span>
+          <div className="cc-carousel-dots">{[0, 1, 2].map(index => <button type="button" key={index} disabled tabIndex={-1} aria-label={`Loading option ${index + 1}`} />)}</div>
         </div>
         <div className="cc-carousel-stage">
-          <span className="cc-skeleton-block cc-shimmer cc-skeleton-arrow cc-skeleton-arrow-previous" />
           <div className="cc-carousel-window">
             <div className="cc-carousel-track">
-              <FareCardSkeleton />
-              <FareCardSkeleton />
+              <FareCardSkeleton roundTrip={Boolean(context?.returnDate)} />
+              <FareCardSkeleton roundTrip={Boolean(context?.returnDate)} />
             </div>
           </div>
-          <span className="cc-skeleton-block cc-shimmer cc-skeleton-arrow cc-skeleton-arrow-next" />
         </div>
       </section>
-      <div className="cc-skeleton-notes" aria-hidden="true">
-        <span className="cc-skeleton-block cc-shimmer cc-skeleton-hint" />
-        <span className="cc-skeleton-freshness">
-          <span className="cc-skeleton-block cc-shimmer" />
-          <span className="cc-skeleton-block cc-shimmer" />
-          <span className="cc-skeleton-block cc-shimmer" />
-        </span>
-      </div>
     </section>
   );
 }
 
-function resultStatus(state: ResultsState) {
+function resultStatus(state: ResultsState, onRetry?: () => Promise<void>, context?: SearchContext) {
   if (state === 'loading') {
     return (
-      <Frame className="cc-app cc-flight-results" displayMode="auto" title="Flight options" subtitle="Searching current fares">
-        <FlightSearchSkeleton />
+      <Frame className="cc-app cc-flight-results" displayMode="auto">
+        <FlightSearchSkeleton context={context} />
       </Frame>
     );
   }
   return (
-    <Frame className="cc-app" displayMode="auto" title="Flight results">
-      <Feedback status="error">The flight result was incomplete and could not be shown safely.</Feedback>
+    <Frame className="cc-app cc-flight-results" displayMode="auto">
+      <FlightSearchRecovery onRetry={onRetry} />
     </Frame>
   );
 }
@@ -820,6 +830,7 @@ export function FlightResultsView({
   onBack,
   onSearchPrompt,
   onExpand,
+  onRetry,
   pendingFareSelectionId,
   pendingSelectionId,
   selectedSelectionId,
@@ -839,6 +850,7 @@ export function FlightResultsView({
   readonly onBack?: () => void;
   readonly onSearchPrompt?: (draft: SearchDraft) => void;
   readonly onExpand?: () => void;
+  readonly onRetry?: () => Promise<void>;
   readonly pendingFareSelectionId?: string;
   readonly pendingSelectionId?: string;
   readonly selectedSelectionId?: string;
@@ -847,8 +859,8 @@ export function FlightResultsView({
   readonly verification?: Verification;
   readonly verificationError?: GatewayError;
 }) {
-  if (state) return resultStatus(state);
-  if (!result) return resultStatus('malformed');
+  if (state) return resultStatus(state, onRetry, result?.searchContext);
+  if (!result) return resultStatus('malformed', onRetry);
 
   if (view === 'search') {
     return (
@@ -869,7 +881,7 @@ export function FlightResultsView({
 
   const selected = result.itineraries.find((itinerary) => itinerary.selectionId === selectedSelectionId);
   if (view === 'review') {
-    if (!selected || !verification || verification.selectionId !== selected.selectionId) return resultStatus('malformed');
+    if (!selected || !verification || verification.selectionId !== selected.selectionId) return resultStatus('malformed', onRetry);
     return (
       <Frame className="cc-app" displayMode="auto" title="Verified fare" data-llm={result.fallback}>
         <FareReview itinerary={selected} verification={verification} onBack={onBack} />
@@ -879,13 +891,8 @@ export function FlightResultsView({
 
   if (result.status === 'error') {
     return (
-      <Frame className="cc-app" displayMode="auto" title="Search needs attention" data-llm={result.fallback}>
-        <Feedback status="error">{result.error?.message ?? result.message}</Feedback>
-        <p className="cc-freshness">
-          {result.error?.retryable
-            ? 'Try this search again from the conversation.'
-            : 'Adjust an airport or travel date before searching again.'}
-        </p>
+      <Frame className="cc-app cc-flight-results" displayMode="auto" data-llm={result.fallback}>
+        <FlightSearchRecovery key={`${result.retrievedAt}-${result.error?.code}`} error={result.error} onRetry={onRetry} onEdit={onEdit} />
       </Frame>
     );
   }
@@ -913,11 +920,7 @@ export function FlightResultsView({
           <div className="cc-results-summary">
             <h2>Flight options</h2>
             {result.searchContext ? (
-              <span>
-                {result.searchContext.origin} → {result.searchContext.destination} · {result.searchContext.departureDate}
-                {result.searchContext.returnDate ? ` – ${result.searchContext.returnDate}` : ' · One way'}
-                {' · '}{travellerLabel(result.searchContext)} · {result.searchContext.cabinClass.replaceAll('_', ' ').toLowerCase()} · {result.searchContext.currency}
-              </span>
+              <span>{searchSummary(result.searchContext)}</span>
             ) : <span>{result.itineraries.length} options · prices require verification</span>}
             <small role={result.status === 'partial' ? 'status' : undefined}>
               {result.status === 'partial'
@@ -1081,6 +1084,11 @@ export default function FlightResults() {
         });
       }}
       onEdit={() => flow.navigate('search')}
+      onRetry={ready && layout.supports?.followUpMessage ? async () => {
+        await sendFollowUp({ prompt: result?.searchContext
+          ? `Please retry this flight search using the same details: ${JSON.stringify(result.searchContext)}. Search for fresh fares; do not select or book anything.`
+          : 'Please retry my last flight search using the same route, dates, travelers, cabin, and currency. Ask me to confirm any details that are no longer available.' });
+      } : undefined}
       onBack={() => flow.back()}
       onExpand={ready && layout.supports?.fullscreen ? () => { void requestDisplayMode('fullscreen'); } : undefined}
       onSearchPrompt={ready && layout.supports?.followUpMessage ? (draft) => {
