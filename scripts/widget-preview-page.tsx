@@ -97,7 +97,7 @@ const itineraries: Itinerary[] = [
   },
 ];
 
-const search: SearchOutput = {
+export const search: SearchOutput = {
   status: 'success',
   message: 'Three fictional test fares found.',
   fallback: 'Three fictional test fares from QZX to QZY.',

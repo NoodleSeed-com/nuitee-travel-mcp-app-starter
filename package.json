@@ -24,6 +24,7 @@
     "dev:live": "noodle dev src/live-server.ts",
     "dev:demo": "noodle dev src/demo-live-server.ts",
     "dev:preview": "noodle dev src/demo-preview-server.ts",
+    "dev:widget-shell": "vite --mode widget-preview --host localhost --port 3001 --strictPort --open /scripts/widget-shell-preview.html",
     "dev:demo:embedded": "noodle dev src/demo-embedded-server.ts",
     "validate:live": "noodle validate src/live-server.ts",
     "validate:embedded": "noodle validate src/embedded-server.ts",
