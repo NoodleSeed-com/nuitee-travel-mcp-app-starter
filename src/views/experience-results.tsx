@@ -190,9 +190,9 @@ function ExperienceCard({ experience, selected, locale, onCompare, onDetail }: {
     <PhotoBand name={experience.title} imageUrl={photo.url} glyph={<CompassIcon />} height={190}>
       <StatusBadge tone="info">{experience.categories.slice(0, 2).map((category) => category.toLowerCase()).join(' · ')}</StatusBadge>
       <span className="cc-experience-photo-credit">{photo.credit}</span>
-      <Action className="cc-experience-compare-toggle" type="button" variant={selected ? 'primary' : 'secondary'} aria-pressed={selected} aria-label={`${selected ? 'Remove' : 'Compare'} ${experience.title}`} onClick={onCompare}>
+      {onCompare ? <Action className="cc-experience-compare-toggle" type="button" variant={selected ? 'primary' : 'secondary'} aria-pressed={selected} aria-label={`${selected ? 'Remove' : 'Compare'} ${experience.title}`} onClick={onCompare}>
         {selected ? '✓ Comparing' : '+ Compare'}
-      </Action>
+      </Action> : null}
     </PhotoBand>
     <div className="cc-experience-card-body">
       <h3>{experience.title}</h3>
@@ -271,6 +271,7 @@ export function ExperienceResultsView({ result, state, displayMode, locale = 'en
   </Frame>;
 
   const current = restoreExperienceJourney(journey, result);
+  const canCompare = result.experiences.length > 1;
   const ids = new Set(result.experiences.map((experience) => experience.experienceId));
   const change = (next: Partial<ExperienceJourneyState>) => onJourneyChange?.({ ...current, ...next });
   const selected = current.compareIds.map((id) => result.experiences.find((experience) => experience.experienceId === id)).filter((experience): experience is DemoExperience => Boolean(experience));
@@ -305,7 +306,7 @@ export function ExperienceResultsView({ result, state, displayMode, locale = 'en
     <p className="cc-experience-disclosure">{result.disclosure}</p>
     <CardCarousel label={`${result.experiences[0]?.city} experience ideas`} itemName="experience">
       {result.experiences.map((experience) => <ExperienceCard key={experience.experienceId} experience={experience} selected={current.compareIds.includes(experience.experienceId)} locale={locale}
-        onCompare={onJourneyChange ? () => {
+        onCompare={canCompare && onJourneyChange ? () => {
           const compareIds = current.compareIds.includes(experience.experienceId)
             ? current.compareIds.filter((id) => id !== experience.experienceId)
             : current.compareIds.length < 2 ? [...current.compareIds, experience.experienceId] : current.compareIds;
@@ -313,7 +314,7 @@ export function ExperienceResultsView({ result, state, displayMode, locale = 'en
         } : undefined}
         onDetail={onJourneyChange ? () => change({ screen: 'detail', detailId: experience.experienceId }) : undefined} />)}
     </CardCarousel>
-    <CompareTray selected={selected} locale={locale} onRemove={onJourneyChange ? (id) => change({ compareIds: current.compareIds.filter((candidate) => candidate !== id) }) : undefined} onOpen={onJourneyChange ? () => change({ screen: 'compare' }) : undefined} />
+    {canCompare ? <CompareTray selected={selected} locale={locale} onRemove={onJourneyChange ? (id) => change({ compareIds: current.compareIds.filter((candidate) => candidate !== id) }) : undefined} onOpen={onJourneyChange ? () => change({ screen: 'compare' }) : undefined} /> : null}
   </Frame>;
 }
 

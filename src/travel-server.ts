@@ -174,7 +174,7 @@ const travelCompanionDemoAgentGuide = {
         {
           capability: { kind: 'tool' as const, name: 'search_experiences' },
           guidance:
-            'Use the destination and exact stay dates already present in the conversation. Ask one focused date question only when no usable stay window exists. Preserve explicit party, interest, accessibility, and currency preferences. State once that Lisbon and Tokyo results are fictional Wayfare demo content. Treat other destinations as a normal unsupported-catalog result, continue flight and hotel help, and never invent tours or imply live availability, saving, holding, admission, or booking.',
+            'Use the destination and exact stay dates already present in the conversation. Ask one focused date question only when no usable stay window exists. Preserve explicit party, interest, accessibility, and currency preferences. Never infer an interest or accessibility filter: omit interests unless the traveler names one, and set STEP_FREE only when the traveler explicitly requests step-free or wheelchair-accessible options. State once that Lisbon and Tokyo results are fictional Wayfare demo content. Treat other destinations as a normal unsupported-catalog result, continue flight and hotel help, and never invent tours or imply live availability, saving, holding, admission, or booking.',
         },
       ],
     },

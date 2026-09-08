@@ -127,3 +127,20 @@ it('supports carousel controls, compare thumbnails, details, and narrow layouts'
 
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(320);
 });
+
+it('keeps a single experience focused on details without comparison controls', async () => {
+  const host = document.createElement('div'); document.body.append(host);
+  root = createRoot(host);
+  root.render(<ExperienceResultsView
+    result={{ ...result, experiences: result.experiences.slice(0, 1) }}
+    displayMode="inline"
+    journey={{ searchId: result.searchId, screen: 'results', compareIds: [] }}
+    onJourneyChange={vi.fn()}
+  />);
+
+  await expect.element(page.getByRole('heading', { name: 'Tokyo experience ideas' })).toBeVisible();
+  await expect.element(page.getByRole('button', { name: /View details for/ })).toBeVisible();
+  expect(document.querySelector('.cc-experience-compare-toggle')).toBeNull();
+  expect(document.querySelector('.cc-experience-tray')).toBeNull();
+  expect(document.body.textContent).not.toContain('Select two cards to compare');
+});

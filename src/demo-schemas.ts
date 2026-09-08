@@ -152,8 +152,12 @@ export const demoExperienceSearchInputSchema = z.object({
   adults: z.number().int().min(1).max(8).default(1),
   children: z.number().int().min(0).max(6).default(0),
   currency: demoExperienceCurrencySchema.default('CAD'),
-  interests: z.array(demoExperienceCategorySchema).max(4).optional(),
-  accessibility: z.literal('STEP_FREE').optional(),
+  interests: z.array(demoExperienceCategorySchema).max(4)
+    .describe('Optional categories explicitly requested by the traveler; omit for broad discovery')
+    .optional(),
+  accessibility: z.literal('STEP_FREE')
+    .describe('Set only when the traveler explicitly requests step-free or wheelchair-accessible options; otherwise omit')
+    .optional(),
 }).refine(
   ({ startDate, endDate }) => endDate > startDate,
   { path: ['endDate'], message: 'Experience search end date must be after start date.' },

@@ -61,6 +61,20 @@ describe('Wayfare experience comparison widget', () => {
     expect(html).not.toMatch(/Book now|Reserve|Checkout|Add to trip/iu);
   });
 
+  it('hides comparison controls and guidance when only one experience is available', () => {
+    const html = render({
+      result: { ...result, experiences: result.experiences.slice(0, 1) },
+      displayMode: 'inline',
+      journey: { searchId: result.searchId, screen: 'results', compareIds: [] },
+      onJourneyChange: vi.fn(),
+    });
+
+    expect(html).not.toContain('cc-experience-compare-toggle');
+    expect(html).not.toContain('cc-experience-tray');
+    expect(html).not.toContain('Select two cards to compare');
+    expect(html).not.toContain('Compare selected');
+  });
+
   it('renders selected thumbnails and the compare-two screen from current result IDs only', () => {
     const ids = result.experiences.slice(0, 2).map((experience) => experience.experienceId);
     const resultsHtml = render({

@@ -122,8 +122,13 @@ describe('Wayfare expanded travel profile', () => {
     expect(experiences).toMatchObject({ annotations: { readOnlyHint: true } });
     expect(JSON.stringify(experiences.outputSchema)).toContain('WAYFARE_DEMO');
     expect(JSON.stringify(experiences.outputSchema)).toContain('UNSUPPORTED_DESTINATION');
+    expect(JSON.stringify(experiences.inputSchema)).toContain(
+      'Set only when the traveler explicitly requests step-free or wheelchair-accessible options',
+    );
     expect(JSON.stringify(home.outputSchema)).toContain('Experiences');
-    expect(JSON.stringify(demo.server.agentGuide)).toContain('search_experiences');
+    const agentGuide = JSON.stringify(demo.server.agentGuide);
+    expect(agentGuide).toContain('search_experiences');
+    expect(agentGuide).toContain('Never infer an interest or accessibility filter');
     expect(starter.tools.some((entry: any) => entry.name === 'search_experiences')).toBe(false);
   });
 
