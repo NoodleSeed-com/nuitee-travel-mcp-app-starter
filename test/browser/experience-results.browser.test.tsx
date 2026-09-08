@@ -59,6 +59,42 @@ function expectIconCentered(button: HTMLButtonElement) {
   expect(Math.abs((buttonRect.top + buttonRect.bottom) / 2 - (iconRect.top + iconRect.bottom) / 2)).toBeLessThanOrEqual(1);
 }
 
+it('opens a named experience directly in the existing chooser and keeps Back usable', async () => {
+  await page.viewport(900, 1200);
+  const first = result.experiences[0]!;
+  const named = { ...result, searchContext: { ...result.searchContext, experienceName: first.title }, experiences: [{ ...first, slots: [...first.slots, { ...first.slots[0]!, slotId: 'slot_ffffffffffffffffffffffffffffffff', startLocal: '2030-04-20T14:30:00' }] }] };
+  const add = vi.fn();
+  function NamedFlow() {
+    const [journey, setJourney] = useState<ExperienceJourneyState>();
+    return <ExperienceResultsView result={named} displayMode="inline" journey={journey} onJourneyChange={setJourney} onAdd={add} />;
+  }
+  const host = document.createElement('div'); document.body.append(host);
+  root = createRoot(host); root.render(<NamedFlow />);
+  await expect.element(page.getByRole('heading', { name: first.title })).toBeVisible();
+  expect(document.querySelector('.cc-card-carousel-track')).toBeNull();
+  await expect.element(page.getByRole('button', { name: 'Choose a day to continue' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Saturday 20 Apr' }).click();
+  await expect.element(page.getByRole('button', { name: 'Choose a time to continue' })).toBeDisabled();
+  expect(add).not.toHaveBeenCalled();
+  await page.getByRole('button', { name: '14:30', exact: true }).click();
+  await page.getByRole('button', { name: 'Add to my trip', exact: true }).click();
+  expect(add).toHaveBeenCalledExactlyOnceWith(named.experiences[0], 'slot_ffffffffffffffffffffffffffffffff');
+  await page.getByRole('button', { name: 'Back to experiences' }).click();
+  await expect.element(page.getByRole('heading', { name: 'Tokyo experience ideas' })).toBeVisible();
+  await page.getByRole('button', { name: `View details for ${first.title}` }).click();
+  await expect.element(page.getByRole('heading', { name: first.title })).toBeVisible();
+  await page.screenshot({ path: '__screenshots__/named-experience-details.png', fullPage: true });
+});
+
+it('keeps multiple named matches in the carousel until the traveler chooses', async () => {
+  const ambiguous = { ...result, searchContext: { ...result.searchContext, experienceName: 'Yanaka' }, experiences: result.experiences.slice(0, 2).map(item => ({ ...item, title: 'Yanaka Food & Craft Walk' })) };
+  const host = document.createElement('div'); document.body.append(host);
+  root = createRoot(host); root.render(<ExperienceResultsView result={ambiguous} displayMode="inline" onJourneyChange={vi.fn()} />);
+  await expect.element(page.getByRole('heading', { name: 'Tokyo experience ideas' })).toBeVisible();
+  expect(document.querySelectorAll('.cc-experience-card')).toHaveLength(2);
+  expect(document.querySelector('.wf-trip-detail')).toBeNull();
+});
+
 it('supports carousel controls, compare thumbnails, details, and narrow layouts', async () => {
   await page.viewport(900, 1_200);
   const host = document.createElement('div'); document.body.append(host);
@@ -122,7 +158,7 @@ it('supports carousel controls, compare thumbnails, details, and narrow layouts'
   expect(Math.abs(backToResults.getBoundingClientRect().left - comparisonGrid.getBoundingClientRect().left)).toBeLessThanOrEqual(1);
   expect(backToResults.getBoundingClientRect().right).toBeLessThan(comparisonGrid.getBoundingClientRect().left + comparisonGrid.getBoundingClientRect().width / 2);
   await page.getByRole('button', { name: /View details for/ }).first().click();
-  await expect.element(page.getByRole('heading', { name: 'Experience details' })).toBeVisible();
+  await expect.element(page.getByRole('heading', { name: result.experiences[0]!.title })).toBeVisible();
   await page.getByRole('button', { name: 'Ask about this experience' }).click();
 
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(320);

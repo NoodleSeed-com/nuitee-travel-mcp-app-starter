@@ -124,12 +124,18 @@ export const itinerarySchema = z.object({
   messages: z.array(z.string().max(240)).max(6),
 });
 
+export const activityDatesSchema = z.object({
+  startDate: z.iso.date().describe('First local activity date explicitly supplied by the traveler'),
+  endDate: z.iso.date().describe('Exclusive end of the activity window; for activities through Sep 22 inclusive, use Sep 23'),
+}).refine(({ startDate, endDate }) => endDate > startDate, 'Activity end date must follow its start date');
+
 export const searchInputSchema = z.object({
   origin: z.string().regex(/^[A-Za-z]{3}$/).describe('Resolved actual-airport IATA code derived from an unambiguous user-supplied city or airport name; use YYZ for Toronto, not the YTO metro code'),
   destination: z.string().regex(/^[A-Za-z]{3}$/).describe('Resolved actual-airport IATA code derived from an unambiguous user-supplied city or airport name; use YYZ for Toronto, not the YTO metro code'),
   tripType: z.enum(['ONE_WAY', 'ROUND_TRIP']).optional().describe('Always identify the requested trip type. Use ONE_WAY when the traveler does not request a return trip; use ROUND_TRIP only when a later return date is requested'),
   departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe('Outbound date in YYYY-MM-DD format; resolve relative language from the server-provided local date before calling'),
   returnDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe('Round-trip return date in YYYY-MM-DD format. Omit returnDate entirely for ONE_WAY; for ROUND_TRIP it must be strictly later than departureDate and must never duplicate departureDate'),
+  activityDates: activityDatesSchema.optional().describe('Preserve an explicit local activity or stay window already supplied in the conversation for this destination, so Explore experiences can reuse it directly. Omit when unknown; never infer it from flight departure or return dates. This planning context is not sent to the flight provider.'),
   adults: z.number().int().min(1).max(9).default(1).describe('Adult traveler count; treat a generic passenger count as adults unless the user explicitly identifies children or infants'),
   children: z.number().int().min(0).max(8).default(0).describe('Children explicitly identified by the user; otherwise zero'),
   infants: z.number().int().min(0).max(9).default(0).describe('Infants explicitly identified by the user; otherwise zero'),
@@ -239,6 +245,17 @@ export const selectionRecordSchema = z.object({
   originalTotal: z.number().nonnegative().max(100_000_000),
   currency: z.string().regex(/^[A-Z]{3}$/),
   expiresAt: z.string().max(64).optional(),
+  planningContext: z.object({
+    origin: z.string().regex(/^[A-Z]{3}$/),
+    destination: z.string().regex(/^[A-Z]{3}$/),
+    departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    returnDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    activityDates: activityDatesSchema.optional(),
+    adults: z.number().int().min(1).max(9),
+    children: z.number().int().min(0).max(8),
+    infants: z.number().int().min(0).max(9),
+    currency: z.string().regex(/^[A-Z]{3}$/),
+  }).optional(),
 });
 
 export const selectionStateSchema = z.object({

@@ -1,0 +1,97 @@
+/* Approved experience-selection layout, following docs/brand/wayfare-brand-guidelines.md. */
+.cc-app.wf-trip-widget { padding: 0; width: 100%; min-width: 0; max-width: 100%; border: 1px solid var(--cc-border); border-radius: 23px; overflow: hidden; background: var(--cc-bg); font-size: 16px; line-height: 1.45; }
+.wf-trip-widget, .wf-trip-widget * { box-sizing: border-box; }
+.cc-app.wf-trip-widget h2, .cc-app.wf-trip-widget h3, .cc-app.wf-trip-widget p { margin: 0; }
+.cc-app.wf-trip-widget h2 { font-size: 25px; letter-spacing: -.035em; line-height: 1.2; font-weight: 600; }
+.cc-app.wf-trip-widget h3 { font-size: 18px; line-height: 1.25; letter-spacing: -.02em; font-weight: 600; }
+.cc-app.wf-trip-widget p { line-height: 1.55; }
+.cc-app.wf-trip-widget button { cursor: pointer; min-height: 44px; border: 1px solid var(--cc-border); border-radius: 999px; padding: 10px 18px; color: var(--cc-text); background: var(--cc-bg); font: inherit; font-weight: 550; line-height: 1.35; }
+.cc-app.wf-trip-widget button:hover { background: var(--cc-surface-muted); }
+.cc-app.wf-trip-widget button:disabled { cursor: default; color: #777; background: var(--cc-surface-muted); }
+.cc-app.wf-trip-widget button[aria-pressed=true] { background: var(--cc-selected); border-color: var(--cc-selected); }
+.cc-app.wf-trip-widget :focus-visible { outline: 2px solid var(--cc-text); outline-offset: 4px; }
+.wf-trip-icon { width: 20px; height: 20px; display: block; flex-shrink: 0; }
+.wf-trip-muted { color: var(--cc-muted); }
+.cc-app.wf-trip-widget .wf-trip-text-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; background: transparent; border-color: transparent; padding: 10px 12px; font-size: 14px; }
+.wf-trip-back-row { padding: 9px 12px; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.wf-trip-badge { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; border-radius: 999px; background: var(--cc-surface-muted); padding: 7px 10px; font-size: 11px; font-weight: 600; color: var(--cc-brand-ink); }
+.wf-trip-back-row .wf-trip-badge { margin-right: 10px; }
+.wf-trip-photo { position: relative; min-height: 230px; background: linear-gradient(120deg, var(--cc-brand-ink), var(--cc-brand-blue)); overflow: hidden; }
+.wf-trip-photo > img { display: block; width: 100%; height: 230px; object-fit: cover; object-position: center 56%; }
+.wf-trip-photo > img[hidden] { display: none; }
+.wf-trip-credit { position: absolute; bottom: 0; right: 0; padding: 14px 12px 7px 25px; color: white; background: linear-gradient(140deg, transparent, #000b); font-size: 10px; }
+.wf-trip-detail { padding: 25px; }
+.wf-trip-detail-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.wf-trip-detail-top > div:first-child { min-width: 0; }
+.wf-trip-detail-top .wf-trip-price { flex-shrink: 0; text-align: right; }
+.wf-trip-price strong { display: block; font-size: 23px; letter-spacing: -.04em; font-weight: 600; }
+.wf-trip-price span { display: block; color: var(--cc-muted); font-size: 12px; margin-top: 3px; }
+.wf-trip-meta { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; color: var(--cc-muted); font-size: 13px; }
+.wf-trip-meta > span { display: flex; gap: 6px; align-items: center; }
+.wf-trip-meta .wf-trip-icon { width: 17px; height: 17px; }
+.cc-app.wf-trip-widget .wf-trip-description { font-size: 14px; color: var(--cc-muted); margin: 18px 0; }
+.wf-trip-selection { border-top: 1px solid var(--cc-border); padding-top: 20px; margin-top: 21px; }
+.cc-app.wf-trip-widget .wf-trip-selection-label { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+.wf-trip-date-options, .wf-trip-time-options { display: flex; flex-wrap: wrap; gap: 9px; }
+.cc-app.wf-trip-widget .wf-trip-date-option { padding: 10px 24px; min-width: 112px; text-align: left; }
+.wf-trip-date-option span { display: block; font-size: 12px; margin-bottom: 3px; font-weight: 400; }
+.wf-trip-date-option strong { font-size: 16px; font-weight: 600; }
+.wf-trip-time-row { display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; margin-top: 19px; }
+.cc-app.wf-trip-widget .wf-trip-time-row .wf-trip-selection-label { margin: 0; }
+.cc-app.wf-trip-widget .wf-trip-time-options button { min-width: 92px; }
+.wf-trip-party { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 20px; padding: 14px 0; border-top: 1px solid var(--cc-border); font-size: 14px; }
+.wf-trip-party > div { display: flex; align-items: center; gap: 8px; }
+.wf-trip-party small { font-size: 12px; color: var(--cc-muted); }
+.wf-trip-details-disclosure { border-top: 1px solid var(--cc-border); font-size: 13px; color: var(--cc-muted); padding-top: 14px; }
+.wf-trip-details-disclosure summary { min-height: 44px; cursor: pointer; color: var(--cc-text); display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.wf-trip-details-disclosure summary::-webkit-details-marker { display: none; }
+.cc-app.wf-trip-widget .wf-trip-details-disclosure p { margin: 8px 0; }
+.wf-trip-action-area { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--cc-border); }
+.wf-trip-selection-total { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 13px; }
+.wf-trip-selection-total p { font-size: 12px; color: var(--cc-muted); }
+.wf-trip-selection-total strong { font-size: 23px; font-weight: 600; }
+.cc-app.wf-trip-widget .wf-trip-primary { display: flex; align-items: center; justify-content: center; gap: 9px; background: var(--cc-text); color: var(--cc-bg); border: 1px solid var(--cc-text); border-radius: 999px; min-height: 50px; width: 100%; padding: 10px 18px; font-size: 16px; font-weight: 550; line-height: 1.35; }
+.cc-app.wf-trip-widget button.wf-trip-primary:hover { background: #292929; }
+.cc-app.wf-trip-widget button.wf-trip-primary:disabled { border-color: var(--cc-border); color: #777; background: var(--cc-surface-muted); }
+.cc-app.wf-trip-widget .wf-trip-primary.wf-trip-selected { background: var(--cc-selected); color: var(--cc-text); border-color: var(--cc-selected); }
+.cc-app.wf-trip-widget .wf-trip-fine-print { color: var(--cc-muted); font-size: 12px; text-align: center; margin-top: 10px; }
+.wf-trip-secondary-row { display: flex; justify-content: center; margin-top: 6px; }
+.wf-trip-note { background: var(--cc-surface-muted); border-radius: 13px; padding: 14px 16px; font-size: 13px; line-height: 1.55; color: var(--cc-muted); }
+.wf-trip-widget-header { padding: 23px 24px 17px; display: flex; justify-content: space-between; align-items: start; gap: 14px; }
+.cc-app.wf-trip-widget .wf-trip-widget-header p { font-size: 14px; color: var(--cc-muted); margin-top: 7px; }
+.wf-trip-added-content { padding: 24px; }
+.wf-trip-added-content .wf-trip-summary-card { margin: 18px 0; }
+.wf-trip-summary-card { display: grid; grid-template-columns: 100px minmax(0,1fr); gap: 17px; border: 1px solid var(--cc-border); border-radius: 17px; padding: 12px; align-items: center; }
+.wf-trip-summary-card .wf-trip-thumbnail { height: 100px; width: 100px; border-radius: 12px; object-fit: cover; background: var(--cc-surface-muted); }
+.cc-app.wf-trip-widget .wf-trip-summary-card h3 { margin: 3px 0 7px; }
+.wf-trip-summary-card p { color: var(--cc-muted); font-size: 13px; }
+.wf-trip-summary-card small { color: var(--cc-brand-ink); font-size: 11px; }
+.wf-trip-added-price { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 6px 0 20px; font-size: 14px; }
+.wf-trip-added-price strong { font-size: 22px; font-weight: 600; }
+.cc-app.wf-trip-widget .wf-trip-error-note { border: 1px solid var(--cc-action-needed); border-radius: 13px; padding: 14px; font-size: 13px; margin-bottom: 13px; }
+@container (max-width: 640px) {
+  .wf-trip-photo, .wf-trip-photo > img { min-height: 195px; height: 195px; }
+  .wf-trip-detail, .wf-trip-added-content { padding: 18px; }
+  .wf-trip-detail-top { display: block; }
+  .wf-trip-detail-top .wf-trip-price { display: none; }
+  .cc-app.wf-trip-widget h2 { font-size: 23px; }
+  .wf-trip-meta { font-size: 12px; gap: 8px; }
+  .cc-app.wf-trip-widget .wf-trip-date-option { min-width: 0; padding: 10px 18px; flex: 1; }
+  .wf-trip-date-options { gap: 7px; }
+  .wf-trip-date-option strong { font-size: 15px; }
+  .wf-trip-time-row { align-items: flex-start; }
+  .cc-app.wf-trip-widget .wf-trip-selection-label { font-size: 13px; }
+  .wf-trip-party { align-items: flex-start; font-size: 13px; }
+  .wf-trip-party small { max-width: 110px; text-align: right; }
+  .wf-trip-widget-header { padding: 20px 18px 17px; }
+  .cc-app.wf-trip-widget .wf-trip-widget-header h2 { font-size: 22px; }
+  .wf-trip-badge { font-size: 10px; padding: 6px 8px; }
+  .wf-trip-summary-card { grid-template-columns: 78px minmax(0,1fr); gap: 12px; padding: 10px; }
+  .wf-trip-summary-card .wf-trip-thumbnail { width: 78px; height: 95px; }
+  .cc-app.wf-trip-widget .wf-trip-summary-card h3 { font-size: 17px; }
+  .wf-trip-summary-card p { font-size: 12px; }
+  .wf-trip-credit { font-size: 9px; }
+  .cc-app.wf-trip-widget .wf-trip-fine-print { font-size: 11px; }
+}
+.wf-trip-widget { container-type: inline-size; }
+@media (prefers-reduced-motion: reduce) { .wf-trip-widget * { scroll-behavior: auto !important; transition: none !important; } }

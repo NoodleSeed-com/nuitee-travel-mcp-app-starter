@@ -37,10 +37,10 @@ To explore the MCP product separately, run `pnpm dev:preview`. This opens the cr
 | --- | --- | --- |
 | Flights | Search one-way or return itineraries, compare a compact carousel, select a fare, verify its current price and availability | Live Nuitée access required; stops before reservation or booking |
 | Hotels | Search stays, inspect rooms and terms, compare options, explore locations when configured, remember a selection | Live Nuitée results in the expanded live profile; illustrative stays in the credential-free profile; no room held |
-| Experiences | Discover fictional Lisbon and Tokyo ideas, inspect details, and compare two options | Demonstration catalog only; no live operators, capacity checks, saved trip selection, or booking |
+| Experiences | Discover fictional Lisbon and Tokyo ideas, compare options, choose a date/time, and add an experience to the conversation's plan | Demonstration catalog only; temporary planning selections, no live operators, capacity checks, or booking |
 | Rewards and reward flights | Show an example balance and compare points-based trip ideas | Illustrative only; no account access, live award inventory, or redemption |
 | Travel protection | Compare example protection concepts | Illustrative only; no insurance quote, policy, eligibility decision, or purchase |
-| Trip review | Review the selected flight and stay in conversation | Preserves each source; never invents a bookable package total |
+| Trip review | Review any selected flight, stay, or experiences inline and explore relevant missing components | Optional components with separate prices; preserves each source and never invents a bookable package total |
 
 **No booking, passenger collection, payment, ticketing, cancellation, refund, voucher issuance, or points redemption is implemented.** Cars, private jets, and broader trip-care imagery are product concepts, not connected transaction capabilities. A selected option is never presented as a reservation.
 

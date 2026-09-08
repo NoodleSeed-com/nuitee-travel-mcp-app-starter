@@ -302,7 +302,7 @@ describe('synthetic Wayfare travel fixtures', () => {
     expect(review).toMatchObject({
       status: 'ready',
       dataSource: 'illustrative',
-      missing: [],
+      missing: ['experiences'],
       flight: { dataSource: 'live_nuitee_selection' },
       stay: { dataSource: 'illustrative' },
     });
@@ -316,7 +316,7 @@ describe('synthetic Wayfare travel fixtures', () => {
     const review = buildSyntheticTripReview({});
     expect(review).toMatchObject({
       status: 'incomplete',
-      missing: ['flight', 'stay'],
+      missing: ['flight', 'stay', 'experiences'],
     });
     expect(review.flight).toBeUndefined();
     expect(review.stay).toBeUndefined();

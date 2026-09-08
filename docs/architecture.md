@@ -65,7 +65,9 @@ The website admits only these exact linked-App identities:
 - `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget`;
 - `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget`;
 - `search_hotels` + `ui://nuitee_travel_mcp_app_starter/search_hotels_widget`;
+- `open_hotel` + `ui://nuitee_travel_mcp_app_starter/open_hotel_widget`;
 - `search_experiences` + `ui://nuitee_travel_mcp_app_starter/search_experiences_widget`;
+- `add_experience_to_trip` + `ui://nuitee_travel_mcp_app_starter/add_experience_to_trip_widget`;
 - `open_loyalty` + `ui://nuitee_travel_mcp_app_starter/open_loyalty_widget`;
 - `compare_reward_flights` + `ui://nuitee_travel_mcp_app_starter/compare_reward_flights_widget`;
 - `review_trip` + `ui://nuitee_travel_mcp_app_starter/review_trip_widget`; and
@@ -94,13 +96,15 @@ exactly:
 The last helper remains `visibility: ['app']`; it is available to the trusted linked App bridge but is not offered to the model as a conversational tool.
 
 The expanded `src/demo-embedded-server.ts` profile reuses those flight
-capabilities and adds six model-visible read-only tools—`search_hotels`,
-`search_experiences`, `open_loyalty`, `compare_reward_flights`, `compare_travel_insurance`, and
+capabilities and adds eight model-visible tools: `search_hotels`, `open_hotel`,
+`search_experiences`, `add_experience_to_trip`, `open_loyalty`, `compare_reward_flights`, `compare_travel_insurance`, and
 `review_trip`—plus App-only `select_hotel`. In live and embedded profiles, `search_hotels` uses the fixed Nuitee
 `POST /v3.0/hotels/rates` connector. `src/demo-preview-server.ts` is the
 credential-free fictional alternative. Experiences, rewards, reward flights and protection
 remain illustrative compute; they do not access accounts, redeem points or
-purchase policies. Hotel and flight selections are not bookings.
+purchase policies. `open_hotel` reopens a named hotel from the current caller's stored search without refreshing rates or selecting it. `add_experience_to_trip` records an explicitly chosen returned date/time in temporary caller state, with a 30-minute expiry and acknowledged, duplicate-safe writes. These tools are provider-read-only; selections change conversation planning state, not provider inventory. No selection is a booking.
+
+Any combination of selected flight, stay, and experiences is a valid planning review. Review buttons read current selections inline without sending a chat message. Explore experiences also opens inline using the selected context. Flight-derived dates are labeled as provisional browsing dates, not confirmed arrival or activity dates; known stay dates retain their source. Missing components remain optional, and prices stay separate.
 
 The visual contract is one centered chronological conversation. Linked Apps stay inline at their original message-part positions.
 Distinct view IDs are not generically deduplicated. Mismatched tool/resource pairs fail closed.
@@ -161,10 +165,13 @@ produce explicit empty results instead of invented replacement inventory.
 
 Every result carries `dataSource: illustrative`, `source: WAYFARE_DEMO`, and
 `isFictional: true`. The linked `ExperienceResultsView` offers a carousel,
-details, a two-item comparison, and a conversational follow-up. View state and
-optional model context track inspection/comparison only. There is no server-side
-experience selection, save-to-trip tool, admission check, reservation, or booking.
-`review_trip` continues to resolve flight and hotel selections only.
+details, a two-item comparison, and explicit date/time selection. A single named
+match opens details directly; broad or ambiguous matches stay in the carousel.
+The server owns temporary experience search snapshots and selected slots; widget
+state owns navigation only. `add_experience_to_trip` validates the returned
+references and acknowledges a successful state write before showing Added.
+`review_trip` reads those selections alongside optional flights and stays.
+There is no live admission check, reservation, or booking.
 
 The widget's fixed decorative photos load from `https://images.unsplash.com`
 under its resource-only CSP. They do not validate a fictional operator or its

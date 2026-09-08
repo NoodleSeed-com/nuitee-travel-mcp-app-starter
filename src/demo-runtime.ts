@@ -9,6 +9,10 @@ export type DemoGatewayInput =
       readonly kind: 'review';
       readonly flightState: unknown;
       readonly hotelState: unknown;
+      readonly experienceState?: unknown;
+      readonly experienceReadOk?: boolean;
+      readonly requestedAt?: string;
+      readonly aliases?: Readonly<Record<string, string>>;
       readonly loyalty: Readonly<Record<string, unknown>>;
     }
   | {
@@ -26,6 +30,17 @@ export type DemoGatewayInput =
       readonly experienceSearch: Readonly<Record<string, unknown>>;
       readonly experienceCatalog: Readonly<Record<string, readonly Readonly<Record<string, unknown>>[]>>;
       readonly experienceAliases: Readonly<Record<string, string>>;
+      readonly experienceState?: unknown;
+      readonly experienceReadOk?: boolean;
+      readonly requestedAt?: string;
+    }
+  | {
+      readonly kind: 'experience_select';
+      readonly experienceState?: unknown;
+      readonly experienceReadOk?: boolean;
+      readonly experienceId: string;
+      readonly slotId: string;
+      readonly requestedAt: string;
     }
   | {
       readonly kind: 'select';
@@ -49,7 +64,7 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
   const string = (value: unknown): string | undefined => typeof value === 'string' ? value : undefined;
   const number = (value: unknown): number | undefined => typeof value === 'number' && Number.isFinite(value) ? value : undefined;
   const opaque = (
-    prefix: 'hsearch' | 'hsel' | 'rsearch' | 'rwd' | 'inscmp' | 'inplan' | 'exsearch' | 'exp' | 'slot',
+    prefix: 'hsearch' | 'hsel' | 'rsearch' | 'rwd' | 'inscmp' | 'inplan' | 'exsearch' | 'exp' | 'slot' | 'esel',
     value: string,
   ) => {
     let first = 2166136261;
@@ -98,9 +113,38 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
     year += month <= 2 ? 1 : 0;
     return `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
   };
+  // Noodle compute intentionally has no ambient Date clock. Parse only the
+  // explicitly supplied UTC invocation instant and use integer calendar math.
+  const instantMillis = (value: string): number => {
+    const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?Z$/.exec(value);
+    if (!match) return Number.NaN;
+    const hours = Number(match[2]);
+    const minutes = Number(match[3]);
+    const seconds = Number(match[4]);
+    if (hours > 23 || minutes > 59 || seconds > 59 || dateFromDayNumber(dayNumber(match[1]!)) !== match[1]) return Number.NaN;
+    return (dayNumber(match[1]!) - dayNumber('1970-01-01')) * 86_400_000
+      + hours * 3_600_000 + minutes * 60_000 + seconds * 1_000
+      + Number((match[5] ?? '').padEnd(3, '0').slice(0, 3));
+  };
+  const formatInstant = (value: number): string => {
+    const days = Math.floor(value / 86_400_000);
+    const withinDay = value - days * 86_400_000;
+    const hours = Math.floor(withinDay / 3_600_000);
+    const minutes = Math.floor((withinDay % 3_600_000) / 60_000);
+    const seconds = Math.floor((withinDay % 60_000) / 1_000);
+    const millis = withinDay % 1_000;
+    return `${dateFromDayNumber(days + dayNumber('1970-01-01'))}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${millis.toString().padStart(3, '0')}Z`;
+  };
 
   if (input.kind === 'experience_search') {
-    const search = record(input.experienceSearch) ?? {};
+    const search = { ...record(input.experienceSearch) };
+    // Hosts may supply an empty optional string. Normalize before filtering,
+    // hashing, returning context, or persisting options for later selection.
+    if (typeof search.experienceName === 'string') {
+      const name = search.experienceName.trim();
+      if (name) search.experienceName = name;
+      else delete search.experienceName;
+    }
     const destination = string(search.destination) ?? '';
     const startDate = string(search.startDate) ?? '';
     const endDate = string(search.endDate) ?? '';
@@ -108,6 +152,10 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
     const partySize = (number(search.adults) ?? 1) + (number(search.children) ?? 0);
     const interests = array(search.interests).filter((entry): entry is string => typeof entry === 'string');
     const stepFreeOnly = search.accessibility === 'STEP_FREE';
+    // Match title words only; do not guess a winner among similar names.
+    const titleWords = (value: string) => value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim().split(/\s+/).filter(word => word && word !== 'and');
+    const experienceName = string(search.experienceName);
+    const requestedWords = experienceName ? titleWords(experienceName) : [];
     const canonical = input.experienceAliases[destination.trim().toUpperCase()];
     const searchId = opaque('exsearch', JSON.stringify({
       ...search,
@@ -120,7 +168,9 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
       const categories = array(fixture.categories).filter((entry): entry is string => typeof entry === 'string');
       const matchesInterest = interests.length === 0 || interests.some((interest) => categories.includes(interest));
       const accessibility = record(fixture.accessibility) ?? {};
-      return matchesInterest && (!stepFreeOnly || accessibility.stepFree === true);
+      const words = titleWords(string(fixture.title) ?? '');
+      const matchesName = !experienceName || requestedWords.length > 0 && requestedWords.every(word => words.includes(word));
+      return matchesName && matchesInterest && (!stepFreeOnly || accessibility.stepFree === true);
     });
     const experiences = matched.slice(0, 6).map((fixture) => {
       const key = string(fixture.key) ?? 'demo_experience_unknown';
@@ -174,8 +224,24 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
     const status = experiences.length > 0 ? 'success' : 'empty';
     const emptyReason = supportedDestination ? 'NO_MATCHING_EXPERIENCES' : 'UNSUPPORTED_DESTINATION';
     const destinationLabel = string(record(fixtures[0])?.city) ?? destination;
+    const now = instantMillis(input.requestedAt ?? '');
+    const currentState = record(input.experienceState) ?? {};
+    const nextExperienceState = Number.isFinite(now) && input.experienceReadOk === true ? {
+      updatedAt: input.requestedAt,
+      records: experiences.map((experience) => ({
+        experience,
+        searchContext: search,
+        createdAt: input.requestedAt,
+        expiresAt: formatInstant(now + 1_800_000),
+      })),
+      // A new search refreshes available options, never silently clears a trip
+      // or extends the lifetime of an already chosen option.
+      selected: array(currentState.selected).slice(0, 8),
+    } : undefined;
     return {
       kind: 'experience_search',
+      mayWriteExperienceState: Boolean(nextExperienceState),
+      ...(nextExperienceState ? { nextExperienceState } : {}),
       experienceResult: {
         status,
         dataSource: 'illustrative',
@@ -183,12 +249,16 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
         isFictional: true,
         disclosure: 'Fictional Wayfare demo experiences. No operator inventory, capacity, admission, or live availability was checked.',
         message: status === 'success'
-          ? `${experiences.length} fictional experience ideas are ready to explore for ${destinationLabel}.`
+          ? experienceName && experiences.length === 1
+            ? `${experiences[0]!.title} details are open. Choose a date and time to add it to your plan.`
+            : `${experiences.length} fictional experience ideas are ready to explore for ${destinationLabel}.`
           : supportedDestination
-            ? `No fictional experiences matched the selected interests or accessibility filter for ${destinationLabel}.`
+            ? `No fictional experiences matched the requested name, interests, or accessibility filters for ${destinationLabel}.`
             : `The fictional Wayfare experience catalog is not configured for ${destinationLabel}.`,
         fallback: status === 'success'
-          ? `${experiences.length} fictional Wayfare experience ideas for ${destinationLabel} from ${startDate} to ${endDate}; no live operator inventory or booking availability was checked.`
+          ? experienceName && experiences.length === 1
+            ? `${experiences[0]!.title}: fictional Wayfare experience in ${destinationLabel}. Choose a date and time from the returned slots in the detail widget, or in chat if the widget is unavailable. Nothing has been added or reserved by this search.`
+            : `${experiences.length} fictional Wayfare experience ideas for ${destinationLabel} from ${startDate} to ${endDate}; no live operator inventory or booking availability was checked.${experienceName ? ' More than one title matches; choose an experience before a date/time.' : ''}`
           : supportedDestination
             ? `No fictional Wayfare experiences matched the current filters for ${destinationLabel}. No provider call was made.`
             : `No fictional Wayfare experience catalog is configured for ${destinationLabel}. No provider call was made; continue with flights and hotels.`,
@@ -198,6 +268,75 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
         ...(status === 'empty' ? { emptyReason } : {}),
         experiences,
       },
+    };
+  }
+
+  if (input.kind === 'experience_select') {
+    const failure = (status: string, message: string) => ({ kind: 'experience_select', experienceSelection: { status, message } });
+    const state = record(input.experienceState) ?? {};
+    const now = instantMillis(input.requestedAt);
+    if (input.experienceReadOk !== true) return failure('unavailable', 'Your saved experience options could not be read. Try again before adding an experience.');
+    if (!Number.isFinite(now)) return failure('unavailable', 'The experience options could not be checked. Search experiences again before adding one.');
+    const storedSelections = array(state.selected).map(record).filter((entry): entry is Record<string, unknown> => Boolean(entry));
+    const previous = storedSelections.find((entry) => record(entry.experience)?.experienceId === input.experienceId
+      && record(entry.slot)?.slotId === input.slotId);
+    if (previous && instantMillis(string(previous.expiresAt) ?? '') > now) {
+      return { kind: 'experience_select', experienceSelection: {
+        status: 'already_selected', message: 'This experience is already in your trip. It is selected, not reserved.', selection: previous,
+      } };
+    }
+    const stored = array(state.records).map(record).find((entry) => record(entry?.experience)?.experienceId === input.experienceId);
+    const experience = record(stored?.experience);
+    const slot = array(experience?.slots).map(record).find((entry) => entry?.slotId === input.slotId);
+    const search = record(stored?.searchContext);
+    if (!stored || !experience || !slot || !search) {
+      if (previous) return failure('expired', 'These experience options expired. Search again and choose a current date and time.');
+      return failure('unavailable', 'That experience and time are not available in this conversation. Search experiences again.');
+    }
+    const createdAt = instantMillis(string(stored.createdAt) ?? '');
+    const expiresAt = instantMillis(string(stored.expiresAt) ?? '');
+    if (!Number.isFinite(createdAt) || !Number.isFinite(expiresAt) || now < createdAt || expiresAt > createdAt + 1_800_000) {
+      return failure('unavailable', 'The experience options could not be checked. Search experiences again before adding one.');
+    }
+    if (now >= expiresAt) return failure('expired', 'These experience options expired. Search again and choose a current date and time.');
+    const adults = number(search.adults);
+    const children = number(search.children);
+    const capacity = number(slot.remainingCapacity);
+    const slotDate = string(slot.startLocal)?.slice(0, 10);
+    const price = record(experience.price);
+    const amount = number(price?.amountMinor);
+    if (!adults || !Number.isInteger(adults) || children === undefined || !Number.isInteger(children)
+      || adults < 1 || children < 0 || adults + children > 8 || capacity === undefined || capacity < adults + children
+      || !slotDate || slotDate < String(search.startDate) || slotDate >= String(search.endDate)
+      || slot.timeZone !== experience.timeZone || amount === undefined || !Number.isSafeInteger(amount)
+      || amount <= 0 || !price || price.currency !== search.currency || amount * adults > 100_000_000) {
+      return failure('unavailable', 'This option cannot accommodate the stored trip details. Search again with your dates and party size.');
+    }
+    if (children > 0) {
+      return failure('unavailable', 'Child pricing is unknown for these fictional experiences. I cannot add a priced family selection. Clarify whether this experience is for adults only, then search again.');
+    }
+    const selected = storedSelections.filter((entry) => instantMillis(string(entry.expiresAt) ?? '') > now);
+    const sameChoice = selected.find((entry) => {
+      const savedExperience = record(entry.experience);
+      const savedSearch = record(entry.searchContext);
+      return savedExperience?.city === experience.city && savedExperience?.title === experience.title
+        && record(entry.slot)?.startLocal === slot.startLocal && savedSearch?.adults === adults && savedSearch?.children === children;
+    });
+    if (sameChoice) return { kind: 'experience_select', experienceSelection: {
+      status: 'already_selected', message: 'This experience is already in your trip. It is selected, not reserved.', selection: sameChoice,
+    } };
+    if (selected.length >= 8) return failure('limit_reached', 'This conversation can keep up to eight experience choices. Start a new trip to plan more.');
+    const selection = {
+      selectionId: opaque('esel', `${input.experienceId}:${input.slotId}`),
+      experience, slot, searchContext: search,
+      totalPrice: { amountMinor: amount * adults, currency: price.currency },
+      addedAt: input.requestedAt, expiresAt: stored.expiresAt,
+    };
+    return {
+      kind: 'experience_select',
+      // Proposal only. The public tool must gate this result on patch_state.ok.
+      experienceSelection: { status: 'selected', message: 'Added to your trip. This fictional experience is selected, not reserved.', selection },
+      nextExperienceState: { ...state, updatedAt: input.requestedAt, selected: [...selected, selection] },
     };
   }
 
@@ -483,13 +622,22 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
   const stay = array(hotelState.records)
     .map(record)
     .find((entry) => entry?.selectionId === activeHotelId);
+  const now = instantMillis(input.requestedAt ?? '');
+  const savedExperiences = array(input.experienceReadOk === true ? record(input.experienceState)?.selected : undefined).map(record)
+    .filter((entry): entry is Record<string, unknown> => Boolean(entry));
+  const experiences = savedExperiences.filter((entry) => Number.isFinite(now)
+    && instantMillis(string(entry.addedAt) ?? '') <= now && instantMillis(string(entry.expiresAt) ?? '') > now).slice(0, 8);
   const missing = [
     ...(flight ? [] : ['flight']),
     ...(stay ? [] : ['stay']),
+    ...(experiences.length ? [] : ['experiences']),
   ];
+  const ready = Boolean(flight || stay || experiences.length);
   const flightReview = flight ? {
     dataSource: 'live_nuitee_selection',
     selectionId: flight.selectionId,
+    ...(string(record(flight.planningContext)?.origin) ? { origin: record(flight.planningContext)!.origin } : {}),
+    ...(string(record(flight.planningContext)?.destination) ? { destination: record(flight.planningContext)!.destination } : {}),
     searchPrice: {
       total: flight.originalTotal,
       currency: flight.currency,
@@ -509,21 +657,70 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
     rooms: stay.rooms,
     staySubtotal: stay.staySubtotal,
   } : undefined;
+  const selectedExperience = record(experiences[0]?.experience);
+  const experienceContext = record(experiences[0]?.searchContext);
+  const flightContext = record(flight?.planningContext);
+  const staySearchResult = record(record(input.hotelState)?.searchResult);
+  const staySearchContext = stay && staySearchResult && staySearchResult.searchId === stay.searchId ? record(staySearchResult.searchContext) : undefined;
+  const basePlanningContext = stay ? {
+    source: 'stay', destination: stay.city, startDate: stay.checkInDate, endDate: stay.checkOutDate,
+    dateBasis: 'stay', propertyName: stay.propertyName, currency: record(stay.staySubtotal)?.currency,
+  } : selectedExperience && experienceContext ? {
+    source: 'experience', destination: selectedExperience.city, countryCode: selectedExperience.countryCode,
+    startDate: experienceContext.startDate, endDate: experienceContext.endDate, dateBasis: 'experience_search',
+    adults: experienceContext.adults, children: experienceContext.children, currency: experienceContext.currency,
+    meetingArea: selectedExperience.meetingArea,
+  } : flightContext ? {
+    source: 'flight', destination: flightContext.destination, origin: flightContext.origin,
+    startDate: flightContext.departureDate, ...(flightContext.returnDate ? { endDate: flightContext.returnDate } : {}),
+    dateBasis: 'flight_departure', adults: flightContext.adults, children: flightContext.children,
+    infants: flightContext.infants, currency: flightContext.currency,
+    ...(record(flightContext.activityDates) ? { activityDates: flightContext.activityDates } : {}),
+  } : undefined;
+  const canonicalDestination = (value: unknown) => {
+    const name = string(value)?.trim().toUpperCase() ?? '';
+    return input.aliases?.[name] ?? name;
+  };
+  const matchingFlight = flightContext && basePlanningContext?.endDate
+    && canonicalDestination(flightContext.destination) === canonicalDestination(basePlanningContext.destination)
+    && flightContext.departureDate === basePlanningContext.startDate && flightContext.returnDate === basePlanningContext.endDate
+    ? flightContext : undefined;
+  const matchingExperience = experiences.find((entry) => {
+    const context = record(entry.searchContext);
+    return basePlanningContext && canonicalDestination(record(entry.experience)?.city) === canonicalDestination(basePlanningContext.destination)
+      && context?.startDate === basePlanningContext.startDate && context?.endDate === basePlanningContext.endDate;
+  });
+  const matchingExperienceContext = record(matchingExperience?.searchContext);
+  const parties = [staySearchContext, matchingFlight, matchingExperienceContext].filter((entry): entry is Record<string, unknown> => Boolean(entry));
+  const conflictingParty = parties.some(entry => entry.adults !== parties[0]?.adults || entry.children !== parties[0]?.children
+    || (number(entry.infants) ?? 0) !== (number(parties[0]?.infants) ?? 0));
+  const partyContext = conflictingParty ? undefined : parties[0];
+  const planningContext = basePlanningContext ? {
+    ...basePlanningContext,
+    ...(matchingFlight ? { origin: matchingFlight.origin } : {}),
+    ...(partyContext ? { adults: partyContext.adults, children: partyContext.children,
+      ...(partyContext.infants !== undefined ? { infants: partyContext.infants } : {}),
+    } : {}),
+  } : undefined;
+  const notes = [
+    ...(savedExperiences.length > experiences.length ? ['Some experience choices expired. Search experiences again to add current options.'] : []),
+    ...(planningContext?.source === 'flight' ? ['The flight date is its departure date. Confirm local arrival and the final stay date before searching accommodation.'] : []),
+    ...(conflictingParty ? ['Selected components have different participant details. Confirm who is joining the next part of the trip.'] : []),
+  ];
   return {
     kind: 'review',
     review: {
-      status: missing.length === 0 ? 'ready' : 'incomplete',
+      status: ready ? 'ready' : 'incomplete',
       dataSource: 'illustrative',
-      disclosure: stayDataSource === 'live_nuitee'
-        ? 'Flight and stay selections came from current provider searches. Rewards remain illustrative; prices stay separate and nothing was booked or paid.'
-        : 'The flight remains a current provider selection. Stay and rewards values are illustrative; this is not a bookable package and no payment or points action is available.',
-      fallback: missing.length === 0
-        ? stayDataSource === 'live_nuitee'
-          ? 'Trip review ready: flight and stay are current Nuitee search selections, while rewards are illustrative. Prices remain separate and nothing was booked or paid.'
-          : 'Trip review ready: the flight remains a live Nuitee search selection, while the stay and rewards information is synthetic. Prices remain separate and nothing was booked or paid.'
-        : `Trip review needs a current ${missing.join(' and ')} selection. No booking, payment, or points action occurred.`,
+      disclosure: 'Selected items are a conversation plan, not reservations. Experiences and rewards are illustrative; each flight and stay identifies its own source. Prices remain separate. Nothing was booked, paid, or redeemed.',
+      fallback: ready
+        ? `Your selected trip is ready to review: ${[...(flight ? ['flight'] : []), ...(stay ? ['stay'] : []), ...(experiences.length ? [`${experiences.length} fictional experience${experiences.length === 1 ? '' : 's'}`] : [])].join(', ')}. Other components are optional; prices stay separate and nothing is reserved.${notes.length ? ` ${notes[0]}` : ''}`
+        : `No current trip selections are saved. Choose a flight, stay, or experience to start a plan.${notes.length ? ` ${notes[0]}` : ''}`,
       ...(flightReview ? { flight: flightReview } : {}),
       ...(stayReview ? { stay: stayReview } : {}),
+      experiences,
+      ...(planningContext ? { planningContext } : {}),
+      ...(notes.length ? { notes } : {}),
       loyalty: input.loyalty,
       missing,
     },

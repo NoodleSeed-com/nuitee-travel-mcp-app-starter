@@ -24,6 +24,8 @@ export function progressForEvent(
       return { label: 'Verifying the current fare', phase: 'verifying' };
     case 'search_hotels':
       return { label: 'Finding stays' };
+    case 'open_hotel':
+      return { label: 'Opening your requested stay' };
     case 'select_hotel':
       return { label: 'Adding the stay' };
     case 'open_loyalty':

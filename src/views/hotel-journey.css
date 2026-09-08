@@ -1,4 +1,11 @@
 .cc-hotel-journey { --stay-gap: 16px; }
+.cc-hotel-journey .cc-card-carousel { position: relative; width: 100%; }
+.cc-app.cc-hotel-journey .cc-card-carousel-track { width: 100%; max-width: 100%; box-sizing: border-box; scrollbar-width: none; }
+.cc-app.cc-hotel-journey .cc-card-carousel-track::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.cc-hotel-journey .cc-card-carousel-nav { min-height: 44px; }
+.cc-app.cc-hotel-journey .cc-card-carousel-nav button { position: absolute; z-index: 4; top: calc(50% - 25px); transform: translateY(-50%); box-shadow: 0 3px 14px rgb(13 13 13 / .16); }
+.cc-hotel-journey .cc-card-carousel-nav button:first-of-type { left: 8px; }
+.cc-hotel-journey .cc-card-carousel-nav button:last-of-type { right: 8px; }
 .cc-hotel-journey .cc-stay-context { margin-bottom: 4px; font-size: 1.05rem; }
 .cc-hotel-journey .cc-stay-dates, .cc-hotel-journey .cc-stay-source { color: var(--cc-muted); font-size: .82rem; }
 .cc-hotel-journey .cc-stay-source { margin: 10px 0 16px; max-width: 75ch; }
@@ -27,7 +34,13 @@
 .cc-stay-detail-body dl { display: grid; grid-template-columns: auto 1fr; gap: 8px 20px; }
 .cc-stay-detail-body dt { color: var(--cc-muted); }
 .cc-stay-detail-body ul { margin: 0; padding-left: 18px; }
-.cc-stay-selected-note { margin-top: 12px !important; font-size: .85rem; }
+.cc-stay-selected-note { margin-top: 16px !important; padding-top: 16px; border-top: 1px solid var(--cc-border); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; font-size: .85rem; }
+.cc-stay-selected-note > div { flex: 1 1 240px; min-width: 0; }
+.cc-stay-selected-note strong { display: flex; align-items: center; gap: 8px; }
+.cc-stay-selected-note .cc-icon { flex: 0 0 20px; width: 20px; height: 20px; }
+.cc-stay-selected-note p { margin: 6px 0 2px; overflow-wrap: anywhere; }
+.cc-stay-selected-note small { color: var(--cc-muted); }
+.cc-stay-selected-note > button { flex: 0 0 auto; min-height: 44px; }
 .cc-stay-compare-picker { margin: 20px 0; border: 0; padding: 0; }
 .cc-stay-compare-picker legend { font-weight: 600; margin-bottom: 8px; }
 .cc-stay-compare-picker label { display: flex; align-items: center; gap: 12px; min-height: 44px; font-size: .875rem; }
@@ -81,4 +94,5 @@
   .cc-stay-detail-body { padding: 14px; }
   .cc-stay-comparison { grid-template-columns: 1fr; }
   .cc-stay-detail-body dl { grid-template-columns: 1fr; gap: 5px; }
+  .cc-stay-selected-note > button { width: 100%; }
 }

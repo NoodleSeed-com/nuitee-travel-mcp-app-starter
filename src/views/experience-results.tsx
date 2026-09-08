@@ -1,12 +1,13 @@
 import '@fontsource-variable/host-grotesk';
 import '@noodleseed/one/react/styles.css';
-import { useEffect } from 'react';
-import type { DemoExperience, DemoExperienceSearchOutput } from '../demo-schemas.js';
+import { useEffect, useRef, useState } from 'react';
+import type { DemoExperience, DemoExperienceSearchOutput, DemoExperienceSelection, DemoTripReview } from '../demo-schemas.js';
 import {
   Action,
   Feedback,
   Frame,
   StatusBadge,
+  useCallTool,
   useLayout,
   useSendFollowUpMessage,
   useToolInfo,
@@ -17,98 +18,23 @@ import {
 import { CardCarousel } from './card-carousel.js';
 import { PhotoBand } from './card-primitives.js';
 import { CompassIcon, XMarkIcon } from './icons.js';
+import { ExperienceAddedView, ExperienceChooseView, type ExperienceAddState, type ExperienceSelectionState } from './experience-selection.js';
+import { experiencePhoto, isExperience, isExperienceSearchContext, isExperienceTripSelection, matchesExperienceChoice, record, text, durationLabel, formatExperienceMoney } from './experience-selection-data.js';
 import './travel.css';
+import { InlineTripReview } from './trip-review.js';
+import { tripPlanningSnapshot, type TripExperienceSearchPlan } from './trip-experience-search.js';
 import './experience-results.css';
 
 export interface ExperienceJourneyState {
   readonly searchId: string;
-  readonly screen: 'results' | 'detail' | 'compare';
+  readonly screen: 'results' | 'detail' | 'compare' | 'added';
   readonly detailId?: string;
   readonly compareIds: readonly string[];
+  readonly choice?: ExperienceSelectionState;
+  readonly selection?: DemoExperienceSelection;
 }
 
 type ExperienceState = 'loading' | 'error' | 'malformed';
-
-const record = (value: unknown): Record<string, unknown> | undefined =>
-  value !== null && typeof value === 'object' && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : undefined;
-const text = (value: unknown, minimum: number, maximum: number): value is string =>
-  typeof value === 'string' && value.trim().length >= minimum && value.length <= maximum;
-const integer = (value: unknown, minimum: number, maximum: number): value is number =>
-  typeof value === 'number' && Number.isInteger(value) && value >= minimum && value <= maximum;
-const currencies = new Set(['CAD', 'USD', 'EUR', 'GBP', 'JPY']);
-const categories = new Set(['FOOD', 'CULTURE', 'WATER', 'DESIGN', 'FAMILY', 'EVENING', 'CRAFT', 'TEA']);
-
-interface ExperiencePhoto {
-  readonly url: string;
-  readonly credit: string;
-}
-
-const EXPERIENCE_PHOTOS: Readonly<Record<string, ExperiencePhoto>> = {
-  'Alfama Tastes & Tiles Walk': {
-    url: 'https://images.unsplash.com/photo-1651237170873-0445e48bf802?auto=format&fit=crop&w=900&q=82',
-    credit: 'Photo: Colin + Meg · Unsplash',
-  },
-  'Tagus Sunset Sailing Circle': {
-    url: 'https://images.unsplash.com/photo-1681204620631-3c4c8d29b882?auto=format&fit=crop&w=900&q=82',
-    credit: 'Photo: Abigail Prowse · Unsplash',
-  },
-  'Belém Makers Morning': {
-    url: 'https://images.unsplash.com/photo-1585334954347-e50fe83cc6ce?auto=format&fit=crop&w=900&q=82',
-    credit: 'Photo: gemmmm · Unsplash',
-  },
-  'Yanaka Food & Craft Walk': {
-    url: 'https://images.unsplash.com/photo-1590582917892-a6e11d1b32bc?auto=format&fit=crop&w=900&q=82',
-    credit: 'Photo: Michael Wu · Unsplash',
-  },
-  'Sumida Evening Waterways': {
-    url: 'https://images.unsplash.com/photo-1692080355318-2ed92347877d?auto=format&fit=crop&w=900&q=82',
-    credit: 'Photo: Taro Ohtani · Unsplash',
-  },
-  'Quiet Tea & Design Studio': {
-    url: 'https://images.unsplash.com/photo-1545830017-e4c7878841d0?auto=format&fit=crop&w=900&q=82',
-    credit: 'Photo: Emile Guillemot · Unsplash',
-  },
-};
-
-const EXPERIENCE_CITY_FALLBACK_PHOTOS: Readonly<Record<DemoExperience['city'], ExperiencePhoto>> = {
-  Lisbon: EXPERIENCE_PHOTOS['Alfama Tastes & Tiles Walk']!,
-  Tokyo: EXPERIENCE_PHOTOS['Quiet Tea & Design Studio']!,
-};
-
-function experiencePhoto(experience: DemoExperience) {
-  return EXPERIENCE_PHOTOS[experience.title] ?? EXPERIENCE_CITY_FALLBACK_PHOTOS[experience.city];
-}
-
-function isExperience(value: unknown): value is DemoExperience {
-  const experience = record(value);
-  const accessibility = record(experience?.accessibility);
-  const price = record(experience?.price);
-  if (!experience || !accessibility || !price ||
-    typeof experience.experienceId !== 'string' || !/^exp_[a-f0-9]{32}$/.test(experience.experienceId) ||
-    experience.dataSource !== 'illustrative' || experience.source !== 'WAYFARE_DEMO' || experience.isFictional !== true ||
-    !['Lisbon', 'Tokyo'].includes(String(experience.city)) || !['PT', 'JP'].includes(String(experience.countryCode)) ||
-    !['Europe/Lisbon', 'Asia/Tokyo'].includes(String(experience.timeZone)) ||
-    !text(experience.title, 2, 100) || !text(experience.operatorLabel, 2, 80) ||
-    !text(experience.shortDescription, 20, 240) || !integer(experience.durationMinutes, 30, 720) ||
-    !text(experience.meetingArea, 2, 100) || typeof accessibility.stepFree !== 'boolean' ||
-    !text(accessibility.summary, 2, 160) || !text(experience.cancellationPolicy, 2, 180) ||
-    !integer(price.amountMinor, 0, 100_000_000) || !currencies.has(String(price.currency)) ||
-    !Array.isArray(experience.categories) || experience.categories.length < 1 || experience.categories.length > 4 ||
-    !experience.categories.every((category) => categories.has(String(category))) ||
-    !Array.isArray(experience.inclusions) || experience.inclusions.length < 1 || experience.inclusions.length > 5 ||
-    !experience.inclusions.every((entry) => text(entry, 2, 100)) ||
-    !Array.isArray(experience.restrictions) || experience.restrictions.length > 3 ||
-    !experience.restrictions.every((entry) => text(entry, 2, 160)) ||
-    !Array.isArray(experience.slots) || experience.slots.length < 1 || experience.slots.length > 4) return false;
-  return experience.slots.every((candidate) => {
-    const slot = record(candidate);
-    return slot && typeof slot.slotId === 'string' && /^slot_[a-f0-9]{32}$/.test(slot.slotId) &&
-      typeof slot.startLocal === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00$/.test(slot.startLocal) &&
-      slot.timeZone === experience.timeZone && integer(slot.remainingCapacity, 1, 20) && slot.isFictional === true;
-  });
-}
 
 export function isDemoExperienceSearchOutput(value: unknown): value is DemoExperienceSearchOutput {
   const result = record(value);
@@ -116,7 +42,7 @@ export function isDemoExperienceSearchOutput(value: unknown): value is DemoExper
     result.source !== 'WAYFARE_DEMO' || result.isFictional !== true || !text(result.disclosure, 20, 320) ||
     !text(result.message, 2, 320) || !text(result.fallback, 20, 700) ||
     typeof result.searchId !== 'string' || !/^exsearch_[a-f0-9]{32}$/.test(result.searchId) ||
-    typeof result.supportedDestination !== 'boolean' || !record(result.searchContext) ||
+    typeof result.supportedDestination !== 'boolean' || !isExperienceSearchContext(result.searchContext) ||
     !Array.isArray(result.experiences) || result.experiences.length > 6 || !result.experiences.every(isExperience)) return false;
   const success = result.status === 'success';
   if (success !== (result.experiences.length > 0)) return false;
@@ -125,41 +51,46 @@ export function isDemoExperienceSearchOutput(value: unknown): value is DemoExper
     (result.supportedDestination ? result.emptyReason === 'NO_MATCHING_EXPERIENCES' : result.emptyReason === 'UNSUPPORTED_DESTINATION');
 }
 
-function initialJourney(searchId: string): ExperienceJourneyState {
-  return { searchId, screen: 'results', compareIds: [] };
+function initialJourney(result: DemoExperienceSearchOutput): ExperienceJourneyState {
+  const named = result.searchContext.experienceName && result.experiences.length === 1 ? result.experiences[0] : undefined;
+  return { searchId: result.searchId, screen: named ? 'detail' : 'results', ...(named ? { detailId: named.experienceId } : {}), compareIds: [] };
 }
 
 export function restoreExperienceJourney(value: unknown, result: DemoExperienceSearchOutput): ExperienceJourneyState {
   const saved = record(value);
   const ids = new Set(result.experiences.map((experience) => experience.experienceId));
-  if (!saved || saved.searchId !== result.searchId || !['results', 'detail', 'compare'].includes(String(saved.screen)) ||
-    !Array.isArray(saved.compareIds)) return initialJourney(result.searchId);
+  if (!saved || saved.searchId !== result.searchId || !['results', 'detail', 'compare', 'added'].includes(String(saved.screen)) ||
+    !Array.isArray(saved.compareIds)) return initialJourney(result);
   const compareIds = [...new Set(saved.compareIds.filter((id): id is string => typeof id === 'string' && ids.has(id)))].slice(0, 2);
   const detailId = typeof saved.detailId === 'string' && ids.has(saved.detailId) ? saved.detailId : undefined;
+  const experience = result.experiences.find((item) => item.experienceId === detailId);
+  const rawChoice = record(saved.choice);
+  const date = experience && rawChoice && rawChoice.experienceId === detailId && typeof rawChoice.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(rawChoice.date) && experience.slots.some((slot) => slot.startLocal.slice(0, 10) === rawChoice.date) ? rawChoice.date : undefined;
+  const slotId = date && experience?.slots.find((slot) => slot.slotId === rawChoice?.slotId && slot.startLocal.startsWith(date))?.slotId;
+  const choice = date && detailId ? { experienceId: detailId, date, ...(slotId ? { slotId } : {}) } : undefined;
+  const savedSelection = isExperienceTripSelection(saved.selection) ? saved.selection : undefined;
+  const selection = savedSelection && result.experiences.some((item) => matchesExperienceChoice(savedSelection, item, result.searchContext)) ? savedSelection : undefined;
   const requestedScreen = saved.screen as ExperienceJourneyState['screen'];
   const screen = requestedScreen === 'detail' && !detailId
     ? 'results'
-    : requestedScreen === 'compare' && compareIds.length !== 2
+    : requestedScreen === 'added' && !selection ? 'results' : requestedScreen === 'compare' && compareIds.length !== 2
       ? 'results'
       : requestedScreen;
-  return { searchId: result.searchId, screen, ...(detailId ? { detailId } : {}), compareIds };
+  return { searchId: result.searchId, screen, ...(detailId ? { detailId } : {}), compareIds, ...(choice ? { choice } : {}), ...(selection ? { selection } : {}) };
 }
 
-function durationLabel(minutes: number) {
-  if (minutes % 60 === 0) return `${minutes / 60} hour${minutes === 60 ? '' : 's'}`;
-  return `${Math.floor(minutes / 60)}.5 hours`;
+export function acknowledgedExperienceSelection(response: unknown, experienceId: string, slotId: string, expected?: { readonly experience: DemoExperience; readonly context: DemoExperienceSearchOutput['searchContext'] }): DemoExperienceSelection | undefined {
+  const envelope = record(response), output = record(envelope?.structuredContent);
+  if (envelope?.isError || !output || !['selected', 'already_selected'].includes(String(output.status)) ||
+    output.requestedExperienceId !== experienceId || output.requestedSlotId !== slotId || !isExperienceTripSelection(output.selection)) return undefined;
+  if (output.status === 'selected' && (output.selection.experience.experienceId !== experienceId || output.selection.slot.slotId !== slotId)) return undefined;
+  if (expected && !matchesExperienceChoice(output.selection, expected.experience, expected.context, slotId)) return undefined;
+  if (expected && output.status === 'selected' && (output.selection.experience.price.amountMinor !== expected.experience.price.amountMinor || output.selection.totalPrice.currency !== expected.context.currency)) return undefined;
+  return output.selection;
 }
 
 function formatMoney(experience: DemoExperience, locale: string) {
-  const divisor = experience.price.currency === 'JPY' ? 1 : 100;
-  try {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency', currency: experience.price.currency,
-      maximumFractionDigits: experience.price.currency === 'JPY' ? 0 : 2,
-    }).format(experience.price.amountMinor / divisor);
-  } catch {
-    return `${experience.price.currency} ${experience.price.amountMinor / divisor}`;
-  }
+  return formatExperienceMoney(experience.price.amountMinor, experience.price.currency, locale);
 }
 
 function slotLabel(experience: DemoExperience) {
@@ -249,7 +180,7 @@ function ExperienceCompareCard({ experience, locale, onDetail }: {
   </article>;
 }
 
-export function ExperienceResultsView({ result, state, displayMode, locale = 'en-CA', journey, onJourneyChange, onAsk }: {
+export function ExperienceResultsView({ result, state, displayMode, locale = 'en-CA', journey, onJourneyChange, onAsk, onAdd, addState, addMessage, verifiedSelection, checkingSelection, onReview, onRefresh }: {
   readonly result?: DemoExperienceSearchOutput;
   readonly state?: ExperienceState;
   readonly displayMode: 'inline' | 'fullscreen' | 'pip';
@@ -257,6 +188,13 @@ export function ExperienceResultsView({ result, state, displayMode, locale = 'en
   readonly journey?: ExperienceJourneyState;
   readonly onJourneyChange?: (state: ExperienceJourneyState) => void;
   readonly onAsk?: (experience: DemoExperience) => void;
+  readonly onAdd?: (experience: DemoExperience, slotId: string) => void;
+  readonly addState?: ExperienceAddState;
+  readonly addMessage?: string;
+  readonly verifiedSelection?: DemoExperienceSelection;
+  readonly checkingSelection?: boolean;
+  readonly onReview?: () => void;
+  readonly onRefresh?: () => void;
 }) {
   if (state === 'loading') return <ExperienceSkeleton />;
   if (state === 'error') return <Frame className="cc-app cc-experiences" displayMode="auto" title="Experience ideas">
@@ -276,20 +214,17 @@ export function ExperienceResultsView({ result, state, displayMode, locale = 'en
   const change = (next: Partial<ExperienceJourneyState>) => onJourneyChange?.({ ...current, ...next });
   const selected = current.compareIds.map((id) => result.experiences.find((experience) => experience.experienceId === id)).filter((experience): experience is DemoExperience => Boolean(experience));
 
-  if (current.screen === 'detail') {
-    const experience = result.experiences.find((candidate) => candidate.experienceId === current.detailId)!;
-    const photo = experiencePhoto(experience);
-    return <Frame className="cc-app cc-experiences" displayMode="auto" data-llm={result.fallback}>
-      <header className="cc-experience-heading"><div><h2>Experience details</h2><p>Fictional Wayfare catalog</p></div><span>WAYFARE DEMO</span></header>
-      <button className="cc-experience-back" type="button" onClick={() => change({ screen: 'results', detailId: undefined })}>← Back to results</button>
-      <PhotoBand name={experience.title} imageUrl={photo.url} glyph={<CompassIcon />} height={220}><StatusBadge tone="info">{experience.categories.map((category) => category.toLowerCase()).join(' · ')}</StatusBadge><span className="cc-experience-photo-credit">{photo.credit}</span></PhotoBand>
-      <div className="cc-experience-detail-grid"><section><h3>{experience.title}</h3><p>{experience.shortDescription}</p><p className="cc-experience-operator">Fictional operator: {experience.operatorLabel}</p><h4>Included</h4><ul>{experience.inclusions.map((item) => <li key={item}>{item}</li>)}</ul><h4>Important to know</h4><ul>{experience.restrictions.map((item) => <li key={item}>{item}</li>)}</ul></section><aside>
-        <dl className="cc-experience-facts"><div><dt>Duration</dt><dd>{durationLabel(experience.durationMinutes)}</dd></div><div><dt>Area</dt><dd>{experience.meetingArea}</dd></div><div><dt>Sample times</dt><dd>{slotLabel(experience)}</dd></div><div><dt>Access</dt><dd>{experience.accessibility.summary}</dd></div><div><dt>Policy</dt><dd>{experience.cancellationPolicy}</dd></div></dl>
-        <p className="cc-experience-price"><strong>{formatMoney(experience, locale)}</strong><span> fictional · per adult</span></p>
-        <Action className="cc-experience-ask" type="button" variant="primary" onClick={() => onAsk?.(experience)}>Ask about this experience</Action>
-      </aside></div>
-      <p className="cc-experience-disclosure">This preview cannot save or book an experience. {result.disclosure}</p>
-    </Frame>;
+  if (current.screen === 'added' && verifiedSelection && current.selection?.selectionId === verifiedSelection.selectionId) {
+    return <ExperienceAddedView selection={verifiedSelection} locale={locale} actionError={addMessage} onReview={onReview} onExplore={() => change({ screen: 'results' })} />;
+  }
+  if (current.screen === 'added' && checkingSelection) return <Frame className="cc-app cc-experiences" displayMode="auto"><Feedback status="loading">Checking your selected experience…</Feedback></Frame>;
+  if (current.screen === 'detail' || current.screen === 'added') {
+    const experience = result.experiences.find((candidate) => candidate.experienceId === current.detailId) ?? result.experiences.find((candidate) => current.selection && matchesExperienceChoice(current.selection, candidate, result.searchContext))!;
+    return <ExperienceChooseView experience={experience} context={result.searchContext} choice={current.choice} locale={locale} status={addState} message={addMessage}
+      onChoice={onJourneyChange ? (choice) => change({ choice }) : undefined}
+      onBack={() => change({ screen: 'results', detailId: undefined, choice: undefined })}
+      onAdd={onAdd ? (slotId) => onAdd(experience, slotId) : undefined}
+      onAsk={onAsk ? () => onAsk(experience) : undefined} onRefresh={onRefresh} />;
   }
 
   if (current.screen === 'compare') {
@@ -319,26 +254,144 @@ export function ExperienceResultsView({ result, state, displayMode, locale = 'en
 }
 
 export default function ExperienceResults() {
+  const toolInfo = useToolInfo('search_experiences');
+  return <ExperienceJourney toolInfo={toolInfo} />;
+}
+
+/** Shared controller for chat search results and direct in-widget discovery. */
+export function ExperienceJourney({ toolInfo, onReview, onRefresh, tripReview, browsingPlan, onBusyChange }: {
+  readonly toolInfo: { readonly structuredContent?: unknown; readonly isError?: boolean };
+  readonly onReview?: () => void;
+  readonly onRefresh?: () => void;
+  readonly tripReview?: DemoTripReview;
+  readonly browsingPlan?: TripExperienceSearchPlan;
+  readonly onBusyChange?: (busy: boolean) => void;
+}) {
   const ready = useWidgetReady();
   const layout = useLayout();
-  const toolInfo = useToolInfo('search_experiences');
+  const addTool = useCallTool('add_experience_to_trip');
+  const reviewTool = useCallTool('review_trip');
   const sendFollowUp = useSendFollowUpMessage();
   const updateModelContext = useUpdateModelContext();
   const [savedJourney, setSavedJourney] = useViewState<ExperienceJourneyState | undefined>('experience_journey', undefined);
+  const [verifiedSelection, setVerifiedSelection] = useState<DemoExperienceSelection>();
+  const [addState, setAddState] = useState<ExperienceAddState>('idle');
+  const [addMessage, setAddMessage] = useState<string>();
+  const [checkingSelection, setCheckingSelection] = useState(false);
+  const [showReview, setShowReview] = useState(false);
+  const inFlight = useRef<symbol | undefined>(undefined);
+  const latestSearchId = useRef<string | undefined>(undefined);
+  const lastRestoredId = useRef<string | undefined>(undefined);
   const pending = !ready || Object.keys(toolInfo).length === 0;
   const result = isDemoExperienceSearchOutput(toolInfo.structuredContent) ? toolInfo.structuredContent : undefined;
   const journey = result ? restoreExperienceJourney(savedJourney, result) : undefined;
+  latestSearchId.current = result?.searchId;
   const compared = journey?.compareIds.join(',') ?? '';
+  const savedId = journey?.selection?.selectionId;
+  const currentSelection = verifiedSelection && result?.experiences.some((item) => matchesExperienceChoice(verifiedSelection, item, result.searchContext)) ? verifiedSelection : undefined;
+
+  useEffect(() => { onBusyChange?.(addState === 'pending'); return () => onBusyChange?.(false); }, [addState, onBusyChange]);
+  useEffect(() => {
+    latestSearchId.current = result?.searchId;
+    return () => { latestSearchId.current = undefined; inFlight.current = undefined; };
+  }, [result?.searchId]);
 
   useEffect(() => {
-    if (!ready || !result || !layout.supports?.modelContext) return;
-    const detail = result.experiences.find((experience) => experience.experienceId === journey?.detailId);
-    void updateModelContext({
-      content: [{ type: 'text', text: detail ? `Inspecting fictional experience: ${detail.title}. Nothing saved or booked.` : `${result.experiences.length} fictional experience ideas are available; nothing selected or booked.` }],
-      structuredContent: { experienceSearchId: result.searchId, inspectedExperience: detail ? { experienceId: detail.experienceId, title: detail.title } : null, comparingExperienceIds: journey?.compareIds ?? [] },
-    }).catch(() => { /* Model-context delivery is optional. */ });
-  }, [ready, result?.searchId, journey?.detailId, compared, layout.supports?.modelContext, updateModelContext]);
+    inFlight.current = undefined;
+    setAddState('idle'); setAddMessage(undefined); setCheckingSelection(false);
+    setShowReview(false);
+  }, [result?.searchId]);
 
-  return <ExperienceResultsView result={result} state={pending ? 'loading' : toolInfo.isError ? 'error' : result ? undefined : 'malformed'} displayMode={layout.displayMode} locale={layout.locale ?? 'en-CA'} journey={journey} onJourneyChange={setSavedJourney}
-    onAsk={ready && layout.supports?.followUpMessage ? (experience) => { void sendFollowUp({ prompt: `Tell me more about the fictional Wayfare experience “${experience.title}”, especially its pace, accessibility, timing, and cancellation terms. Do not imply live availability or booking.` }); } : undefined} />;
+  useEffect(() => {
+    if (!ready || !result || !journey?.selection || savedId === currentSelection?.selectionId || lastRestoredId.current === savedId) return;
+    lastRestoredId.current = savedId;
+    const searchId = result.searchId;
+    setCheckingSelection(true);
+    // Persisted widget state is presentation only. Re-read current server selections before restoring Added.
+    void reviewTool.callToolAsync({}).then((response) => {
+      if (latestSearchId.current !== searchId) return;
+      const review = record(response.structuredContent);
+      const selection = !response.isError && Array.isArray(review?.experiences)
+        ? review.experiences.find((item) => isExperienceTripSelection(item) && item.selectionId === savedId)
+        : undefined;
+      if (isExperienceTripSelection(selection)) setVerifiedSelection(selection);
+      else {
+        setAddState('expired');
+        setAddMessage('This saved choice could not be verified. Refresh the experience options before adding it again.');
+      }
+    }).catch(() => {
+      if (latestSearchId.current === searchId) {
+        setAddState('error');
+        setAddMessage('Your saved choice could not be checked. Review your trip in the conversation to check its current status.');
+      }
+    }).finally(() => { if (latestSearchId.current === searchId) setCheckingSelection(false); });
+  }, [ready, result?.searchId, savedId, currentSelection?.selectionId]);
+
+  useEffect(() => {
+    if (!currentSelection) return;
+    const expire = () => {
+      setVerifiedSelection(undefined);
+      setAddState('expired');
+      setAddMessage('These experience options have expired. Refresh them before adding a current choice.');
+    };
+    const remaining = Date.parse(currentSelection.expiresAt) - Date.now();
+    if (remaining <= 0) { expire(); return; }
+    const timer = setTimeout(expire, Math.min(remaining, 2_147_483_647));
+    return () => clearTimeout(timer);
+  }, [currentSelection?.selectionId, currentSelection?.expiresAt]);
+
+  useEffect(() => {
+    if (showReview || !ready || !result || !layout.supports?.modelContext) return;
+    const detail = result.experiences.find((experience) => experience.experienceId === journey?.detailId);
+    const chosen = currentSelection ? {
+      selectionId: currentSelection.selectionId, experienceId: currentSelection.experience.experienceId,
+      title: currentSelection.experience.title, startLocal: currentSelection.slot.startLocal, timeZone: currentSelection.slot.timeZone,
+      adults: currentSelection.searchContext.adults, totalPrice: currentSelection.totalPrice, status: 'selected',
+    } : null;
+    void updateModelContext({
+      content: [{ type: 'text', text: chosen ? `Selected fictional experience: ${chosen.title} at ${chosen.startLocal}, ${chosen.timeZone}. Added to the plan; nothing reserved or paid.` : detail ? `Inspecting fictional experience: ${detail.title}. No new selection acknowledged.` : `${result.experiences.length} fictional experience ideas are available.` }],
+      structuredContent: { experienceSearchId: result.searchId, experienceSearchContext: result.searchContext,
+        ...(tripReview ? { tripPlanning: tripPlanningSnapshot(tripReview, currentSelection),
+          experienceBrowsing: { dateBasis: browsingPlan?.dateBasis, note: browsingPlan?.note, proximity: 'Not measured; these are city-wide demo ideas.',
+            experiences: result.experiences.map(item => ({ experienceId: item.experienceId, title: item.title, slots: item.slots.map(slot => ({ slotId: slot.slotId, startLocal: slot.startLocal, timeZone: slot.timeZone })) })) } } : {}),
+        inspectedExperience: detail ? { experienceId: detail.experienceId, title: detail.title } : null, comparingExperienceIds: journey?.compareIds ?? [], selectedExperience: chosen, pendingSlotId: journey?.choice?.slotId ?? null },
+    }).catch(() => { /* Server selections remain authoritative if optional context delivery fails. */ });
+  }, [showReview, ready, result?.searchId, journey?.detailId, journey?.choice?.slotId, compared, currentSelection?.selectionId, layout.supports?.modelContext, updateModelContext]);
+
+  const followUp = ready && layout.supports?.followUpMessage
+    ? (prompt: string) => { void sendFollowUp({ prompt }).catch(() => { setAddMessage('The follow-up could not be sent. Continue in the conversation.'); }); }
+    : undefined;
+  if (showReview) return <InlineTripReview onBack={() => setShowReview(false)} backLabel="Back to experience" />;
+  return <ExperienceResultsView result={result} state={pending ? 'loading' : toolInfo.isError ? 'error' : result ? undefined : 'malformed'} displayMode={layout.displayMode} locale={layout.locale ?? 'en-CA'} journey={journey}
+    verifiedSelection={currentSelection} checkingSelection={checkingSelection || Boolean(journey?.screen === 'added' && !currentSelection && !addMessage)}
+    addState={addState} addMessage={addMessage}
+    onJourneyChange={ready ? (next) => { if (!inFlight.current) { setSavedJourney(next); setAddState('idle'); setAddMessage(undefined); } } : undefined}
+    onAsk={followUp ? (experience) => followUp(`Tell me more about the fictional Wayfare experience “${experience.title}”, especially its pace, accessibility, timing, and cancellation terms. Do not imply live availability or booking.`) : undefined}
+    onReview={ready ? onReview ?? (() => setShowReview(true)) : undefined}
+    onRefresh={ready && onRefresh ? onRefresh : followUp && result ? () => followUp(`Refresh the fictional experience options for ${result.searchContext.destination}, ${result.searchContext.startDate} to ${result.searchContext.endDate}, for ${result.searchContext.adults} adults and ${result.searchContext.children} children in ${result.searchContext.currency}.`) : undefined}
+    onAdd={ready && result && journey ? (experience, slotId) => {
+      if (inFlight.current || !experience.slots.some((slot) => slot.slotId === slotId) || result.searchContext.children > 0) return;
+      const searchId = result.searchId;
+      const request = Symbol('add-experience');
+      inFlight.current = request;
+      setAddState('pending'); setAddMessage(undefined);
+      void addTool.callToolAsync({ experienceId: experience.experienceId, slotId }).then((response) => {
+        if (latestSearchId.current !== searchId) return;
+        const selection = acknowledgedExperienceSelection(response, experience.experienceId, slotId, { experience, context: result.searchContext });
+        if (selection && Date.parse(selection.expiresAt) > Date.now()) {
+          lastRestoredId.current = selection.selectionId;
+          setVerifiedSelection(selection);
+          setSavedJourney({ ...journey, screen: 'added', detailId: experience.experienceId, selection });
+          setAddState('idle');
+        } else {
+          const output = record(response.structuredContent);
+          setAddState(output?.status === 'expired' ? 'expired' : 'error');
+          setAddMessage(text(output?.message, 2, 500) ? output.message : 'The experience was not added. Your previous selections are unchanged. Try again.');
+        }
+      }).catch(() => {
+        if (latestSearchId.current === searchId) {
+          setAddState('error'); setAddMessage('The experience could not be added. Try again or review your trip to check whether it was saved.');
+        }
+      }).finally(() => { if (inFlight.current === request) inFlight.current = undefined; });
+    } : undefined} />;
 }

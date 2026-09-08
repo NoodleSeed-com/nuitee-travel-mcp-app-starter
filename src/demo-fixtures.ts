@@ -597,17 +597,22 @@ export function buildSyntheticTripReview(input: {
     readonly originalTotal: number;
     readonly currency: string;
     readonly expiresAt?: string;
+    readonly planningContext?: { readonly origin: string; readonly destination: string };
   };
   readonly stay?: DemoHotelSelectionRecord;
 }): DemoTripReview {
   const missing = [
     ...(input.flight ? [] : ['flight' as const]),
     ...(input.stay ? [] : ['stay' as const]),
+    'experiences' as const,
   ];
   const flight = input.flight
     ? {
         dataSource: 'live_nuitee_selection' as const,
         selectionId: input.flight.selectionId,
+        ...(input.flight.planningContext ? {
+          origin: input.flight.planningContext.origin, destination: input.flight.planningContext.destination,
+        } : {}),
         searchPrice: {
           total: input.flight.originalTotal,
           currency: input.flight.currency,
@@ -631,14 +636,15 @@ export function buildSyntheticTripReview(input: {
     : undefined;
 
   return demoTripReviewSchema.parse({
-    status: missing.length === 0 ? 'ready' : 'incomplete',
+    status: flight || stay ? 'ready' : 'incomplete',
     dataSource: 'illustrative',
     disclosure: TRIP_DISCLOSURE,
-    fallback: missing.length === 0
-      ? 'Trip review ready: the flight remains a live Nuitee search selection, while the stay and rewards information is synthetic. Prices remain separate and nothing was booked or paid.'
-      : `Trip review needs a current ${missing.join(' and ')} selection. No booking, payment, or points action occurred.`,
+    fallback: flight || stay
+      ? 'Your selected trip is ready to review. Other components are optional; prices remain separate and nothing was booked or paid.'
+      : 'No current trip selections are saved. Choose a flight, stay, or experience to start a plan.',
     ...(flight ? { flight } : {}),
     ...(stay ? { stay } : {}),
+    experiences: [],
     loyalty: getSyntheticLoyaltyOverview(),
     missing,
   });

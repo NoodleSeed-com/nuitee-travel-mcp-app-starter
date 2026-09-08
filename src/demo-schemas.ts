@@ -1,6 +1,6 @@
 import { z } from '@noodleseed/one';
 import { travelCompanionDemoConfig } from './demo-config.js';
-import { selectionIdSchema } from './flight-schemas.js';
+import { activityDatesSchema, selectionIdSchema } from './flight-schemas.js';
 
 export const syntheticDataSourceSchema = z.literal('illustrative');
 export const hotelDataSourceSchema = z.enum(['live_nuitee', 'illustrative']);
@@ -13,6 +13,7 @@ export const demoInsurancePlanIdSchema = z.string().regex(/^inplan_[a-f0-9]{32}$
 export const demoExperienceSearchIdSchema = z.string().regex(/^exsearch_[a-f0-9]{32}$/);
 export const demoExperienceIdSchema = z.string().regex(/^exp_[a-f0-9]{32}$/);
 export const demoExperienceSlotIdSchema = z.string().regex(/^slot_[a-f0-9]{32}$/);
+export const demoExperienceSelectionIdSchema = z.string().regex(/^esel_[a-f0-9]{32}$/);
 export const demoCurrencySchema = z.enum(['CAD', 'USD', 'EUR']);
 export const demoInsuranceCurrencySchema = z.enum(['CAD', 'USD', 'EUR', 'GBP']);
 export const demoExperienceCurrencySchema = z.enum(['CAD', 'USD', 'EUR', 'GBP', 'JPY']);
@@ -147,6 +148,8 @@ export const demoHotelSearchOutputSchema = z.object({
 
 export const demoExperienceSearchInputSchema = z.object({
   destination: destinationSchema.describe('City name or known city/airport alias for the fictional experience catalog'),
+  experienceName: z.string().trim().max(100).optional()
+    .describe('Use an empty string "" for broad discovery or add another experience. Otherwise use only the experience title or identifying part explicitly requested by the traveler: one matching title opens its date/time detail screen; multiple matches show a carousel. Never use the destination, a wildcard, or an invented name as a placeholder.'),
   startDate: calendarDateSchema.describe('First local date to consider in YYYY-MM-DD format'),
   endDate: calendarDateSchema.describe('Exclusive end date in YYYY-MM-DD format'),
   adults: z.number().int().min(1).max(8).default(1),
@@ -233,6 +236,52 @@ export const demoExperienceSearchOutputSchema = z.object({
   { path: ['supportedDestination'], message: 'Unsupported destinations must use the matching empty reason.' },
 );
 
+export const demoAddExperienceInputSchema = z.object({
+  experienceId: demoExperienceIdSchema.describe('Experience reference returned by the current conversation search'),
+  slotId: demoExperienceSlotIdSchema.describe('Returned date/time slot explicitly chosen by the traveler'),
+}).strict();
+
+export const demoExperienceSelectionSchema = z.object({
+  selectionId: demoExperienceSelectionIdSchema,
+  experience: demoExperienceSchema,
+  slot: demoExperienceSlotSchema,
+  searchContext: demoExperienceSearchInputSchema,
+  totalPrice: demoExperienceMoneySchema,
+  addedAt: z.string().datetime(),
+  expiresAt: z.string().datetime(),
+});
+
+export const demoExperienceSelectionRecordSchema = z.object({
+  experience: demoExperienceSchema,
+  searchContext: demoExperienceSearchInputSchema,
+  createdAt: z.string().datetime(),
+  expiresAt: z.string().datetime(),
+});
+
+export const demoExperienceSelectionStateSchema = z.object({
+  updatedAt: z.string().datetime(),
+  records: z.array(demoExperienceSelectionRecordSchema).max(6),
+  selected: z.array(demoExperienceSelectionSchema).max(8),
+});
+
+const experienceSelectionDecisionFields = {
+  status: z.enum(['selected', 'already_selected', 'expired', 'unavailable', 'limit_reached', 'conflict']),
+  message: z.string().min(1).max(320),
+  selection: demoExperienceSelectionSchema.optional(),
+};
+export const demoExperienceSelectionDecisionSchema = z.object(experienceSelectionDecisionFields).refine(
+  ({ status, selection }) => ['selected', 'already_selected'].includes(status) === (selection !== undefined),
+  { path: ['selection'], message: 'Only an acknowledged selection includes selection details.' },
+);
+export const demoAddExperienceOutputSchema = z.object({
+  ...experienceSelectionDecisionFields,
+  requestedExperienceId: demoExperienceIdSchema,
+  requestedSlotId: demoExperienceSlotIdSchema,
+}).refine(
+  ({ status, selection }) => ['selected', 'already_selected'].includes(status) === (selection !== undefined),
+  { path: ['selection'], message: 'Only an acknowledged selection includes selection details.' },
+);
+
 export const demoHotelSelectionRecordSchema = z.object({
   selectionId: demoHotelSelectionIdSchema,
   searchId: demoHotelSearchIdSchema,
@@ -253,7 +302,28 @@ export const demoHotelSelectionStateSchema = z.object({
   updatedAt: z.string().max(64),
   records: z.array(demoHotelSelectionRecordSchema).max(10),
   activeSelectionId: demoHotelSelectionIdSchema.optional(),
+  searchResult: demoHotelSearchOutputSchema.optional(),
 });
+
+export const openHotelInputSchema = z.object({
+  hotelName: z.string().trim().min(1).max(100).describe('The hotel name or identifying part explicitly requested by the traveler. Search only previously returned hotels; never invent a placeholder.'),
+}).strict();
+
+export const openHotelOutputSchema = z.object({
+  status: z.enum(['ready', 'not_found', 'unavailable']),
+  message: z.string().min(2).max(320),
+  result: demoHotelSearchOutputSchema.optional(),
+  focusedSelectionId: demoHotelSelectionIdSchema.optional(),
+  selectedSelectionId: demoHotelSelectionIdSchema.optional(),
+}).refine(
+  ({ status, result, focusedSelectionId, selectedSelectionId }) => status === 'ready'
+    ? Boolean(result && result.hotels.length > 0 &&
+      (focusedSelectionId === undefined || result.hotels.length === 1 && result.hotels[0]!.selectionId === focusedSelectionId) &&
+      (selectedSelectionId === undefined || result.hotels.some(hotel => hotel.selectionId === selectedSelectionId)))
+    : result === undefined && focusedSelectionId === undefined && selectedSelectionId === undefined,
+  { message: 'Only ready hotel lookups include matching returned hotels and valid presentation references.' },
+);
+export type OpenHotelOutput = z.infer<typeof openHotelOutputSchema>;
 
 export const demoSelectHotelOutputSchema = z.object({
   status: z.enum(['selected', 'unavailable']),
@@ -416,6 +486,8 @@ export const demoInsuranceComparisonOutputSchema = z.object({
 export const demoTripReviewFlightSchema = z.object({
   dataSource: z.literal('live_nuitee_selection'),
   selectionId: selectionIdSchema,
+  origin: z.string().regex(/^[A-Z]{3}$/).optional(),
+  destination: z.string().regex(/^[A-Z]{3}$/).optional(),
   searchPrice: z.object({
     total: z.number().nonnegative().max(100_000_000),
     currency: z.string().regex(/^[A-Z]{3}$/),
@@ -436,6 +508,23 @@ export const demoTripReviewStaySchema = z.object({
   staySubtotal: demoMoneySchema,
 });
 
+export const demoTripPlanningContextSchema = z.object({
+  source: z.enum(['flight', 'stay', 'experience']),
+  destination: z.string().min(2).max(100),
+  countryCode: z.string().regex(/^[A-Z]{2}$/).optional(),
+  origin: z.string().min(2).max(100).optional(),
+  startDate: calendarDateSchema.optional(),
+  endDate: calendarDateSchema.optional(),
+  dateBasis: z.enum(['flight_departure', 'stay', 'experience_search']),
+  activityDates: activityDatesSchema.optional(),
+  adults: z.number().int().min(1).max(9).optional(),
+  children: z.number().int().min(0).max(8).optional(),
+  infants: z.number().int().min(0).max(9).optional(),
+  currency: z.string().regex(/^[A-Z]{3}$/).optional(),
+  meetingArea: z.string().min(2).max(100).optional(),
+  propertyName: z.string().min(2).max(100).optional(),
+});
+
 export const demoTripReviewSchema = z.object({
   status: z.enum(['ready', 'incomplete']),
   dataSource: syntheticDataSourceSchema,
@@ -443,11 +532,20 @@ export const demoTripReviewSchema = z.object({
   fallback: z.string().trim().min(20).max(500),
   flight: demoTripReviewFlightSchema.optional(),
   stay: demoTripReviewStaySchema.optional(),
+  experiences: z.array(demoExperienceSelectionSchema).max(8),
   loyalty: demoLoyaltyOverviewSchema,
-  missing: z.array(z.enum(['flight', 'stay'])).max(2),
+  missing: z.array(z.enum(['flight', 'stay', 'experiences'])).max(3),
+  planningContext: demoTripPlanningContextSchema.optional(),
+  notes: z.array(z.string().min(1).max(240)).max(3).optional(),
 }).refine(
-  ({ status, missing }) => status === 'ready' ? missing.length === 0 : missing.length > 0,
-  { path: ['missing'], message: 'Trip review status must match its missing selections.' },
+  ({ status, flight, stay, experiences }) =>
+    (status === 'ready') === Boolean(flight || stay || experiences.length),
+  { path: ['status'], message: 'A trip review is ready when any component is selected.' },
+).refine(
+  ({ flight, stay, experiences, missing }) => JSON.stringify(missing) === JSON.stringify([
+    ...(flight ? [] : ['flight']), ...(stay ? [] : ['stay']), ...(experiences.length ? [] : ['experiences']),
+  ]),
+  { path: ['missing'], message: 'Missing components must match the selected trip components.' },
 );
 
 export type DemoHotelSearchInput = z.infer<typeof demoHotelSearchInputSchema>;
@@ -456,6 +554,10 @@ export type DemoHotel = z.infer<typeof demoHotelSchema>;
 export type DemoHotelSearchOutput = z.infer<typeof demoHotelSearchOutputSchema>;
 export type DemoExperienceSearchInput = z.infer<typeof demoExperienceSearchInputSchema>;
 export type DemoExperience = z.infer<typeof demoExperienceSchema>;
+export type DemoExperienceSlot = z.infer<typeof demoExperienceSlotSchema>;
+export type DemoExperienceSelection = z.infer<typeof demoExperienceSelectionSchema>;
+export type DemoExperienceSelectionState = z.infer<typeof demoExperienceSelectionStateSchema>;
+export type DemoAddExperienceOutput = z.infer<typeof demoAddExperienceOutputSchema>;
 export type DemoExperienceSearchOutput = z.infer<typeof demoExperienceSearchOutputSchema>;
 export type DemoHotelSelectionRecord = z.infer<typeof demoHotelSelectionRecordSchema>;
 export type DemoHotelSelectionState = z.infer<typeof demoHotelSelectionStateSchema>;
