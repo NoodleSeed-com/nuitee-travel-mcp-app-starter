@@ -5,7 +5,7 @@ import demoLiveApp from '../src/demo-live-server.js';
 import demoPreviewApp from '../src/demo-preview-server.js';
 import embeddedApp from '../src/embedded-server.js';
 import liveApp from '../src/live-server.js';
-import { hotelDemoViewPolicy } from '../src/travel-server.js';
+import { experienceDemoViewPolicy, hotelDemoViewPolicy } from '../src/travel-server.js';
 
 const starterTools = [
   'open_travel_starter',
@@ -25,6 +25,7 @@ const sharedFlightTools = [
 const demoTools = [
   ...starterTools,
   'search_hotels',
+  'search_experiences',
   'open_loyalty',
   'compare_reward_flights',
   'compare_travel_insurance',
@@ -86,6 +87,7 @@ describe('Wayfare expanded travel profile', () => {
       'search_flights',
       'verify_flight_offer',
       'search_hotels',
+      'search_experiences',
       'open_loyalty',
       'compare_reward_flights',
       'compare_travel_insurance',
@@ -99,6 +101,9 @@ describe('Wayfare expanded travel profile', () => {
     expect(wire).toContain('Wayfare');
     expect(wire).toContain('illustrative');
     expect(wire).toContain('hotel-results');
+    expect(wire).toContain('experience-results');
+    expect(wire).toContain('WAYFARE_DEMO');
+    expect(wire).toContain('Lisbon and Tokyo');
     expect(wire).toContain('loyalty-overview');
     expect(wire).toContain('reward-flight-results');
     expect(wire).toContain('insurance-results');
@@ -106,6 +111,26 @@ describe('Wayfare expanded travel profile', () => {
     expect(wire).toContain(
       'Do not refuse a “book with points” request solely because redemption is unavailable',
     );
+  });
+
+  it('exposes two-city fictional experiences only in expanded profiles', async () => {
+    const demo = await demoLiveApp.toManifest() as any;
+    const starter = await liveApp.toManifest() as any;
+    const experiences = demo.tools.find((entry: any) => entry.name === 'search_experiences');
+    const home = demo.tools.find((entry: any) => entry.name === 'open_travel_starter');
+
+    expect(experiences).toMatchObject({ annotations: { readOnlyHint: true } });
+    expect(JSON.stringify(experiences.outputSchema)).toContain('WAYFARE_DEMO');
+    expect(JSON.stringify(experiences.outputSchema)).toContain('UNSUPPORTED_DESTINATION');
+    expect(JSON.stringify(experiences.inputSchema)).toContain(
+      'Use ANY unless the traveler explicitly requests step-free or wheelchair-accessible options',
+    );
+    expect(JSON.stringify(experiences.inputSchema)).toContain('ANY');
+    expect(JSON.stringify(home.outputSchema)).toContain('Experiences');
+    const agentGuide = JSON.stringify(demo.server.agentGuide);
+    expect(agentGuide).toContain('search_experiences');
+    expect(agentGuide).toContain('Never infer an interest or accessibility filter');
+    expect(starter.tools.some((entry: any) => entry.name === 'search_experiences')).toBe(false);
   });
 
   it('keeps model-facing input schemas compatible with provider JSON Schema parsers', async () => {
@@ -235,5 +260,13 @@ describe('hotel widget map CSP', () => {
 
   it('retains the bounded Nuitee hotel-image origin', () => {
     expect(hotelDemoViewPolicy.csp.resourceDomains).toContain('https://snaphotelapi.com');
+  });
+});
+
+describe('experience widget image CSP', () => {
+  it('allows only the bounded Unsplash image origin', () => {
+    expect(experienceDemoViewPolicy.csp.connectDomains).toEqual([]);
+    expect(experienceDemoViewPolicy.csp.resourceDomains).toEqual(['https://images.unsplash.com']);
+    expect(experienceDemoViewPolicy.csp.frameDomains).toEqual([]);
   });
 });

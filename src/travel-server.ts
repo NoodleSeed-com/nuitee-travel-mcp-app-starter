@@ -59,10 +59,10 @@ const liveDemoHome = {
     { name: 'Stays' as const, availability: 'available' as const, label: travelCompanionDemoConfig.dataSources.hotels.label },
     { name: 'Loyalty' as const, availability: 'illustrative' as const, label: travelCompanionDemoConfig.dataSources.loyalty.label },
     { name: 'Ground travel' as const, availability: 'coming_soon' as const, label: 'Not included' },
-    { name: 'Experiences' as const, availability: 'coming_soon' as const, label: 'Not included' },
+    { name: 'Experiences' as const, availability: 'illustrative' as const, label: 'Fictional Lisbon and Tokyo ideas' },
   ],
   fallback:
-    `${travelCompanionDemoConfig.brand.name} can search current flights and hotels, compare illustrative reward-flight and travel-protection options, and open an illustrative rewards profile. No booking, payment, redemption, or policy purchase is available.`,
+    `${travelCompanionDemoConfig.brand.name} can search current flights and hotels, explore fictional Lisbon and Tokyo experiences, compare illustrative reward-flight and travel-protection options, and open an illustrative rewards profile. No booking, payment, redemption, experience reservation, or policy purchase is available.`,
 };
 
 const previewDemoHome = {
@@ -71,7 +71,7 @@ const previewDemoHome = {
     ? { ...domain, availability: 'illustrative' as const, label: 'Illustrative stays' }
     : domain),
   fallback:
-    `${travelCompanionDemoConfig.brand.name} can compare illustrative stays, reward-flight ideas, travel protection, and rewards. Current flight and hotel searches require configured provider access.`,
+    `${travelCompanionDemoConfig.brand.name} can compare illustrative stays, fictional Lisbon and Tokyo experiences, reward-flight ideas, travel protection, and rewards. Current flight and hotel searches require configured provider access.`,
 };
 
 const travelAgentGuide = {
@@ -153,7 +153,7 @@ const travelAgentGuide = {
 
 const travelCompanionDemoAgentGuide = {
   description:
-    'Guide one agent-led conversation across current flights and hotels, illustrative travel-protection comparisons, and illustrative rewards while keeping every source boundary visible.',
+    'Guide one agent-led conversation across current flights and hotels, fictional Lisbon and Tokyo experience discovery, illustrative travel-protection comparisons, and illustrative rewards while keeping every source boundary visible.',
   useWhen: [
     ...travelAgentGuide.useWhen,
     'A traveler describes a broad trip goal without choosing a travel capability.',
@@ -162,9 +162,22 @@ const travelCompanionDemoAgentGuide = {
     'A traveler asks what the displayed illustrative points could cover, asks for flights they could book with those points, or wants to compare reward-flight ideas.',
     'A traveler wants a non-transactional review of the flight and stay selected in the application.',
     'A traveler wants to compare illustrative travel-protection concepts without requesting a real quote or policy.',
+    'A traveler wants fictional experience ideas for Lisbon or Tokyo, or asks whether the bounded demo catalog supports another destination.',
   ],
   workflows: [
     ...travelAgentGuide.workflows,
+    {
+      id: 'discover_experiences',
+      title: 'Explore fictional experiences',
+      intent: 'Show bounded Wayfare demo experience ideas without implying live operator inventory or booking support.',
+      steps: [
+        {
+          capability: { kind: 'tool' as const, name: 'search_experiences' },
+          guidance:
+            'Use the destination and exact stay dates already present in the conversation. Ask one focused date question only when no usable stay window exists. Preserve explicit party, interest, accessibility, and currency preferences. Never infer an interest or accessibility filter: omit interests unless the traveler names one, use accessibility ANY when none was requested, and use STEP_FREE only when the traveler explicitly requests step-free or wheelchair-accessible options. State once that Lisbon and Tokyo results are fictional Wayfare demo content. Treat other destinations as a normal unsupported-catalog result, continue flight and hotel help, and never invent tours or imply live availability, saving, holding, admission, or booking.',
+        },
+      ],
+    },
     {
       id: 'compare_hotels',
       title: 'Search current stays',
@@ -239,11 +252,20 @@ const travelCompanionDemoAgentGuide = {
     'Do not refuse a “book with points” request solely because redemption is unavailable; route it to the illustrative reward-flight comparison and clearly separate comparison from booking.',
     'Reward-flight comparisons are illustrative ideas only. Never describe them as live award seats, current loyalty-program rates, or bookable/redemption offers.',
     'Travel-protection comparisons are illustrative concepts only. Never describe them as an insurance quote, policy, recommendation, eligibility decision, coverage guarantee, or purchasable product.',
+    'Experience results for Lisbon and Tokyo are fictional Wayfare demo content. Never describe them as live operator inventory, current capacity, held admission, or bookable reservations; unsupported cities remain a normal empty catalog result.',
     'Never collect health history, diagnoses, exact dates of birth, passport details, or payment information for an illustrative travel-protection comparison.',
     'Never combine separately sourced flight and hotel prices into a factual or bookable package total.',
   ],
   examples: [
     ...travelAgentGuide.examples,
+    {
+      prompt: 'What food and culture experiences could we do in Lisbon?',
+      workflow: 'discover_experiences',
+    },
+    {
+      prompt: 'Show me quieter design experiences in Tokyo during my stay.',
+      workflow: 'discover_experiences',
+    },
     {
       prompt: 'Show me hotels in Lisbon from 2026-09-18 to 2026-09-21.',
       workflow: 'compare_hotels',
@@ -325,6 +347,15 @@ const demoViewPolicy = {
   csp: {
     connectDomains: [],
     resourceDomains: [],
+    frameDomains: [],
+  },
+};
+
+export const experienceDemoViewPolicy = {
+  ...sharedWidgetDomainPolicy,
+  csp: {
+    connectDomains: [],
+    resourceDomains: ['https://images.unsplash.com'],
     frameDomains: [],
   },
 };
@@ -553,6 +584,7 @@ function createTravelCapabilities(live: boolean, profile: TravelServerProfile) {
   const demo = profile === 'expanded-travel'
       ? createDemoCapabilities({
         hotel: hotelDemoViewPolicy,
+        experience: experienceDemoViewPolicy,
         insurance: demoViewPolicy,
         loyalty: demoViewPolicy,
       }, { liveHotels: live })
