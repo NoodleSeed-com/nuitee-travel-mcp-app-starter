@@ -2387,14 +2387,24 @@ test('fits 320px, 390px, and 200 percent text zoom without orphaning the headlin
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(320);
   await expect(page.getByRole('button', { name: 'Submit trip request' }))
     .toHaveCSS('min-height', '44px');
-  const [mobileInput, mobileSubmit] = await Promise.all([
-    page.getByRole('textbox', { name: 'Ask the travel assistant' }).boundingBox(),
-    page.getByRole('button', { name: 'Submit trip request' }).boundingBox(),
-  ]);
-  expect(mobileInput).not.toBeNull();
-  expect(mobileSubmit).not.toBeNull();
-  expect(mobileInput!.y + mobileInput!.height)
-    .toBeLessThanOrEqual(mobileSubmit!.y);
+  const expectCompactComposerGeometry = async () => {
+    const [input, submit] = await Promise.all([
+      page.getByRole('textbox', { name: 'Ask the travel assistant' }).boundingBox(),
+      page.getByRole('button', { name: 'Submit trip request' }).boundingBox(),
+    ]);
+    expect(input).not.toBeNull();
+    expect(submit).not.toBeNull();
+    // The approved mobile composer keeps the send target beside the input.
+    // Text may grow vertically at zoom, but the two controls must not overlap.
+    expect(input!.x + input!.width).toBeLessThanOrEqual(submit!.x);
+    expect(Math.min(input!.y + input!.height, submit!.y + submit!.height))
+      .toBeGreaterThan(Math.max(input!.y, submit!.y));
+    expect(input!.width).toBeGreaterThanOrEqual(44);
+    expect(input!.height).toBeGreaterThanOrEqual(44);
+    expect(submit!.width).toBe(44);
+    expect(submit!.height).toBe(44);
+  };
+  await expectCompactComposerGeometry();
   expect(await page.getByRole('textbox', { name: 'Ask the travel assistant' })
     .evaluate((input) => input.scrollHeight <= input.clientHeight)).toBe(true);
   await expectHeadlineDoesNotOrphanFinalWords(page);
@@ -2405,6 +2415,7 @@ test('fits 320px, 390px, and 200 percent text zoom without orphaning the headlin
   });
   await expectHorizontalFit(page, 390);
   await expectHeadlineDoesNotOrphanFinalWords(page);
+  await expectCompactComposerGeometry();
   expect(await landingMidwordBreaks(page)).toEqual([]);
   const editorialLines = await renderedTextLines(
     page,

@@ -30,20 +30,8 @@ describe('Next security headers', () => {
 });
 
 describe('Next redirects', () => {
-  it('permanently redirects the www host to the canonical apex origin', async () => {
+  it('does not redirect adopters to another owner', async () => {
     const config = (await import('../next.config')).default;
-    const redirects = await (config.redirects as () => Promise<Array<{
-      source: string;
-      destination: string;
-      permanent: boolean;
-      has?: Array<{ type: string; value: string }>;
-    }>>)();
-
-    expect(redirects).toContainEqual({
-      source: '/:path*',
-      has: [{ type: 'host', value: 'www.gowayfare.io' }],
-      destination: 'https://gowayfare.io/:path*',
-      permanent: true,
-    });
+    expect(config.redirects ? await config.redirects() : []).toEqual([]);
   });
 });

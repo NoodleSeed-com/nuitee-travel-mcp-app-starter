@@ -1,6 +1,7 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { SEO_ORIGIN } from '../src/lib/seo-config';
 import { WayfareStructuredData } from '../src/components/wayfare-structured-data';
 import {
   serializeStructuredData,
@@ -14,7 +15,7 @@ describe('Wayfare structured data', () => {
     expect(wayfareStructuredData['@graph'].map((node) => node['@type']))
       .toEqual(['WebSite', 'WebApplication']);
     const value = JSON.stringify(wayfareStructuredData);
-    expect(value).toContain('https://gowayfare.io/');
+    expect(value).toContain(SEO_ORIGIN.href);
     expect(value).not.toMatch(
       /AggregateRating|Offer|SearchAction|price|ratingValue|book now/i,
     );

@@ -3,7 +3,7 @@
 ## Purpose
 
 The expanded Wayfare profile demonstrates one Noodle travel server supporting
-a single conversational journey across current flights, illustrative stays,
+a single conversational journey across current flights and stays,
 illustrative rewards, and an illustrative travel-protection comparison. It
 preserves the canonical Wayfare identity and the normal starter entry points.
 
@@ -11,8 +11,9 @@ The evidence boundaries are explicit:
 
 - Flight search and fare verification use the existing Nuitee Flights
   connector and normalization path.
-- Stay results are deterministic synthetic fixtures, not live rates,
-  availability, or reservations.
+- Stay results use the Nuitee hotel connector in live/embedded profiles. The
+  credential-free preview uses deterministic synthetic stays. Neither reserves
+  inventory or completes a booking.
 - Rewards balances, status, benefits, and trip estimates are synthetic and
   illustrative. No real account is accessed and no points are earned or
   redeemed.
@@ -55,7 +56,8 @@ server-owned selections for review.
 
 The expanded profile adds these model-visible read-only tools:
 
-- `search_hotels` — compares bounded fictional properties for supported
+- `search_hotels` — reads bounded current Nuitee stays in live/embedded profiles
+  and fictional properties in the preview profile for supported
   fixture destinations and returns an honest empty result elsewhere.
 - `open_loyalty` — opens a fixed synthetic rewards profile and benefits view.
 - `compare_reward_flights` — shows bounded illustrative reward-flight ideas

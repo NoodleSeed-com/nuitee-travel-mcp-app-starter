@@ -11,3 +11,11 @@ dist
 .env.local
 .vitest-attachments/
 test/browser/__screenshots__/
+
+# Optional regenerated agent tooling is excluded from public source exports.
+.agents/
+.claude/
+
+# Next.js may generate local agent context during development.
+/apps/web/AGENTS.md
+/apps/web/CLAUDE.md

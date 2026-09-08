@@ -2,7 +2,7 @@
 
 `apps/web/` is the primary developer experience in this repository: a guest-first Next.js travel website whose embedded Assistant exposes the same Search → Select → Verify product as external MCP hosts.
 
-Local tests prove the code and browser shell. They do not prove an active hosted Assistant, provider inventory, a production origin, daily admission budget, privacy monitoring, or a public release. Those require the exact promotion evidence in [../PUBLIC_RELEASE_CHECKLIST.md](../PUBLIC_RELEASE_CHECKLIST.md) and separate authorization for every hosted mutation.
+Local tests prove the code and browser shell. They do not prove an active hosted Assistant, provider inventory, a production origin, daily admission budget, privacy monitoring, or production availability. Source-template release is a separate gate. Those require the exact promotion evidence in [../PUBLIC_RELEASE_CHECKLIST.md](../PUBLIC_RELEASE_CHECKLIST.md) and separate authorization for every hosted mutation.
 
 ## Guest-first architecture
 
@@ -12,16 +12,18 @@ Next.js guest browser
   → Noodle public Assistant surface and model
   → shared travel MCP tools and linked Apps
   → server-side Nuitee connector
-  → Nuitee Flights API
+  → Nuitee flight and hotel APIs
 ```
 
 The browser uses the custom renderer in `apps/web/` with `useNoodleAssistant` and `NoodleAppView`. It does not implement a second chat transport, fetch `ui://` resources, copy linked Apps, reconstruct App output as website fare cards, or call Nuitee directly. Wayfare is one centered chronological conversation with no secondary result workspace. Official inline MCP Apps render at their original message part, and distinct view IDs remain distinct invocations in history rather than being generically deduplicated.
 
-Only two exact tool/resource identities may reach `NoodleAppView`:
+The baseline profile uses these exact tool/resource identities in `NoodleAppView`:
 
 - `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget`;
 - `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget`.
 
+The expanded profile also supports the exact hotel, loyalty, reward-flight,
+trip-review and protection pairs listed in `apps/web/src/lib/travel-view-policy.ts`.
 Every mismatch fails closed as an unavailable inline view. The compact typed trip disclosure uses validated tool results only, remains absent before facts exist, and never lets traveler or Assistant prose populate it.
 
 `src/embedded-server.ts` calls the same `createTravelServer('embedded')` product factory as the other entrypoints. Its public surface allowlists the same five tool instances registered on the server:
@@ -38,15 +40,18 @@ The public surface is anonymous, not identity-free: Noodle binds each session to
 
 The Assistant may open the starter, collect one missing date decision, search one-way or round-trip flights, select an application-issued fare handle, and verify current availability and price. The agent guide defaults to one adult and Economy rather than asking for provider-oriented fields. An untrusted website page default may suggest an omitted origin, currency, and pricing market; explicit traveler text wins, and other hosts retain USD and the US market. A verified or changed fare is terminal.
 
-It does not prebook, hold inventory, collect passenger data, take payment, issue a ticket, manage a booking, cancel, refund, redeem loyalty, or search hotels and cars. Neither a selection nor a verified fare implies that inventory is held.
+It does not prebook, hold inventory, collect passenger data, take payment, issue a ticket, manage a booking, cancel, refund, redeem loyalty, or search cars. The expanded `src/demo-embedded-server.ts` profile adds live hotel
+search and App-only hotel selection, plus illustrative rewards and protection.
+Use `pnpm dev:preview` for the separate credential-free fictional MCP profile. Neither a selection nor a verified fare implies that inventory is held.
 
 ## Website runtime configuration
 
-The primary website reads only two public values:
+The primary website reads these public configuration values:
 
 | Variable | Purpose | Secret |
 | --- | --- | --- |
 | `NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID` | Stable identifier for the active public Assistant surface | No |
+| `NEXT_PUBLIC_SITE_URL` | Your exact website origin for canonical metadata; unset/local builds are noindex | No |
 | `NEXT_PUBLIC_NOODLE_SERVICE_URL` | Exact Noodle service origin; optional when using the default Cloud origin | No |
 
 Copy `apps/web/.env.example` into an ignored local file only after an active assistant-enabled deployment provides the real embed ID. The service URL must be an exact HTTPS origin, or an explicit `localhost`/`127.0.0.1` origin with a port for local development.
@@ -111,7 +116,7 @@ The preflight reports required or missing environment names without printing val
 
 ## Public admission and budget
 
-A public surface must have one reviewed daily turn budget and an operational kill switch. Before inviting traffic, the owner must inspect the active embed projection, exact origins, five allowed capabilities, current spend, and configured cap. Budget exhaustion is a calm unavailable state; the website does not automatically retry it.
+A public surface must have one reviewed daily turn budget and an operational kill switch. Before inviting traffic, the owner must inspect the active embed projection, exact origins, the chosen profile's allowed capabilities, current spend, and configured cap. Budget exhaustion is a calm unavailable state; the website does not automatically retry it.
 
 Budget changes and embed revocation are hosted mutations. Do not run them under local implementation authority. Record the exact organization, app, environment, old value, new value, approver, and post-change probe in the promotion evidence.
 

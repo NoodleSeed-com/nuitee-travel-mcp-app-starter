@@ -1,130 +1,92 @@
 # Contributing
 
-This repository uses pnpm, test-first changes, generated Noodle Agent Kit guidance, and fully offline ordinary tests.
+Build useful agentic travel experiences with small, reviewable changes. The
+starter uses TypeScript, Node 24+, pnpm 11.17.0 and a committed workspace lock.
 
-## Setup
+## Local setup
 
 ```sh
 corepack enable
-pnpm install
-pnpm exec noodle agents doctor --json
+pnpm install --frozen-lockfile
 pnpm test
 pnpm exec playwright install chromium
-pnpm test:browser
+pnpm check:browser
 ```
 
-Use Node 24+ and pnpm 11+. Do not switch package managers or remove `pnpm-lock.yaml`.
+Read the README, `AGENTS.md`, `docs/architecture.md` and, before any user-facing
+change, the full `docs/brand/wayfare-brand-guidelines.md`. Optional local agent
+guidance can be generated with `pnpm exec noodle agents setup --write`; see
+[generated guidance](docs/generated-agent-guidance.md). Do not redistribute
+bundled generated examples or import them into the application.
 
-## Test-first workflow
+## Develop and verify
 
-1. Read `AGENTS.md` and the relevant generated skills/references.
-2. Add a focused failing test under `test/**/*.{test,spec}.{ts,tsx}`.
-3. Run `pnpm test` and confirm the expected failure.
-4. Implement the smallest coherent change.
-5. Run the focused suite, then all offline and Noodle gates.
-6. Update product/security/provider/customization docs when a contract changes.
-
-Generated Agent Kit examples are documentation assets. Do not import their code or let Vitest discover tests outside the project-owned `test/` tree.
-
-See [docs/generated-agent-guidance.md](docs/generated-agent-guidance.md) for generated-file regeneration, review, and redistribution boundaries. Use the repository issue forms for sanitized bugs and product proposals. Do not report vulnerabilities in public issues; the owner must finalize the private reporting route before public release.
-
-## Offline rule
-
-Ordinary tests and CI must require no provider network, Nuitee key, assistant-model key, Noodle account, or customer identity. Mock the compute gateway's allowlisted `callOperation` function and use fictional fixtures. The Vitest setup fails any accidental global `fetch` call.
-
-The separate `pnpm test:browser` gate renders fictional fixtures in headless Chromium and makes no provider call. Install its local browser once with `pnpm exec playwright install chromium`. It verifies narrow-width overflow, keyboard focus, touch targets, light/dark themes, reduced motion, and selection interaction.
-
-Never make a live provider call merely to get CI green. Live sandbox evidence is an explicitly authorized owner step after offline gates pass.
-
-## Fixtures
-
-- Keep airline names, airline identifiers, itinerary/offer IDs, and inventory fictional.
-- Label fixture content as fictional where it could be mistaken for live inventory.
-- Do not record or paste upstream responses, customer data, real keys, carrier logos, or private reference assets.
-- Keep fixtures bounded and derive focused fictional test cases for missing, malformed, partial, empty, oversized, changed-price, expired, and unavailable behavior.
-- Fixture airport codes must be schema-shaped but unassigned when reviewed; recheck them against IATA's current code lookup before public release. Reserved computer-test designators may be used for fictional airlines only when documented.
-- Production tool fulfilment must never import from `test/` or return fixtures on failure.
-
-## Full review gates
+For a behavior change, add a focused failing test, implement the smallest
+coherent change, then rerun the focused suite and relevant full checks. Keep
+fixtures fictional and bounded. Update public capability, privacy and provider
+documentation when behavior changes.
 
 ```sh
-pnpm install
-pnpm exec noodle agents setup --write
-pnpm exec playwright install chromium
-pnpm test:browser
 pnpm ci:offline
+pnpm check:browser
 ```
 
-`pnpm ci:offline` is the canonical no-secret gate. It checks Agent Kit freshness, validates the safe customization file, runs the root suite, exercises the default local MCP protocol, lists the tool surface, runs default/live/embedded static readiness checks, and typechecks/tests/builds the companion host. Live and embedded entrypoints are only validated statically; CI does not execute provider- or model-backed tools. Do not run those calls without managed credentials, entitlement, safe input, and explicit authorization.
+`ci:offline` validates configuration, audits reachable history and dependency
+license metadata, runs application tests, checks the default/live/embedded MCP
+contracts, and builds the Next.js website and authenticated-host example. It
+requires installed dependencies but no provider credentials or Noodle account.
+Browser checks are separate and use fictional fixtures. The public-candidate CI
+workflow runs both against an exported tree with fresh history.
 
-The offline gate also runs `pnpm audit:history` across every reachable Git
-commit and `pnpm audit:licenses` against installed package metadata. The history
-scanner reports only detector names and paths—never matched content. Before a
-release, run `pnpm audit:release`; its final npm advisory query requires network
-access and does not replace owner/legal license review.
+`pnpm audit:release` additionally enforces public file/link boundaries, generated
+example reproducibility and current dependency advisories. Run it in the clean
+public export; the private development tree intentionally contains excluded
+internal material. Advisory checks require network access.
 
-Review the tool list after every change: it must contain only `open_travel_starter`, `search_flights`, and `verify_flight_offer`. Airport lookup remains omitted until its live connector path passes; a future domain remains presentation-only until its full contract and evidence exist.
+## Security and provider contracts
 
-## Security review expectations
+- Never include credentials, raw provider responses, offer identifiers, customer
+  data or private URLs in code, fixtures, issues, screenshots or logs.
+- Keep origin, path, method and credential injection connector-owned. End users
+  must never paste provider keys into conversation.
+- Preserve caller-scoped opaque selections, TTL/revision checks, bounded lists,
+  explicit provenance and safe public errors.
+- A provider failure must never activate fictional fallback inventory.
+- Ordinary tests require no live network or identity. Use the existing test
+  harness and fictional input; do not call providers to make CI pass.
+- Flight and hotel reads are supported integration paths. Rewards and protection
+  are illustrative. Booking, payment and real loyalty transactions require new
+  contracts, authorization and implementation; they are not starter features.
 
-- Exact origin/base/path/method/auth remain connector-owned.
-- No transport authority or provider offer ID appears in model inputs.
-- No raw provider response/error/logo/internal fare code appears in public output.
-- Every list and nested list has an explicit cap.
-- Unknown/stale selection IDs stop before provider access.
-- Browser/widget CSP remains empty unless a reviewed feature requires a narrowly allowlisted domain.
-- Changed fares remain success states; no result implies a hold, reservation, or booking.
-- No new secrets or credential-shaped fields appear in source, docs, tests, logs, or artifacts.
+Report suspected vulnerabilities through [SECURITY.md](SECURITY.md), never a
+public issue. Community assistance and its no-SLA boundary are in [SUPPORT.md](SUPPORT.md).
 
-## Updating `@noodleseed/one`
+## Dependencies and generated files
 
-The package must stay exact-pinned; never commit `latest`.
+Keep direct versions exact and regenerate the lock with pnpm. Verify advisories,
+licenses, typechecks, application/host tests, browser behavior and builds after a
+runtime upgrade. Bounded overrides must explain the vulnerable range and patched
+version. Preserve the workspace's minimum-release-age policy.
 
-1. Report the existing and candidate registry versions.
-2. Obtain review for the candidate version.
-3. Update the exact pin and run `pnpm install` to regenerate the lock.
-4. Run `pnpm exec noodle agents setup --write` and doctor.
-5. Re-read changed Agent Kit instructions and relevant skills.
-6. Run every default/live/embedded static gate and application test.
-7. Review manifests, widgets, connector behavior, state, and error output for breaking changes.
-8. Merge only after human review. Do not auto-merge Noodle package updates.
+Never hand-edit Noodle managed hashes or examples. Updating generated local
+guidance is a separate reviewed change and does not make it part of the public
+source distribution.
 
-Monthly Dependabot pull requests cover npm and GitHub Actions. They are review prompts, not approval to merge; action updates must remain full-commit-SHA pinned. The workspace also holds newly published packages for 24 hours by default. The current exact Noodle package pair is an explicitly reviewed compatibility-set exception; change that exception only with the pins, lockfile, regenerated Agent Kit, and full gates.
+## Review and contribution terms
 
-## Change review
+Describe the problem, resulting behavior, evidence, and material limitations in
+the PR. Get maintainer approval before merging. Do not enable auto-merge or add
+a PR to GitHub's Merge Queue without explicit authorization. The destination
+repository's branch protections and queue settings are owner-managed controls.
 
-A pull request should state product impact, contract source, new failing test, security impact, evidence run, and unexecuted evidence (live provider, host, deployment). Do not mix unrelated generated-kit, dependency, visual, and provider-contract changes when they can be reviewed separately.
-
-Contributions accepted into this repository are licensed under the
-[Apache License 2.0](LICENSE).
-
-## Developer Certificate of Origin
-
-This project uses the [Developer Certificate of Origin
-1.1](https://developercertificate.org/) and does not use a Contributor License
-Agreement. Sign off every commit to certify that you have the right to submit
-the contribution under the project's license:
+Contributions are licensed under the [Apache License 2.0](LICENSE). This project
+uses the [Developer Certificate of Origin 1.1](https://developercertificate.org/)
+and does not use a Contributor License Agreement. Sign off commits:
 
 ```sh
 git commit --signoff
 ```
 
-The sign-off adds a `Signed-off-by` trailer using the contributor's real name
-and reachable email address. Maintainers should not merge a contribution whose
-commits lack the required sign-off.
-
-Community support is described in [SUPPORT.md](SUPPORT.md). This project does
-not promise a support SLA.
-
-## Merge Queue
-
-After the required code-owner review and `offline-quality-gates` pass, add the
-pull request to GitHub's Merge Queue instead of manually updating its branch.
-The queue tests a temporary candidate containing the latest `main` and the
-changes ahead of it before using the repository's squash-only merge method.
-
-An actual change to the pull request still requires fresh review. A base-branch
-advance alone should be handled by the queue; do not create merge-only update
-commits merely to make an otherwise approved pull request current. If the
-merge-group check fails or GitHub reports a conflict, remove and repair the
-affected pull request without bypassing branch protection.
+The sign-off uses your real name and reachable email to certify your right to
+submit the contribution under the project's license. Be respectful, constructive
+and protective of user privacy in all community interactions.

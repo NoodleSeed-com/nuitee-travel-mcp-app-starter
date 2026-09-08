@@ -50,3 +50,8 @@ d14d7200a59b5d8367dec5eb525e3dcac979a3ff apps/web/public/images/immersive/privat
 85e55bf133960d1acec0248427b4ee37948534cf apps/web/public/images/immersive/wayfare-cockpit-v1.png
 c5562474b0cb3bc29ae9d515683228ec3eac5c09 apps/web/public/images/immersive/wayfare-flight-stay-v1.png
 4280732ad050936c59d1681a0d019aed0edd0ae3 apps/web/public/images/immersive/wayfare-stay-v1.png
+# Current public starter screenshots, visually reviewed at original captured
+# resolution; real React UI, credential-free homepage and fictional widgets.
+8a95e1ec2e7e48ffa4bdb59d97975e2e81afcfde docs/images/travel-home.png
+6535a2a8d43396834008bfd25b9bfce7e74d6dc7 docs/images/flight-results.png
+a052ec12f8f14e5aaac82a79682b51a4abab8350 docs/images/hotel-results.png

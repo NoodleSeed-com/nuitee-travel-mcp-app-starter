@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 async function pageMetadata(path: string) {
   const page = await import(/* @vite-ignore */ path) as { metadata?: Metadata };
@@ -7,13 +7,26 @@ async function pageMetadata(path: string) {
 }
 
 describe('Wayfare rendered metadata contract', () => {
+  beforeEach(() => { vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://travel.example.com'); vi.resetModules(); });
+  afterEach(() => { vi.unstubAllEnvs(); vi.resetModules(); });
+  it('marks the layout and public pages noindex without deployment configuration', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', undefined);
+    vi.resetModules();
+    const layout = await import('../app/layout');
+    expect(layout.metadata.metadataBase?.toString()).toBe('http://localhost:3000/');
+    expect(layout.metadata.robots).toEqual({ index: false, follow: false });
+    for (const path of ['../app/page', '../app/privacy/page', '../app/terms/page']) {
+      expect((await pageMetadata(path))?.robots).toEqual({ index: false, follow: false });
+    }
+  });
+
   it('publishes complete global metadata and a light-only viewport', async () => {
     const layout = await import('../app/layout') as {
       metadata: Metadata;
       viewport: Viewport;
     };
 
-    expect(layout.metadata.metadataBase?.toString()).toBe('https://gowayfare.io/');
+    expect(layout.metadata.metadataBase?.toString()).toBe('https://travel.example.com/');
     expect(layout.metadata.title).toEqual({
       default: 'Wayfare — Plan your trip in one conversation',
       template: '%s | Wayfare',

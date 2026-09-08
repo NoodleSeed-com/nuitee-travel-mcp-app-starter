@@ -2,7 +2,10 @@
 
 ## Supported boundary
 
-This starter supports read-only flight discovery and fare verification. It does not support prebooking, booking, reservations, passenger data, payment, cancellation, refund, loyalty transactions, or end-user credential collection.
+This starter supports read-only flight discovery and fare verification, plus
+hotel search and application selection in the expanded live/embedded profiles.
+The preview profile is explicitly fictional. Rewards, reward flights and travel
+protection are illustrative and do not access real accounts or sell products. It does not support prebooking, booking, reservations, passenger data, payment, cancellation, refund, loyalty transactions, or end-user credential collection.
 
 Version one uses one deployment-owner Nuitee key. Multi-tenant credential brokering, per-user provider authorization, and customer-owned routing require a separate production architecture and threat model.
 
@@ -25,8 +28,13 @@ The live connector permits only:
 
 - `POST https://api.liteapi.travel/v3.0/flights/rates`
 - `POST https://api.liteapi.travel/v3.0/flights/verify`
+- `POST https://api.liteapi.travel/v3.0/hotels/rates` (expanded live/embedded profiles)
 
-Tools cannot select a URL, base, origin, path, method, or header. Widgets have no external connection domain and call Noodle tools only. FlightResults may load a validated airline image from `https://sandbox.nuitee.flights` or `https://production.nuitee.flights`; it uses no-referrer requests and rejects every other image origin/path. Loading that image still discloses ordinary request metadata such as the viewer's IP address and user agent to Nuitee's asset host, so deployments that do not accept that privacy tradeoff should disable remote carrier images and retain the text/initial fallback.
+Tools cannot select a URL, base, origin, path, method, or header. Widgets invoke business operations through Noodle tools. Optional hotel map
+exploration uses the explicitly configured Mapbox integration and its declared
+CSP domains; absent host/fullscreen/map configuration must retain a useful
+textual comparison. Map use can disclose ordinary network metadata to Mapbox.
+Audit the exact compiled CSP when enabling it in a host. FlightResults may load a validated airline image from `https://sandbox.nuitee.flights` or `https://production.nuitee.flights`; it uses no-referrer requests and rejects every other image origin/path. Loading that image still discloses ordinary request metadata such as the viewer's IP address and user agent to Nuitee's asset host, so deployments that do not accept that privacy tradeoff should disable remote carrier images and retain the text/initial fallback.
 
 The starter claims no widget domain. Configure one real, dedicated HTTPS widget
 origin for both widgets before registration with a host; never use a reserved or
@@ -52,4 +60,9 @@ Include a concise impact statement, affected revision, safe reproduction steps, 
 
 ## Release blocker
 
-A final reporting contact, copyright/NOTICE and owner/legal dependency-license and provenance review, corrected reproducible generated examples, the remaining caller-state lifecycle proof, and named-host UI evidence are required before public release. The automated history, exact-binary-review, generated-guidance, package-metadata, and advisory checks must be repeated from the final release commit.
+Publish only the reviewed clean source export after its content/history,
+exact-binary-review, reproducibility, dependency and advisory checks pass.
+Private security reporting and distribution notices must be finalized.
+Hosted caller-state lifecycle and named-host UI evidence are required before
+claiming production or host readiness, as specified in
+[PUBLIC_RELEASE_CHECKLIST.md](PUBLIC_RELEASE_CHECKLIST.md).

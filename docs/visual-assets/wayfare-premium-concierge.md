@@ -37,9 +37,11 @@ relax the Heroicons-only interface rule.
 - SHA-256: `c305e88d25b80313604c256d355bef987b034e2f28d56156d51d986b194d4860`
 - Git blob: `9ee481a2c4b897356e5cff1ab20d0c8a7d311d7c`
 
-Both marks require owner review of trademark use and public redistribution
-rights before the repository's public release. Their presence documents the
-approved visual treatment; it does not independently prove endorsement terms.
+On 2026-09-08 the repository owner confirmed Noodle Seed as copyright holder
+and confirmed Nuitée wordmark redistribution clearance for this starter.
+Preserve the unmodified marks and attribution. This approval does not imply
+endorsement of adopters or a general right to alter the marks. See
+`THIRD_PARTY_NOTICES.md` for the distribution boundary.
 
 ## Wayline WebGL mask
 

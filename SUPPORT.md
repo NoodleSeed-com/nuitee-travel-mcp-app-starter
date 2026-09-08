@@ -12,7 +12,7 @@ service.
   only sanitized versions, steps, public error categories, and offline test
   evidence.
 - Use the feature-request form for bounded proposals that remain within the
-  repository's flights-first scope.
+  starter's documented flight, hotel and illustrative-widget scope.
 
 Do not place credentials, authorization headers, provider response bodies,
 customer information, private deployment URLs, or other sensitive data in an

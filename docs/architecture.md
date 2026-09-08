@@ -11,7 +11,7 @@ Noodle public Assistant surface ───── External MCP host
   └──────────────────┬──────────────────────┘
                      ▼
               shared travel MCP
-       flight tools + expanded illustrative tools
+       flight/hotel reads + illustrative tools
                      │
          ┌───────────┴───────────┐
          ▼                       ▼
@@ -24,7 +24,7 @@ Noodle public Assistant surface ───── External MCP host
         https://api.liteapi.travel/v3.0
                      │
                      ▼
-           official Flights API
+           official flight and hotel APIs
 ```
 
 `apps/web/` is the primary product surface. Its high-contrast Host Grotesk homepage owns
@@ -71,9 +71,9 @@ A tool/URI mismatch fails closed inline and never reaches `NoodleAppView`. The c
 
 `apps/web/src/components/wayfare-mark.tsx` owns the deterministic route-line SVG logo asset. Every functional interface icon in the Next.js website comes from the pinned Heroicons React package. Outline icons are the default; compact solid icons are reserved for status emphasis. Hand-authored utility SVGs and mixed icon libraries are not permitted in that surface. Official Noodle Seed and Nuitée SVG wordmarks are a narrow identity-attribution exception, not product icons. The website does not use icons to imply attachments, payment, booking, voice, or account capabilities. The default homepage layers the configured blue-hour panorama beneath a fixed transparent cabin foreground and applies bounded mouse-only movement to the panorama; touch and reduced-motion presentations remain static. `/experience` may read the complete mode-aware `1672 × 941` visual catalog from `apps/web/src/lib/travel-hero-content.ts`. The passive editorial destination cards retain their local JPEG masters. None are claimed as literal 4K sources, and Next.js produces responsive AVIF/WebP delivery from them. Exact bytes, hashes, crop choices, and visual-review evidence are in [the Wayfare provenance ledger](visual-assets/wayfare-premium-concierge.md).
 
-The repository-owned MCP App UI has not been migrated to this visual system in
-the current implementation. That work is explicitly deferred to Wahab; the
-canonical brand guidelines remain the required contract for that later pass.
+The repository-owned MCP Apps implement the compact Wayfare card/carousel
+pattern. The canonical brand guidelines include the approved ChatGPT host-theme
+exception; the Wayfare website retains its light palette and Host Grotesk.
 
 `src/` owns the MCP server, model-facing workflows, exact public capability allowlist, connector, tools, state, and linked Apps. External MCP hosts enter the same server and provide their own model. No browser-specific or host-specific copy of the business tools exists.
 
@@ -89,13 +89,18 @@ exactly:
 
 The last helper remains `visibility: ['app']`; it is available to the trusted linked App bridge but is not offered to the model as a conversational tool.
 
-The private expanded `src/demo-embedded-server.ts` profile reuses those flight
+The expanded `src/demo-embedded-server.ts` profile reuses those flight
 capabilities and adds five model-visible read-only tools—`search_hotels`,
 `open_loyalty`, `compare_reward_flights`, `compare_travel_insurance`, and
-`review_trip`—plus App-only `select_hotel`. Its stays, rewards, reward flights,
-and travel-protection results are deterministic illustrative compute; they do
-not call a hotel, loyalty, reward-inventory, or insurer API. Only flight search
-and verification use the Nuitee connector.
+`review_trip`—plus App-only `select_hotel`. In live and embedded profiles, `search_hotels` uses the fixed Nuitee
+`POST /v3.0/hotels/rates` connector. `src/demo-preview-server.ts` is the
+credential-free fictional alternative. Rewards, reward flights and protection
+remain illustrative compute; they do not access accounts, redeem points or
+purchase policies. Hotel and flight selections are not bookings.
+
+The visual contract is one centered chronological conversation. Linked Apps stay inline at their original message-part positions.
+Distinct view IDs are not generically deduplicated. Mismatched tool/resource pairs fail closed.
+Current trip stays inside the conversation. Local proof is not hosted proof.
 
 ## Repository surfaces
 
@@ -103,8 +108,10 @@ and verification use the Nuitee connector.
 | --- | --- | --- | --- |
 | Primary website | `apps/web/` | Public embed ID and optional public service origin | Guest chat-first core landing plus optional expanded illustrative views |
 | Public Assistant MCP | `src/embedded-server.ts` | Nuitee key plus operator-provided Assistant model settings in Noodle | Anonymous Assistant sessions over the exact public allowlist |
-| Private expanded Assistant | `src/demo-embedded-server.ts` | Same hosted boundaries as the public Assistant | Current flights plus illustrative stays, rewards, and travel protection |
+| Expanded Assistant | `src/demo-embedded-server.ts` | Same hosted boundaries as the public Assistant | Current flights and hotels plus illustrative rewards and travel protection |
 | External MCP baseline | `src/server.ts` | None | Credential-free home and explicit live-tool configuration errors |
+| Expanded fictional preview | `src/demo-preview-server.ts` | None | Fictional hotel/ancillary UI; flight tools report missing configuration, no provider fallback |
+| Expanded live MCP | `src/demo-live-server.ts` | `NUITEE_API_KEY` | Provider-backed flights and hotels plus illustrative ancillary views |
 | External MCP live | `src/live-server.ts` | `NUITEE_API_KEY` in Noodle when executed | Provider-backed use from DevTools or external MCP hosts |
 | Migration reference | `examples/embedded-assistant-host/` | Local synthetic website session or backend Assistant client settings | Temporary authenticated parity oracle; not the primary app |
 

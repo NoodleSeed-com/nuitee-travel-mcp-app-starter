@@ -1,107 +1,110 @@
-# Fly.io Experience deployment
+# Deploy your own website on Fly.io
 
-The repository's hosted demo is the **Experience** environment at
-`https://wayfare-experience.fly.dev`. Fly runs only the stateless Next.js
-website. Noodle Cloud continues to own the Assistant, MCP server, model
-configuration, connector credentials, and caller-scoped state.
+Fly runs the stateless Next.js website. Noodle Cloud owns the Assistant, MCP
+server, model configuration, connector credentials, and caller-scoped state.
+The starter contains no Fly app identity and automatic deployment is disabled
+unless an adopter explicitly enables it. Creating a fork or merging a pull
+request does not arm deployment.
 
-## What the image contains
+## Prepare your coordinates
 
-The root `Dockerfile` builds the `apps/web` workspace using Next.js standalone
-output and runs it as an unprivileged user. The runtime image contains no source
-credentials, development dependencies, database, or persistent volume.
-
-`fly.toml` provisions one shared CPU with 512 MB RAM and lets the Machine stop
-when idle. The first request after an idle period can therefore have a cold
-start. Increase memory to 1 GB if production image optimization shows memory
-pressure.
-
-## Required public coordinates
-
-Set these in the shell that runs the build:
+Create an app in your own Fly organization and set its public coordinates in
+your shell. Replace the placeholders before running these commands:
 
 ```sh
-export NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID="<public-embed-id>"
+export FLY_APP="<your-globally-unique-app-name>"
+export FLY_DEPLOY_URL="https://<your-app>.fly.dev"
+export NEXT_PUBLIC_SITE_URL="$FLY_DEPLOY_URL"
+export NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID="<your-public-embed-id>"
 export NEXT_PUBLIC_NOODLE_SERVICE_URL="https://cloud.noodleseed.dev"
 ```
 
-These values are intentionally public and are compiled into the browser bundle.
-Never expose `NUITEE_API_KEY`, an Assistant client secret, a model key, or a Fly
-access token through a `NEXT_PUBLIC_` variable or Docker build argument.
+`NEXT_PUBLIC_SITE_URL` is the website's exact canonical origin, used for page
+metadata, social URLs, JSON-LD, robots, and sitemap. Use HTTPS without a trailing
+slash, path, query, fragment, or credentials. An unset value falls back to
+`http://localhost:3000`, marks pages noindex, blocks crawling, and publishes an
+empty sitemap. Explicit HTTP loopback origins with a port are also noindex.
+Changing these public build values requires rebuilding the image.
 
-The Noodle Assistant surface must independently allow the deployment's exact
-HTTPS origin. For the maintained Experience environment that origin is:
+All `NEXT_PUBLIC_` values are public. Never put `NUITEE_API_KEY`, an Assistant
+client secret, a model key, or a Fly access token in a public variable or Docker
+build argument. Keep provider/model credentials in the supported Noodle secret
+mechanism, separate from this website.
 
-```text
-https://wayfare-experience.fly.dev
+The default Assistant allowlist contains only `http://localhost:3000` and
+`http://localhost:3001`. Prepare your own exact production origin locally:
+
+```sh
+pnpm customize -- --production-origin "$FLY_DEPLOY_URL"
+pnpm customize:check
 ```
 
-## Automatic maintained deployment
+Add `--keep-local-demo` only if the same non-production Assistant must serve
+`http://localhost:3000`. This edits source only. Separately configure and deploy
+your Noodle Assistant through its supported hosted workflow before expecting
+browser sessions to work. See [EMBEDDED_ASSISTANT.md](EMBEDDED_ASSISTANT.md).
 
-The `CI` GitHub Actions workflow deploys the maintained Experience after every
-successful push to `main`. Pull requests and merge-queue checks run the same
-quality gate but never receive the production environment or deploy to Fly.
+## Manual deployment
 
-The `production` GitHub environment owns these deployment coordinates:
+Authenticate with Fly, create your app once, and deploy from the repository
+root. Every command supplies `--app`; `fly.toml` intentionally has no `app` value.
 
-- `NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID` environment variable: the stable,
-  public Assistant embed ID.
-- `NEXT_PUBLIC_NOODLE_SERVICE_URL` environment variable:
-  `https://cloud.noodleseed.dev`.
-- `FLY_API_TOKEN` environment secret: an app-scoped deploy token for
-  `wayfare-experience`. It is never passed to the Docker build.
+```sh
+fly auth login
+fly apps create "$FLY_APP" --org "<your-fly-org>"
+fly deploy --app "$FLY_APP" \
+  --build-arg NEXT_PUBLIC_SITE_URL="$NEXT_PUBLIC_SITE_URL" \
+  --build-arg NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID="$NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID" \
+  --build-arg NEXT_PUBLIC_NOODLE_SERVICE_URL="$NEXT_PUBLIC_NOODLE_SERVICE_URL"
+fly status --app "$FLY_APP"
+fly logs --app "$FLY_APP"
+```
 
-CI runs the core and web suites in parallel. Browser suites remain available
-for explicit local and pre-release validation, but are not part of the hosted
-CI or Fly deployment path. The stable
-`offline-quality-gates` check requires both, so branch protection and the
-deployment dependency stay simple while individual failures remain easy to
-identify. The deployment job then serializes production deployments, uses
-immutable action and Fly CLI versions, waits for the Fly rollout, and verifies
-both Fly status and an HTTP response from
-`https://wayfare-experience.fly.dev`.
+The root `Dockerfile` builds Next.js standalone output and runs as an
+unprivileged user. `fly.toml` uses one shared CPU and 512 MB RAM, stops when
+idle, and has an HTTP health check. Cold starts are possible. Adjust its region
+and memory for your own deployment.
 
-Rotate the app-scoped token without printing it to the terminal:
+## Opt in to GitHub Actions deployment
+
+Configure the following **repository variables** in your own repository:
+
+| Variable | Value |
+| --- | --- |
+| `ENABLE_FLY_DEPLOY` | Set exactly `true` only when ready to enable main-branch deployment; unset or `false` keeps it disabled. |
+| `FLY_APP` | Your Fly app name. |
+| `FLY_DEPLOY_URL` | Your exact HTTPS website origin, such as your app's Fly hostname or configured custom domain. |
+
+The opt-in must be a repository variable because the job condition is evaluated
+before the `production` environment is available. Configure these in the
+`production` GitHub environment (or as repository variables where appropriate):
+
+- `NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID`: your public Assistant embed ID.
+- `NEXT_PUBLIC_NOODLE_SERVICE_URL`: the HTTPS Noodle service origin.
+- `FLY_API_TOKEN`: an app-scoped deployment **secret**, never a variable.
+
+For example, create and transfer an app-scoped token without printing it:
 
 ```sh
 fly tokens create deploy \
-  --app wayfare-experience \
+  --app "$FLY_APP" \
   --name github-actions-production \
   --expiry 8760h | gh secret set FLY_API_TOKEN --env production
 ```
 
-## Manual recovery deployment
+Enable the repository variable only after the app, public coordinates, secret,
+and exact Assistant origin are ready. Setting it to `false` disables future
+workflow deployments. This guide does not change GitHub settings or hosted state.
 
-If GitHub Actions is unavailable, authenticate with Fly and deploy from the
-repository root:
+Only a push to `main` with `ENABLE_FLY_DEPLOY` exactly `true` can deploy, and it
+must first pass `offline-quality-gates`. Pull requests and merge queues run
+quality checks without deployment. The deployment job validates the app name,
+HTTPS deployment/service origins and embed ID before invoking Fly. It passes
+`FLY_DEPLOY_URL` as the image's `NEXT_PUBLIC_SITE_URL`, serializes deployments,
+waits for rollout, and checks Fly status and the website response. Credentials
+use the existing GitHub secret mechanism and never enter the image build.
 
-```sh
-fly auth login
-fly deploy \
-  --build-arg NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID="$NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID" \
-  --build-arg NEXT_PUBLIC_NOODLE_SERVICE_URL="$NEXT_PUBLIC_NOODLE_SERVICE_URL"
-```
-
-Run `fly status`, inspect `fly logs`, and exercise a real browser conversation
-after each manual recovery deployment. A successful image rollout does not by
-itself prove the Assistant origin binding or live Nuitee workflow.
-
-## Deploy your own copy
-
-Fork or clone the repository, choose a globally unique Fly app name, and change
-the `app` value in `fly.toml`. Create that app in your Fly organization, configure
-your own public Noodle Assistant embed ID, and replace the exact production
-origin through the supported customizer:
-
-```sh
-pnpm customize -- --production-origin "https://<your-app>.fly.dev" --keep-local-demo
-pnpm customize:check
-fly apps create <your-app> --org <your-fly-org>
-fly deploy -a <your-app> \
-  --build-arg NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID="$NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID" \
-  --build-arg NEXT_PUBLIC_NOODLE_SERVICE_URL="$NEXT_PUBLIC_NOODLE_SERVICE_URL"
-```
-
-Changing the checked-in origin prepares the Noodle server source; it does not
-mutate or redeploy an existing Noodle Assistant surface. Complete that hosted
-configuration separately before claiming the embedded experience works.
+An HTTP success proves website availability only. After deployment, verify the
+canonical URLs and exercise a real browser conversation to prove exact-origin
+Assistant binding and the provider-backed workflow. A successful Fly rollout
+alone does not prove either of those boundaries.

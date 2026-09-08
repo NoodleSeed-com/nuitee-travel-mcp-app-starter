@@ -12,7 +12,10 @@ describe('safe starter customization', () => {
   });
 
   it('keeps one canonical config in the authoring source with a root public facade', async () => {
-    expect(starterConfig.embeddedAssistant.origins).toContain('http://localhost:3000');
+    expect(starterConfig.embeddedAssistant.origins).toEqual([
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ]);
     expect(starterConfig.prompts).toHaveLength(3);
     expect(starterConfig.website.developerPath).toBe('/developers');
     expect(starterConfig.website.privacyUrl).toBe('/privacy');

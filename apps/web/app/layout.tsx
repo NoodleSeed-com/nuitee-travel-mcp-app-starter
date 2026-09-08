@@ -5,6 +5,7 @@ import {
   SEO_DEFAULT_TITLE,
   SEO_DESCRIPTION,
   SEO_ORIGIN,
+  SEO_ROBOTS,
   SEO_SITE_NAME,
   SEO_SOCIAL_IMAGE,
 } from '../src/lib/seo-config';
@@ -12,6 +13,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: SEO_ORIGIN,
+  robots: SEO_ROBOTS,
   title: {
     default: SEO_DEFAULT_TITLE,
     template: '%s | Wayfare',

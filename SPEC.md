@@ -10,7 +10,9 @@ This repository is not an official Nuitee connector and must not imply a Nuitee,
 
 ## Version-one boundary
 
-Flights are the only operational travel domain.
+The baseline profile supports provider-backed flights. Expanded live and
+embedded profiles also support provider-backed hotel search and application
+selection; the preview profile uses explicit fictional data.
 
 | Domain | Version-one state | Interaction |
 | --- | --- | --- |
@@ -20,7 +22,7 @@ Flights are the only operational travel domain.
 | Ground travel | Coming soon | Noninteractive presentation only |
 | Experiences | Coming soon | Noninteractive presentation only |
 
-Version one has no multicity search, prebooking, booking, inventory hold, passenger collection, seat or baggage purchase, payment, cancellation, refund, amendment, loyalty earning/redemption, hotel search, car search, or arbitrary HTTP. It produces no checkout or handoff URL.
+Version one has no multicity search, prebooking, booking, inventory hold, passenger collection, seat or baggage purchase, payment, cancellation, refund, amendment, loyalty earning/redemption, hotel booking, car search, or arbitrary HTTP. It produces no checkout or handoff URL.
 
 ### Website starting experience
 
