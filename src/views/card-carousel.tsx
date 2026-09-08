@@ -35,7 +35,14 @@ export function CardCarousel({ children, label, itemName = 'card', className = '
   const [position, setPosition] = useState({ first: true, last: true });
   const update = () => {
     const el = track.current;
-    if (el) setPosition({ first: el.scrollLeft <= 3, last: el.scrollLeft + el.clientWidth >= el.scrollWidth - 3 });
+    if (!el) return;
+    const next = {
+      first: el.scrollLeft <= 3,
+      last: el.scrollLeft + el.clientWidth >= el.scrollWidth - 3,
+    };
+    setPosition((current) => (
+      current.first === next.first && current.last === next.last ? current : next
+    ));
   };
   useEffect(() => {
     const el = track.current;
