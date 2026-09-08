@@ -43,7 +43,7 @@ jobs:
         run: test "$QUALITY_RESULT" = "success"
 
   deploy-fly-experience:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.ENABLE_FLY_DEPLOY == 'true'
     needs: offline-quality-gates
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -52,10 +52,11 @@ jobs:
       cancel-in-progress: false
     environment:
       name: production
-      url: https://wayfare-experience.fly.dev
+      url: ${{ vars.FLY_DEPLOY_URL }}
     env:
-      FLY_APP: wayfare-experience
-      FLY_DEPLOY_URL: https://wayfare-experience.fly.dev
+      ENABLE_FLY_DEPLOY: ${{ vars.ENABLE_FLY_DEPLOY }}
+      FLY_APP: ${{ vars.FLY_APP }}
+      FLY_DEPLOY_URL: ${{ vars.FLY_DEPLOY_URL }}
       NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID: ${{ vars.NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID }}
       NEXT_PUBLIC_NOODLE_SERVICE_URL: ${{ vars.NEXT_PUBLIC_NOODLE_SERVICE_URL }}
     steps:
@@ -67,8 +68,7 @@ jobs:
           version: 0.4.97
       - name: Verify deployment coordinates
         run: |
-          test -n "$NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID"
-          test -n "$NEXT_PUBLIC_NOODLE_SERVICE_URL"
+          node scripts/validate-fly-deployment.mjs
       - name: Deploy Fly Experience
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
@@ -76,6 +76,7 @@ jobs:
           test -n "$FLY_API_TOKEN"
           flyctl deploy --remote-only \
             --app "$FLY_APP" \
+            --build-arg NEXT_PUBLIC_SITE_URL="$FLY_DEPLOY_URL" \
             --build-arg NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID="$NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID" \
             --build-arg NEXT_PUBLIC_NOODLE_SERVICE_URL="$NEXT_PUBLIC_NOODLE_SERVICE_URL" \
             --wait-timeout 5m

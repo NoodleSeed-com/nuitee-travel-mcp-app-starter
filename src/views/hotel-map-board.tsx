@@ -245,7 +245,7 @@ export function MapBoard({
 }) {
   const located = mappableHotels(hotels);
   const selected = located.find((hotel) => hotel.selectionId === selectedId);
-  const unmapped = hotels.filter((hotel) => !located.includes(hotel));
+  const unmapped = hotels.filter((hotel) => !located.some((mappedHotel) => mappedHotel === hotel));
 
   return (
     <section className="cc-map-wrap" aria-label="Hotel map">

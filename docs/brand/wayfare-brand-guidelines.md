@@ -4,6 +4,12 @@
 **Approved:** 2026-09-04
 **Applies to:** the Wayfare website, conversational product, repository-owned MCP Apps, product copy, generated previews, and new user-facing capabilities
 
+**Project identity (owner confirmed 2026-09-08):** Wayfare is an example project
+by Noodle Seed. Lead product and repository presentation with Wayfare, then
+explain that developers can use its source as an agentic travel starter. Noodle
+Seed is the author and platform foundation; Nuitée is the configured travel-data
+provider. Preserve their distinct roles and the approved attribution lockup.
+
 Wayfare is a **modern global explorer for globally curious professionals**. It
 turns travel planning into one capable, continuous conversation. The brand
 should feel worldly, optimistic, calm, and precise—not like a legacy airline,

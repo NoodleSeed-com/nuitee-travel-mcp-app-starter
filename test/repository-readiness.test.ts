@@ -85,7 +85,7 @@ describe('public repository contracts', () => {
       repositoryFile('src/travel-server.ts'),
       repositoryFile('PUBLIC_RELEASE_CHECKLIST.md'),
       repositoryFile('docs/architecture.md'),
-      repositoryFile('IMPLEMENTATION_PLAN.md'),
+      repositoryFile('docs/architecture.md'),
       repositoryFile('SPEC.md'),
     ]);
     const capabilityNames = [
@@ -129,8 +129,9 @@ describe('public repository contracts', () => {
       repositoryFile('security/reviewed-binary-blobs.txt'),
     ]);
     const previews = [
-      ['docs/images/travel-home.png', 'Where will you go next?', 'Wayfare route mark'],
-      ['docs/images/flight-results.png', 'Current flight options', 'Verify current fare'],
+      ['docs/images/travel-home.png', 'Next.js homepage', 'Wayfare'],
+      ['docs/images/flight-results.png', 'FlightResultsView', 'fictional'],
+      ['docs/images/hotel-results.png', 'HotelJourney', 'fictional'],
     ] as const;
 
     for (const [path, firstLabel, secondLabel] of previews) {
@@ -145,7 +146,7 @@ describe('public repository contracts', () => {
       expect(reviewedBlobs).toContain(`${blob} ${path}`);
     }
     expect(fixtureGuide).toContain('current deterministic product previews');
-    expect(readme).toContain('current local Wayfare product');
+    expect(readme).toContain('fictional fixtures');
     expect(previewGuide).not.toMatch(/Choose your flight|Lowest shown|Verify selected fare/);
   });
 
@@ -204,12 +205,12 @@ describe('public repository contracts', () => {
     const readme = await repositoryFile('README.md');
 
     expect(readme).toContain('pnpm dev:web');
-    expect(readme).toContain('External MCP hosts');
+    expect(readme).toContain('External MCP host');
     expect(readme.indexOf('pnpm dev:web')).toBeLessThan(
-      readme.indexOf('External MCP hosts'),
+      readme.indexOf('External MCP host'),
     );
     expect(readme).toContain('Search → Select → Verify');
-    expect(readme).toContain('does not book');
+    expect(readme).toContain('No booking');
   });
 
   it('ships the approved layered Wayfare homepage without the obsolete shader dependency', async () => {
@@ -230,7 +231,7 @@ describe('public repository contracts', () => {
     expect(heroViewAsset.size).toBeGreaterThan(0);
     expect(heroCabinAsset.size).toBeGreaterThan(0);
     expect(webPackage.dependencies['@paper-design/shaders-react']).toBeUndefined();
-    expect(readme).toContain('single-entry cinematic landing');
+    expect(readme).toContain('Next.js guest website');
     expect(readme).toContain('Search → Select → Verify');
     expect(customization).toContain('## Wayfare image system');
     await expect(access(new URL(
@@ -253,14 +254,15 @@ describe('public repository contracts', () => {
     ]);
     const activeDocs = [readme, architecture, customization, companion].join('\n');
 
-    expect(readme).toContain('single-entry cinematic landing');
+    expect(readme).toContain('Next.js guest website');
     expect(spec).toContain('one general travel composer');
     expect(architecture).toContain('capability choice stays inside the agent');
     expect(customization).toContain('passive destination inspiration');
     expect(companion).toContain('one natural-language starting composer');
-    expect(companion).toContain('Flights remain provider-backed');
+    expect(companion).toContain('Flights and stays are provider-backed in the expanded live profile');
     expect(activeDocs).not.toMatch(/offers accessible entry points for each|choose a planning view/i);
-    expect(spec).toContain('Flights are the only operational travel domain.');
+    expect(spec).toContain('Expanded live and');
+    expect(spec).toContain('provider-backed hotel search');
     expect(spec).toContain('It produces no checkout or handoff URL.');
   });
 
@@ -366,7 +368,9 @@ describe('public repository contracts', () => {
     expect(rootPackage.scripts['agent:check:live']).toContain('src/live-server.ts');
     expect(rootPackage.scripts['check:embedded-host']).toContain('@nuitee-travel-starter/embedded-assistant-host');
     for (const command of [
-      'pnpm agent:doctor',
+      'pnpm audit:history',
+      'pnpm audit:licenses',
+      'pnpm typecheck',
       'pnpm customize:check',
       'pnpm test',
       'pnpm agent:check',
@@ -427,6 +431,7 @@ describe('public repository contracts', () => {
     expect(rootEnvironment).not.toMatch(/NOODLE_ASSISTANT_CLIENT_(?:ID|SECRET)/);
     expect(rootEnvironment).not.toContain('NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID');
     expect(websiteEnvironment.trim().split('\n')).toEqual([
+      'NEXT_PUBLIC_SITE_URL=',
       'NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID=',
       'NEXT_PUBLIC_NOODLE_SERVICE_URL=https://cloud.noodleseed.dev',
       'IPINFO_TOKEN=',
@@ -444,9 +449,10 @@ describe('public repository contracts', () => {
 
     expect(rootPackage.scripts['audit:release']).toContain('pnpm audit:generated-guidance');
     expect(rootPackage.scripts['ci:offline']).not.toContain('audit:generated-guidance');
-    expect(checklist).toContain('[ ] Replace every mutable dependency selector in bundled runnable Agent Kit examples');
-    expect(generatedGuide).toContain('must stay private');
-    expect(generatedGuide).toContain('Do not hand-edit the generated copies');
+    expect(checklist).toContain('Exclude bundled generated examples from the public export');
+    expect(generatedGuide).toContain('rejects mutable');
+    expect(generatedGuide).toContain('public export excludes those trees');
+    expect(generatedGuide).toMatch(/Do not hand-edit the generated\s+copies/);
   });
 
   it('pins CI actions and covers application, embedded, and supply-chain gates', async () => {
@@ -478,7 +484,9 @@ describe('public repository contracts', () => {
     expect(workflow).toContain("if: github.event_name == 'push' && github.ref == 'refs/heads/main'");
     expect(workflow).toContain('needs: offline-quality-gates');
     expect(workflow).toContain('name: production');
-    expect(workflow).toContain('url: https://wayfare-experience.fly.dev');
+    expect(workflow).toContain("vars.ENABLE_FLY_DEPLOY == 'true'");
+    expect(workflow).toContain('url: ${{ vars.FLY_DEPLOY_URL }}');
+    expect(workflow).not.toContain('wayfare-experience');
     expect(workflow).toContain('group: fly-production');
     expect(workflow).toContain('cancel-in-progress: false');
     expect(workflow).toContain(
@@ -529,7 +537,8 @@ describe('public repository contracts', () => {
     expect(attributes).toContain('.claude/** linguist-generated=true');
     expect(pullRequest).toContain('No credentials, provider bodies, customer data, or private URLs');
     expect(bugReport).toContain('Do not paste credentials');
-    expect(featureRequest).toContain('Version-one boundary');
+    expect(featureRequest).toContain('live flight and hotel reads');
+    expect(featureRequest).toContain('Booking, payment');
     expect(generatedGuide).toContain('pnpm exec noodle agents setup --write');
     expect(releaseChecklist).toContain('Owner decision required');
     expect(releaseChecklist).toContain('license');
@@ -550,7 +559,7 @@ describe('public repository contracts', () => {
     expect(license).toContain('Apache License');
     expect(license).toContain('Version 2.0, January 2004');
     expect(codeowners.trim()).toBe('* @WahabShah23 @asadatnoodle @hassan50306');
-    expect(readme).toContain('licensed under the [Apache License 2.0]');
+    expect(readme).toContain('[Apache 2.0](LICENSE)');
     expect(contributing).toContain('Apache License 2.0');
   });
 
@@ -558,7 +567,7 @@ describe('public repository contracts', () => {
     const generatedGuide = await repositoryFile('docs/generated-agent-guidance.md');
 
     expect(generatedGuide).not.toContain('private and unlicensed');
-    expect(generatedGuide).toContain('does not by itself complete the owner/legal provenance review');
+    expect(generatedGuide).toMatch(/does not by itself complete the owner\/legal\s+provenance review/);
   });
 
   it('documents the approved community support and DCO policy', async () => {
@@ -575,25 +584,29 @@ describe('public repository contracts', () => {
     expect(contributing).toMatch(/does not use a Contributor License\s+Agreement/);
     expect(contributing).toContain('GitHub\'s Merge Queue');
     expect(checklist).toContain('[x] Use the Developer Certificate of Origin');
-    expect(checklist).toContain('[x] Keep squash merge as the only enabled merge method');
+    expect(checklist).toContain('[ ] Verify main-branch protection');
+    expect(contributing).toContain('without explicit authorization');
   });
 
   it('records the enforced and proven merge queue gate', async () => {
     const checklist = await repositoryFile('PUBLIC_RELEASE_CHECKLIST.md');
 
-    expect(checklist).toContain('[x] Require GitHub Merge Queue');
-    expect(checklist).toContain('passes `offline-quality-gates`');
+    expect(checklist).toContain('queue settings');
+    const workflow = await repositoryFile('.github/workflows/public-candidate.yml');
+    expect(workflow).toContain('merge_group:');
+    expect(checklist).toContain('never authorizes publication');
   });
 
   it('separates private ready-to-toggle gates from unauthorized transition-day actions', async () => {
     const checklist = await repositoryFile('PUBLIC_RELEASE_CHECKLIST.md');
 
-    expect(checklist).toContain('## Private ready-to-toggle gates');
+    expect(checklist).toContain('## Source candidate gates');
     expect(checklist).toContain('## Transition-day actions — not authorized');
-    expect(checklist).toContain('Do not execute any transition-day action without separate explicit authorization.');
-    expect(checklist).toContain('- [ ] Switch repository visibility to public.');
-    expect(checklist).toContain('- [ ] Enable GitHub template status last.');
-    expect(checklist).toContain('- [ ] Publish or deploy only under separate explicit authorization.');
+    expect(checklist).toContain('A preparation PR never authorizes publication');
+    expect(checklist).toContain('must remain private');
+    expect(checklist).toContain('create a **new** public repository with fresh history');
+    expect(checklist).toContain('- [ ] Enable GitHub template status after the anonymous checks pass.');
+    expect(checklist).toContain('Keep the PR unarmed');
   });
 
   it('makes hosted guest-assistant proof an explicit promotion gate', async () => {
@@ -603,7 +616,7 @@ describe('public repository contracts', () => {
       repositoryFile('PUBLIC_RELEASE_CHECKLIST.md'),
     ]);
 
-    expect(readme).toContain('primary guest website');
+    expect(readme).toContain('Next.js guest website');
     expect(guide).toContain('Guest-first architecture');
     expect(guide).toContain('temporary authenticated migration reference');
     expect(checklist).toContain('[ ] Configure one real public embed ID');
@@ -647,7 +660,7 @@ describe('public repository contracts', () => {
     const activeGuides = await Promise.all([
       repositoryFile('docs/oauth.md'),
       repositoryFile('docs/nuitee-flights-contract.md'),
-      repositoryFile('docs/PREMIUM_UI_PLAN.md'),
+      repositoryFile('docs/architecture.md'),
     ]);
 
     for (const guide of activeGuides) {
@@ -674,13 +687,13 @@ describe('public repository contracts', () => {
   it('records generic and app-mapped public preflights without claiming hosted readiness', async () => {
     const checklist = await repositoryFile('PUBLIC_RELEASE_CHECKLIST.md');
 
-    expect(checklist).toContain('Exact generic host preflight');
-    expect(checklist).toContain('App-mapped local preflight');
+    expect(checklist).toContain('Host and production promotion (conditional)');
+    expect(checklist).toContain('not prerequisites for distributing');
     expect(checklist).toContain(
-      '`NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID` as the only missing name',
+      'exact allowed HTTPS website origin',
     );
-    expect(checklist).toContain('process-only loopback coordinates');
-    expect(checklist).toContain('does not prove hosted readiness');
+    expect(checklist).toContain('before claiming host compatibility');
+    expect(checklist).toContain('must remain private');
   });
 
   it('documents the safe widget-domain customization path without claiming a default domain', async () => {
@@ -690,7 +703,7 @@ describe('public repository contracts', () => {
       repositoryFile('src/starter-config.ts'),
     ]);
 
-    expect(readme).toContain('pnpm customize -- --widget-domain');
+    expect(readme).toContain('docs/customization.md');
     expect(customization).toContain('--widget-domain "$DEPLOYMENT_WIDGET_ORIGIN"');
     expect(config).toContain('domain: null');
   });
@@ -698,9 +711,9 @@ describe('public repository contracts', () => {
   it('keeps public-facing docs free of private upstream trackers and internal feedback IDs', async () => {
     const docs = await Promise.all([
       repositoryFile('README.md'),
-      repositoryFile('IMPLEMENTATION_PLAN.md'),
+      repositoryFile('docs/architecture.md'),
       repositoryFile('PUBLIC_RELEASE_CHECKLIST.md'),
-      repositoryFile('docs/live-smoke-evidence.md'),
+      repositoryFile('docs/public-template-release.md'),
       repositoryFile('docs/troubleshooting.md'),
     ]);
     const combined = docs.join('\n');

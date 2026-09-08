@@ -1,243 +1,160 @@
-# Nuitee Travel MCP App Starter
+# Wayfare
 
-A guest-first Next.js developer template for building a chat-first flight experience with a Noodle embedded assistant and the official Nuitee Connect Flights API. The fictional customer-facing brand is **Wayfare**.
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-0D0D0D.svg)](LICENSE)
+[![Node.js 24+](https://img.shields.io/badge/Node.js-24%2B-0D0D0D.svg)](package.json)
+[![pnpm 11](https://img.shields.io/badge/pnpm-11-0D0D0D.svg)](package.json)
+[![MCP Apps](https://img.shields.io/badge/MCP-Apps-147D83.svg)](docs/architecture.md)
+[![Build checks](https://img.shields.io/badge/Build-checks_in_CI-147D83.svg)](.github/workflows/ci.yml)
 
-The primary guest website guides a traveler through **Search → Select → Verify** and stops at a verified fare. Wayfare resolves useful relative timing such as `next week`, applies visible one-way/adult/Economy defaults, and may suggest a currency from a permission-free coarse-country lookup. It searches without asking the traveler to confirm every provider field. A clear route with no usable date clue still produces one structured date decision. It does not book, hold inventory, collect passenger details, take payment, or issue tickets. The repository also exposes the same bounded MCP tools and linked Apps to external MCP hosts; there is no website-only copy of the travel product.
+**One conversation. The whole journey.**
 
-This is an independent starter, not an official Nuitee connector, airline partnership, booking product, or endorsement.
+**Wayfare is an example project by [Noodle Seed](https://noodleseed.com).** It demonstrates a conversational travel experience built with a Next.js website, shared TypeScript MCP tools, and interactive travel Apps. Use it as a starter for your own agentic travel product. Noodle Seed provides the MCP and embedded-assistant foundation; Nuitée provides the configured live flight and hotel data.
 
-**Experience:** [Open the hosted Wayfare demo](https://wayfare-experience.fly.dev). The hosted site is a demonstration environment, not a booking service; it stops after current-fare verification.
+Use this starter to turn trip intent into options, compare tradeoffs, remember a selection, and verify a flight fare. The same travel tools serve the website's embedded assistant and external MCP hosts.
 
-## Primary guest website
+![Wayfare homepage with its conversational composer and jet-window hero](docs/images/travel-home.png)
 
-The Next.js application in `apps/web/` is the main developer path. Wayfare uses
-a high-contrast, Host Grotesk single-entry cinematic landing with one natural-language
-composer. The homepage keeps capability choice inside the assistant while the
-existing conversation, inline widgets, and Search → Select → Verify flight
-boundary remain unchanged. The alternate `/experience` route is an optional
-visual reference for the five core image modes; it does not define the default
-homepage contract. Submitting a prompt moves into one chronological conversation
-with delayed anonymous Assistant admission and plain-language progress. The compact typed trip
-disclosure is absent until validated facts exist, stays collapsed by default,
-and is derived only from structured tool results—never conversation prose.
+*Actual local website, before a conversation starts. No credentials or live provider requests were used for these captures.*
 
-Before changing any user-facing capability, read the canonical
-[Wayfare brand guidelines](docs/brand/wayfare-brand-guidelines.md). They define
-the exact Wayline logo, typography, light-only tokens, semantic colors,
-rounded controls, Heroicons policy, jet-window device, motion, voice, and
-accessibility requirements for the website and MCP Apps.
+## Try it without credentials
 
-Official inline MCP Apps render at the exact chronological message part that
-needs interaction. Every distinct view ID remains in history; the website
-neither reconstructs App output as fare cards nor creates a second results
-workspace. The exact fail-closed allowlist covers the home, flight results,
-illustrative stay results, loyalty overview, reward-flight comparison, trip
-review, and travel-protection comparison views. A tool/URI mismatch never
-reaches `NoodleAppView`.
-
-The exact Wayline SVG in `apps/web/src/components/wayfare-mark.tsx` is the
-repository-owned Wayfare logo asset. Use only the installed Heroicons React
-library for functional interface iconography; do not hand-author utility SVGs,
-mix icon libraries, or introduce symbols suggesting attachments, payment,
-booking, voice, or account management. The shared core hero and editorial
-destination masters are truthful native `1672 × 941` high-resolution web
-images, not literal 4K sources. Next.js serves responsive AVIF/WebP derivatives;
-their exact paths, bytes, hashes, visual review, and responsive crop decisions
-are in the [Wayfare provenance ledger](docs/visual-assets/wayfare-premium-concierge.md).
+Install **Node.js 24+** and **Corepack**, then run from the repository root:
 
 ```sh
 corepack enable
-pnpm install
+corepack prepare pnpm@11.17.0 --activate
+pnpm install --frozen-lockfile
 pnpm dev:web
 ```
 
-Open `http://localhost:3000`. The zero state works without credentials and does not open an Assistant session on mount. Without a real public embed ID, the first submitted message fails closed with setup guidance rather than substituting a fake assistant.
+Open [localhost:3000](http://localhost:3000). You can explore the real Wayfare homepage, destination imagery, navigation, and composer without a Noodle account or provider key. The website opens no assistant session on load. Submitting a message requires your configured embedded assistant; an unconfigured site shows setup guidance.
 
-Run the credential-free MCP gate separately:
+To explore the MCP product separately, run `pnpm dev:preview`. This opens the credential-free expanded server in local Noodle DevTools: hotels, experiences, rewards, and travel protection use clearly labeled examples; current flight search explains the missing configuration. It never substitutes fictional fares for a live flight search.
 
-```sh
-pnpm agent:check
+## What you can build with it
+
+| Capability | Included behavior | Data and boundary |
+| --- | --- | --- |
+| Flights | Search one-way or return itineraries, compare a compact carousel, select a fare, verify its current price and availability | Live Nuitée access required; stops before reservation or booking |
+| Hotels | Search stays, inspect rooms and terms, compare options, explore locations when configured, remember a selection | Live Nuitée results in the expanded live profile; illustrative stays in the credential-free profile; no room held |
+| Experiences | Discover fictional Lisbon and Tokyo ideas, inspect details, and compare two options | Demonstration catalog only; no live operators, capacity checks, saved trip selection, or booking |
+| Rewards and reward flights | Show an example balance and compare points-based trip ideas | Illustrative only; no account access, live award inventory, or redemption |
+| Travel protection | Compare example protection concepts | Illustrative only; no insurance quote, policy, eligibility decision, or purchase |
+| Trip review | Review the selected flight and stay in conversation | Preserves each source; never invents a bookable package total |
+
+**No booking, passenger collection, payment, ticketing, cancellation, refund, voucher issuance, or points redemption is implemented.** Cars, private jets, and broader trip-care imagery are product concepts, not connected transaction capabilities. A selected option is never presented as a reservation.
+
+### Flight comparison
+
+![Real compact flight-results App with a fictional selected fare and current-fare verification action](docs/images/flight-results.png)
+
+### Hotel discovery
+
+![Real hotel-results App with three fictional stays, prices, terms, and detail actions](docs/images/hotel-results.png)
+
+These are Chromium captures of the current React components using fictional fixtures, not live inventory or screenshots from a third-party host. The hotel preview intentionally uses the product's missing-photo fallback. [Capture provenance and reproduction](docs/images/README.md) record the source, network restrictions, dimensions, and checksums.
+
+## How it fits together
+
+```mermaid
+flowchart LR
+  Traveler[Traveler] --> Web[Next.js website]
+  Web --> Assistant[Noodle embedded assistant]
+  Host[External MCP host] --> MCP[Shared travel MCP tools]
+  Assistant --> MCP
+  MCP --> Apps[Linked React MCP Apps]
+  MCP --> State[Caller-scoped selection state]
+  MCP --> Connector[Server-side Nuitée connectors]
+  Connector --> Provider[Nuitée flight and hotel APIs]
 ```
 
-After a separately authorized assistant-enabled deployment provides a stable public embed ID, copy `apps/web/.env.example` to an ignored local environment file and set:
+The flight journey is Search → Select → Verify. Conversation carries intent and refinement. Bounded tools return structured facts and readable fallback text; linked Apps handle comparison and selection at the relevant point in the conversation. Provider credentials and provider offer identifiers remain on the server. The browser receives application-issued selection handles, not provider credentials.
 
-```text
-NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID=<real-public-embed-id>
-NEXT_PUBLIC_NOODLE_SERVICE_URL=<exact-service-origin>
-IPINFO_TOKEN=<server-only-ipinfo-lite-token>
-```
+| Location | Purpose |
+| --- | --- |
+| [`apps/web/`](apps/web/) | Next.js guest website and chronological embedded conversation |
+| [`src/travel-server.ts`](src/travel-server.ts) | Shared capabilities, entrypoint profiles, assistant configuration, and state contracts |
+| [`src/views/`](src/views/) | Real flight, hotel, experience, reward, trip-review, and protection Apps |
+| [`src/flight-runtime.ts`](src/flight-runtime.ts), [`src/hotel-runtime.ts`](src/hotel-runtime.ts) | Provider normalization, safe output mapping, and selection boundaries |
+| [`src/starter-config.ts`](src/starter-config.ts) | Canonical brand and deployment configuration |
+| [`test/`](test/), [`apps/web/test/`](apps/web/test/) | Contract, security-boundary, component, and browser coverage |
 
-The two `NEXT_PUBLIC_` values are public deployment coordinates. `IPINFO_TOKEN` is optional and server-only; on Fly.io it enables a coarse country lookup for the initial currency without browser location permission. Never put it, `NUITEE_API_KEY`, an Assistant client secret, or model credentials in a `NEXT_PUBLIC_` variable. The optional service URL must be one exact HTTPS origin, or an explicit loopback origin with a port for local development.
+See the [architecture guide](docs/architecture.md) for the trust boundaries and [Nuitée flight contract](docs/nuitee-flights-contract.md) for the provider mapping.
 
-For a small scale-to-zero website deployment, follow the checked-in [Fly.io Experience guide](docs/FLY_DEPLOYMENT.md). It keeps the Next.js shell on Fly while the Assistant, MCP server, provider credentials, and caller state remain on Noodle Cloud.
+## Connect your own services
 
-The browser path is:
+### 1. Enable live provider reads
 
-```text
-Next.js browser
-  → public Noodle assistant
-  → shared travel MCP and linked Apps
-  → server-side Nuitee connector
-  → Nuitee Flights API
-```
-
-The guest template has no login button, application database, or `/api/assistant/session` route. Add identity only for a real identity-bound capability and follow [docs/oauth.md](docs/oauth.md); website login, Assistant session exchange, and direct MCP customer authentication are distinct layers.
-
-## Capability boundary
-
-- Open the travel starter and explain the supported flight scope.
-- Search current one-way and round-trip offers after resolving only unambiguous places to IATA codes.
-- Return at most ten normalized itineraries and show at most three inline.
-- Select an application-issued opaque fare handle inside the linked flight-results App.
-- Verify the active or explicitly selected fare against current availability and price.
-- Treat partial results, changed prices, unavailable offers, and expiry as normal bounded outcomes.
-- In the expanded Wayfare profile, compare deterministic illustrative stays,
-  rewards, reward-flight ideas, and travel protection while keeping those
-  sources visibly separate from current flight results.
-- Review an application-selected flight and illustrative stay without combining
-  them into a package price. Travel protection remains a stateless comparison.
-
-The product deliberately does not prebook, reserve, collect passengers, take
-payment, ticket, cancel, refund, access a real loyalty account, redeem points,
-quote or sell insurance, or search cars. Private Jets and Cars are visual
-conversation concepts only. Illustrative stays, rewards, and travel protection
-are available only through the expanded demo entrypoints; they never represent
-live inventory, accounts, eligibility, policies, or purchase support.
-
-## Live Nuitee development
-
-Requirements:
-
-- Node.js 24 or newer;
-- pnpm 11 or newer;
-- a Nuitee API key for live tools; and
-- Nuitee Flights access for the intended environment. Possession of a key alone does not guarantee usable Flights entitlement.
-
-See Nuitee's [authentication](https://docs.liteapi.travel/reference/authentication) and [Flights access](https://docs.liteapi.travel/docs/getting-access-to-flights) guidance. Sandbox data is non-production, limited, and may be inconsistent. Production and whitelabel access require Nuitee approval.
-
-The credential-free server remains the default:
-
-```sh
-pnpm dev
-```
-
-Its home App works and live-only tools return an explicit configuration error. For current provider results in local DevTools, copy the value-free template, add the key to the project-root ignored `.env`, and start the live entrypoint:
+Use your own Nuitée account and key with the required flight and hotel entitlements. A key alone does not guarantee access to every API. Use credentials entitled to the fixed Lite API endpoints; sandbox responses are not production inventory.
 
 ```sh
 cp .env.example .env
-# Edit .env locally so it contains NUITEE_API_KEY=<your value>.
-pnpm dev:live
+# Edit the ignored .env locally and set NUITEE_API_KEY.
+pnpm dev:demo
 ```
 
-Local setup does not require `noodle login`. The pinned CLI reads the exact project-root `.env` only as a local fallback for matching `secret(...)` declarations. `.env.local` is not that fallback. Stop and restart `pnpm dev:live` after changing server code or configuration.
+Despite the command's historical name, `dev:demo` selects the **expanded live profile**: current flights and hotels, plus fictional experiences and illustrative rewards and protection. For the smaller flights-only profile, use `pnpm dev:live`.
 
-Alternatively, transfer an already exported shell value into Noodle's ignored local store without placing the value on the command line:
+The CLI's local secret fallback reads the project-root `.env`; restart after configuration changes. Keep keys out of source, prompts, screenshots, browser variables, and Git history. Local configuration does not configure a hosted service.
+
+Try a future flight search, choose a returned option, and verify the current fare. For hotels, provide a destination and check-in/check-out dates, inspect the returned stay, and select it. Both journeys stop before booking.
+
+### 2. Choose the conversational host
+
+**External MCP host:** the host supplies its own model. The same server can be connected to ChatGPT, Claude, or an MCP inspection client. Use the Noodle CLI's connection workflow for your chosen host; Apps render only where supported, and other hosts receive useful text and structured results. A local check is not proof of approval by a host's app directory.
+
+**Embedded website:** configure your own Noodle-hosted assistant using `src/demo-embedded-server.ts` for the expanded travel profile. Its server-side model settings are `ASSISTANT_MODEL_BASE_URL`, `ASSISTANT_MODEL`, and secret `ASSISTANT_MODEL_API_KEY`; live reads also require `NUITEE_API_KEY`. Follow the [embedded assistant guide](docs/EMBEDDED_ASSISTANT.md).
+
+Copy the website's value-free template and set your public embed coordinates locally:
 
 ```sh
-pnpm exec noodle secrets set NUITEE_API_KEY --runtime local --from-env NUITEE_API_KEY
+cp apps/web/.env.example apps/web/.env.local
+# Set NEXT_PUBLIC_NOODLE_ASSISTANT_EMBED_ID and NEXT_PUBLIC_NOODLE_SERVICE_URL.
+pnpm dev:web
 ```
 
-Never paste a Nuitee key into a conversation, source file, browser variable, screenshot, fixture, test, log, URL, or Git history. A local value is not automatically a hosted deployment secret.
+The embed ID and service origin are public coordinates. Provider and model keys remain server-side. Experience ideas use the bundled fictional catalog in both expanded live and preview profiles; their photos are decorative remote Unsplash assets, not evidence of operator inventory. See [SECURITY.md](SECURITY.md) for the image and map request boundaries. Allow your exact website origin in the assistant configuration; `localhost` and `127.0.0.1` are different origins. Add identity only when a capability needs it; the [authentication guide](docs/oauth.md) explains the separate website, assistant, and MCP boundaries.
 
-For a live smoke, ask for a future one-way or round-trip flight, select one returned fare in the linked App, and choose **Verify current fare**. A `partial` search result is valid when malformed provider entries were safely dropped. The terminal outcome is a verified or changed fare, never a booking.
+### Entrypoints at a glance
 
-## External MCP hosts
+| Command | Profile | Credentials |
+| --- | --- | --- |
+| `pnpm dev:web` | Guest website | None for the homepage; configured assistant for chat |
+| `pnpm dev:preview` | Expanded MCP preview | None; illustrative ancillary data |
+| `pnpm dev` | Minimal flights MCP shell | None; live tools explain configuration requirements |
+| `pnpm dev:live` | Live flights MCP | Your Nuitée key and Flights access |
+| `pnpm dev:demo` | Live flights + hotels MCP, illustrative ancillaries | Your Nuitée key and relevant access |
+| `pnpm dev:demo:embedded` | Expanded embedded-assistant server | Provider access and your configured model service |
 
-ChatGPT, Claude, Inspector, and other MCP hosts can consume the same MCP server. The host provides the conversational model, so this path requires no Assistant model key.
+## Make it yours
 
-```sh
-pnpm exec noodle connect chatgpt
-pnpm exec noodle connect claude
-pnpm exec noodle connect inspector
-```
-
-Hosts without MCP Apps support still receive bounded structured results and a readable fallback summary. Users may speak in natural city or airport names; a capable host should resolve only clear places and ask for region or country clarification when a name is ambiguous.
-
-The starter does not claim a custom widget domain. Before claiming or submitting ChatGPT App compatibility, set one real deployment-owned origin and run:
-
-```sh
-pnpm customize -- --widget-domain "$DEPLOYMENT_WIDGET_ORIGIN"
-pnpm customize:check
-pnpm exec noodle check src/live-server.ts --target chatgpt --json
-```
-
-Do not satisfy the gate with a placeholder, wildcard, path, or unrelated domain.
-
-## Embedded Assistant architecture
-
-`src/embedded-server.ts` declares the public Assistant surface over the same tool instances used by MCP hosts. `apps/web/` consumes the public embed ID and renders the primary guest website. Model settings and `NUITEE_API_KEY` remain server-side in Noodle; the browser receives neither.
-
-The older `examples/embedded-assistant-host/` application remains only as a temporary authenticated migration reference while parity and removal gates are reviewed. It is not the primary website and its synthetic local sign-in is not a production identity implementation. See [docs/EMBEDDED_ASSISTANT.md](docs/EMBEDDED_ASSISTANT.md) for the guest path and [docs/oauth.md](docs/oauth.md) for a real authenticated extension.
-
-No hosted conversation is claimed from local code or tests alone. Hosted behavior remains unproven until a separately authorized deployment and exact embed-binding verification. A real public embed ID, exact HTTPS website origin, monitored privacy link, CSP validation, budget controls, live Search → Select → Verify browser proof, and the selection-TTL smoke remain promotion evidence in [PUBLIC_RELEASE_CHECKLIST.md](PUBLIC_RELEASE_CHECKLIST.md). Deployments, access changes, hosted configuration, and budget mutations require separate exact authorization.
-
-## Customization
-
-The canonical checked-in configuration lives in `src/starter-config.ts`; root `starter.config.ts` is the public compatibility facade imported by the Next.js app. Use the deterministic customizer rather than replacing strings across the repository:
+Start with the [customization guide](docs/customization.md). The included Wayfare example keeps its own product identity, with Noodle Seed credited as its author. Its design follows the [brand guidelines](docs/brand/wayfare-brand-guidelines.md): Host Grotesk, the Wayline mark, light surfaces, rounded controls, accessible contrast, and truthful selection states. Read that contract before changing the included UI.
 
 ```sh
 pnpm customize -- \
   --brand-name "North Star Travel" \
-  --brand-mark "N" \
-  --tagline "Travel planning, made calm" \
-  --accent "#123456"
-
+  --tagline "Travel planning, made calm"
 pnpm customize:check
 ```
 
-To prepare a specific hosted website, add its exact owner-controlled HTTPS origin and decide explicitly whether loopback remains:
+Set `NEXT_PUBLIC_SITE_URL` to your exact website origin for canonical metadata. Unset/local builds are noindex. Configure your own support and legal destinations, assistant origins, and deployment settings before hosting. The [Fly guide](docs/FLY_DEPLOYMENT.md) describes opt-in deployment. Review the result in a browser after customization. The customizer preserves tool names, provider contracts, and state boundaries. Asset provenance and attribution are documented in the [visual asset ledger](docs/visual-assets/wayfare-premium-concierge.md) and [NOTICE](NOTICE).
 
-```sh
-pnpm customize -- --production-origin "https://<your-exact-domain>"
-pnpm customize:check
-```
-
-The customizer does not rename packages, server IDs, tool names, connector contracts, state handles, provider limits, or fixtures. Review light-theme contrast and browser layout after visual changes. Full constraints are in [docs/customization.md](docs/customization.md).
-
-## Architecture and security
-
-The browser never calls Nuitee. The fixed server-side connector owns the exact provider origin, path, method, API-key injection, timeout, response-size limit, and normalization boundary. Provider offer IDs stay in private caller-scoped state; browser-visible selection IDs are application-issued opaque handles valid only against that state.
-
-The shared journey is Search/Edit → Results → Verified fare review. The flight-results App uses `select_flight_offer` as an App-only helper and `verify_flight_offer` for current provider verification. Raw provider responses, arbitrary URLs, and transaction identifiers are never public output fields.
-
-Read [docs/architecture.md](docs/architecture.md), [SECURITY.md](SECURITY.md), and [docs/nuitee-flights-contract.md](docs/nuitee-flights-contract.md) before changing the network, identity, state, or provider boundary.
-
-## Quality gates
-
-Useful local commands:
+## Check your changes
 
 ```sh
 pnpm test
 pnpm test:browser
-pnpm customize:check
-pnpm --filter @nuitee-travel-starter/web test
-pnpm --filter @nuitee-travel-starter/web typecheck
-pnpm --filter @nuitee-travel-starter/web build
-pnpm --filter @nuitee-travel-starter/web test:browser
-pnpm exec noodle validate --json
-pnpm exec noodle test --json
-pnpm exec noodle tools list --json
-pnpm exec noodle check --json
-pnpm agent:check:live
-pnpm agent:check:assistant
+pnpm agent:check
+pnpm agent:check:preview
+pnpm check:web
 ```
 
-The fixture-only Chromium captures below show the current local Wayfare product: the light hybrid landing and the real linked flight-results App with fictional data. They are not live inventory or host screenshots. Their exact labels, dimensions, hashes, network boundary, and reproducible provenance are in [docs/images/README.md](docs/images/README.md).
+These commands cover fixture tests, browser components, the default and expanded-preview MCP contracts, and the website's typecheck, tests, browser tests, and build. The [CI workflow](.github/workflows/ci.yml) defines the repository gates. The build badge links to those checks; it is not a claim that a public CI run or hosted deployment has passed.
 
-| Cinematic credential-free home | Fictional flight comparison |
-| --- | --- |
-| ![Current Wayfare light hybrid home with route mark and no Assistant session before submit](docs/images/travel-home.png) | ![Current Wayfare flight-results App with fictional fares and Verify current fare](docs/images/flight-results.png) |
+Use `pnpm docs:previews` to regenerate the flight and hotel captures. Follow the [screenshot guide](docs/images/README.md) to recapture the homepage and review updated binaries.
 
-## Public-release status
+## Contribute and license
 
-This repository is licensed under the [Apache License 2.0](LICENSE), remains private, and is not being made public by these changes. Local implementation evidence does not prove hosted availability or authorize repository visibility, template status, deployment, access, budget, submission, or release changes.
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), [SUPPORT.md](SUPPORT.md), and [SECURITY.md](SECURITY.md) before opening an issue. Report vulnerabilities through the private route in the security policy; do not include secrets or vulnerability details in public issues.
 
-The complete gate inventory is in [PUBLIC_RELEASE_CHECKLIST.md](PUBLIC_RELEASE_CHECKLIST.md). Outstanding owner/legal, security-contact, generated-dependency, widget-domain, caller-state lifecycle, hosted guest-assistant, privacy, and production browser evidence must be satisfied before a public-readiness claim.
-
-## Contributing and generated guidance
-
-Start with [CONTRIBUTING.md](CONTRIBUTING.md), use the sanitized issue forms, and never place vulnerability details or secrets in a public issue. Community support and its no-SLA boundary are in [SUPPORT.md](SUPPORT.md); the monitored private security route remains an owner decision in [SECURITY.md](SECURITY.md).
-
-The `.agents/` and `.claude/` trees are generated Agent Kit guidance. [docs/generated-agent-guidance.md](docs/generated-agent-guidance.md) explains regeneration, provenance review, and public-redistribution boundaries. Review generated diffs; do not hand-edit them.
-
-Unreleased changes are summarized in [CHANGELOG.md](CHANGELOG.md). Add a version and date only at an approved release freeze.
+Wayfare is an example project by Noodle Seed. Copyright Noodle Seed. Code is licensed under [Apache 2.0](LICENSE). Third-party dependencies and assets retain their respective licenses; see [NOTICE](NOTICE) and [third-party notices](THIRD_PARTY_NOTICES.md). Included provider wordmarks are attribution, not a grant to imply endorsement of your derivative product. This starter is not an official Nuitée connector, airline partnership, or booking service.

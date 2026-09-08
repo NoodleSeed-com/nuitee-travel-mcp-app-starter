@@ -1,4 +1,4 @@
-app = "wayfare-experience"
+# Supply your own app with fly deploy --app "$FLY_APP".
 primary_region = "sin"
 kill_signal = "SIGINT"
 kill_timeout = "10s"

@@ -1,22 +1,8 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import type { HomeOutput, Itinerary, SearchOutput } from '../src/flight-schemas.js';
-import { starterConfig } from '../src/starter-config.js';
+import type { Itinerary, SearchOutput } from '../src/flight-schemas.js';
 import { FlightResultsView } from '../src/views/flight-results.js';
-import { TravelHomeView } from '../src/views/travel-home.js';
-
-const home: HomeOutput = {
-  status: 'ready',
-  brand: starterConfig.brand.name,
-  message: 'Flights are available. Tell me your route, dates, travelers, currency, and point-of-sale country to begin.',
-  domains: [
-    { name: 'Flights', availability: 'available' },
-    { name: 'Stays', availability: 'coming_soon' },
-    { name: 'Loyalty', availability: 'coming_soon' },
-    { name: 'Ground travel', availability: 'coming_soon' },
-    { name: 'Experiences', availability: 'coming_soon' },
-  ],
-  fallback: 'Cedar & Cloud Travel can search and verify flights.',
-};
+import { HotelJourney } from '../src/views/hotel-journey.js';
+import type { DemoHotelSearchOutput } from '../src/demo-schemas.js';
 
 const baseItinerary: Itinerary = {
   selectionId: 'sel_11111111111111111111111111111111',
@@ -118,9 +104,36 @@ export const search: SearchOutput = {
   itineraries,
 };
 
-export function renderWidgetPreview(name: 'home' | 'results') {
-  if (name === 'home') {
-    return renderToStaticMarkup(<TravelHomeView data={home} theme="light" onSearchPrompt={() => undefined} />);
+// Screenshot-only examples: no provider images, real properties, or live rates.
+const hotelSearch: DemoHotelSearchOutput = {
+  status: 'success',
+  dataSource: 'illustrative',
+  disclosure: 'Fictional stays and prices for this preview. Nothing is booked or held.',
+  message: 'Three fictional stays found.',
+  fallback: 'Three fictional stays in Cedar Bay. This preview contains no live inventory.',
+  searchId: 'hsearch_11111111111111111111111111111111',
+  searchContext: {
+    destination: 'Cedar Bay', checkInDate: '2030-04-20', checkOutDate: '2030-04-23',
+    adults: 2, children: 0, rooms: 1, currency: 'CAD',
+  },
+  hotels: [
+    { name: 'Cedar House', neighborhood: 'Old harbour', nightly: 180, room: 'Garden room' },
+    { name: 'Cloud Harbour Inn', neighborhood: 'Waterfront', nightly: 215, room: 'Harbour room' },
+    { name: 'The Juniper', neighborhood: 'Arts quarter', nightly: 195, room: 'Courtyard room' },
+  ].map((hotel, index) => ({
+    selectionId: `hsel_${String(index + 1).repeat(32)}`,
+    dataSource: 'illustrative', name: hotel.name, city: 'Cedar Bay', countryCode: 'CA',
+    neighborhood: hotel.neighborhood, description: 'A fictional stay used only to demonstrate the comparison interface.',
+    roomName: hotel.room, category: 4, amenities: ['Wi-Fi', 'Breakfast'], nights: 3, rooms: 1,
+    nightlyPrice: { amount: hotel.nightly, currency: 'CAD' },
+    staySubtotal: { amount: hotel.nightly * 3, currency: 'CAD' },
+    taxesAndFeesIncluded: false, policySummary: 'Example terms: free cancellation until 48 hours before arrival.',
+  })),
+};
+
+export function renderWidgetPreview(name: 'results' | 'hotels') {
+  if (name === 'hotels') {
+    return renderToStaticMarkup(<HotelJourney result={hotelSearch} displayMode="inline" onAdd={() => undefined} />);
   }
   return renderToStaticMarkup(
     <FlightResultsView

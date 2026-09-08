@@ -4,6 +4,15 @@ Notable changes to this starter will be recorded here. The repository has not pu
 
 ## Unreleased
 
+- Prepare a reusable public source template with a clean, allowlisted export,
+  private-history exclusion, reproducible candidate CI, and current product screenshots.
+- Document live flight/hotel reads, illustrative ancillary widgets and explicit
+  unsupported transactions; add source licensing and dependency/asset attribution.
+- Make website origins and Fly deployment adopter-owned and opt-in.
+- Update Next.js and affected transitive dependencies to address the reviewed
+  dependency advisories while preserving the pinned Noodle runtime.
+
+
 - Update the exact Noodle compatibility set to `@noodleseed/one` 0.145.1 and
   `@noodleseed/assistant` 1.27.0 for the current public Assistant service.
 - Refresh the fictional guest website as Wayfare with a centered conversation

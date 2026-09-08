@@ -1,7 +1,8 @@
 import type { MetadataRoute } from 'next';
-import { absoluteUrl } from '../src/lib/seo-config';
+import { absoluteUrl, SEO_INDEXABLE } from '../src/lib/seo-config';
 
 export default function robots(): MetadataRoute.Robots {
+  if (!SEO_INDEXABLE) return { rules: [{ userAgent: '*', disallow: '/' }] };
   return {
     rules: [{
       userAgent: '*',

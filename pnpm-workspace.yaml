@@ -5,6 +5,13 @@ packages:
 allowBuilds:
   sharp: true
 
+# Keep advisory fixes bounded to vulnerable transitive versions. Next 16.3.4
+# supplies patched PostCSS and Sharp directly; no overrides are needed for them.
+overrides:
+  'fast-uri@>=3.0.0 <3.1.6': '3.1.6'
+  'qs@>=2.2.5 <6.16.0': '6.16.0'
+  '@ai-sdk/provider-utils@>=4.0.0-beta.10 <4.0.33': '4.0.33'
+
 # Hold newly published dependencies for 24 hours by default. These two exact
 # Noodle versions were reviewed as one compatibility set during the controlled
 # upgrade; future Noodle updates must update the pins, lockfile, Agent Kit, and

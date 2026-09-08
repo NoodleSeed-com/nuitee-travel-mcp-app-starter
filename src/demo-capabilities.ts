@@ -48,18 +48,18 @@ function searchDemoExperiences(viewPolicy: Readonly<Record<string, unknown>>) {
         experienceAliases: DEMO_EXPERIENCE_ALIASES,
       });
       return {
-        status: gateway.experienceResult.status,
-        dataSource: gateway.experienceResult.dataSource,
-        source: gateway.experienceResult.source,
-        isFictional: gateway.experienceResult.isFictional,
-        disclosure: gateway.experienceResult.disclosure,
-        message: gateway.experienceResult.message,
-        fallback: gateway.experienceResult.fallback,
-        searchId: gateway.experienceResult.searchId,
-        searchContext: gateway.experienceResult.searchContext,
-        supportedDestination: gateway.experienceResult.supportedDestination,
-        emptyReason: gateway.experienceResult.emptyReason.optional(),
-        experiences: gateway.experienceResult.experiences,
+        status: gateway['experienceResult.status'],
+        dataSource: gateway['experienceResult.dataSource'],
+        source: gateway['experienceResult.source'],
+        isFictional: gateway['experienceResult.isFictional'],
+        disclosure: gateway['experienceResult.disclosure'],
+        message: gateway['experienceResult.message'],
+        fallback: gateway['experienceResult.fallback'],
+        searchId: gateway['experienceResult.searchId'],
+        searchContext: gateway['experienceResult.searchContext'],
+        supportedDestination: gateway['experienceResult.supportedDestination'],
+        emptyReason: gateway['experienceResult.emptyReason'].optional(),
+        experiences: gateway['experienceResult.experiences'],
       };
     },
     viewTitle: 'Fictional experience ideas',
@@ -91,20 +91,20 @@ function searchDemoHotels(viewPolicy: Readonly<Record<string, unknown>>) {
         handle: 'demo_hotel_selections',
         expectedRevision: current.revision,
         value: {
-          searchId: gateway.result.searchId,
-          updatedAt: context.temporal.instant,
+          searchId: gateway['result.searchId'],
+          updatedAt: context['temporal.instant'],
           records: gateway.records,
         },
       });
       return {
-        status: gateway.result.status,
-        dataSource: gateway.result.dataSource,
-        disclosure: gateway.result.disclosure,
-        message: gateway.result.message,
-        fallback: gateway.result.fallback,
-        searchId: gateway.result.searchId,
-        searchContext: gateway.result.searchContext,
-        hotels: gateway.result.hotels,
+        status: gateway['result.status'],
+        dataSource: gateway['result.dataSource'],
+        disclosure: gateway['result.disclosure'],
+        message: gateway['result.message'],
+        fallback: gateway['result.fallback'],
+        searchId: gateway['result.searchId'],
+        searchContext: gateway['result.searchContext'],
+        hotels: gateway['result.hotels'],
       };
     },
     viewTitle: 'Hotel results',
@@ -127,28 +127,28 @@ function searchLiveHotels(viewPolicy: Readonly<Record<string, unknown>>) {
     fulfil: ({ input, context, connectors }) => {
       const gateway = connectors.hotels.execute({
         search: input,
-        requestedAt: context.temporal.instant,
+        requestedAt: context['temporal.instant'],
       });
       const current = connectors.state.readState({ handle: 'demo_hotel_selections' });
       connectors.state.patchState({
         handle: 'demo_hotel_selections',
         expectedRevision: current.revision,
         value: {
-          searchId: gateway.result.searchId,
-          updatedAt: context.temporal.instant,
+          searchId: gateway['result.searchId'],
+          updatedAt: context['temporal.instant'],
           records: gateway.records,
         },
       });
       return {
-        status: gateway.result.status,
-        dataSource: gateway.result.dataSource,
-        disclosure: gateway.result.disclosure,
-        message: gateway.result.message,
-        fallback: gateway.result.fallback,
-        searchId: gateway.result.searchId,
-        searchContext: gateway.result.searchContext,
-        hotels: gateway.result.hotels,
-        error: gateway.result.error,
+        status: gateway['result.status'],
+        dataSource: gateway['result.dataSource'],
+        disclosure: gateway['result.disclosure'],
+        message: gateway['result.message'],
+        fallback: gateway['result.fallback'],
+        searchId: gateway['result.searchId'],
+        searchContext: gateway['result.searchContext'],
+        hotels: gateway['result.hotels'],
+        error: gateway['result.error'],
       };
     },
     viewTitle: 'Current hotel results',
@@ -193,15 +193,15 @@ function compareDemoRewardFlights(viewPolicy: Readonly<Record<string, unknown>>)
         rewardCatalog: DEMO_REWARD_FLIGHT_CATALOG,
       });
       return {
-        status: gateway.rewardResult.status,
-        dataSource: gateway.rewardResult.dataSource,
-        disclosure: gateway.rewardResult.disclosure,
-        message: gateway.rewardResult.message,
-        fallback: gateway.rewardResult.fallback,
-        searchId: gateway.rewardResult.searchId,
-        searchContext: gateway.rewardResult.searchContext,
-        pointsContext: gateway.rewardResult.pointsContext,
-        options: gateway.rewardResult.options,
+        status: gateway['rewardResult.status'],
+        dataSource: gateway['rewardResult.dataSource'],
+        disclosure: gateway['rewardResult.disclosure'],
+        message: gateway['rewardResult.message'],
+        fallback: gateway['rewardResult.fallback'],
+        searchId: gateway['rewardResult.searchId'],
+        searchContext: gateway['rewardResult.searchContext'],
+        pointsContext: gateway['rewardResult.pointsContext'],
+        options: gateway['rewardResult.options'],
       };
     },
     viewTitle: 'Illustrative reward flights',
@@ -228,15 +228,15 @@ function compareDemoTravelInsurance(viewPolicy: Readonly<Record<string, unknown>
         insuranceCatalog: DEMO_INSURANCE_PLAN_CATALOG,
       });
       return {
-        status: gateway.insuranceResult.status,
-        dataSource: gateway.insuranceResult.dataSource,
-        disclosure: gateway.insuranceResult.disclosure,
-        message: gateway.insuranceResult.message,
-        fallback: gateway.insuranceResult.fallback,
-        comparisonId: gateway.insuranceResult.comparisonId,
-        searchContext: gateway.insuranceResult.searchContext,
-        assumptions: gateway.insuranceResult.assumptions,
-        plans: gateway.insuranceResult.plans,
+        status: gateway['insuranceResult.status'],
+        dataSource: gateway['insuranceResult.dataSource'],
+        disclosure: gateway['insuranceResult.disclosure'],
+        message: gateway['insuranceResult.message'],
+        fallback: gateway['insuranceResult.fallback'],
+        comparisonId: gateway['insuranceResult.comparisonId'],
+        searchContext: gateway['insuranceResult.searchContext'],
+        assumptions: gateway['insuranceResult.assumptions'],
+        plans: gateway['insuranceResult.plans'],
       };
     },
     viewTitle: 'Illustrative travel protection',
@@ -267,14 +267,14 @@ function reviewDemoTrip(viewPolicy: Readonly<Record<string, unknown>>) {
         loyalty: getSyntheticLoyaltyOverview(),
       });
       return {
-        status: gateway.review.status,
-        dataSource: gateway.review.dataSource,
-        disclosure: gateway.review.disclosure,
-        fallback: gateway.review.fallback,
-        flight: gateway.review.flight.optional(),
-        stay: gateway.review.stay.optional(),
-        loyalty: gateway.review.loyalty,
-        missing: gateway.review.missing,
+        status: gateway['review.status'],
+        dataSource: gateway['review.dataSource'],
+        disclosure: gateway['review.disclosure'],
+        fallback: gateway['review.fallback'],
+        flight: gateway['review.flight'].optional(),
+        stay: gateway['review.stay'].optional(),
+        loyalty: gateway['review.loyalty'],
+        missing: gateway['review.missing'],
       };
     },
     viewTitle: 'Trip and rewards review',
@@ -305,15 +305,15 @@ function selectDemoHotel() {
         selectionId: input.selectionId,
         hotelState: states.hotelState.optional(),
       });
-      when(gateway.selection.status.equals('selected'), () => connectors.state.patchState({
+      when(gateway['selection.status'].equals('selected'), () => connectors.state.patchState({
         handle: 'demo_hotel_selections',
         expectedRevision: current.revision,
         value: gateway.nextHotelState,
       }));
       return {
-        status: gateway.selection.status,
-        message: gateway.selection.message,
-        selectionId: gateway.selection.selectionId.optional(),
+        status: gateway['selection.status'],
+        message: gateway['selection.message'],
+        selectionId: gateway['selection.selectionId'].optional(),
       };
     },
   });

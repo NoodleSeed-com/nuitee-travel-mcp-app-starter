@@ -1,0 +1,49 @@
+name: Public starter candidate
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+      - name: Export only approved source from the candidate commit
+        run: node scripts/export-public-template.mjs --out "$RUNNER_TEMP/public-starter"
+      - name: Establish fresh local audit history
+        working-directory: ${{ runner.temp }}/public-starter
+        run: |
+          git init --quiet
+          git config user.name 'Public template audit'
+          git config user.email 'public-template-audit@example.invalid'
+          git add .
+          git commit --quiet -m 'Audit public candidate'
+      - name: Install without developer credentials
+        working-directory: ${{ runner.temp }}/public-starter
+        run: pnpm install --frozen-lockfile
+      - name: Audit public contents, history, guidance, licenses and advisories
+        working-directory: ${{ runner.temp }}/public-starter
+        run: pnpm audit:release
+      - name: Validate, smoke, test and build the exported application
+        working-directory: ${{ runner.temp }}/public-starter
+        run: pnpm ci:offline
+      - name: Install browser for fictional UI checks
+        working-directory: ${{ runner.temp }}/public-starter
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Check widget and website browser behavior
+        working-directory: ${{ runner.temp }}/public-starter
+        run: pnpm check:browser

@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Describe the user or developer outcome before proposing implementation. The Version-one boundary excludes booking, payment, cancellations, hotels, loyalty, cars, arbitrary HTTP, and unfinished tools.
+        Describe the user or developer outcome before proposing implementation. The starter supports live flight and hotel reads plus clearly illustrative travel widgets. Booking, payment, cancellations, real loyalty transactions, cars and arbitrary HTTP remain unsupported.
   - type: textarea
     id: problem
     attributes:

@@ -1,6 +1,34 @@
 import type { Metadata } from 'next';
 
-export const SEO_ORIGIN = new URL('https://gowayfare.io');
+const LOCAL_SITE_ORIGIN = 'http://localhost:3000';
+
+/** A canonical origin is public build configuration, never inferred from request headers. */
+export function resolveSiteConfig(value: string | undefined) {
+  if (value === undefined || value === '') {
+    return { origin: new URL(LOCAL_SITE_ORIGIN), indexable: false };
+  }
+  const invalid = () => new Error(
+    'NEXT_PUBLIC_SITE_URL must be an exact HTTPS origin or an HTTP loopback origin with an explicit port; omit paths, credentials, trailing slashes, queries, and fragments.',
+  );
+  let origin: URL;
+  try {
+    origin = new URL(value);
+  } catch {
+    throw invalid();
+  }
+  const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname);
+  if (value !== origin.origin || origin.username || origin.password || value.includes('*') ||
+    !['http:', 'https:'].includes(origin.protocol) ||
+    (origin.protocol === 'http:' && (!loopback || !origin.port))) {
+    throw invalid();
+  }
+  return { origin, indexable: !loopback };
+}
+
+const siteConfig = resolveSiteConfig(process.env.NEXT_PUBLIC_SITE_URL);
+export const SEO_ORIGIN = siteConfig.origin;
+export const SEO_INDEXABLE = siteConfig.indexable;
+export const SEO_ROBOTS = { index: SEO_INDEXABLE, follow: SEO_INDEXABLE } as const;
 export const SEO_SITE_NAME = 'Wayfare';
 export const SEO_DEFAULT_TITLE = 'Wayfare — Plan your trip in one conversation';
 export const SEO_DESCRIPTION =
@@ -17,8 +45,8 @@ export function absoluteUrl(pathname: string) {
   return new URL(pathname, SEO_ORIGIN).href;
 }
 
-const indexable = { index: true, follow: true } as const;
-const privatePreview = { index: false, follow: true } as const;
+const indexable = SEO_ROBOTS;
+const privatePreview = { index: false, follow: SEO_INDEXABLE } as const;
 const conversational = { index: false, follow: false } as const;
 
 export const routeMetadata = {

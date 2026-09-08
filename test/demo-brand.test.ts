@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { travelCompanionDemoConfig } from '../src/demo-config.js';
+import { starterConfig } from '../src/starter-config.js';
 
 function relativeLuminance(hex: string) {
   const channels = hex
@@ -30,7 +31,29 @@ describe('Wayfare expanded travel brand contract', () => {
     expect(travelCompanionDemoConfig.brand).toMatchObject({
       name: 'Wayfare',
       assistantName: 'Wayfare travel assistant',
-      tagline: 'Travel, planned around you.',
+      tagline: 'One conversation. The whole journey.',
+    });
+  });
+
+  it('keeps portable brand defaults aligned with the approved Wayfare light palette', () => {
+    expect(starterConfig.brand).toMatchObject({
+      assistantName: 'Wayfare travel assistant',
+      tagline: travelCompanionDemoConfig.brand.tagline,
+      accent: '#0D0D0D',
+      signal: '#0D0D0D',
+      canvas: '#FFFFFF',
+      ink: '#0D0D0D',
+      muted: '#5D5D5D',
+      boundary: '#E8E8E8',
+    });
+    expect(travelCompanionDemoConfig.brand.palette.light).toMatchObject({
+      primary: starterConfig.brand.accent,
+      focus: starterConfig.brand.ink,
+      canvas: starterConfig.brand.canvas,
+      ink: starterConfig.brand.ink,
+      muted: starterConfig.brand.muted,
+      boundary: starterConfig.brand.boundary,
+      surfaceTint: '#F7F7F7',
     });
   });
 

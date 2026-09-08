@@ -8,4 +8,4 @@ The country and currency are convenience defaults, not verified identity, author
 
 If coarse-country resolution is unavailable, fails, or returns an unsupported country, Wayfare falls back quietly to the browser locale and then to `USD`. Flight search remains fully usable in every case, and no permission prompt is shown.
 
-The public `/privacy` page describes the guest, assistant, Fly.io, IPinfo Lite, Noodle Seed, model-provider, and Nuitee data flow. It is a product draft that must receive deployment-owner and legal review before public release.
+The public `/privacy` page describes the guest, assistant, Fly.io, IPinfo Lite, Noodle Seed, model-provider, and Nuitee data flow. It is a product draft that must receive deployment-owner and legal review before exposing an adopter's hosted service to users. Source-template publication does not approve a deployed privacy policy.

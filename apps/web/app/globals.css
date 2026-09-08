@@ -1849,10 +1849,9 @@ code {
 
   .travel-composer__input {
     font-size: max(16px, 1rem);
-  }
-
-  .travel-composer__input:placeholder-shown {
-    height: 44px;
+    /* Content sizing lets wrapped placeholders grow at text zoom. Reduced
+       padding and the shared 44px minimum keep the mobile row compact. */
+    padding-block: 0.3rem;
   }
 
   .destination-inspiration {

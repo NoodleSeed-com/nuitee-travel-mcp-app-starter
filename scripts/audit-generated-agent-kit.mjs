@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 function gitLines(args) {
   return execFileSync('git', args, {
@@ -15,12 +16,9 @@ const packageFiles = [...tracked]
   .filter((path) => /^(?:\.agents|\.claude)\/skills\/noodle-seed\/examples\/[^/]+\/package\.json$/.test(path))
   .sort();
 
-if (packageFiles.length === 0) {
-  process.stdout.write(`${JSON.stringify({
-    ok: false,
-    error: { code: 'generated_examples_missing' },
-  })}\n`);
-  process.exit(1);
+if (packageFiles.length === 0 && ![...tracked].some((path) => /^(?:\.agents|\.claude)\//.test(path))) {
+  process.stdout.write(`${JSON.stringify({ ok: true, data: { packageFiles: 0, managedKits: 0, issues: 0, distribution: 'no-bundled-generated-guidance' } })}\n`);
+  process.exit(0);
 }
 
 const issues = [];
@@ -64,7 +62,13 @@ for (const managed of managedRoots) {
 
 for (const path of packageFiles) {
   try {
-    JSON.parse(readFileSync(path, 'utf8'));
+    const pkg = JSON.parse(readFileSync(path, 'utf8'));
+    const dependencies = { ...pkg.dependencies, ...pkg.devDependencies, ...pkg.optionalDependencies };
+    for (const [name, version] of Object.entries(dependencies)) {
+      if (typeof version !== 'string' || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) issues.push({ path, code: 'mutable_dependency', dependency: name });
+    }
+    if (typeof pkg.packageManager !== 'string' || !/^pnpm@\d+\.\d+\.\d+$/.test(pkg.packageManager)) issues.push({ path, code: 'package_manager_not_pinned' });
+    if (!existsSync(join(dirname(path), 'pnpm-lock.yaml'))) issues.push({ path, code: 'example_lockfile_missing' });
   } catch {
     issues.push({ path, code: 'invalid_package_json' });
     continue;
@@ -91,7 +95,7 @@ if (issues.length > 0) {
     ok: false,
     error: {
       code: 'generated_example_provenance_failed',
-      message: 'Bundled Agent Kit examples do not match their Noodle-managed provenance manifests.',
+      message: 'Bundled Agent Kit examples fail managed provenance or reproducible-install requirements.',
       issues,
     },
   })}\n`);

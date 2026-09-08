@@ -1,6 +1,8 @@
 # Customization guide
 
-Customize the existing flights-first product before adding scope. Keep Wayfare fictional unless you have authority to replace it with your own brand.
+Wayfare is an example project by Noodle Seed. Adapt its supported flight, hotel
+and fictional experience flows to your own product, keeping the source and
+transaction boundaries clear.
 
 ## Wayfare image system
 
@@ -16,8 +18,8 @@ positions, priority behavior, and responsive crop checks when replacing one.
 The default hero copy is intentionally limited to one H1. Its empty composer
 cycles short, visual-only sample requests. Keep the samples within supported
 travel intent, stop them on focus or text entry, and preserve the static
-reduced-motion fallback. The surrounding ocean BorderBeam remains active while
-the composer is empty and stops after the traveler enters text; its submit
+reduced-motion fallback. The surrounding ocean BorderBeam runs only while the agent is responding
+and stays still when idle, focused, or showing an error; its submit
 control remains an accessible arrow-only button. The compact header exposes only currency and the menu
 beside the Wayfare lockup; do not restore direct planning or developer links to
 that row.
@@ -41,9 +43,8 @@ Font License 1.1 (`OFL-1.1`) and includes its license text. Code and command
 samples retain a semantic monospace stack.
 
 If you replace Host Grotesk, update the website package and import,
-browser-computed font tests, and dependency-license evidence together. MCP App
-typography is deferred to Wahab's later implementation and must be reconciled
-against the canonical brand guideline at that point. The bundled license
+browser-computed font tests, and dependency-license evidence together. Repository-owned MCP Apps follow the canonical brand guideline, including its
+approved host typography and theme adaptation for ChatGPT. The bundled license
 record is evidence of the current dependency metadata, not a completed legal
 approval: copyright, NOTICE treatment, dependency provenance/compatibility,
 and public redistribution still require owner/legal review before release.
@@ -85,7 +86,9 @@ public-distribution review.
 
 ## Branding
 
-The canonical customization source is `src/starter-config.ts`. Root `starter.config.ts` is the public compatibility facade consumed by `apps/web/`; it re-exports the same object and must not define a second brand. Use the deterministic command instead of replacing brand text across the repository:
+The baseline MCP configuration is `src/starter-config.ts`; root
+`starter.config.ts` re-exports it. Use the deterministic command for that
+profile's presentation and the shared deployment coordinates:
 
 ```sh
 pnpm customize -- \
@@ -99,7 +102,16 @@ pnpm customize -- \
 pnpm customize:check
 ```
 
-The command updates the canonical `src/starter-config.ts` file, writes it atomically, and is idempotent. It accepts only bounded presentation values and never reads credentials or environment files. The MCP server and Apps import the canonical module; the primary Next.js website reaches that same value through root `starter.config.ts`. The website is intentionally light-only and consumes the brand through direct CSS custom properties in `apps/web/app/globals.css`; it does not use a Tailwind mapping. Review light-theme contrast after changing colors; `surfaceDark` remains available to external hosts that consume the portable MCP brand kit.
+The command writes `src/starter-config.ts` atomically and is idempotent. It
+accepts bounded presentation values and never reads credentials or environment
+files. It does not rebrand the whole example website: expanded MCP branding is
+in `src/demo-config.ts`, and the website's deliberate Wayfare identity is in
+`apps/web/src/lib/site-config.ts` and `apps/web/app/globals.css`. Update those,
+the Wayline assets, metadata and screenshot evidence together for an independent
+brand. The website remains light-only and uses direct CSS custom properties,
+not a Tailwind mapping. `surfaceDark` is a neutral fallback for
+external hosts that consume the portable MCP brand kit. Review contrast after
+changing any token.
 
 To prepare the primary guest Assistant surface for one hosted website, add only that exact deployment-owned origin:
 
@@ -114,19 +126,19 @@ The customized runtime stays one bounded pipeline:
 ```text
 Next.js browser
   → public Assistant surface using the configured exact origin
-  → shared travel MCP and linked Apps using the same brand config
+  → shared travel MCP and linked Apps using the selected profile's branding
   → server-side Nuitee connector
   → Nuitee Flights API
 ```
 
-The browser receives only the public embed ID and public service origin. Branding changes never move `NUITEE_API_KEY`, model settings, Assistant client credentials, provider identifiers, or raw provider data into the website.
+The browser receives the public embed ID, public service origin, and public website origin. Branding changes never move `NUITEE_API_KEY`, model settings, Assistant client credentials, provider identifiers, or raw provider data into the website.
 
 The command deliberately does not rename the package, server ID, tool names, Nuitee connector, state handles, provider limits, fixture carriers, or historical product documents. Those identifiers and security boundaries are not consumer branding.
 
 - Use your own name, short copy, and restrained accent token; keep structural surfaces and text host-neutral.
 - `apps/web/src/components/wayfare-mark.tsx` owns the exact Wayline SVG mark. Preserve its `64 × 64` geometry, continuous rounded route path, two endpoint circles, `currentColor` treatment, and accessible wordmark pairing; do not replace it with an angular W, generated raster, airline lookalike, or decorative ambient route motif.
 - Let the host-supplied app identity carry the logo. Do not repeat a brand mark inside a compact response widget.
-- Keep bundled Host Grotesk for Next.js non-code UI, the compact type scale, and semantic monospace only for code. The website uses the exact light-only Wayfare tokens and does not inherit the operating system's dark preference. Use only the installed Heroicons React package for its functional interface iconography: `24/outline` is the default set, `20/solid` is reserved for compact status emphasis, and icon-only controls retain an accessible name and a 44px target. Do not add another icon library or hand-author a utility SVG. The repository-owned Wayline logo is the sole repository-authored SVG brand-asset exception; unmodified official third-party wordmarks may appear only for truthful identity attribution. MCP App visual implementation is deferred to Wahab and must follow the same canonical guideline when undertaken.
+- Keep bundled Host Grotesk for Next.js non-code UI, the compact type scale, and semantic monospace only for code. The website uses the exact light-only Wayfare tokens and does not inherit the operating system's dark preference. Use only the installed Heroicons React package for its functional interface iconography: `24/outline` is the default set, `20/solid` is reserved for compact status emphasis, and icon-only controls retain an accessible name and a 44px target. Do not add another icon library or hand-author a utility SVG. The repository-owned Wayline logo is the sole repository-authored SVG brand-asset exception; unmodified official third-party wordmarks may appear only for truthful identity attribution. MCP App visual changes must follow the same canonical guideline, including its approved host adaptation.
 
 The complete normative system is in the
 [Wayfare brand guidelines](brand/wayfare-brand-guidelines.md). Coding agents
@@ -148,6 +160,29 @@ must read it before designing, implementing, or reviewing a user-facing change.
   paths, query strings, and fragments. The committed default remains `null`.
 
 Search fixtures must remain clearly fictional. Live output may show the actual carrier name, code, and allowlisted Nuitee-hosted airline image returned by Nuitee, but that is inventory attribution—not a bundled brand partnership.
+
+## Website origin and hosting
+
+Set `NEXT_PUBLIC_SITE_URL` in `apps/web/.env.local` before a production build to
+your exact website origin, for example `https://<your-exact-domain>` with the
+placeholder replaced. The parser rejects trailing slashes, paths, queries,
+fragments, credentials, wildcards, and non-loopback HTTP. Metadata, social URLs,
+JSON-LD, robots, and sitemap share this origin. Without it the site uses
+`http://localhost:3000`, marks pages noindex, disallows crawling, and emits an
+empty sitemap. An explicit local origin is also noindex. Public build variables
+must be supplied when building, and changing them requires a rebuild.
+
+This website setting does not change Assistant access. Use the exact-origin
+customizer above and separately apply your authorized Noodle hosted
+configuration. The template contains no owner-specific canonical redirect;
+configure any custom-domain redirects for your own domains.
+
+Fly deployment is optional. `fly.toml` has no app identity; supply your own
+`--app` on every command. CI deploys only after its quality gate and only when
+the repository variable `ENABLE_FLY_DEPLOY` is exactly `true`, with configured
+`FLY_APP`, `FLY_DEPLOY_URL`, public Assistant coordinates, and a secret deploy
+token. Forking or merging does not enable deployment. See
+[FLY_DEPLOYMENT.md](FLY_DEPLOYMENT.md) for the complete adopter-owned setup.
 
 ## Tool descriptions and inputs
 
@@ -223,6 +258,6 @@ Only then register the new tool and change the home domain from “Coming soon.�
 
 ## Guest website and optional identity
 
-`apps/web/` is the primary guest website and `src/embedded-server.ts` selects the shared server factory's public Assistant mode. The committed allowlist contains only the exact Next.js loopback origin. Before a hosted deployment, configure one real HTTPS origin, decide explicitly whether loopback remains, and follow [EMBEDDED_ASSISTANT.md](EMBEDDED_ASSISTANT.md).
+`apps/web/` is the primary guest website and `src/embedded-server.ts` selects the shared server factory's public Assistant mode. The committed allowlist contains only the exact Next.js loopback origins `http://localhost:3000` and `http://localhost:3001`. Before a hosted deployment, configure one real HTTPS origin, decide explicitly whether loopback remains, and follow [EMBEDDED_ASSISTANT.md](EMBEDDED_ASSISTANT.md).
 
 Do not create an embedded-only copy of the flight tools or move model/Nuitee credentials into the browser. The public embed ID is intentionally non-secret; an Assistant client secret is not. If a real identity-bound capability later needs website login and backend session exchange, follow [oauth.md](oauth.md). Do not add a disabled login control or reuse the synthetic identity from `examples/embedded-assistant-host/`.
