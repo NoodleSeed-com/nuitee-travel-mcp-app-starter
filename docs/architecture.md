@@ -1,4 +1,7 @@
-# Architecture
+# Wayfare architecture
+
+Wayfare is an example project by Noodle Seed. The Wayfare identity names the
+travel experience; Noodle Seed is its author and MCP/assistant foundation.
 
 ## Primary runtime shape
 
@@ -32,8 +35,8 @@ one general composer, so capability choice stays inside the agent rather than
 in a pre-conversation menu. The hero keeps only the H1 over the layered image;
 idle, empty input examples are visual-only typewriter prompts that stop on
 focus or input and resolve to one static prompt for reduced motion. Its
-blue-hour BorderBeam remains active while the homepage composer is empty and
-stops after text entry; the arrow-only submit control keeps the action compact.
+blue-hour BorderBeam appears only while the agent is submitting or responding;
+idle and focused composers stay static, and the arrow-only submit control keeps the action compact.
 The header
 keeps only the Wayfare lockup, currency, and menu visible; planning and
 developer navigation remain keyboard-accessible inside that menu. A single
@@ -62,6 +65,7 @@ The website admits only these exact linked-App identities:
 - `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget`;
 - `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget`;
 - `search_hotels` + `ui://nuitee_travel_mcp_app_starter/search_hotels_widget`;
+- `search_experiences` + `ui://nuitee_travel_mcp_app_starter/search_experiences_widget`;
 - `open_loyalty` + `ui://nuitee_travel_mcp_app_starter/open_loyalty_widget`;
 - `compare_reward_flights` + `ui://nuitee_travel_mcp_app_starter/compare_reward_flights_widget`;
 - `review_trip` + `ui://nuitee_travel_mcp_app_starter/review_trip_widget`; and
@@ -90,11 +94,11 @@ exactly:
 The last helper remains `visibility: ['app']`; it is available to the trusted linked App bridge but is not offered to the model as a conversational tool.
 
 The expanded `src/demo-embedded-server.ts` profile reuses those flight
-capabilities and adds five model-visible read-only tools—`search_hotels`,
-`open_loyalty`, `compare_reward_flights`, `compare_travel_insurance`, and
+capabilities and adds six model-visible read-only tools—`search_hotels`,
+`search_experiences`, `open_loyalty`, `compare_reward_flights`, `compare_travel_insurance`, and
 `review_trip`—plus App-only `select_hotel`. In live and embedded profiles, `search_hotels` uses the fixed Nuitee
 `POST /v3.0/hotels/rates` connector. `src/demo-preview-server.ts` is the
-credential-free fictional alternative. Rewards, reward flights and protection
+credential-free fictional alternative. Experiences, rewards, reward flights and protection
 remain illustrative compute; they do not access accounts, redeem points or
 purchase policies. Hotel and flight selections are not bookings.
 
@@ -108,7 +112,7 @@ Current trip stays inside the conversation. Local proof is not hosted proof.
 | --- | --- | --- | --- |
 | Primary website | `apps/web/` | Public embed ID and optional public service origin | Guest chat-first core landing plus optional expanded illustrative views |
 | Public Assistant MCP | `src/embedded-server.ts` | Nuitee key plus operator-provided Assistant model settings in Noodle | Anonymous Assistant sessions over the exact public allowlist |
-| Expanded Assistant | `src/demo-embedded-server.ts` | Same hosted boundaries as the public Assistant | Current flights and hotels plus illustrative rewards and travel protection |
+| Expanded Assistant | `src/demo-embedded-server.ts` | Same hosted boundaries as the public Assistant | Current flights and hotels plus fictional experiences, rewards and travel protection |
 | External MCP baseline | `src/server.ts` | None | Credential-free home and explicit live-tool configuration errors |
 | Expanded fictional preview | `src/demo-preview-server.ts` | None | Fictional hotel/ancillary UI; flight tools report missing configuration, no provider fallback |
 | Expanded live MCP | `src/demo-live-server.ts` | `NUITEE_API_KEY` | Provider-backed flights and hotels plus illustrative ancillary views |
@@ -145,6 +149,27 @@ Deterministic local browser evidence proves this composition only against a loop
 10. Validated planning and search results drive the compact Current trip summary inside the conversation. The summary never parses Assistant prose or stores identifiers.
 
 If validation or the provider fails, the application returns bounded sanitized state and consults no fixture. A valid empty result clears stale route projection and reports no fares found.
+
+## Fictional experience discovery
+
+The expanded preview, live, and embedded profiles all register the same
+`search_experiences` tool. `src/experience-fixtures.ts` supplies a deterministic
+Lisbon/Tokyo catalog; this tool performs no provider HTTP request. Exact stay
+dates and party size shape sample slots. Optional interest or step-free filters
+apply only when requested. Unsupported destinations and filters with no matches
+produce explicit empty results instead of invented replacement inventory.
+
+Every result carries `dataSource: illustrative`, `source: WAYFARE_DEMO`, and
+`isFictional: true`. The linked `ExperienceResultsView` offers a carousel,
+details, a two-item comparison, and a conversational follow-up. View state and
+optional model context track inspection/comparison only. There is no server-side
+experience selection, save-to-trip tool, admission check, reservation, or booking.
+`review_trip` continues to resolve flight and hotel selections only.
+
+The widget's fixed decorative photos load from `https://images.unsplash.com`
+under its resource-only CSP. They do not validate a fictional operator or its
+inventory. This ordinary image traffic is separate from the compute tool and
+can disclose request metadata to the image host; see [SECURITY.md](../SECURITY.md).
 
 ## Selection and verification data flow
 

@@ -259,7 +259,7 @@ describe('public repository contracts', () => {
     expect(architecture).toContain('capability choice stays inside the agent');
     expect(customization).toContain('passive destination inspiration');
     expect(companion).toContain('one natural-language starting composer');
-    expect(companion).toContain('Flights remain provider-backed');
+    expect(companion).toContain('Flights and stays are provider-backed in the expanded live profile');
     expect(activeDocs).not.toMatch(/offers accessible entry points for each|choose a planning view/i);
     expect(spec).toContain('Expanded live and');
     expect(spec).toContain('provider-backed hotel search');

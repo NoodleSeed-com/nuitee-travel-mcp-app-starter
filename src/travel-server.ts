@@ -635,7 +635,7 @@ export function createTravelServer(
   const brand = demo ? travelCompanionDemoConfig.brand : starterConfig.brand;
   const options = live
     ? {
-        title: demo ? 'Wayfare Travel Companion' : 'Nuitee Travel MCP App Starter',
+        title: demo ? 'Wayfare Travel Companion' : 'Wayfare Flight Starter',
         version: '0.1.0',
         agentGuide: demo ? travelCompanionDemoAgentGuide : travelAgentGuide,
         instructions: demo
@@ -681,7 +681,7 @@ export function createTravelServer(
         ...(assistant ? { assistant } : {}),
       }
     : {
-        title: demo ? 'Wayfare Travel Companion' : 'Nuitee Travel MCP App Starter',
+        title: demo ? 'Wayfare Travel Companion' : 'Wayfare Flight Starter',
         version: '0.1.0',
         agentGuide: demo ? travelCompanionDemoAgentGuide : travelAgentGuide,
         instructions:

@@ -1,6 +1,8 @@
 # Customization guide
 
-Customize the existing flights-first product before adding scope. Keep Wayfare fictional unless you have authority to replace it with your own brand.
+Wayfare is an example project by Noodle Seed. Adapt its supported flight, hotel
+and fictional experience flows to your own product, keeping the source and
+transaction boundaries clear.
 
 ## Wayfare image system
 
@@ -84,7 +86,9 @@ public-distribution review.
 
 ## Branding
 
-The canonical customization source is `src/starter-config.ts`. Root `starter.config.ts` is the public compatibility facade consumed by `apps/web/`; it re-exports the same object and must not define a second brand. Use the deterministic command instead of replacing brand text across the repository:
+The baseline MCP configuration is `src/starter-config.ts`; root
+`starter.config.ts` re-exports it. Use the deterministic command for that
+profile's presentation and the shared deployment coordinates:
 
 ```sh
 pnpm customize -- \
@@ -98,7 +102,16 @@ pnpm customize -- \
 pnpm customize:check
 ```
 
-The command updates the canonical `src/starter-config.ts` file, writes it atomically, and is idempotent. It accepts only bounded presentation values and never reads credentials or environment files. The MCP server and Apps import the canonical module; the primary Next.js website reaches that same value through root `starter.config.ts`. The website is intentionally light-only and consumes the brand through direct CSS custom properties in `apps/web/app/globals.css`; it does not use a Tailwind mapping. Review light-theme contrast after changing colors; `surfaceDark` remains available to external hosts that consume the portable MCP brand kit.
+The command writes `src/starter-config.ts` atomically and is idempotent. It
+accepts bounded presentation values and never reads credentials or environment
+files. It does not rebrand the whole example website: expanded MCP branding is
+in `src/demo-config.ts`, and the website's deliberate Wayfare identity is in
+`apps/web/src/lib/site-config.ts` and `apps/web/app/globals.css`. Update those,
+the Wayline assets, metadata and screenshot evidence together for an independent
+brand. The website remains light-only and uses direct CSS custom properties,
+not a Tailwind mapping. `surfaceDark` is a neutral fallback for
+external hosts that consume the portable MCP brand kit. Review contrast after
+changing any token.
 
 To prepare the primary guest Assistant surface for one hosted website, add only that exact deployment-owned origin:
 
@@ -113,7 +126,7 @@ The customized runtime stays one bounded pipeline:
 ```text
 Next.js browser
   → public Assistant surface using the configured exact origin
-  → shared travel MCP and linked Apps using the same brand config
+  → shared travel MCP and linked Apps using the selected profile's branding
   → server-side Nuitee connector
   → Nuitee Flights API
 ```

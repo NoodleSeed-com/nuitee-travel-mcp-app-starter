@@ -2,9 +2,12 @@
 
 ## Supported boundary
 
-This starter supports read-only flight discovery and fare verification, plus
+Wayfare is an example project by Noodle Seed. It supports read-only flight discovery and fare verification, plus
 hotel search and application selection in the expanded live/embedded profiles.
-The preview profile is explicitly fictional. Rewards, reward flights and travel
+The preview profile is explicitly fictional. Expanded profiles also expose
+fictional Lisbon/Tokyo experience discovery, detail, and comparison; no live
+operator inventory, capacity, admission, or accessibility is verified. Experiences
+cannot be saved to a trip, held, or booked. Rewards, reward flights and travel
 protection are illustrative and do not access real accounts or sell products. It does not support prebooking, booking, reservations, passenger data, payment, cancellation, refund, loyalty transactions, or end-user credential collection.
 
 Version one uses one deployment-owner Nuitee key. Multi-tenant credential brokering, per-user provider authorization, and customer-owned routing require a separate production architecture and threat model.
@@ -36,8 +39,17 @@ CSP domains; absent host/fullscreen/map configuration must retain a useful
 textual comparison. Map use can disclose ordinary network metadata to Mapbox.
 Audit the exact compiled CSP when enabling it in a host. FlightResults may load a validated airline image from `https://sandbox.nuitee.flights` or `https://production.nuitee.flights`; it uses no-referrer requests and rejects every other image origin/path. Loading that image still discloses ordinary request metadata such as the viewer's IP address and user agent to Nuitee's asset host, so deployments that do not accept that privacy tradeoff should disable remote carrier images and retain the text/initial fallback.
 
+The experience tool runs solely against the bundled fictional catalog and
+makes no provider HTTP call. Its widget may load fixed decorative photography
+from `https://images.unsplash.com`, as declared by its resource-only CSP; hotel
+results may load provider images from `https://snaphotelapi.com`. These resource
+requests disclose ordinary network metadata to the image hosts and do not
+prove live inventory, an operator relationship, or booking support. Experience
+inspection/comparison identifiers represent view state, not reservation tokens
+or server-side trip selections.
+
 The starter claims no widget domain. Configure one real, dedicated HTTPS widget
-origin for both widgets before registration with a host; never use a reserved or
+origin for the relevant widgets before registration with a host; never use a reserved or
 placeholder domain to satisfy a target gate.
 
 ## Offer identifiers
@@ -48,7 +60,12 @@ Do not add a raw `offerId` tool input, log state values, put provider IDs in wid
 
 ## Provider data and failures
 
-Provider responses are untrusted and bounded before public use. Public results cap itineraries and nested arrays, sanitize strings, omit raw responses/provider logos/arbitrary image URLs/internal fare codes, and classify errors through application-owned messages. The only image exception is a documented marketing-carrier image on an exact Nuitee Flights asset origin. A provider failure never activates fixtures.
+Provider responses are untrusted and bounded before public use. Public results cap itineraries and nested arrays, sanitize strings, omit raw
+responses, arbitrary image URLs and internal fare codes, and classify errors
+through application-owned messages. Allowed carrier and hotel imagery is bounded
+to the explicit resource origins above. Experience photography is fixed widget
+content, separate from provider output. A live provider failure never activates
+fixtures; intentionally illustrative tools remain clearly identified as such.
 
 The authored compute gateway has a 12-second/one-host-call limit. Flight search alone accepts up to 6 MiB at the connector and application boundaries before normalizing at most ten results; fare verification retains a 750,000-byte application cap. Operators should not broaden either limit without contract evidence and should monitor without logging raw bodies.
 

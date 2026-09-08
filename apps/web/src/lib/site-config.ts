@@ -6,7 +6,7 @@ const wayfareWebBrand = {
   assistantName: 'Wayfare travel assistant',
   tagline: 'One conversation. The whole journey.',
   intro:
-    'Search current flights, compare illustrative stays and travel protection, and preview rewards in one conversation.',
+    'Search current flights and stays, explore fictional Lisbon and Tokyo experiences, compare travel protection concepts, and preview rewards in one conversation.',
   light: {
     canvas: '#FFFFFF',
     surface: '#F7F7F7',

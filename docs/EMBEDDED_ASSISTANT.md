@@ -1,4 +1,8 @@
-# Guest embedded Assistant
+# Wayfare guest embedded Assistant
+
+Wayfare is an example project by Noodle Seed: the Wayfare brand identifies the
+travel experience, while Noodle Seed authors the project and supplies its shared
+MCP and embedded-assistant foundation.
 
 `apps/web/` is the primary developer experience in this repository: a guest-first Next.js travel website whose embedded Assistant exposes the same Search → Select → Verify product as external MCP hosts.
 
@@ -22,7 +26,7 @@ The baseline profile uses these exact tool/resource identities in `NoodleAppView
 - `search_flights` + `ui://nuitee_travel_mcp_app_starter/search_flights_widget`;
 - `open_travel_starter` + `ui://nuitee_travel_mcp_app_starter/open_travel_starter_widget`.
 
-The expanded profile also supports the exact hotel, loyalty, reward-flight,
+The expanded profile also supports the exact hotel, experience, loyalty, reward-flight,
 trip-review and protection pairs listed in `apps/web/src/lib/travel-view-policy.ts`.
 Every mismatch fails closed as an unavailable inline view. The compact typed trip disclosure uses validated tool results only, remains absent before facts exist, and never lets traveler or Assistant prose populate it.
 
@@ -41,7 +45,11 @@ The public surface is anonymous, not identity-free: Noodle binds each session to
 The Assistant may open the starter, collect one missing date decision, search one-way or round-trip flights, select an application-issued fare handle, and verify current availability and price. The agent guide defaults to one adult and Economy rather than asking for provider-oriented fields. An untrusted website page default may suggest an omitted origin, currency, and pricing market; explicit traveler text wins, and other hosts retain USD and the US market. A verified or changed fare is terminal.
 
 It does not prebook, hold inventory, collect passenger data, take payment, issue a ticket, manage a booking, cancel, refund, redeem loyalty, or search cars. The expanded `src/demo-embedded-server.ts` profile adds live hotel
-search and App-only hotel selection, plus illustrative rewards and protection.
+search and App-only hotel selection, plus fictional experiences and illustrative
+rewards and protection. `search_experiences` uses a bounded Lisbon/Tokyo catalog
+in all expanded profiles; its detail and two-item comparison UI cannot save,
+hold, or book an experience. It makes no provider call and does not add an
+experience to the flight/hotel trip review.
 Use `pnpm dev:preview` for the separate credential-free fictional MCP profile. Neither a selection nor a verified fare implies that inventory is held.
 
 ## Website runtime configuration
@@ -103,7 +111,11 @@ The Next.js security headers allow the exact Noodle service origin in:
 - `connect-src` for session and turn traffic; and
 - `frame-src` for linked App sandboxes.
 
-Keep `default-src 'self'`, `frame-ancestors 'none'`, `object-src 'none'`, the restrictive permissions policy, and the exact service origin. The policy disables camera, microphone, and geolocation. A blocked `script-src` prevents the runtime from starting, so the page cannot report that failure from inside the Assistant.
+Keep `default-src 'self'`, `frame-ancestors 'none'`, `object-src 'none'`, the restrictive permissions policy, and the exact service origin. The policy disables camera, microphone, and geolocation. The experience App
+separately declares `https://images.unsplash.com` for fixed decorative image
+resources only; this does not enable a live experience provider or arbitrary
+network access. Review [SECURITY.md](../SECURITY.md) for remote-image metadata
+disclosure. A blocked `script-src` prevents the runtime from starting, so the page cannot report that failure from inside the Assistant.
 
 Run the local non-mutating preflight and production-equivalent website build before promotion:
 

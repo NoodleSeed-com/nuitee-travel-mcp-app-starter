@@ -1,4 +1,4 @@
-# Agentic Travel Starter
+# Wayfare
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-0D0D0D.svg)](LICENSE)
 [![Node.js 24+](https://img.shields.io/badge/Node.js-24%2B-0D0D0D.svg)](package.json)
@@ -8,7 +8,7 @@
 
 **One conversation. The whole journey.**
 
-Build a travel assistant with a Next.js website, shared TypeScript MCP tools, and interactive flight and hotel Apps. **Wayfare** is the included sample brand. [Noodle Seed](https://noodleseed.com) provides the MCP and embedded-assistant foundation; Nuitée provides the configured live flight and hotel data.
+**Wayfare is an example project by [Noodle Seed](https://noodleseed.com).** It demonstrates a conversational travel experience built with a Next.js website, shared TypeScript MCP tools, and interactive travel Apps. Use it as a starter for your own agentic travel product. Noodle Seed provides the MCP and embedded-assistant foundation; Nuitée provides the configured live flight and hotel data.
 
 Use this starter to turn trip intent into options, compare tradeoffs, remember a selection, and verify a flight fare. The same travel tools serve the website's embedded assistant and external MCP hosts.
 
@@ -29,7 +29,7 @@ pnpm dev:web
 
 Open [localhost:3000](http://localhost:3000). You can explore the real Wayfare homepage, destination imagery, navigation, and composer without a Noodle account or provider key. The website opens no assistant session on load. Submitting a message requires your configured embedded assistant; an unconfigured site shows setup guidance.
 
-To explore the MCP product separately, run `pnpm dev:preview`. This opens the credential-free expanded server in local Noodle DevTools: hotels, rewards, and travel protection use clearly labeled examples; current flight search explains the missing configuration. It never substitutes fictional fares for a live flight search.
+To explore the MCP product separately, run `pnpm dev:preview`. This opens the credential-free expanded server in local Noodle DevTools: hotels, experiences, rewards, and travel protection use clearly labeled examples; current flight search explains the missing configuration. It never substitutes fictional fares for a live flight search.
 
 ## What you can build with it
 
@@ -37,11 +37,12 @@ To explore the MCP product separately, run `pnpm dev:preview`. This opens the cr
 | --- | --- | --- |
 | Flights | Search one-way or return itineraries, compare a compact carousel, select a fare, verify its current price and availability | Live Nuitée access required; stops before reservation or booking |
 | Hotels | Search stays, inspect rooms and terms, compare options, explore locations when configured, remember a selection | Live Nuitée results in the expanded live profile; illustrative stays in the credential-free profile; no room held |
+| Experiences | Discover fictional Lisbon and Tokyo ideas, inspect details, and compare two options | Demonstration catalog only; no live operators, capacity checks, saved trip selection, or booking |
 | Rewards and reward flights | Show an example balance and compare points-based trip ideas | Illustrative only; no account access, live award inventory, or redemption |
 | Travel protection | Compare example protection concepts | Illustrative only; no insurance quote, policy, eligibility decision, or purchase |
 | Trip review | Review the selected flight and stay in conversation | Preserves each source; never invents a bookable package total |
 
-**No booking, passenger collection, payment, ticketing, cancellation, refund, voucher issuance, or points redemption is implemented.** Experiences, cars, private jets, and broader trip-care imagery are product concepts, not connected transaction capabilities. A selected option is never presented as a reservation.
+**No booking, passenger collection, payment, ticketing, cancellation, refund, voucher issuance, or points redemption is implemented.** Cars, private jets, and broader trip-care imagery are product concepts, not connected transaction capabilities. A selected option is never presented as a reservation.
 
 ### Flight comparison
 
@@ -73,7 +74,7 @@ The flight journey is Search → Select → Verify. Conversation carries intent 
 | --- | --- |
 | [`apps/web/`](apps/web/) | Next.js guest website and chronological embedded conversation |
 | [`src/travel-server.ts`](src/travel-server.ts) | Shared capabilities, entrypoint profiles, assistant configuration, and state contracts |
-| [`src/views/`](src/views/) | Real flight, hotel, reward, trip-review, and protection Apps |
+| [`src/views/`](src/views/) | Real flight, hotel, experience, reward, trip-review, and protection Apps |
 | [`src/flight-runtime.ts`](src/flight-runtime.ts), [`src/hotel-runtime.ts`](src/hotel-runtime.ts) | Provider normalization, safe output mapping, and selection boundaries |
 | [`src/starter-config.ts`](src/starter-config.ts) | Canonical brand and deployment configuration |
 | [`test/`](test/), [`apps/web/test/`](apps/web/test/) | Contract, security-boundary, component, and browser coverage |
@@ -92,7 +93,7 @@ cp .env.example .env
 pnpm dev:demo
 ```
 
-Despite the command's historical name, `dev:demo` selects the **expanded live profile**: current flights and hotels, plus illustrative rewards and protection. For the smaller flights-only profile, use `pnpm dev:live`.
+Despite the command's historical name, `dev:demo` selects the **expanded live profile**: current flights and hotels, plus fictional experiences and illustrative rewards and protection. For the smaller flights-only profile, use `pnpm dev:live`.
 
 The CLI's local secret fallback reads the project-root `.env`; restart after configuration changes. Keep keys out of source, prompts, screenshots, browser variables, and Git history. Local configuration does not configure a hosted service.
 
@@ -112,7 +113,7 @@ cp apps/web/.env.example apps/web/.env.local
 pnpm dev:web
 ```
 
-The embed ID and service origin are public coordinates. Provider and model keys remain server-side. Allow your exact website origin in the assistant configuration; `localhost` and `127.0.0.1` are different origins. Add identity only when a capability needs it; the [authentication guide](docs/oauth.md) explains the separate website, assistant, and MCP boundaries.
+The embed ID and service origin are public coordinates. Provider and model keys remain server-side. Experience ideas use the bundled fictional catalog in both expanded live and preview profiles; their photos are decorative remote Unsplash assets, not evidence of operator inventory. See [SECURITY.md](SECURITY.md) for the image and map request boundaries. Allow your exact website origin in the assistant configuration; `localhost` and `127.0.0.1` are different origins. Add identity only when a capability needs it; the [authentication guide](docs/oauth.md) explains the separate website, assistant, and MCP boundaries.
 
 ### Entrypoints at a glance
 
@@ -127,7 +128,7 @@ The embed ID and service origin are public coordinates. Provider and model keys 
 
 ## Make it yours
 
-Start with the [customization guide](docs/customization.md). The checked-in Wayfare design follows the [brand guidelines](docs/brand/wayfare-brand-guidelines.md): Host Grotesk, the Wayline mark, light surfaces, rounded controls, accessible contrast, and truthful selection states. Read that contract before changing the included UI.
+Start with the [customization guide](docs/customization.md). The included Wayfare example keeps its own product identity, with Noodle Seed credited as its author. Its design follows the [brand guidelines](docs/brand/wayfare-brand-guidelines.md): Host Grotesk, the Wayline mark, light surfaces, rounded controls, accessible contrast, and truthful selection states. Read that contract before changing the included UI.
 
 ```sh
 pnpm customize -- \
@@ -156,4 +157,4 @@ Use `pnpm docs:previews` to regenerate the flight and hotel captures. Follow the
 
 Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), [SUPPORT.md](SUPPORT.md), and [SECURITY.md](SECURITY.md) before opening an issue. Report vulnerabilities through the private route in the security policy; do not include secrets or vulnerability details in public issues.
 
-Copyright Noodle Seed. Code is licensed under [Apache 2.0](LICENSE). Third-party dependencies and assets retain their respective licenses; see [NOTICE](NOTICE) and [third-party notices](THIRD_PARTY_NOTICES.md). Included provider wordmarks are attribution, not a grant to imply endorsement of your derivative product. This starter is not an official Nuitée connector, airline partnership, or booking service.
+Wayfare is an example project by Noodle Seed. Copyright Noodle Seed. Code is licensed under [Apache 2.0](LICENSE). Third-party dependencies and assets retain their respective licenses; see [NOTICE](NOTICE) and [third-party notices](THIRD_PARTY_NOTICES.md). Included provider wordmarks are attribution, not a grant to imply endorsement of your derivative product. This starter is not an official Nuitée connector, airline partnership, or booking service.
