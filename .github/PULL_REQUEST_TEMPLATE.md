@@ -11,12 +11,12 @@ Describe the user/developer impact and the smallest coherent scope.
 
 ## Review checklist
 
-- [ ] The change stays within the flights-first product boundary.
+- [ ] The change stays within read-only flight/hotel discovery and clearly labeled illustrative capabilities; no booking or payment is introduced.
 - [ ] Model-visible inputs expose no origin, URL, path, method, header, credential, or provider offer ID.
 - [ ] Public output is bounded, normalized, and free of raw provider bodies and private identifiers.
 - [ ] Ordinary tests and CI remain fully offline and credential-free.
 - [ ] No credentials, provider bodies, customer data, or private URLs appear in this change, logs, screenshots, or issue links.
-- [ ] Generated Agent Kit changes were produced by the pinned CLI and reviewed separately from application logic.
+- [ ] Generated Agent Kit trees remain excluded from the public export; any deliberate distribution change passes the pinned-guidance audit.
 - [ ] Documentation and the public-release checklist were updated when a contract or release claim changed.
 - [ ] `pnpm ci:offline` passes, or the exact sanitized blocker is recorded above.
 
