@@ -7,11 +7,11 @@ and extend the application. Hosted production promotion is a separate decision.
 ## Source candidate gates
 
 - [ ] Freeze one reviewed commit and export it with `pnpm export:public -- --out /absolute/new/directory`.
-- [x] Run `pnpm ci:offline`, `pnpm check:browser`, and `pnpm audit:release` in the fresh public candidate after a frozen install (2026-09-08: 683 unit/contract tests, 123 browser tests passed, 17 intentional browser skips; zero known dependency vulnerabilities). Repeat for the final publication revision.
+- [x] Run `pnpm ci:offline`, `pnpm check:browser`, and `pnpm audit:release` in the fresh public candidate after a frozen install (2026-09-08, Wayfare refresh including experiences: 697 unit/contract tests, 125 browser tests passed, 17 intentional browser skips; zero known dependency vulnerabilities). Repeat for the final publication revision.
 - [x] Inspect the homepage, flight and hotel screenshots and verify their exact blob entries and fictional-data provenance (2026-09-08; see `docs/images/README.md`).
 - [ ] Have a developer unfamiliar with the project complete the README quickstart.
 - [x] Verify the provider-backed flight and hotel paths with authorized developer-owned credentials. On 2026-09-08 the expanded live entrypoint returned ten flight itineraries (`partial`) and nine live hotel stays (`success`) after one bounded retry. This is local read evidence only.
-- [x] Inspect the exported tree and its new history for internal material, secrets and unreviewed binaries (2026-09-08; 295 files, one fresh audit commit, nine detectors, zero findings). Repeat for the final publication revision.
+- [x] Inspect the exported tree and its new history for internal material, secrets and unreviewed binaries (2026-09-08; 301 files, one fresh audit commit, nine detectors, zero findings). Repeat for the final publication revision.
 
 The development repository retains internal documentation and old history. It
 must remain private. The export has an explicit source allowlist and carries no
