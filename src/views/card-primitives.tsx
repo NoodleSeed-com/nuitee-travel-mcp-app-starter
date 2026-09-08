@@ -48,7 +48,13 @@ export function PhotoBand({
         style={{ background: gradientForName(name) }}
       >
         {imageUrl
-          ? <img alt="" className="cc-photo-image" loading="lazy" src={imageUrl} />
+          ? <img
+              alt=""
+              className="cc-photo-image"
+              loading="lazy"
+              onError={(event) => { event.currentTarget.hidden = true; }}
+              src={imageUrl}
+            />
           : glyph
             ? <span className="cc-photo-glyph">{glyph}</span>
             : null}

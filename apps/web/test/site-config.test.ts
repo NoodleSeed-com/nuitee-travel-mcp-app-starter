@@ -44,10 +44,10 @@ describe('Wayfare companion website identity', () => {
       'Flight and stay results come from connected providers.',
     );
     expect(siteConfig.disclosure.persistent).toContain(
-      'Rewards and travel protection are illustrative previews.',
+      'Lisbon and Tokyo experiences, rewards, and travel protection are fictional or illustrative previews.',
     );
     expect(siteConfig.disclosure.persistent).toContain(
-      'Booking, redemption, and policy purchase are unavailable.',
+      'Booking, experience reservations, redemption, and policy purchase are unavailable.',
     );
     expect(siteConfig.disclosure.persistent).not.toMatch(/\bdemo\b|\bsandbox\b/iu);
   });

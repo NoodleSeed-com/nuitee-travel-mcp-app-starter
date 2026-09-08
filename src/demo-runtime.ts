@@ -22,6 +22,12 @@ export type DemoGatewayInput =
       readonly insuranceCatalog?: readonly Readonly<Record<string, unknown>>[];
     }
   | {
+      readonly kind: 'experience_search';
+      readonly experienceSearch: Readonly<Record<string, unknown>>;
+      readonly experienceCatalog: Readonly<Record<string, readonly Readonly<Record<string, unknown>>[]>>;
+      readonly experienceAliases: Readonly<Record<string, string>>;
+    }
+  | {
       readonly kind: 'select';
       readonly selectionId: string;
       readonly hotelState: unknown;
@@ -43,7 +49,7 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
   const string = (value: unknown): string | undefined => typeof value === 'string' ? value : undefined;
   const number = (value: unknown): number | undefined => typeof value === 'number' && Number.isFinite(value) ? value : undefined;
   const opaque = (
-    prefix: 'hsearch' | 'hsel' | 'rsearch' | 'rwd' | 'inscmp' | 'inplan',
+    prefix: 'hsearch' | 'hsel' | 'rsearch' | 'rwd' | 'inscmp' | 'inplan' | 'exsearch' | 'exp' | 'slot',
     value: string,
   ) => {
     let first = 2166136261;
@@ -78,6 +84,122 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
       + dayOfYear;
     return era * 146097 + dayOfEra;
   };
+  const dateFromDayNumber = (value: number) => {
+    const era = Math.floor(value / 146097);
+    const dayOfEra = value - era * 146097;
+    const yearOfEra = Math.floor(
+      (dayOfEra - Math.floor(dayOfEra / 1460) + Math.floor(dayOfEra / 36524) - Math.floor(dayOfEra / 146096)) / 365,
+    );
+    let year = yearOfEra + era * 400;
+    const dayOfYear = dayOfEra - (365 * yearOfEra + Math.floor(yearOfEra / 4) - Math.floor(yearOfEra / 100));
+    const shiftedMonth = Math.floor((5 * dayOfYear + 2) / 153);
+    const day = dayOfYear - Math.floor((153 * shiftedMonth + 2) / 5) + 1;
+    const month = shiftedMonth + (shiftedMonth < 10 ? 3 : -9);
+    year += month <= 2 ? 1 : 0;
+    return `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+  };
+
+  if (input.kind === 'experience_search') {
+    const search = record(input.experienceSearch) ?? {};
+    const destination = string(search.destination) ?? '';
+    const startDate = string(search.startDate) ?? '';
+    const endDate = string(search.endDate) ?? '';
+    const currency = string(search.currency) ?? 'CAD';
+    const partySize = (number(search.adults) ?? 1) + (number(search.children) ?? 0);
+    const interests = array(search.interests).filter((entry): entry is string => typeof entry === 'string');
+    const stepFreeOnly = search.accessibility === 'STEP_FREE';
+    const canonical = input.experienceAliases[destination.trim().toUpperCase()];
+    const searchId = opaque('exsearch', JSON.stringify({
+      ...search,
+      destination: canonical ?? destination.trim().toUpperCase(),
+    }));
+    const fixtures = canonical ? input.experienceCatalog[canonical] ?? [] : [];
+    const firstDay = dayNumber(startDate);
+    const lastDay = dayNumber(endDate);
+    const matched = fixtures.map(record).filter((entry): entry is Record<string, unknown> => Boolean(entry)).filter((fixture) => {
+      const categories = array(fixture.categories).filter((entry): entry is string => typeof entry === 'string');
+      const matchesInterest = interests.length === 0 || interests.some((interest) => categories.includes(interest));
+      const accessibility = record(fixture.accessibility) ?? {};
+      return matchesInterest && (!stepFreeOnly || accessibility.stepFree === true);
+    });
+    const experiences = matched.slice(0, 6).map((fixture) => {
+      const key = string(fixture.key) ?? 'demo_experience_unknown';
+      const experienceId = opaque('exp', `${searchId}:${key}`);
+      const prices = record(fixture.pricesMinor) ?? {};
+      const localTimes = array(fixture.localTimes).filter((entry): entry is string => typeof entry === 'string').slice(0, 2);
+      const slots: Array<Record<string, unknown>> = [];
+      for (let day = firstDay; day < lastDay && slots.length < 4; day += 1) {
+        const date = dateFromDayNumber(day);
+        for (const localTime of localTimes) {
+          if (slots.length >= 4) break;
+          const startLocal = `${date}T${localTime}:00`;
+          const slotId = opaque('slot', `${experienceId}:${startLocal}`);
+          const capacitySeed = Number.parseInt(slotId.slice(-2), 16);
+          slots.push({
+            slotId,
+            startLocal,
+            timeZone: string(fixture.timeZone) ?? 'Europe/Lisbon',
+            remainingCapacity: Math.max(partySize, 4 + (capacitySeed % 9)),
+            isFictional: true,
+          });
+        }
+      }
+      const accessibility = record(fixture.accessibility) ?? {};
+      return {
+        experienceId,
+        dataSource: 'illustrative',
+        source: 'WAYFARE_DEMO',
+        isFictional: true,
+        city: string(fixture.city) ?? destination,
+        countryCode: string(fixture.countryCode) ?? 'ZZ',
+        timeZone: string(fixture.timeZone) ?? 'Europe/Lisbon',
+        title: string(fixture.title) ?? 'Fictional experience idea',
+        operatorLabel: string(fixture.operatorLabel) ?? 'Wayfare demo operator',
+        shortDescription: string(fixture.shortDescription) ?? 'A fictional Wayfare experience idea for conversation testing.',
+        categories: array(fixture.categories).filter((entry): entry is string => typeof entry === 'string').slice(0, 4),
+        durationMinutes: number(fixture.durationMinutes) ?? 60,
+        meetingArea: string(fixture.meetingArea) ?? 'Fictional meeting area',
+        accessibility: {
+          stepFree: accessibility.stepFree === true,
+          summary: string(accessibility.summary) ?? 'Accessibility details are not configured.',
+        },
+        inclusions: array(fixture.inclusions).filter((entry): entry is string => typeof entry === 'string').slice(0, 5),
+        restrictions: array(fixture.restrictions).filter((entry): entry is string => typeof entry === 'string').slice(0, 3),
+        cancellationPolicy: string(fixture.cancellationPolicy) ?? 'Fictional cancellation terms are not configured.',
+        price: { amountMinor: number(prices[currency]) ?? 0, currency },
+        slots,
+      };
+    }).filter((experience) => experience.slots.length > 0 && experience.price.amountMinor > 0);
+    const supportedDestination = Boolean(canonical);
+    const status = experiences.length > 0 ? 'success' : 'empty';
+    const emptyReason = supportedDestination ? 'NO_MATCHING_EXPERIENCES' : 'UNSUPPORTED_DESTINATION';
+    const destinationLabel = string(record(fixtures[0])?.city) ?? destination;
+    return {
+      kind: 'experience_search',
+      experienceResult: {
+        status,
+        dataSource: 'illustrative',
+        source: 'WAYFARE_DEMO',
+        isFictional: true,
+        disclosure: 'Fictional Wayfare demo experiences. No operator inventory, capacity, admission, or live availability was checked.',
+        message: status === 'success'
+          ? `${experiences.length} fictional experience ideas are ready to explore for ${destinationLabel}.`
+          : supportedDestination
+            ? `No fictional experiences matched the selected interests or accessibility filter for ${destinationLabel}.`
+            : `The fictional Wayfare experience catalog is not configured for ${destinationLabel}.`,
+        fallback: status === 'success'
+          ? `${experiences.length} fictional Wayfare experience ideas for ${destinationLabel} from ${startDate} to ${endDate}; no live operator inventory or booking availability was checked.`
+          : supportedDestination
+            ? `No fictional Wayfare experiences matched the current filters for ${destinationLabel}. No provider call was made.`
+            : `No fictional Wayfare experience catalog is configured for ${destinationLabel}. No provider call was made; continue with flights and hotels.`,
+        searchId,
+        searchContext: search,
+        supportedDestination,
+        ...(status === 'empty' ? { emptyReason } : {}),
+        experiences,
+      },
+    };
+  }
 
   if (input.kind === 'search') {
     const search = record(input.search) ?? {};

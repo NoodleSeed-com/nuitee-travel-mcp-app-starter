@@ -10,8 +10,22 @@ export const demoRewardFlightSearchIdSchema = z.string().regex(/^rsearch_[a-f0-9
 export const demoRewardFlightOptionIdSchema = z.string().regex(/^rwd_[a-f0-9]{32}$/);
 export const demoInsuranceComparisonIdSchema = z.string().regex(/^inscmp_[a-f0-9]{32}$/);
 export const demoInsurancePlanIdSchema = z.string().regex(/^inplan_[a-f0-9]{32}$/);
+export const demoExperienceSearchIdSchema = z.string().regex(/^exsearch_[a-f0-9]{32}$/);
+export const demoExperienceIdSchema = z.string().regex(/^exp_[a-f0-9]{32}$/);
+export const demoExperienceSlotIdSchema = z.string().regex(/^slot_[a-f0-9]{32}$/);
 export const demoCurrencySchema = z.enum(['CAD', 'USD', 'EUR']);
 export const demoInsuranceCurrencySchema = z.enum(['CAD', 'USD', 'EUR', 'GBP']);
+export const demoExperienceCurrencySchema = z.enum(['CAD', 'USD', 'EUR', 'GBP', 'JPY']);
+export const demoExperienceCategorySchema = z.enum([
+  'FOOD',
+  'CULTURE',
+  'WATER',
+  'DESIGN',
+  'FAMILY',
+  'EVENING',
+  'CRAFT',
+  'TEA',
+]);
 
 export const demoHomeOutputSchema = z.object({
   status: z.literal('ready'),
@@ -129,6 +143,94 @@ export const demoHotelSearchOutputSchema = z.object({
 ).refine(
   ({ status, error }) => status === 'error' ? error !== undefined : error === undefined,
   { path: ['error'], message: 'Only failed hotel searches include an error.' },
+);
+
+export const demoExperienceSearchInputSchema = z.object({
+  destination: destinationSchema.describe('City name or known city/airport alias for the fictional experience catalog'),
+  startDate: calendarDateSchema.describe('First local date to consider in YYYY-MM-DD format'),
+  endDate: calendarDateSchema.describe('Exclusive end date in YYYY-MM-DD format'),
+  adults: z.number().int().min(1).max(8).default(1),
+  children: z.number().int().min(0).max(6).default(0),
+  currency: demoExperienceCurrencySchema.default('CAD'),
+  interests: z.array(demoExperienceCategorySchema).max(4)
+    .describe('Optional categories explicitly requested by the traveler; omit for broad discovery')
+    .optional(),
+  accessibility: z.enum(['ANY', 'STEP_FREE'])
+    .describe('Use ANY unless the traveler explicitly requests step-free or wheelchair-accessible options; use STEP_FREE only for that explicit request')
+    .optional(),
+}).refine(
+  ({ startDate, endDate }) => endDate > startDate,
+  { path: ['endDate'], message: 'Experience search end date must be after start date.' },
+).refine(
+  ({ startDate, endDate }) =>
+    (calendarDay(endDate) - calendarDay(startDate)) / 86_400_000 <= 30,
+  { path: ['endDate'], message: 'Fictional experience searches are limited to 30 days.' },
+).refine(
+  ({ adults, children }) => adults + children <= 8,
+  { path: ['children'], message: 'Fictional experience searches are limited to eight participants.' },
+);
+
+export const demoExperienceMoneySchema = z.object({
+  amountMinor: z.number().int().nonnegative().max(100_000_000),
+  currency: demoExperienceCurrencySchema,
+});
+
+export const demoExperienceSlotSchema = z.object({
+  slotId: demoExperienceSlotIdSchema,
+  startLocal: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00$/),
+  timeZone: z.enum(['Europe/Lisbon', 'Asia/Tokyo']),
+  remainingCapacity: z.number().int().min(1).max(20),
+  isFictional: z.literal(true),
+});
+
+export const demoExperienceSchema = z.object({
+  experienceId: demoExperienceIdSchema,
+  dataSource: syntheticDataSourceSchema,
+  source: z.literal('WAYFARE_DEMO'),
+  isFictional: z.literal(true),
+  city: z.enum(['Lisbon', 'Tokyo']),
+  countryCode: z.enum(['PT', 'JP']),
+  timeZone: z.enum(['Europe/Lisbon', 'Asia/Tokyo']),
+  title: z.string().trim().min(2).max(100),
+  operatorLabel: z.string().trim().min(2).max(80),
+  shortDescription: z.string().trim().min(20).max(240),
+  categories: z.array(demoExperienceCategorySchema).min(1).max(4),
+  durationMinutes: z.number().int().min(30).max(720),
+  meetingArea: z.string().trim().min(2).max(100),
+  accessibility: z.object({
+    stepFree: z.boolean(),
+    summary: z.string().trim().min(2).max(160),
+  }),
+  inclusions: z.array(z.string().trim().min(2).max(100)).min(1).max(5),
+  restrictions: z.array(z.string().trim().min(2).max(160)).max(3),
+  cancellationPolicy: z.string().trim().min(2).max(180),
+  price: demoExperienceMoneySchema,
+  slots: z.array(demoExperienceSlotSchema).min(1).max(4),
+});
+
+export const demoExperienceSearchOutputSchema = z.object({
+  status: z.enum(['success', 'empty']),
+  dataSource: syntheticDataSourceSchema,
+  source: z.literal('WAYFARE_DEMO'),
+  isFictional: z.literal(true),
+  disclosure: z.string().trim().min(20).max(320),
+  message: z.string().trim().min(2).max(320),
+  fallback: z.string().trim().min(20).max(700),
+  searchId: demoExperienceSearchIdSchema,
+  searchContext: demoExperienceSearchInputSchema,
+  supportedDestination: z.boolean(),
+  emptyReason: z.enum(['UNSUPPORTED_DESTINATION', 'NO_MATCHING_EXPERIENCES']).optional(),
+  experiences: z.array(demoExperienceSchema).max(6),
+}).refine(
+  ({ status, experiences }) => status === 'success' ? experiences.length > 0 : experiences.length === 0,
+  { path: ['experiences'], message: 'Successful experience searches need results; empty searches cannot contain results.' },
+).refine(
+  ({ status, emptyReason }) => status === 'empty' ? emptyReason !== undefined : emptyReason === undefined,
+  { path: ['emptyReason'], message: 'Only empty experience searches include an empty reason.' },
+).refine(
+  ({ supportedDestination, emptyReason }) =>
+    supportedDestination ? emptyReason !== 'UNSUPPORTED_DESTINATION' : emptyReason === 'UNSUPPORTED_DESTINATION',
+  { path: ['supportedDestination'], message: 'Unsupported destinations must use the matching empty reason.' },
 );
 
 export const demoHotelSelectionRecordSchema = z.object({
@@ -352,6 +454,9 @@ export type DemoHotelSearchInput = z.infer<typeof demoHotelSearchInputSchema>;
 export type DemoHomeOutput = z.infer<typeof demoHomeOutputSchema>;
 export type DemoHotel = z.infer<typeof demoHotelSchema>;
 export type DemoHotelSearchOutput = z.infer<typeof demoHotelSearchOutputSchema>;
+export type DemoExperienceSearchInput = z.infer<typeof demoExperienceSearchInputSchema>;
+export type DemoExperience = z.infer<typeof demoExperienceSchema>;
+export type DemoExperienceSearchOutput = z.infer<typeof demoExperienceSearchOutputSchema>;
 export type DemoHotelSelectionRecord = z.infer<typeof demoHotelSelectionRecordSchema>;
 export type DemoHotelSelectionState = z.infer<typeof demoHotelSelectionStateSchema>;
 export type DemoLoyaltyOverview = z.infer<typeof demoLoyaltyOverviewSchema>;

@@ -38,13 +38,14 @@ describe('Wayfare expanded travel brand contract', () => {
     expect(travelCompanionDemoConfig.dataSources).toEqual({
       flights: { mode: 'live_sandbox', label: 'Current flight fares' },
       hotels: { mode: 'live_nuitee', label: 'Current hotel rates' },
+      experiences: { mode: 'synthetic_fixture', label: 'Fictional Lisbon and Tokyo ideas' },
       loyalty: { mode: 'synthetic_fixture', label: 'Illustrative rewards' },
       insurance: { mode: 'synthetic_fixture', label: 'Illustrative travel protection' },
     });
     expect(travelCompanionDemoConfig.disclosure.badge).toBe('Preview only');
     expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Flight and stay results come from connected providers/u);
-    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Rewards and travel protection are illustrative/u);
-    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Booking, redemption, and policy purchase are unavailable/u);
+    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Lisbon and Tokyo experiences, rewards, and travel protection are fictional or illustrative previews/u);
+    expect(travelCompanionDemoConfig.disclosure.persistent).toMatch(/Booking, experience reservations, redemption, and policy purchase are unavailable/u);
     expect(travelCompanionDemoConfig.disclosure.persistent).not.toMatch(/\bdemo\b|\bsandbox\b/iu);
   });
 

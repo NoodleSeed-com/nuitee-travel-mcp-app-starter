@@ -3122,6 +3122,7 @@
   display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
   border: 1px solid var(--cc-border); border-radius: 50%; background: var(--cc-surface); color: var(--cc-text);
 }
+.cc-app .cc-card-carousel-nav button .cc-icon { display: block; margin: 0; }
 .cc-card-carousel-nav button:disabled { opacity: .35; cursor: default; }
 .cc-card-carousel-track:focus-visible { outline: 2px solid var(--cc-focus); outline-offset: 2px; }
 .cc-app .cc-domain-available .cc-domain-icon,

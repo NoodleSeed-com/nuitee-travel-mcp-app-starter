@@ -23,6 +23,13 @@ const hotelView: AssistantViewData = {
   result: { status: 'success', dataSource: 'illustrative' },
 };
 
+const experienceView: AssistantViewData = {
+  id: 'experience-view',
+  tool: 'search_experiences',
+  resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_experiences_widget',
+  result: { status: 'success', dataSource: 'illustrative' },
+};
+
 const loyaltyView: AssistantViewData = {
   id: 'loyalty-view',
   tool: 'open_loyalty',
@@ -56,6 +63,7 @@ describe('inline travel view admission', () => {
     ['flight search', searchView],
     ['travel starter', starterView],
     ['demo hotel search', hotelView],
+    ['fictional experience search', experienceView],
     ['demo loyalty overview', loyaltyView],
     ['illustrative reward-flight comparison', rewardFlightView],
     ['trip review', reviewView],
