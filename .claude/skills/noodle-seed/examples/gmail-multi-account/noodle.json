@@ -1,4 +1,0 @@
-{
-  "entrypoint": "src/server.ts",
-  "name": "gmail-multi-account"
-}

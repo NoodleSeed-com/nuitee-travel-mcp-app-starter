@@ -6,18 +6,19 @@ and extend the application. Hosted production promotion is a separate decision.
 
 ## Source candidate gates
 
-- [ ] Freeze one reviewed commit and export it with `pnpm export:public -- --out /absolute/new/directory`.
-- [x] Run `pnpm ci:offline`, `pnpm check:browser`, and `pnpm audit:release` in the fresh public candidate after a frozen install (2026-09-08, Wayfare refresh including experiences: 697 unit/contract tests, 125 browser tests passed, 17 intentional browser skips; zero known dependency vulnerabilities). Repeat for the final publication revision.
+- [ ] Merge the reviewed cleanup PR and verify the final main revision in this repository.
+- [x] Run `pnpm ci:offline`, `pnpm check:browser`, and `pnpm audit:release` after a frozen install (2026-09-08, Wayfare refresh including experiences: 697 unit/contract tests, 125 browser tests passed, 17 intentional browser skips; zero known dependency vulnerabilities). Repeat for the final publication revision.
 - [x] Inspect the homepage, flight and hotel screenshots and verify their exact blob entries and fictional-data provenance (2026-09-08; see `docs/images/README.md`).
 - [ ] Have a developer unfamiliar with the project complete the README quickstart.
 - [x] Verify the provider-backed flight and hotel paths with authorized developer-owned credentials. On 2026-09-08 the expanded live entrypoint returned ten flight itineraries (`partial`) and nine live hotel stays (`success`) after one bounded retry. This is local read evidence only.
-- [x] Inspect the exported tree and its new history for internal material, secrets and unreviewed binaries (2026-09-08; 301 files, one fresh audit commit, nine detectors, zero findings). Repeat for the final publication revision.
+- [ ] Review the final current tree, retained Git history and GitHub surfaces for secrets or material that should stay private. Removing files does not erase their history.
 
-The development repository retains internal documentation and old history. It
-must remain private. The export has an explicit source allowlist and carries no
-Git history, internal documents, planning reports, local environments, generated
-Agent Kit trees, or deployment credentials. Do not use GitHub's visibility toggle
-on this development repository or publish a fork containing its history.
+This repository can be made public after these checks. Its current tree excludes
+internal working notes and generated Agent Kit trees. Historical notes remain
+readable in Git history; review their contents before changing visibility.
+No new repository or history rewrite is required merely to tidy the starter.
+See [the release guide](docs/public-template-release.md) for the direct-checkout
+workflow and optional source-only export.
 
 The baseline profile keeps four model-visible tools plus one App-only helper:
 `open_travel_starter`, `plan_flight_search`, `search_flights`,
@@ -30,22 +31,22 @@ hotel and illustrative ancillary tools; inspect the chosen entrypoint.
 - [x] Record owner confirmation of Nuitée wordmark redistribution (2026-09-08); preserve attribution and trademark boundaries in `THIRD_PARTY_NOTICES.md`.
 - [x] Confirm the private security and conduct reporting destination: `asad@noodleseed.com` (owner confirmed 2026-09-08; recorded in `SECURITY.md` and `CODE_OF_CONDUCT.md`).
 - [ ] Review `NOTICE`, third-party notices, and platform-specific dependency licenses for the actual distribution. An automated metadata audit is not a rights determination.
-- [ ] Approve `CODE_OF_CONDUCT.md`; its private enforcement route is confirmed above.
+- [x] Adopt `CODE_OF_CONDUCT.md` through the merged preparation PR; its private enforcement route is confirmed above.
 
 ## Reproducibility and repository controls
 
 - [x] Keep application dependencies and the package manager pinned with one committed workspace lockfile.
-- [x] Exclude bundled generated examples from the public export; local regeneration is optional. The generated-guidance audit rejects mutable dependencies if examples are distributed.
+- [x] Exclude bundled generated examples from the tracked repository; local regeneration is optional. The generated-guidance audit rejects mutable dependencies if examples are distributed.
 - [x] Use credential-free ordinary tests, fictional fixtures, fixed provider connectors, bounded outputs, and no fixture fallback after a live failure.
 - [x] Gate Fly deployment on explicit opt-in and adopter-owned app, website URL and assistant settings.
 - [x] Use the Developer Certificate of Origin without a CLA and community support without an SLA.
-- [ ] Verify main-branch protection, required CI and reviewer ownership on the destination repository.
-- [ ] Verify secret scanning, push protection, Dependabot and private vulnerability reporting on the destination repository.
-- [ ] Verify code scanning availability and enable it for the public destination.
+- [ ] Verify main-branch protection, required CI and reviewer ownership on this repository.
+- [ ] Verify secret scanning, push protection, Dependabot and private vulnerability reporting on this repository.
+- [ ] Verify code scanning availability and enable it for this repository.
 
-Control settings belong to the destination repository and do not transfer with
-source files. Private source CI passing does not prove these public controls. Review queue settings
-explicitly for the destination repository.
+Repository settings are checked separately from source changes. Passing CI does
+not enable these controls; review queue settings and security features before
+publication, and verify public-only features after the visibility change.
 
 ## Host and production promotion (conditional)
 
@@ -65,7 +66,7 @@ unsupported. The session/domain foundation modules are preparatory and inactive.
 
 ## Transition-day actions — not authorized by a preparation PR
 
-- [ ] Approve the exact exported candidate and create a **new** public repository with fresh history.
+- [ ] Approve the reviewed revision and change this repository to public.
 - [ ] Re-run setup anonymously against its exact public revision.
 - [ ] Enable GitHub template status after the anonymous checks pass.
 - [ ] Publish an initial version and release notes describing actual capabilities and known limitations.

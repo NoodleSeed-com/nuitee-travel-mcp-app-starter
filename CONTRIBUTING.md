@@ -35,13 +35,14 @@ pnpm check:browser
 license metadata, runs application tests, checks the default/live/embedded MCP
 contracts, and builds the Next.js website and authenticated-host example. It
 requires installed dependencies but no provider credentials or Noodle account.
-Browser checks are separate and use fictional fixtures. The public-candidate CI
-workflow runs both against an exported tree with fresh history.
+Browser checks are separate and use fictional fixtures. Application CI runs the
+build and contract checks; the public-candidate workflow runs browser checks and
+the release audit against the actual repository with full history.
 
 `pnpm audit:release` additionally enforces public file/link boundaries, generated
-example reproducibility and current dependency advisories. Run it in the clean
-public export; the private development tree intentionally contains excluded
-internal material. Advisory checks require network access.
+example reproducibility and current dependency advisories. Run it directly in
+this repository. Internal notes and regenerated agent tooling stay untracked.
+Advisory checks require network access.
 
 ## Security and provider contracts
 

@@ -1,6 +1,7 @@
-# Agentic travel starter
+# Wayfare
 
-This is a TypeScript Noodle Seed MCP App with a Next.js guest website. Read the
+Wayfare is an example agentic travel project by Noodle Seed: a TypeScript MCP
+App with a Next.js guest website. Read the
 README and `docs/architecture.md` before changing the product. Before any
 user-facing change, read `docs/brand/wayfare-brand-guidelines.md` in full.
 
