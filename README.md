@@ -151,6 +151,10 @@ pnpm check:web
 
 These commands cover fixture tests, browser components, the default and expanded-preview MCP contracts, and the website's typecheck, tests, browser tests, and build. The [CI workflow](.github/workflows/ci.yml) defines the repository gates. The build badge links to those checks; it is not a claim that a public CI run or hosted deployment has passed.
 
+Run `pnpm audit:release` from this repository to check public file boundaries,
+Git history, generated guidance, dependency licenses and current advisories. See
+the [release guide](docs/public-template-release.md) before publishing a derivative.
+
 Use `pnpm docs:previews` to regenerate the flight and hotel captures. Follow the [screenshot guide](docs/images/README.md) to recapture the homepage and review updated binaries.
 
 ## Contribute and license

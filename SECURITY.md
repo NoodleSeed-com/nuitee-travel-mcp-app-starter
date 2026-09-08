@@ -82,7 +82,7 @@ Include a concise impact statement, affected revision, safe reproduction steps, 
 
 ## Release blocker
 
-Publish only the reviewed clean source export after its content/history,
+Publish only the reviewed repository revision after its content/history,
 exact-binary-review, reproducibility, dependency and advisory checks pass.
 Distribution notices must be reviewed for the actual public artifact.
 Hosted caller-state lifecycle and named-host UI evidence are required before

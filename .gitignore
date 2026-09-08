@@ -12,10 +12,16 @@ dist
 .vitest-attachments/
 test/browser/__screenshots__/
 
-# Optional regenerated agent tooling is excluded from public source exports.
+# Optional regenerated agent tooling stays local.
 .agents/
 .claude/
 
 # Next.js may generate local agent context during development.
 /apps/web/AGENTS.md
 /apps/web/CLAUDE.md
+
+# Local planning and investigation notes are not starter documentation.
+/docs/internal/
+/docs/superpowers/
+/IMPLEMENTATION_PLAN.md
+/design/

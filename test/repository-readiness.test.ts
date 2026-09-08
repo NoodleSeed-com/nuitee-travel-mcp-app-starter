@@ -449,9 +449,9 @@ describe('public repository contracts', () => {
 
     expect(rootPackage.scripts['audit:release']).toContain('pnpm audit:generated-guidance');
     expect(rootPackage.scripts['ci:offline']).not.toContain('audit:generated-guidance');
-    expect(checklist).toContain('Exclude bundled generated examples from the public export');
+    expect(checklist).toContain('Exclude bundled generated examples from the tracked repository');
     expect(generatedGuide).toContain('rejects mutable');
-    expect(generatedGuide).toContain('public export excludes those trees');
+    expect(generatedGuide).toContain('This repository excludes generated');
     expect(generatedGuide).toMatch(/Do not hand-edit the generated\s+copies/);
   });
 
@@ -594,17 +594,23 @@ describe('public repository contracts', () => {
     expect(checklist).toContain('queue settings');
     const workflow = await repositoryFile('.github/workflows/public-candidate.yml');
     expect(workflow).toContain('merge_group:');
+    expect(workflow).toContain('fetch-depth: 0');
+    expect(workflow).toContain('run: pnpm audit:release');
+    expect(workflow).toContain('run: pnpm check:browser');
+    expect(workflow).not.toContain('export-public-template');
+    expect(workflow).not.toContain('git init');
+    expect(workflow).not.toContain('working-directory:');
     expect(checklist).toContain('never authorizes publication');
   });
 
-  it('separates private ready-to-toggle gates from unauthorized transition-day actions', async () => {
+  it('separates same-repository readiness from unauthorized publication', async () => {
     const checklist = await repositoryFile('PUBLIC_RELEASE_CHECKLIST.md');
 
     expect(checklist).toContain('## Source candidate gates');
     expect(checklist).toContain('## Transition-day actions — not authorized');
     expect(checklist).toContain('A preparation PR never authorizes publication');
-    expect(checklist).toContain('must remain private');
-    expect(checklist).toContain('create a **new** public repository with fresh history');
+    expect(checklist).toContain('Historical notes remain');
+    expect(checklist).toContain('change this repository to public');
     expect(checklist).toContain('- [ ] Enable GitHub template status after the anonymous checks pass.');
     expect(checklist).toContain('Keep the PR unarmed');
   });
@@ -693,7 +699,7 @@ describe('public repository contracts', () => {
       'exact allowed HTTPS website origin',
     );
     expect(checklist).toContain('before claiming host compatibility');
-    expect(checklist).toContain('must remain private');
+    expect(checklist).toContain('Historical notes remain');
   });
 
   it('documents the safe widget-domain customization path without claiming a default domain', async () => {

@@ -4,8 +4,11 @@ Notable changes to this starter will be recorded here. The repository has not pu
 
 ## Unreleased
 
-- Prepare a reusable public source template with a clean, allowlisted export,
-  private-history exclusion, reproducible candidate CI, and current product screenshots.
+- Prepare this repository as a reusable public source template with current
+  product screenshots, concise developer guidance and direct repository audits.
+- Remove internal working notes and bundled generated agent tooling from the
+  current tree; preserve application source, tests and existing Git history.
+  A source-only export remains optional.
 - Document live flight/hotel reads, illustrative ancillary widgets and explicit
   unsupported transactions; add source licensing and dependency/asset attribution.
 - Make website origins and Fly deployment adopter-owned and opt-in.
