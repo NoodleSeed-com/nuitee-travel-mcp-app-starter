@@ -71,7 +71,12 @@ The authored compute gateway has a 12-second/one-host-call limit. Flight search 
 
 ## Reporting a vulnerability
 
-The repository owner must replace this section with a monitored private security contact before public release. Until then, use GitHub's private vulnerability reporting feature if enabled for the repository. Do not open a public issue containing exploit details, secrets, provider IDs, customer data, or production URLs.
+Report vulnerabilities privately to [asad@noodleseed.com](mailto:asad@noodleseed.com).
+This is also the private contact for concerns under the
+[community conduct policy](CODE_OF_CONDUCT.md). You may use GitHub's private
+vulnerability reporting feature if enabled for the repository. Do not open a
+public issue containing exploit details, secrets, provider IDs, customer data,
+or production URLs.
 
 Include a concise impact statement, affected revision, safe reproduction steps, and whether a credential might be exposed. Do not test against live provider inventory or other users without written authorization.
 
@@ -79,7 +84,7 @@ Include a concise impact statement, affected revision, safe reproduction steps, 
 
 Publish only the reviewed clean source export after its content/history,
 exact-binary-review, reproducibility, dependency and advisory checks pass.
-Private security reporting and distribution notices must be finalized.
+Distribution notices must be reviewed for the actual public artifact.
 Hosted caller-state lifecycle and named-host UI evidence are required before
 claiming production or host readiness, as specified in
 [PUBLIC_RELEASE_CHECKLIST.md](PUBLIC_RELEASE_CHECKLIST.md).

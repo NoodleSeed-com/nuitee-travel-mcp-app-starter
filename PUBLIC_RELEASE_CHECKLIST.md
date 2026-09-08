@@ -28,9 +28,9 @@ hotel and illustrative ancillary tools; inspect the chosen entrypoint.
 
 - [x] Adopt Apache License 2.0; copyright holder: Noodle Seed (owner confirmed 2026-09-08).
 - [x] Record owner confirmation of Nuitée wordmark redistribution (2026-09-08); preserve attribution and trademark boundaries in `THIRD_PARTY_NOTICES.md`.
-- [ ] Confirm the monitored vulnerability-reporting destination in `SECURITY.md` before publication.
+- [x] Confirm the private security and conduct reporting destination: `asad@noodleseed.com` (owner confirmed 2026-09-08; recorded in `SECURITY.md` and `CODE_OF_CONDUCT.md`).
 - [ ] Review `NOTICE`, third-party notices, and platform-specific dependency licenses for the actual distribution. An automated metadata audit is not a rights determination.
-- [ ] Approve `CODE_OF_CONDUCT.md` and its private enforcement route.
+- [ ] Approve `CODE_OF_CONDUCT.md`; its private enforcement route is confirmed above.
 
 ## Reproducibility and repository controls
 

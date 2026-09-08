@@ -13,7 +13,7 @@ Maintainers may edit or remove harmful content, close disruptive discussions,
 and restrict participation when necessary. Explain moderation decisions
 privately where possible and apply the same standards consistently.
 
-Report conduct concerns privately through the maintainer contact documented in
-[SECURITY.md](SECURITY.md). The release owner must confirm that the private route
-accepts conduct reports as well as vulnerabilities before public launch. Never
-publish another person's private information as part of a report.
+Report conduct concerns privately to
+[asad@noodleseed.com](mailto:asad@noodleseed.com). For vulnerability reports,
+follow [SECURITY.md](SECURITY.md). Never publish another person's private
+information as part of a report.
