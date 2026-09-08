@@ -155,8 +155,8 @@ export const demoExperienceSearchInputSchema = z.object({
   interests: z.array(demoExperienceCategorySchema).max(4)
     .describe('Optional categories explicitly requested by the traveler; omit for broad discovery')
     .optional(),
-  accessibility: z.literal('STEP_FREE')
-    .describe('Set only when the traveler explicitly requests step-free or wheelchair-accessible options; otherwise omit')
+  accessibility: z.enum(['ANY', 'STEP_FREE'])
+    .describe('Use ANY unless the traveler explicitly requests step-free or wheelchair-accessible options; use STEP_FREE only for that explicit request')
     .optional(),
 }).refine(
   ({ startDate, endDate }) => endDate > startDate,

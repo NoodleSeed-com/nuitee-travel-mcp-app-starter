@@ -36,7 +36,7 @@ function searchDemoExperiences(viewPolicy: Readonly<Record<string, unknown>>) {
   return tool('search_experiences', {
     title: 'Explore experience ideas',
     description:
-      'Explore bounded fictional Wayfare experience ideas for Lisbon or Tokyo using exact stay dates and party size. Apply optional interest or step-free filters only when the traveler explicitly requests them; otherwise omit those filters. Results are deterministic demo content, not live operator inventory, and cannot be saved, held, or booked.',
+      'Explore bounded fictional Wayfare experience ideas for Lisbon or Tokyo using exact stay dates and party size. Apply optional interest filters only when explicitly requested. For accessibility use ANY unless the traveler explicitly requests step-free or wheelchair-accessible options, in which case use STEP_FREE. Results are deterministic demo content, not live operator inventory, and cannot be saved, held, or booked.',
     annotations: annotations.readOnly(),
     input: demoExperienceSearchInputSchema,
     output: demoExperienceSearchOutputSchema,

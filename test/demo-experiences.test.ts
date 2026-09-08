@@ -84,6 +84,9 @@ describe('two-city fictional experience discovery', () => {
       }
     }
     expect(demoExperienceSearchOutputSchema.parse(first)).toEqual(first);
+    expect(
+      search({ ...lisbonSearch, accessibility: 'ANY' }).experiences,
+    ).toHaveLength(3);
   });
 
   it('supports Tokyo aliases and filters only on explicitly advertised facts', () => {

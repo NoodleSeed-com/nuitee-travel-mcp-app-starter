@@ -123,8 +123,9 @@ describe('Wayfare expanded travel profile', () => {
     expect(JSON.stringify(experiences.outputSchema)).toContain('WAYFARE_DEMO');
     expect(JSON.stringify(experiences.outputSchema)).toContain('UNSUPPORTED_DESTINATION');
     expect(JSON.stringify(experiences.inputSchema)).toContain(
-      'Set only when the traveler explicitly requests step-free or wheelchair-accessible options',
+      'Use ANY unless the traveler explicitly requests step-free or wheelchair-accessible options',
     );
+    expect(JSON.stringify(experiences.inputSchema)).toContain('ANY');
     expect(JSON.stringify(home.outputSchema)).toContain('Experiences');
     const agentGuide = JSON.stringify(demo.server.agentGuide);
     expect(agentGuide).toContain('search_experiences');
