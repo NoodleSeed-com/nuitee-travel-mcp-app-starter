@@ -17,7 +17,7 @@ const review = {
 let root: Root | undefined;
 afterEach(() => { root?.unmount(); root = undefined; document.body.innerHTML = ''; document.body.style.zoom = ''; });
 
-it('shows a contained airline logo and keeps fallback and prices aligned at mobile widths and zoom', async () => {
+it('shows the airline logo without a grey surround and keeps fallback and prices aligned at mobile widths and zoom', async () => {
   const airlineLogoUrl = 'https://sandbox.nuitee.flights/static/images/airlines/ZZ.png';
   const flightReview = { ...review, experiences: [], missing: ['stay', 'experiences'], flight: {
     dataSource: 'live_nuitee_selection', selectionId: `sel_${'b'.repeat(32)}`,
@@ -31,10 +31,14 @@ it('shows a contained airline logo and keeps fallback and prices aligned at mobi
   expect(photo.getAttribute('src')).toBe(airlineLogoUrl);
   expect(photo.getAttribute('referrerpolicy')).toBe('no-referrer');
   expect(getComputedStyle(photo).objectFit).toBe('contain');
-  expect(getComputedStyle(photo).padding).toBe('12px');
+  expect(getComputedStyle(photo).padding).toBe('0px');
+  expect(getComputedStyle(photo.parentElement!).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+  expect(getComputedStyle(photo.parentElement!).borderWidth).toBe('0px');
+  expect(getComputedStyle(photo).borderRadius).toBe('12px');
   photo.dispatchEvent(new Event('error'));
   await expect.poll(() => document.querySelector('.wf-review-flight-thumbnail img')).toBeNull();
   expect(document.querySelector('.wf-review-flight-thumbnail .cc-icon')).not.toBeNull();
+  expect(getComputedStyle(document.querySelector('.wf-review-flight-thumbnail')!).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
   for (const [width, zoom] of [[882, 1], [366, 1], [320, 1], [640, 2]] as const) {
     await page.viewport(width, 1100);
     document.body.style.zoom = String(zoom);

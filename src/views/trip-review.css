@@ -27,7 +27,8 @@
 .wf-review .wf-review-thumbnail img{width:100%;height:100%;object-fit:cover;display:block}
 .wf-review .wf-review-stay-thumbnail,.wf-review .wf-review-flight-thumbnail{display:grid;place-items:center;flex-shrink:0;background:var(--cc-surface-muted)}
 .wf-review .wf-review-stay-thumbnail>.cc-icon,.wf-review .wf-review-flight-thumbnail>.cc-icon{width:24px;height:24px;color:var(--cc-muted)}
-.wf-review .wf-review-flight-thumbnail img{object-fit:contain;padding:12px}
+.wf-review .wf-review-flight-thumbnail:has(>img){background:transparent}
+.wf-review .wf-review-flight-thumbnail img{object-fit:contain;padding:0;height:auto;max-height:100%;border-radius:inherit}
 .wf-review .wf-review-stay .wf-review-facts,.wf-review .wf-review-flight .wf-review-facts{align-items:center}
 .wf-review .wf-review-experience h3{margin:0 0 5px}
 .wf-review .wf-review-experience p{font-size:13px;color:var(--cc-muted);line-height:1.55;margin:0}
