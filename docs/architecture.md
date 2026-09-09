@@ -194,6 +194,17 @@ The server owns temporary experience search snapshots and selected slots; widget
 state owns navigation only. `add_experience_to_trip` validates the returned
 references and acknowledges a successful state write before showing Added.
 `review_trip` reads those selections alongside optional flights and stays.
+Trip-review navigation reads current server selections again before acting, so
+an older widget does not search for a component selected in a later turn.
+Continue planning opens the next optional missing component in the order stay,
+experiences, then flight. With usable context, stays and experiences reuse their
+existing tools and selection views inline; incomplete searches and flight
+discovery continue through chat. Known end dates are retained; an omitted hotel
+stay length uses a visibly provisional one-night browsing default. An omitted
+adult count defaults to one, with one room. No date default confirms arrival or
+reserves inventory. The website follows new traveler turns from both its composer
+and SDK widget messages, while assistant-only updates respect a reader who has
+scrolled up. Hotel skeletons cover both chat tool execution and inline search.
 There is no live admission check, reservation, or booking.
 
 The widget's fixed decorative photos load from `https://images.unsplash.com`

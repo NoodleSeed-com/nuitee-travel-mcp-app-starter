@@ -1,6 +1,6 @@
 import { z } from '@noodleseed/one';
 import { travelCompanionDemoConfig } from './demo-config.js';
-import { activityDatesSchema, selectionIdSchema } from './flight-schemas.js';
+import { activityDatesSchema, airlineLogoSchema, selectionIdSchema } from './flight-schemas.js';
 
 export const syntheticDataSourceSchema = z.literal('illustrative');
 export const hotelDataSourceSchema = z.enum(['live_nuitee', 'illustrative']);
@@ -61,7 +61,7 @@ export const demoHotelSearchInputSchema = z.object({
     .describe('Two-letter destination country code when destination is a city name'),
   checkInDate: calendarDateSchema.describe('Check-in date in YYYY-MM-DD format'),
   checkOutDate: calendarDateSchema.describe('Check-out date in YYYY-MM-DD format'),
-  adults: z.number().int().min(1).max(8).default(2),
+  adults: z.number().int().min(1).max(8).default(1),
   children: z.number().int().min(0).max(6).default(0),
   rooms: z.number().int().min(1).max(4).default(1),
   currency: demoCurrencySchema.default('CAD'),
@@ -289,6 +289,7 @@ export const demoHotelSelectionRecordSchema = z.object({
   fixtureKey: z.string().regex(/^demo_hotel_[a-z0-9_]{2,64}$/).optional(),
   providerOfferId: z.string().min(1).max(16_384).optional(),
   propertyName: z.string().trim().min(2).max(100),
+  imageUrl: z.url().max(2_048).optional(),
   city: z.string().trim().min(2).max(80),
   checkInDate: calendarDateSchema,
   checkOutDate: calendarDateSchema,
@@ -486,6 +487,7 @@ export const demoInsuranceComparisonOutputSchema = z.object({
 export const demoTripReviewFlightSchema = z.object({
   dataSource: z.literal('live_nuitee_selection'),
   selectionId: selectionIdSchema,
+  airlineLogoUrl: airlineLogoSchema.optional(),
   origin: z.string().regex(/^[A-Z]{3}$/).optional(),
   destination: z.string().regex(/^[A-Z]{3}$/).optional(),
   searchPrice: z.object({
@@ -500,6 +502,7 @@ export const demoTripReviewStaySchema = z.object({
   dataSource: hotelDataSourceSchema,
   selectionId: demoHotelSelectionIdSchema,
   propertyName: z.string().trim().min(2).max(100),
+  imageUrl: z.url().max(2_048).optional(),
   city: z.string().trim().min(2).max(80),
   checkInDate: calendarDateSchema,
   checkOutDate: calendarDateSchema,

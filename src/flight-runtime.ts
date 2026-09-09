@@ -43,6 +43,7 @@ export type SelectionRecord = {
   readonly searchId: string;
   readonly originalTotal: number;
   readonly currency: string;
+  readonly airlineLogoUrl?: string;
   readonly expiresAt?: string;
   readonly planningContext?: {
     readonly origin: string;
@@ -787,6 +788,7 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
       searchId,
       originalTotal: total,
       currency: priceCurrency,
+      ...(carrier.logoUrl ? { airlineLogoUrl: carrier.logoUrl } : {}),
       planningContext: {
         origin: origin!, destination: destination!, departureDate: departureDate as string,
         ...(returnDate ? { returnDate: returnDate as string } : {}),

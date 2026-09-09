@@ -36,6 +36,22 @@ function mount(props: Partial<Parameters<typeof HotelResultsView>[0]> = {}) {
 const globals = globalThis as unknown as Record<string, unknown>;
 afterEach(() => { root?.unmount(); document.body.innerHTML = ''; delete globals.__noodleReactBridge; delete globals.__noodleState; delete globals.__noodleReactVersion; });
 
+it('keeps photo failures truthful and tries a changed URL without losing the stay', async () => {
+  const imageUrl = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+  const withPhoto = { ...result, hotels: [{ ...result.hotels[0]!, imageUrl }] };
+  const container = document.createElement('div'); document.body.append(container); root = createRoot(container);
+  root.render(<HotelResultsView result={withPhoto} displayMode="inline" />);
+  await expect.element(page.getByRole('img', { name: withPhoto.hotels[0]!.name })).toBeVisible();
+  const img = document.querySelector<HTMLImageElement>('.cc-stay-photo img')!;
+  expect(img.referrerPolicy).toBe('no-referrer');
+  img.dispatchEvent(new Event('error'));
+  await expect.element(page.getByText('Photo unavailable', { exact: true })).toBeVisible();
+  await expect.element(page.getByRole('button', { name: `View stay: ${withPhoto.hotels[0]!.name}` })).toBeVisible();
+  root.render(<HotelResultsView result={{ ...withPhoto, hotels: [{ ...withPhoto.hotels[0]!, imageUrl: `${imageUrl}#updated` }] }} displayMode="inline" />);
+  await expect.element(page.getByRole('img', { name: withPhoto.hotels[0]!.name })).toBeVisible();
+  expect(document.querySelector('.cc-stay-photo')!.textContent).not.toContain('Photo unavailable');
+});
+
 function notifyViewStateChange() {
   // Match the host bridge: React's external-store subscription reads this version.
   globals.__noodleReactVersion = Number(globals.__noodleReactVersion ?? 0) + 1;
