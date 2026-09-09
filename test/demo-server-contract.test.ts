@@ -285,6 +285,8 @@ describe('hotel widget map CSP', () => {
 
   it('retains the bounded Nuitee hotel-image origin', () => {
     expect(hotelDemoViewPolicy.csp.resourceDomains).toContain('https://snaphotelapi.com');
+    expect(hotelDemoViewPolicy.csp.resourceDomains).toContain('https://static.cupid.travel');
+    expect(hotelDemoViewPolicy.csp.connectDomains).not.toContain('https://static.cupid.travel');
   });
 });
 

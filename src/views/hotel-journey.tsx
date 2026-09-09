@@ -24,11 +24,12 @@ function money(hotel: DemoHotel, locale: string) {
 }
 
 function HotelPhoto({ hotel }: { readonly hotel: DemoHotel }) {
-  const [failed, setFailed] = useState(false);
+  const [failedUrl, setFailedUrl] = useState<string>();
+  const failed = Boolean(hotel.imageUrl && hotel.imageUrl === failedUrl);
   return <div className="cc-stay-photo">
     {hotel.imageUrl && !failed
-      ? <img alt={hotel.name} src={hotel.imageUrl} loading="lazy" onError={() => setFailed(true)} />
-      : <span><BedIcon /><small>Photo not provided</small></span>}
+      ? <img key={hotel.imageUrl} alt={hotel.name} src={hotel.imageUrl} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailedUrl(hotel.imageUrl)} />
+      : <span><BedIcon /><small>{failed ? 'Photo unavailable' : 'Photo not provided'}</small></span>}
   </div>;
 }
 

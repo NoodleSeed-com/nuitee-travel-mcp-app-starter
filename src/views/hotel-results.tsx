@@ -66,7 +66,7 @@ function isDemoHotel(value: unknown): value is DemoHotel {
     isDemoMoney(hotel.staySubtotal) &&
     typeof hotel.taxesAndFeesIncluded === 'boolean' &&
     boundedString(hotel.policySummary, 2, 200) &&
-    (hotel.imageUrl === undefined || (boundedString(hotel.imageUrl, 1, 2_048) && /^https:\/\/snaphotelapi\.com\//i.test(hotel.imageUrl))) &&
+    (hotel.imageUrl === undefined || (boundedString(hotel.imageUrl, 1, 2_048) && /^https:\/\/(?:snaphotelapi\.com|static\.cupid\.travel)\//i.test(hotel.imageUrl))) &&
     (hotel.reviewScore === undefined || (typeof hotel.reviewScore === 'number' && hotel.reviewScore >= 0 && hotel.reviewScore <= 10)) &&
     (hotel.reviewCount === undefined || boundedInteger(hotel.reviewCount, 0, 10_000_000))
   );

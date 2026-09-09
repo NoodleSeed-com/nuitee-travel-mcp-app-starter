@@ -53,6 +53,24 @@ const response = {
 };
 
 describe('Nuitee hotel gateway', () => {
+  it.each(['https://static.cupid.travel', 'https://snaphotelapi.com'])('preserves provider photos from %s', (origin) => {
+    const raw = { ...response, hotels: [{ ...response.hotels[0], thumbnail: `${origin}/fixture-thumbnail.jpg`, main_photo: `${origin}/fixture-main.jpg` }] };
+    const output = runHotelGateway({ search }, { callOperation: () => ({ raw }) });
+    expect(output.result).toMatchObject({ status: 'success', hotels: [{ imageUrl: `${origin}/fixture-thumbnail.jpg` }] });
+    expect(demoHotelSearchOutputSchema.safeParse(output.result).success).toBe(true);
+  });
+
+  it.each([
+    'http://static.cupid.travel/photo.jpg',
+    'https://static.cupid.travel.evil.example/photo.jpg',
+    'https://static.cupid.travel@evil.example/photo.jpg',
+    'https://static.cupid.travel:8443/photo.jpg',
+    'https://untrusted.example/photo.jpg',
+  ])('rejects an unapproved thumbnail and falls back to the approved main photo: %s', (thumbnail) => {
+    const output = runHotelGateway({ search }, { callOperation: () => ({ raw: { ...response, hotels: [{ ...response.hotels[0], thumbnail, main_photo: 'https://static.cupid.travel/fixture-main.jpg' }] } }) });
+    expect(output.result).toMatchObject({ hotels: [{ imageUrl: 'https://static.cupid.travel/fixture-main.jpg' }] });
+  });
+
   it('runs without browser or clock globals and normalizes a bounded live rate', () => {
     const sandboxed = runInNewContext(`(${runHotelGateway.toString()})`, {
       Date: undefined,

@@ -361,7 +361,7 @@ export const hotelDemoViewPolicy = {
   ...sharedWidgetDomainPolicy,
   csp: {
     connectDomains: [...mapboxOrigins],
-    resourceDomains: ['https://snaphotelapi.com', 'https://images.unsplash.com', ...mapboxOrigins],
+    resourceDomains: ['https://snaphotelapi.com', 'https://static.cupid.travel', 'https://images.unsplash.com', ...mapboxOrigins],
     frameDomains: [],
   },
 };

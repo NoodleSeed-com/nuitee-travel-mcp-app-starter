@@ -136,7 +136,7 @@ export function runHotelGateway(
   const boundedHttpsImage = (value: unknown): string | undefined => {
     const candidate = string(value, 2_048);
     if (!candidate) return undefined;
-    return /^https:\/\/snaphotelapi\.com\//i.test(candidate) ? candidate : undefined;
+    return /^https:\/\/(?:snaphotelapi\.com|static\.cupid\.travel)\//i.test(candidate) ? candidate : undefined;
   };
 
   const search = object(input.search) ?? {};
