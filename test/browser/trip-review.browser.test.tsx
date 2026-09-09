@@ -1,8 +1,18 @@
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, expect, it, vi } from 'vitest';
-import { page } from 'vitest/browser';
+import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
+import { commands, page } from 'vitest/browser';
 import { TripReviewView, tripSuggestion } from '../../src/views/trip-review.js';
 import type { DemoTripReview } from '../../src/demo-schemas.js';
+
+declare module 'vitest/browser' {
+  interface BrowserCommands {
+    mockTripReviewImages(): Promise<void>;
+    restoreTripReviewImages(): Promise<void>;
+  }
+}
+
+beforeAll(() => commands.mockTripReviewImages());
+afterAll(() => commands.restoreTripReviewImages());
 
 const review = {
   status: 'ready', experiences: [{
@@ -27,7 +37,8 @@ it('shows the airline logo without a grey surround and keeps fallback and prices
   const node = document.createElement('div'); document.body.append(node); root = createRoot(node);
   root.render(<TripReviewView data={flightReview} onSuggest={() => {}} onContinue={() => {}} />);
   await expect.element(page.getByRole('heading', { name: 'Your selected flight' })).toBeVisible();
-  const photo = document.querySelector('.wf-review-flight-thumbnail img')!;
+  const photo = document.querySelector<HTMLImageElement>('.wf-review-flight-thumbnail img')!;
+  await expect.poll(() => photo.complete && photo.naturalWidth > 0).toBe(true);
   expect(photo.getAttribute('src')).toBe(airlineLogoUrl);
   expect(photo.getAttribute('referrerpolicy')).toBe('no-referrer');
   expect(getComputedStyle(photo).objectFit).toBe('contain');
@@ -52,6 +63,7 @@ it('shows the airline logo without a grey surround and keeps fallback and prices
   const changedLogo = airlineLogoUrl.replace('ZZ.png', 'QZ.png');
   root.render(<TripReviewView data={{ ...flightReview, flight: { ...flightReview.flight!, airlineLogoUrl: changedLogo } }} />);
   await expect.poll(() => document.querySelector('.wf-review-flight-thumbnail img')?.getAttribute('src')).toBe(changedLogo);
+  await expect.poll(() => document.querySelector<HTMLImageElement>('.wf-review-flight-thumbnail img')?.naturalWidth).toBe(64);
 });
 
 it('keeps the stay thumbnail, fallback and price aligned at desktop, mobile and zoom', async () => {
@@ -63,7 +75,8 @@ it('keeps the stay thumbnail, fallback and price aligned at desktop, mobile and 
   const node = document.createElement('div'); document.body.append(node); root = createRoot(node);
   root.render(<TripReviewView data={stayReview} onSuggest={() => {}} onContinue={() => {}} />);
   await expect.element(page.getByRole('heading', { name: 'Selected Lisbon Hotel' })).toBeVisible();
-  const photo = document.querySelector('.wf-review-stay-thumbnail img')!;
+  const photo = document.querySelector<HTMLImageElement>('.wf-review-stay-thumbnail img')!;
+  await expect.poll(() => photo.complete && photo.naturalWidth > 0).toBe(true);
   expect(photo.getAttribute('referrerpolicy')).toBe('no-referrer');
   photo.dispatchEvent(new Event('error'));
   await expect.poll(() => document.querySelector('.wf-review-stay-thumbnail img')).toBeNull();
@@ -80,12 +93,13 @@ it('keeps the stay thumbnail, fallback and price aligned at desktop, mobile and 
   }
   root.render(<TripReviewView data={{ ...stayReview, stay: { ...stayReview.stay!, imageUrl: 'https://static.cupid.travel/browser-fixture-changed.jpg' } }} />);
   await expect.poll(() => document.querySelector('.wf-review-stay-thumbnail img')?.getAttribute('src')).toBe('https://static.cupid.travel/browser-fixture-changed.jpg');
+  await expect.poll(() => document.querySelector<HTMLImageElement>('.wf-review-stay-thumbnail img')?.naturalWidth).toBe(64);
 });
 
 it('keeps breathing room between flight-only suggestions and the date note at narrow widths and zoom', async () => {
   const flightReview = {
     ...review, experiences: [], missing: ['stay', 'experiences'],
-    flight: { selectionId: `sel_${'b'.repeat(32)}`, searchPrice: { total: 655.07, currency: 'CAD' }, disclosure: 'Flight search selection only.' },
+    flight: { dataSource: 'live_nuitee_selection', selectionId: `sel_${'b'.repeat(32)}`, searchPrice: { total: 655.07, currency: 'CAD' }, disclosure: 'Flight search selection only.' },
     planningContext: { source: 'flight', destination: 'LIS', origin: 'IST', startDate: '2026-09-18', dateBasis: 'flight_departure', adults: 2, currency: 'CAD' },
     notes: ['The flight date is its departure date. Confirm local arrival and the final stay date before searching accommodation.'],
   } as DemoTripReview;
