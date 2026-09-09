@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-test('a widget follow-up moves to the new turn and offers a jump back to latest', async ({ page, baseURL }, testInfo) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
+for (const reducedMotion of ['reduce', 'no-preference'] as const) {
+test(`a widget follow-up scrolls with loading feedback (${reducedMotion})`, async ({ page, baseURL }, testInfo) => {
+  await page.emulateMedia({ reducedMotion });
   const frame = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0;padding:16px;font:16px system-ui}button{min-height:44px;padding:12px 20px}</style></head><body><h2>Selected trip fixture</h2><button disabled>Find a stay</button><script>
     addEventListener('message', event => {
@@ -54,6 +55,19 @@ test('a widget follow-up moves to the new turn and offers a jump back to latest'
   await page.screenshot({ path: testInfo.outputPath('jump-to-latest.png') });
   await jump.focus();
   await jump.press('Enter');
+  if (reducedMotion === 'no-preference') {
+    await expect(jump).toHaveAttribute('data-loading', 'true');
+    // Native animation has intermediate positions, not an immediate jump.
+    const moving = await page.evaluate(() => ({ y: window.scrollY, end: document.documentElement.scrollHeight - innerHeight }));
+    expect(moving.y).toBeLessThan(moving.end - 30);
+    // Put the pointer on the owning page, not the nested widget iframe left
+    // under the pointer by the earlier submit click.
+    await page.mouse.move(5, 5);
+    await page.mouse.wheel(0, -120);
+    await expect(jump).toHaveAttribute('data-loading', 'false');
+    await expect(jump).toBeInViewport();
+    await jump.click();
+  }
   await expect(jump).toBeHidden();
   await expect(page.getByTestId('conversation-end')).toBeFocused();
   await expect(page.getByText(/Trip planning fixture paragraph 45/)).toBeInViewport();
@@ -64,6 +78,11 @@ test('a widget follow-up moves to the new turn and offers a jump back to latest'
   await expect.poll(() => turns).toBe(2);
   const sent = page.getByRole('article', { name: 'Traveler message' }).filter({ hasText: 'Find a stay for my selected trip.' });
   await expect(sent).toBeInViewport();
+  await expect(jump).toHaveAttribute('data-loading', 'true');
+  await expect(jump).toBeEnabled();
+  expect(await jump.locator('svg').evaluate(element => getComputedStyle(element).animationName))
+    .toBe(reducedMotion === 'reduce' ? 'none' : 'travel-jump-loading');
+  await page.screenshot({ path: testInfo.outputPath('follow-up-loading.png') });
   expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(before + 300);
   // Read the older widget while the follow-up is pending. New assistant text
   // must not pull the reader down; the arrow provides the explicit way back.
@@ -74,9 +93,11 @@ test('a widget follow-up moves to the new turn and offers a jump back to latest'
   await expect(page.getByText('Hotel search fixture complete.')).toBeVisible();
   expect(Math.abs(await page.evaluate(() => window.scrollY) - readingPosition)).toBeLessThan(5);
   await expect(jump).toBeInViewport();
+  await expect(jump).toHaveAttribute('data-loading', 'false');
   await jump.click();
   await expect(jump).toBeHidden();
   await expect(page.getByText('Hotel search fixture complete.')).toBeInViewport();
   expect(turns).toBe(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));
 });
+}

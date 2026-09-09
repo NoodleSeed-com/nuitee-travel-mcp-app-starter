@@ -231,6 +231,20 @@ code {
   height: 20px;
 }
 
+.travel-composer__jump-latest[data-loading="true"] svg {
+  animation: travel-jump-loading 900ms linear infinite;
+}
+
+@keyframes travel-jump-loading {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .travel-composer__jump-latest[data-loading="true"] svg {
+    animation: none;
+  }
+}
+
 .travel-composer__controls {
   display: flex;
   flex: 0 0 auto;

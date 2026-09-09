@@ -180,6 +180,8 @@ export function TravelConversation({
   const transcriptContentRef = useRef<HTMLOListElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const followLatestRef = useRef(true);
+  const scrollToLatestRef = useRef<() => void>(() => {});
+  const [scrollingToLatest, setScrollingToLatest] = useState(false);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [activity, setActivity] = useState<ToolActivity | null>(null);
   const [initialPromptState, setInitialPromptState] = useState<
@@ -204,7 +206,7 @@ export function TravelConversation({
     const prompt = latestTraveler.parts.filter(part => part.type === 'text').map(part => part.text).join('\n');
     if (prompt.trim()) lastPromptRef.current = prompt;
     followLatestRef.current = true;
-    conversationEndRef.current?.scrollIntoView?.({ block: 'end' });
+    scrollToLatestRef.current();
   }, [latestTraveler?.id]);
 
   useEffect(() => {
@@ -271,18 +273,64 @@ export function TravelConversation({
 
   useEffect(() => {
     const content = transcriptContentRef.current;
+    let scrolling = false;
+    let settleTimer: ReturnType<typeof setTimeout> | undefined;
     const nearEnd = () => isNearTranscriptEnd({
       clientHeight: window.innerHeight,
       scrollHeight: document.documentElement.scrollHeight,
       scrollTop: window.scrollY,
     });
     const updateFollowState = () => {
+      // Native smooth scrolling emits intermediate positions. Those are not
+      // a request to stop following, nor should streaming restart the animation.
+      if (scrolling) return;
       followLatestRef.current = nearEnd();
       setShowJumpToLatest(!followLatestRef.current);
     };
+    const finishScroll = () => {
+      if (!scrolling) return;
+      scrolling = false;
+      clearTimeout(settleTimer);
+      setScrollingToLatest(false);
+      // A widget can grow during the animation. Follow that new content only
+      // after this movement finishes, and only if the reader has not interrupted.
+      if (followLatestRef.current && !nearEnd()) {
+        scrollToLatestRef.current();
+      } else {
+        updateFollowState();
+      }
+    };
+    scrollToLatestRef.current = () => {
+      followLatestRef.current = true;
+      if (scrolling || nearEnd()) return;
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      scrolling = !reducedMotion;
+      setScrollingToLatest(scrolling);
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: reducedMotion ? 'instant' : 'smooth' });
+      // scrollend is not available in every host browser. The fallback releases
+      // the animation lock without repeatedly scheduling more animations.
+      if (scrolling) settleTimer = setTimeout(() => {
+        scrolling = false;
+        setScrollingToLatest(false);
+        updateFollowState();
+      }, 1500);
+    };
+    const interruptScroll = () => {
+      if (!scrolling) return;
+      scrolling = false;
+      clearTimeout(settleTimer);
+      followLatestRef.current = false;
+      setScrollingToLatest(false);
+      window.scrollTo({ top: window.scrollY, behavior: 'instant' });
+      setShowJumpToLatest(!nearEnd());
+    };
+    const interruptWithKeyboard = (event: KeyboardEvent) => {
+      if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key)
+        && !(event.target instanceof Element && event.target.closest('input, textarea, button, [contenteditable="true"]'))) interruptScroll();
+    };
     const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(() => {
-      if (followLatestRef.current) {
-        conversationEndRef.current?.scrollIntoView?.({ block: 'end' });
+      if (followLatestRef.current && !scrolling) {
+        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
       }
       setShowJumpToLatest(!nearEnd());
     });
@@ -290,10 +338,22 @@ export function TravelConversation({
     updateFollowState();
     window.addEventListener('scroll', updateFollowState, { passive: true });
     window.addEventListener('resize', updateFollowState);
+    window.addEventListener('scrollend', finishScroll);
+    window.addEventListener('wheel', interruptScroll, { passive: true });
+    window.addEventListener('touchstart', interruptScroll, { passive: true });
+    window.addEventListener('pointerdown', interruptScroll, { passive: true });
+    window.addEventListener('keydown', interruptWithKeyboard);
     return () => {
+      clearTimeout(settleTimer);
+      scrollToLatestRef.current = () => {};
       observer?.disconnect();
       window.removeEventListener('scroll', updateFollowState);
       window.removeEventListener('resize', updateFollowState);
+      window.removeEventListener('scrollend', finishScroll);
+      window.removeEventListener('wheel', interruptScroll);
+      window.removeEventListener('touchstart', interruptScroll);
+      window.removeEventListener('pointerdown', interruptScroll);
+      window.removeEventListener('keydown', interruptWithKeyboard);
     };
   }, []);
 
@@ -369,16 +429,14 @@ export function TravelConversation({
 
   function sendFollowUp(prompt: string) {
     followLatestRef.current = true;
-    conversationEndRef.current?.scrollIntoView?.({ block: 'end' });
+    scrollToLatestRef.current();
     lastPromptRef.current = prompt;
     void client.sendMessage(prompt).catch(() => undefined);
   }
 
   function jumpToLatest() {
     followLatestRef.current = true;
-    // Include the sticky composer so the final answer is not hidden behind it.
-    // An instant jump also respects reduced motion and cannot fight streaming.
-    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+    scrollToLatestRef.current();
     conversationEndRef.current?.focus({ preventScroll: true });
   }
 
@@ -417,6 +475,11 @@ export function TravelConversation({
       break;
     }
   }
+  const waitingForFollowUp = !terminal && responseInProgress
+    && visibleMessages.filter(message => message.role === 'user').length > 1
+    && !visibleMessages.slice(activityInsertionIndex).some(message => message.role === 'assistant'
+      && message.parts.some(part => (part.type === 'text' && part.text.trim()) || part.type === 'data-view'));
+  const jumpToLatestPending = scrollingToLatest || waitingForFollowUp;
   const errorPresentation = error && !hasToolError
     ? presentAssistantError(error)
     : null;
@@ -600,7 +663,8 @@ export function TravelConversation({
         busy={responseInProgress}
         error={Boolean(errorPresentation || hasToolError || projection.phase === 'error')}
         formLabel="Continue trip"
-        onJumpToLatest={showJumpToLatest ? jumpToLatest : undefined}
+        jumpToLatestPending={jumpToLatestPending}
+        onJumpToLatest={showJumpToLatest || jumpToLatestPending ? jumpToLatest : undefined}
         onStop={stopGenerating}
         onSubmit={sendFollowUp}
         placeholder={copy.placeholder}
