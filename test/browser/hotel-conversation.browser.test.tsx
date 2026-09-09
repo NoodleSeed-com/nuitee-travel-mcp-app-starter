@@ -1,8 +1,10 @@
 import { createRoot, type Root } from 'react-dom/client';
 import { useState } from 'react';
 import { afterEach, expect, it } from 'vitest';
-import { page } from 'vitest/browser';
+import { page, userEvent } from 'vitest/browser';
 import HotelResults, { HotelResultsView } from '../../src/views/hotel-results.js';
+import OpenHotel from '../../src/views/open-hotel.js';
+import { runDemoGateway } from '../../src/demo-runtime.js';
 import type { DemoHotelSearchOutput } from '../../src/demo-schemas.js';
 
 const result: DemoHotelSearchOutput = {
@@ -32,7 +34,96 @@ function mount(props: Partial<Parameters<typeof HotelResultsView>[0]> = {}) {
   root.render(<Journey />);
 }
 const globals = globalThis as unknown as Record<string, unknown>;
-afterEach(() => { root?.unmount(); document.body.innerHTML = ''; delete globals.__noodleReactBridge; delete globals.__noodleState; });
+afterEach(() => { root?.unmount(); document.body.innerHTML = ''; delete globals.__noodleReactBridge; delete globals.__noodleState; delete globals.__noodleReactVersion; });
+
+function notifyViewStateChange() {
+  // Match the host bridge: React's external-store subscription reads this version.
+  globals.__noodleReactVersion = Number(globals.__noodleReactVersion ?? 0) + 1;
+  window.dispatchEvent(new Event('noodle:state'));
+}
+
+function mountOpened(output: unknown) {
+  const calls: string[] = [];
+  const saved: Record<string, unknown> = {};
+  const hotel = result.hotels[3]!;
+  const review = runDemoGateway({ kind: 'review', flightState: {}, hotelState: {
+    activeSelectionId: hotel.selectionId,
+    records: [{ selectionId: hotel.selectionId, searchId: result.searchId, dataSource: 'illustrative', propertyName: hotel.name, city: hotel.city,
+      checkInDate: result.searchContext.checkInDate, checkOutDate: result.searchContext.checkOutDate, nights: hotel.nights, rooms: hotel.rooms, staySubtotal: hotel.staySubtotal }],
+  }, loyalty: {} }).review;
+  globals.__noodleReactBridge = {
+    getToolResult: () => ({ structuredContent: output }),
+    getLayout: () => ({ theme: 'light', displayMode: 'inline', supports: {} }),
+    getViewState: () => saved,
+    setWidgetState: (patch: Record<string, unknown>) => { Object.assign(saved, patch); notifyViewStateChange(); },
+    callServerTool: async (request: { name: string; arguments: { selectionId?: string } }) => {
+      calls.push(request.name);
+      if (request.name === 'review_trip') return { structuredContent: review };
+      expect(request.name).toBe('select_hotel');
+      expect(request.arguments.selectionId).toBe(hotel.selectionId);
+      return { structuredContent: { status: 'selected', selectionId: hotel.selectionId } };
+    },
+  };
+  const container = document.createElement('div'); document.body.append(container); root = createRoot(container);
+  root.render(<OpenHotel />);
+  return calls;
+}
+
+it('opens a requested later stay directly, preserves Back, then chooses and reviews inline', async () => {
+  await page.viewport(900, 1200);
+  const hotel = result.hotels[3]!;
+  const calls = mountOpened({ status: 'ready', message: 'The requested hotel is open. Nothing selected.', result: { ...result, hotels: [hotel] }, focusedSelectionId: hotel.selectionId });
+  await expect.element(page.getByRole('heading', { name: hotel.name })).toBeVisible();
+  await expect.element(page.getByRole('button', { name: 'Choose this stay' })).toBeEnabled();
+  expect(document.querySelector('.cc-stay-card')).toBeNull();
+  expect(calls).toEqual([]);
+  await page.getByRole('button', { name: 'Back to stays', exact: true }).click();
+  await expect.element(page.getByRole('heading', { name: 'Stays for your trip' })).toBeVisible();
+  await page.getByRole('button', { name: `View stay: ${hotel.name}` }).click();
+  await page.getByRole('button', { name: 'Choose this stay' }).click();
+  await expect.element(page.getByText('Stay added to your trip', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Review my trip' }).click();
+  await expect.element(page.getByRole('heading', { name: 'Your Lisbon plan' })).toBeVisible();
+  expect(calls).toEqual(['select_hotel', 'review_trip']);
+  await page.getByRole('button', { name: 'Back to stays' }).click();
+  await expect.element(page.getByRole('button', { name: 'Selected', exact: true })).toBeVisible();
+});
+
+it('shows matching cards for ambiguity and no selection controls for a missing hotel', async () => {
+  mountOpened({ status: 'ready', message: 'Two hotels match that name.', result: { ...result, hotels: result.hotels.slice(0, 2) } });
+  await expect.element(page.getByRole('heading', { name: 'Stays for your trip' })).toBeVisible();
+  expect(document.querySelectorAll('.cc-stay-card')).toHaveLength(2);
+  expect(document.querySelector('.cc-stay-detail')).toBeNull();
+  root.unmount(); document.body.innerHTML = '';
+  const calls = mountOpened({ status: 'not_found', message: 'That hotel is not in the current returned results.' });
+  await expect.element(page.getByText('That hotel is not in the current returned results.')).toBeVisible();
+  expect(document.querySelector('.cc-stay-card, .cc-stay-detail')).toBeNull();
+  expect(calls).toEqual([]);
+});
+
+it('hides hotel scrollbars while retaining centered mid-card arrows and keyboard scrolling', async () => {
+  await page.viewport(900, 1200);
+  mount();
+  await expect.element(page.getByRole('button', { name: 'Next stay', exact: true })).toBeEnabled();
+  const track = document.querySelector<HTMLElement>('.cc-card-carousel-track')!;
+  const card = document.querySelector<HTMLElement>('.cc-stay-card')!;
+  expect(getComputedStyle(track).scrollbarWidth).toBe('none');
+  for (const button of document.querySelectorAll<HTMLElement>('.cc-card-carousel-nav button')) {
+    const rect = button.getBoundingClientRect(), icon = button.querySelector('.cc-icon')!.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    expect(Math.abs(rect.top + rect.height / 2 - cardRect.top - cardRect.height / 2)).toBeLessThanOrEqual(8);
+    expect(Math.abs(rect.left + rect.width / 2 - icon.left - icon.width / 2)).toBeLessThanOrEqual(1);
+    expect(Math.abs(rect.top + rect.height / 2 - icon.top - icon.height / 2)).toBeLessThanOrEqual(1);
+  }
+  await page.getByRole('button', { name: 'Next stay', exact: true }).click();
+  await expect.poll(() => track.scrollLeft).toBeGreaterThan(0);
+  track.focus();
+  await userEvent.keyboard('{Home}');
+  // Scroll snapping may settle at the first card's 2px focus-ring inset.
+  await expect.element(page.getByRole('button', { name: 'Previous stay', exact: true })).toBeDisabled();
+  expect(Math.abs(card.getBoundingClientRect().left - track.getBoundingClientRect().left)).toBeLessThanOrEqual(3);
+  await page.screenshot({ path: '__screenshots__/hotel-carousel.png', fullPage: true });
+});
 
 it('starts with three inspectable stays instead of inline comparison and match controls', async () => {
   mount();
@@ -132,7 +223,7 @@ it('persists inspected stay and rejects mismatched helper acknowledgments', asyn
     getToolResult: () => ({ structuredContent: result }),
     getLayout: () => ({ theme: 'light', displayMode: 'inline', supports: {} }),
     getViewState: () => saved,
-    setWidgetState: (patch: Record<string, unknown>) => { Object.assign(saved, patch); window.dispatchEvent(new Event('noodle:state')); },
+    setWidgetState: (patch: Record<string, unknown>) => { Object.assign(saved, patch); notifyViewStateChange(); },
     callServerTool: async (request: { name: string; arguments: { selectionId: string } }) => {
       expect(request.name).toBe('select_hotel');
       expect(request.arguments.selectionId).toBe(result.hotels[0]!.selectionId);

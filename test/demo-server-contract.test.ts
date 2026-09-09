@@ -25,12 +25,14 @@ const sharedFlightTools = [
 const demoTools = [
   ...starterTools,
   'search_hotels',
+  'open_hotel',
   'search_experiences',
   'open_loyalty',
   'compare_reward_flights',
   'compare_travel_insurance',
   'review_trip',
   'select_hotel',
+  'add_experience_to_trip',
 ];
 
 function modelVisible(manifest: any) {
@@ -40,6 +42,14 @@ function modelVisible(manifest: any) {
 }
 
 describe('Wayfare expanded travel profile', () => {
+  it('reopens returned hotels read-only using the existing snapshot and widget-only selection', async () => {
+    const manifest = await demoEmbeddedApp.toManifest() as any;
+    const open = manifest.tools.find((entry: any) => entry.name === 'open_hotel');
+    expect(open).toMatchObject({ annotations: { readOnlyHint: true } });
+    expect(Object.keys(open.inputSchema.properties)).toEqual(['hotelName']);
+    expect(open.fulfilment.steps.map((step: any) => step.use)).toEqual(['state.read_state', 'demo.prepare_states', 'demo.open_hotel']);
+    expect(JSON.stringify(manifest.state.handles.demo_hotel_selections.schema)).toContain('searchResult');
+  });
   it('provides a credential-free local preview of every widget tool', async () => {
     const manifest = await demoPreviewApp.toManifest() as any;
     expect(manifest.tools.map((entry: any) => entry.name)).toEqual(demoTools);
@@ -87,11 +97,13 @@ describe('Wayfare expanded travel profile', () => {
       'search_flights',
       'verify_flight_offer',
       'search_hotels',
+      'open_hotel',
       'search_experiences',
       'open_loyalty',
       'compare_reward_flights',
       'compare_travel_insurance',
       'review_trip',
+      'add_experience_to_trip',
     ]);
     for (const name of demoTools) {
       expect(manifest.tools.filter((entry: any) => entry.name === name)).toHaveLength(1);
@@ -204,6 +216,19 @@ describe('Wayfare expanded travel profile', () => {
     expect(embedded.server.assistant.surfaces[0].capabilities).toEqual(
       demoTools.map((name) => ({ kind: 'tool', name })),
     );
+  });
+
+  it('keeps experience selection callable by conversation and app with caller-owned state and acknowledged patch output', async () => {
+    const manifest = await demoLiveApp.toManifest() as any;
+    const add = manifest.tools.find((entry: any) => entry.name === 'add_experience_to_trip');
+    expect(add).toMatchObject({ visibility: ['model', 'app'], annotations: { readOnlyHint: true } });
+    expect(Object.keys(add.inputSchema.properties)).toEqual(['experienceId', 'slotId']);
+    expect(add.inputSchema.additionalProperties).toBe(false);
+    expect(add.outputSchema.required).toEqual(expect.arrayContaining(['requestedExperienceId', 'requestedSlotId']));
+    expect(manifest.state.handles.experience_selections).toMatchObject({ kind: 'selection', scope: 'caller', ttlSeconds: 1_800 });
+    expect(JSON.stringify(add)).toContain('acknowledge_experience_selection');
+    expect(JSON.stringify(add)).toContain('expectedRevision');
+    expect(JSON.stringify(add)).toContain('patchOk');
   });
 
   it('does not expose a transactional or arbitrary transport capability', async () => {

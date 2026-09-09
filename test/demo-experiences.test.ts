@@ -21,16 +21,47 @@ const lisbonSearch = {
   interests: ['FOOD', 'CULTURE'] as const,
 };
 
-function search(input: Readonly<Record<string, unknown>>) {
+function search(input: Readonly<Record<string, unknown>>, catalog = DEMO_EXPERIENCE_CATALOG) {
   return demoGatewayOutputSchema.parse(runDemoGateway({
     kind: 'experience_search',
     experienceSearch: input,
-    experienceCatalog: DEMO_EXPERIENCE_CATALOG,
+    experienceCatalog: catalog,
     experienceAliases: DEMO_EXPERIENCE_ALIASES,
   })).experienceResult!;
 }
 
 describe('two-city fictional experience discovery', () => {
+  it('preserves a bounded requested experience name and returns only matching titles', () => {
+    const input = { ...lisbonSearch, destination: 'Tokyo', experienceName: '  Yanaka Food and Craft Walk  ' };
+    expect(demoExperienceSearchInputSchema.parse(input)).toHaveProperty('experienceName', 'Yanaka Food and Craft Walk');
+    const result = search({ ...input, experienceName: 'yanaka food & craft walk' });
+    expect(result.experiences.map(item => item.title)).toEqual(['Yanaka Food & Craft Walk']);
+    expect(result.searchContext).toHaveProperty('experienceName', 'yanaka food & craft walk');
+    expect(result.fallback).toContain('Choose a date and time');
+    expect(demoExperienceSearchInputSchema.safeParse({ ...input, experienceName: 'x'.repeat(101) }).success).toBe(false);
+  });
+
+  it.each(['', ' ', '  \t\n'])('treats a blank name %j as broad discovery before hashing and returning context', (experienceName) => {
+    const input = { ...lisbonSearch, destination: 'Tokyo', experienceName, interests: [] };
+    expect(demoExperienceSearchInputSchema.parse(input).experienceName).toBe('');
+    const { experienceName: _name, ...broadInput } = input;
+    const result = search(input);
+    expect(result).toEqual(search(broadInput));
+    expect(result.experiences).toHaveLength(3);
+    expect(result.searchContext).not.toHaveProperty('experienceName');
+    expect(input.experienceName).toBe(experienceName);
+  });
+
+  it('keeps similar and duplicate names ambiguous and never substitutes unrelated experiences', () => {
+    const original = DEMO_EXPERIENCE_CATALOG.TOKYO![0]!;
+    const catalog = { TOKYO: [original, { ...original, key: 'other_yanaka', title: 'Yanaka Food & Craft Walk Evening' }] };
+    expect(search({ ...lisbonSearch, destination: 'Tokyo', experienceName: 'Yanaka Food & Craft Walk' }, catalog).experiences).toHaveLength(2);
+    expect(search({ ...lisbonSearch, destination: 'Tokyo', experienceName: 'Yanaka' }, { TOKYO: [original, { ...original, key: 'duplicate_yanaka' }] }).experiences).toHaveLength(2);
+    expect(search({ ...lisbonSearch, destination: 'Tokyo', experienceName: 'Unknown pottery class' })).toMatchObject({ status: 'empty', emptyReason: 'NO_MATCHING_EXPERIENCES', experiences: [] });
+    expect(search({ ...lisbonSearch, experienceName: 'Belem Makers' }).experiences.map(item => item.title)).toEqual(['Belém Makers Morning']);
+    expect(search({ ...lisbonSearch, destination: 'Tokyo', experienceName: 'Yanaka', accessibility: 'STEP_FREE' }).experiences).toHaveLength(0);
+  });
+
   it('rejects invalid ranges, unsupported currencies, and unbounded parties', () => {
     expect(demoExperienceSearchInputSchema.parse(lisbonSearch)).toEqual(lisbonSearch);
     expect(demoExperienceSearchInputSchema.safeParse({
@@ -135,5 +166,19 @@ describe('two-city fictional experience discovery', () => {
 
     expect(result.status).toBe('success');
     expect(result.experiences).toHaveLength(3);
+    const named = demoGatewayOutputSchema.parse(isolated({
+      kind: 'experience_search',
+      experienceSearch: { ...lisbonSearch, experienceName: 'Belem Makers' },
+      experienceCatalog: DEMO_EXPERIENCE_CATALOG,
+      experienceAliases: DEMO_EXPERIENCE_ALIASES,
+    })).experienceResult!;
+    expect(named.experiences.map(item => item.title)).toEqual(['Belém Makers Morning']);
+    const blank = demoGatewayOutputSchema.parse(isolated({
+      kind: 'experience_search',
+      experienceSearch: { ...lisbonSearch, experienceName: ' ' },
+      experienceCatalog: DEMO_EXPERIENCE_CATALOG,
+      experienceAliases: DEMO_EXPERIENCE_ALIASES,
+    })).experienceResult!;
+    expect(blank).toEqual(result);
   });
 });

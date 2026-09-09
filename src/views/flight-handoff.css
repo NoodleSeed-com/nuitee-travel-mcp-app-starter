@@ -1,0 +1,14 @@
+/* Selection handoff follows docs/brand/wayfare-brand-guidelines.md.
+   Keep the flight-only starter unchanged and the expanded review action explicit. */
+.cc-app .cc-flight-selection-handoff { flex-wrap: wrap; }
+.cc-flight-selection-handoff > div[role='status'] { flex: 1 1 220px; min-width: 0; }
+.cc-flight-selection-handoff > div[role='status'] > span:first-child { color: var(--cc-text); font-size: .85rem; font-weight: 600; }
+.cc-flight-selection-handoff > div[role='status'] > strong { overflow-wrap: anywhere; }
+.cc-flight-selection-handoff > :last-child { display: flex; flex-wrap: wrap; gap: 8px; max-width: 100%; }
+.cc-app button.cc-trip-review-action { min-height: 44px; padding: 10px 18px; border: 1px solid var(--cc-text); border-radius: 999px; background: var(--cc-text); color: var(--cc-bg); font: inherit; font-size: .875rem; font-weight: 550; line-height: 1.35; }
+.cc-app button.cc-trip-review-action span { color: inherit; font: inherit; }
+.cc-app button.cc-trip-review-action:disabled { opacity: .55; cursor: default; }
+.cc-app button.cc-trip-review-action:focus-visible { outline: 2px solid var(--cc-text); outline-offset: 3px; }
+@media (max-width: 520px) {
+  .cc-flight-selection-handoff > div[role='status'] { flex: 0 1 auto; }
+}

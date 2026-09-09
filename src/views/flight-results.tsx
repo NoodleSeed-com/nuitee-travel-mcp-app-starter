@@ -28,7 +28,9 @@ import {
 } from './icons.js';
 import { SearchEditor, searchPrompt, type SearchDraft } from './search-editor.js';
 import { FlightSearchRecovery } from './flight-search-recovery.js';
+import { InlineTripReview } from './trip-review.js';
 import './travel.css';
+import './flight-handoff.css';
 
 type ResultsState = 'loading' | 'malformed';
 type TravelView = 'search' | 'results' | 'review';
@@ -53,7 +55,7 @@ function boundedText(value: unknown, max: number): value is string {
 export function selectionOutcome(value: unknown, expectedSelectionId: string) {
   const response = record(value);
   const content = record(response?.structuredContent);
-  const confirmed = content?.status === 'selected'
+  const confirmed = response?.isError !== true && content?.status === 'selected'
     && content.selectionId === expectedSelectionId;
   return {
     confirmed,
@@ -826,6 +828,7 @@ export function FlightResultsView({
   view = 'results',
   onSelect,
   onVerify,
+  onReview,
   onEdit,
   onBack,
   onSearchPrompt,
@@ -846,6 +849,7 @@ export function FlightResultsView({
   readonly view?: TravelView;
   readonly onSelect?: (selectionId: string) => void;
   readonly onVerify: (selectionId: string) => void;
+  readonly onReview?: () => void;
   readonly onEdit?: () => void;
   readonly onBack?: () => void;
   readonly onSearchPrompt?: (draft: SearchDraft) => void;
@@ -885,6 +889,7 @@ export function FlightResultsView({
     return (
       <Frame className="cc-app" displayMode="auto" title="Verified fare" data-llm={result.fallback}>
         <FareReview itinerary={selected} verification={verification} onBack={onBack} />
+        {onReview ? <Action type="button" variant="primary" className="cc-trip-review-action" data-trip-review-trigger onClick={onReview}>Review my trip</Action> : null}
       </Frame>
     );
   }
@@ -955,11 +960,12 @@ export function FlightResultsView({
             : null
         ) : null}
         {selected ? (
-          <div className="cc-action-dock" aria-label="Selected fare action">
-            <div><span>Selected</span><strong>{selected.carrier.name} · {money(selected.price.total, selected.price.currency)}</strong></div>
+          <div className={`cc-action-dock${onReview ? ' cc-flight-selection-handoff' : ''}`} aria-label="Selected fare action">
+            <div role="status"><span>{onReview ? 'Flight added to your trip' : 'Selected'}</span><strong>{selected.carrier.name} · {money(selected.price.total, selected.price.currency)}</strong><span>Not reserved · {verification?.selectionId === selected.selectionId ? 'Fare previously verified' : 'Fare not yet verified'}</span></div>
             <ActionBar>
+              {onReview ? <Action type="button" variant="primary" className="cc-trip-review-action" data-trip-review-trigger disabled={Boolean(pendingFareSelectionId) || Boolean(pendingSelectionId)} onClick={onReview}>Review my trip</Action> : null}
               <Action
-                variant="primary"
+                variant={onReview ? 'secondary' : 'primary'}
                 pending={pendingSelectionId === selected.selectionId}
                 pendingLabel="Verifying…"
                 onClick={() => onVerify(selected.selectionId)}
@@ -994,7 +1000,7 @@ export function FlightResultsView({
   );
 }
 
-export default function FlightResults() {
+export default function FlightResults({ tripReviewEnabled = false }: { readonly tripReviewEnabled?: boolean } = {}) {
   const ready = useWidgetReady();
   const layout = useLayout();
   const toolInfo = useToolInfo('search_flights');
@@ -1010,6 +1016,7 @@ export default function FlightResults() {
   const [pendingFareSelectionId, setPendingFareSelectionId] = useState<string>();
   const [selectionError, setSelectionError] = useState<string>();
   const [selectionErrorSelectionId, setSelectionErrorSelectionId] = useState<string>();
+  const [showTripReview, setShowTripReview] = useState(false);
   const pending = !ready || Object.keys(toolInfo).length === 0;
   const result = isSearchOutput(toolInfo.structuredContent) ? toolInfo.structuredContent : undefined;
   const verifyContent = verify.data?.structuredContent as Record<string, unknown> | undefined;
@@ -1022,9 +1029,9 @@ export default function FlightResults() {
   const selectedVerification = verification?.selectionId === selected ? verification : undefined;
 
   useEffect(() => {
-    if (!ready || !layout.supports?.modelContext || !selectedItinerary) return;
+    if (showTripReview || !ready || !layout.supports?.modelContext || !selectedItinerary) return;
     void updateModelContext(selectedFareModelContext(selectedItinerary, selectedVerification)).catch(() => undefined);
-  }, [layout.supports?.modelContext, ready, selectedItinerary, selectedVerification, updateModelContext]);
+  }, [showTripReview, layout.supports?.modelContext, ready, selectedItinerary, selectedVerification, updateModelContext]);
 
   useEffect(() => {
     selectionRequest.current = undefined;
@@ -1046,6 +1053,8 @@ export default function FlightResults() {
   };
 
   return (
+    <>
+    <div hidden={showTripReview} inert={showTripReview ? true : undefined}>
     <FlightResultsView
       result={result}
       state={pending ? 'loading' : toolInfo.isError || !result ? 'malformed' : undefined}
@@ -1059,6 +1068,7 @@ export default function FlightResults() {
       selectionError={selectionError}
       verification={verification}
       verificationError={structuredError ?? transportError}
+      onReview={tripReviewEnabled && ready && selectedItinerary ? () => setShowTripReview(true) : undefined}
       onSelect={(selectionId) => {
         if (!ready || pendingFareSelectionId) return;
         setPendingFareSelectionId(selectionId);
@@ -1122,5 +1132,8 @@ export default function FlightResults() {
         }).catch(() => undefined);
       }}
     />
+    </div>
+    {tripReviewEnabled && showTripReview ? <InlineTripReview onBack={() => setShowTripReview(false)} backLabel="Back to flights" /> : null}
+    </>
   );
 }

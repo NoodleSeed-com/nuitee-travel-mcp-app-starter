@@ -13,7 +13,7 @@ import {
 import { createDemoCapabilities } from './demo-capabilities.js';
 import { travelCompanionDemoConfig } from './demo-config.js';
 import { demoGateway } from './demo-connectors.js';
-import { demoHomeOutputSchema, demoHotelSelectionStateSchema } from './demo-schemas.js';
+import { demoHomeOutputSchema, demoHotelSelectionStateSchema, demoExperienceSelectionStateSchema } from './demo-schemas.js';
 import { noodleState, nuiteeGateway, nuiteeHttp } from './flight-connectors.js';
 import { nuiteeHotelsGateway, nuiteeHotelsHttp } from './hotel-connectors.js';
 import {
@@ -160,7 +160,7 @@ const travelCompanionDemoAgentGuide = {
     'A traveler wants to continue a trip using route, dates, travelers, preferences, or selections already established in the conversation.',
     'A traveler wants to search current hotel rates or view an illustrative rewards profile.',
     'A traveler asks what the displayed illustrative points could cover, asks for flights they could book with those points, or wants to compare reward-flight ideas.',
-    'A traveler wants a non-transactional review of the flight and stay selected in the application.',
+    'A traveler wants a non-transactional review of any flight, stay, or experiences selected in the application.',
     'A traveler wants to compare illustrative travel-protection concepts without requesting a real quote or policy.',
     'A traveler wants fictional experience ideas for Lisbon or Tokyo, or asks whether the bounded demo catalog supports another destination.',
   ],
@@ -174,7 +174,22 @@ const travelCompanionDemoAgentGuide = {
         {
           capability: { kind: 'tool' as const, name: 'search_experiences' },
           guidance:
-            'Use the destination and exact stay dates already present in the conversation. Ask one focused date question only when no usable stay window exists. Preserve explicit party, interest, accessibility, and currency preferences. Never infer an interest or accessibility filter: omit interests unless the traveler names one, use accessibility ANY when none was requested, and use STEP_FREE only when the traveler explicitly requests step-free or wheelchair-accessible options. State once that Lisbon and Tokyo results are fictional Wayfare demo content. Treat other destinations as a normal unsupported-catalog result, continue flight and hotel help, and never invent tours or imply live availability, saving, holding, admission, or booking.',
+            'Use the destination and exact stay dates already present in the conversation or selected trip context. Ask one focused date question only when no usable stay window exists. Preserve explicit party, interest, accessibility, and currency preferences. Never infer an interest or accessibility filter: omit interests unless the traveler names one, use accessibility ANY when none was requested, and use STEP_FREE only when the traveler explicitly requests step-free or wheelchair-accessible options. State once that Lisbon and Tokyo results are fictional Wayfare demo content. Treat other destinations as a normal unsupported-catalog result, continue flight and hotel help, and never invent tours or imply live availability, holding, admission, or booking. When the traveler requests experiences near a selected stay or activity, use its destination and location context; do not claim a distance or nearby match that the returned data cannot establish.',
+        },
+      ],
+    },
+    {
+      id: 'add_experience_to_plan',
+      title: 'Add an experience to the trip plan',
+      intent: 'Remember a traveler-chosen fictional experience and returned date/time in the current conversation, without making a reservation.',
+      steps: [
+        {
+          capability: { kind: 'tool' as const, name: 'search_experiences' },
+          guidance: 'For a named experience with no chosen date/time, call search_experiences with experienceName and the known destination, stay dates, party, and currency, even if broad results were already shown. One matching title opens its detail/date/time chooser; invite the traveler to choose there instead of showing all ideas or listing slots in prose. Multiple matches require choosing an experience from the carousel; no match must not be replaced with an unrelated experience. Use experienceName: "" for broad discovery or add another experience, never a city name or wildcard placeholder. Reuse current returned experience and slot references when the traveler already supplied an unambiguous date/time; refresh missing or expired references with the same named lookup. Do not request information already supplied. Only use returned slots, never choose arbitrarily among multiple matches or times. A specific date with exactly one returned start time needs no additional time question. When the widget is unavailable, ask for the missing date/time in concise text using returned slots.',
+        },
+        {
+          capability: { kind: 'tool' as const, name: 'add_experience_to_trip' },
+          guidance: 'Call only after the traveler asks to add the experience to the plan or explicitly chooses its add action. Send only the returned experienceId and slotId; party and price are server-owned. Say Added to your trip only when status is selected or already_selected. Explain failed, expired, unsupported party-pricing, or conflict results without inventing success; refresh expired options and use a newly returned reference when appropriate. This is a session planning choice, never a reservation or booking. The result widget provides the acknowledgment; keep accompanying prose concise.',
         },
       ],
     },
@@ -186,7 +201,11 @@ const travelCompanionDemoAgentGuide = {
         {
           capability: { kind: 'tool' as const, name: 'search_hotels' },
           guidance:
-            'Use exact check-in and check-out dates. Apply two adults, one room, and CAD only when the traveler omitted those values. For a city name, supply its two-letter destination country code; an IATA airport code can be used directly. State assumptions, keep the current-rate/no-reservation disclosure visible, and never substitute another city after an empty result.',
+            'Use exact check-in and check-out dates. Apply two adults, one room, and CAD only when the traveler omitted those values. For a city name, supply its two-letter destination country code; an IATA airport code can be used directly. Recommend only hotels actually returned by this search, never a hotel from general knowledge as if it were selectable. The widget initially shows three stays but the traveler may request any returned stay by name. State assumptions, keep the current-rate/no-reservation disclosure visible, and never substitute another city after an empty result.',
+        },
+        {
+          capability: { kind: 'tool' as const, name: 'open_hotel' },
+          guidance: 'When the traveler names a hotel to show, inspect, choose, or add, call open_hotel with that name. This reopens the current returned option even if it was beyond the initial three cards. Do not repeat a city search or merely tell the traveler to find a widget. One match opens existing details with Choose this stay; multiple matches require choosing the intended hotel. The widget performs the explicit selection and provides acknowledgment plus inline trip review. Opening does not select, reserve, or refresh prices. If the name is absent, say it was not in the returned results, not that it is unavailable; offer a fresh search without inventing replacements. If previous results are missing or expired, refresh using known trip details and only recommend returned stays. Keep accompanying text concise.',
         },
       ],
     },
@@ -217,12 +236,12 @@ const travelCompanionDemoAgentGuide = {
     {
       id: 'review_selections',
       title: 'Review selected travel',
-      intent: 'Review application-selected flight and stay provenance with illustrative rewards context.',
+      intent: 'Review whichever flight, stay, and experiences the traveler selected, with each component’s source and price kept clear.',
       steps: [
         {
           capability: { kind: 'tool' as const, name: 'review_trip' },
           guidance:
-            'Use only after the user selects the flight and stay in their widgets. Keep flight and stay prices separately sourced. Never present a package total or imply booking, payment, points application, or redemption.',
+            'Call when the traveler explicitly asks to review their trip or selected choices, including experience-only, flight-only, stay-only, and mixed plans. Widget Review my trip buttons read the plan directly and replace their own screen without starting a model turn. Continue planning is not a request for another review: use the supplied widget tripPlanning context to suggest a relevant next step, and do not call review_trip or repeat the plan card merely to continue planning or search a missing component. Do not require a flight or hotel before showing the plan. Read the server-owned selections; keep component prices separately sourced, and never present a package total or imply booking, payment, points application, or redemption. Treat missing components as optional next steps. Keep suggestions relevant to planningContext: find stays near the selected experience meeting area, experiences around the chosen stay, and travel for the selected destination/date window. A flight_departure date basis is not a confirmed local arrival/check-in date: clarify arrival timing or missing return/end dates before booking-specific assumptions. Reuse known origin/party/currency and ask only what the next search needs. Do not claim measured proximity without supporting location evidence. Let the review widget carry the details instead of repeating every row in prose.',
         },
       ],
     },
@@ -252,7 +271,7 @@ const travelCompanionDemoAgentGuide = {
     'Do not refuse a “book with points” request solely because redemption is unavailable; route it to the illustrative reward-flight comparison and clearly separate comparison from booking.',
     'Reward-flight comparisons are illustrative ideas only. Never describe them as live award seats, current loyalty-program rates, or bookable/redemption offers.',
     'Travel-protection comparisons are illustrative concepts only. Never describe them as an insurance quote, policy, recommendation, eligibility decision, coverage guarantee, or purchasable product.',
-    'Experience results for Lisbon and Tokyo are fictional Wayfare demo content. Never describe them as live operator inventory, current capacity, held admission, or bookable reservations; unsupported cities remain a normal empty catalog result.',
+    'Experience results for Lisbon and Tokyo are fictional Wayfare demo content. An acknowledged add stores a current-conversation planning selection only. Never describe it as live operator inventory, held admission, persistent account storage, or a bookable reservation; unsupported cities remain a normal empty catalog result.',
     'Never collect health history, diagnoses, exact dates of birth, passport details, or payment information for an illustrative travel-protection comparison.',
     'Never combine separately sourced flight and hotel prices into a factual or bookable package total.',
   ],
@@ -324,6 +343,11 @@ const flightViewPolicy = {
   },
 };
 
+const expandedFlightViewPolicy = {
+  ...flightViewPolicy,
+  csp: { ...flightViewPolicy.csp, resourceDomains: [...flightViewPolicy.csp.resourceDomains, 'https://images.unsplash.com'] },
+};
+
 const mapboxOrigins = [
   'https://api.mapbox.com',
   'https://events.mapbox.com',
@@ -337,7 +361,7 @@ export const hotelDemoViewPolicy = {
   ...sharedWidgetDomainPolicy,
   csp: {
     connectDomains: [...mapboxOrigins],
-    resourceDomains: ['https://snaphotelapi.com', ...mapboxOrigins],
+    resourceDomains: ['https://snaphotelapi.com', 'https://images.unsplash.com', ...mapboxOrigins],
     frameDomains: [],
   },
 };
@@ -386,7 +410,7 @@ function openTravelStarter(profile: TravelServerProfile, live: boolean) {
   });
 }
 
-function offlineSearchFlights() {
+function offlineSearchFlights(profile: TravelServerProfile) {
   return tool('search_flights', {
     title: 'Search flights',
     description:
@@ -402,11 +426,11 @@ function offlineSearchFlights() {
       error: configurationError,
     }),
     viewTitle: 'Flight results',
-    viewDescription: 'Bounded flight comparisons with fare verification as the only primary action.',
+    viewDescription: profile === 'expanded-travel' ? 'Compare flights, select a fare, and review the current trip in place. Fare verification remains a separate check.' : 'Bounded flight comparisons with fare verification as the only primary action.',
     invoking: 'Searching current flights…',
     invoked: 'Flight search complete',
-    view: { component: 'flight-results', entry: './views/flight-results.tsx' },
-    ...flightViewPolicy,
+    view: profile === 'expanded-travel' ? { component: 'expanded-flight-results', entry: './views/expanded-flight-results.tsx' } : { component: 'flight-results', entry: './views/flight-results.tsx' },
+    ...(profile === 'expanded-travel' ? expandedFlightViewPolicy : flightViewPolicy),
   });
 }
 
@@ -440,7 +464,7 @@ function planFlightSearch() {
   });
 }
 
-function liveSearchFlights() {
+function liveSearchFlights(profile: TravelServerProfile) {
   return tool('search_flights', {
     title: 'Search flights',
     description:
@@ -477,11 +501,11 @@ function liveSearchFlights() {
       };
     },
     viewTitle: 'Flight results',
-    viewDescription: 'Bounded flight comparisons with fare verification as the only primary action.',
+    viewDescription: profile === 'expanded-travel' ? 'Compare flights, select a fare, and review the current trip in place. Fare verification remains a separate check.' : 'Bounded flight comparisons with fare verification as the only primary action.',
     invoking: 'Searching current flights…',
     invoked: 'Flight search complete',
-    view: { component: 'flight-results', entry: './views/flight-results.tsx' },
-    ...flightViewPolicy,
+    view: profile === 'expanded-travel' ? { component: 'expanded-flight-results', entry: './views/expanded-flight-results.tsx' } : { component: 'flight-results', entry: './views/flight-results.tsx' },
+    ...(profile === 'expanded-travel' ? expandedFlightViewPolicy : flightViewPolicy),
   });
 }
 
@@ -578,13 +602,14 @@ function liveSelectFlightOffer() {
 function createTravelCapabilities(live: boolean, profile: TravelServerProfile) {
   const open = openTravelStarter(profile, live);
   const plan = planFlightSearch();
-  const search = live ? liveSearchFlights() : offlineSearchFlights();
+  const search = live ? liveSearchFlights(profile) : offlineSearchFlights(profile);
   const verify = live ? liveVerifyFlightOffer() : offlineVerifyFlightOffer();
   const select = live ? liveSelectFlightOffer() : offlineSelectFlightOffer();
   const demo = profile === 'expanded-travel'
       ? createDemoCapabilities({
         hotel: hotelDemoViewPolicy,
         experience: experienceDemoViewPolicy,
+        review: experienceDemoViewPolicy,
         insurance: demoViewPolicy,
         loyalty: demoViewPolicy,
       }, { liveHotels: live })
@@ -675,6 +700,13 @@ export function createTravelServer(
                 ttlSeconds: 1_800,
                 schema: demoHotelSelectionStateSchema,
               },
+              experience_selections: {
+                kind: 'selection' as const,
+                scope: 'caller' as const,
+                version: 'v1',
+                ttlSeconds: 1_800,
+                schema: demoExperienceSelectionStateSchema,
+              },
             } : {}),
           },
         },
@@ -716,6 +748,13 @@ export function createTravelServer(
                 version: 'v1',
                 ttlSeconds: 1_800,
                 schema: demoHotelSelectionStateSchema,
+              },
+              experience_selections: {
+                kind: 'selection' as const,
+                scope: 'caller' as const,
+                version: 'v1',
+                ttlSeconds: 1_800,
+                schema: demoExperienceSelectionStateSchema,
               },
             },
           },

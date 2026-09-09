@@ -13,6 +13,8 @@ import {
 import {
   demoExperienceSearchInputSchema,
   demoExperienceSearchOutputSchema,
+  demoAddExperienceInputSchema,
+  demoAddExperienceOutputSchema,
   demoHotelSearchInputSchema,
   demoHotelSearchOutputSchema,
   demoInsuranceComparisonInputSchema,
@@ -22,6 +24,8 @@ import {
   demoRewardFlightSearchOutputSchema,
   demoSelectHotelOutputSchema,
   demoTripReviewSchema,
+  openHotelInputSchema,
+  openHotelOutputSchema,
 } from './demo-schemas.js';
 import { demoHotelSelectionIdSchema } from './demo-schemas.js';
 
@@ -30,23 +34,33 @@ interface DemoViewPolicies {
   readonly experience: Readonly<Record<string, unknown>>;
   readonly insurance: Readonly<Record<string, unknown>>;
   readonly loyalty: Readonly<Record<string, unknown>>;
+  readonly review: Readonly<Record<string, unknown>>;
 }
 
 function searchDemoExperiences(viewPolicy: Readonly<Record<string, unknown>>) {
   return tool('search_experiences', {
     title: 'Explore experience ideas',
     description:
-      'Explore bounded fictional Wayfare experience ideas for Lisbon or Tokyo using exact stay dates and party size. Apply optional interest filters only when explicitly requested. For accessibility use ANY unless the traveler explicitly requests step-free or wheelchair-accessible options, in which case use STEP_FREE. Results are deterministic demo content, not live operator inventory, and cannot be saved, held, or booked.',
+      'Explore bounded fictional Wayfare experience ideas for Lisbon or Tokyo using exact stay dates and party size. For a named experience request, pass experienceName: one match opens the existing detail/date/time chooser, multiple matches show a carousel. Use this named lookup when the traveler wants to add a named experience but has not chosen a slot, even if broad results were already shown; let the widget collect that choice. Use experienceName: "" for broad discovery or add another experience, never the city name or a wildcard. Apply optional interest filters only when explicitly requested. For accessibility use ANY unless the traveler explicitly requests step-free or wheelchair-accessible options, in which case use STEP_FREE. Returned experience and slot references can be added to this conversation’s trip plan for 30 minutes; nothing is held, reserved, or booked.',
     annotations: annotations.readOnly(),
     input: demoExperienceSearchInputSchema,
     output: demoExperienceSearchOutputSchema,
-    fulfil: ({ input, connectors }) => {
+    fulfil: ({ input, context, connectors }) => {
+      const current = connectors.state.readState({ handle: 'experience_selections' });
+      const states = connectors.demo.prepare_states({ experienceState: current.value });
       const gateway = connectors.demo.execute({
         kind: 'experience_search',
         experienceSearch: input,
         experienceCatalog: DEMO_EXPERIENCE_CATALOG,
         experienceAliases: DEMO_EXPERIENCE_ALIASES,
+        experienceState: states.experienceState.optional(),
+        experienceReadOk: current.ok.optional(),
+        requestedAt: context['temporal.instant'],
       });
+      when(gateway.mayWriteExperienceState.equals(true), () => connectors.state.patchState({
+        handle: 'experience_selections', expectedRevision: current.revision,
+        value: gateway.nextExperienceState,
+      }));
       return {
         status: gateway['experienceResult.status'],
         dataSource: gateway['experienceResult.dataSource'],
@@ -63,10 +77,48 @@ function searchDemoExperiences(viewPolicy: Readonly<Record<string, unknown>>) {
       };
     },
     viewTitle: 'Fictional experience ideas',
-    viewDescription: 'Compare fictional Lisbon and Tokyo experience ideas with visible demo provenance and no booking action.',
+    viewDescription: 'Browse or disambiguate fictional Lisbon and Tokyo experiences. A single named match opens details with date/time choices; the widget handles slot selection, so do not repeat its slot list in prose unless the widget is unavailable. Nothing is booked.',
     invoking: 'Finding fictional experience ideas…',
     invoked: 'Experience ideas ready',
     view: { component: 'experience-results', entry: './views/experience-results.tsx' },
+    ...viewPolicy,
+  });
+}
+
+function addDemoExperience(viewPolicy: Readonly<Record<string, unknown>>) {
+  return tool('add_experience_to_trip', {
+    title: 'Add experience to my trip',
+    description: 'Add an explicitly chosen returned fictional experience and date/time slot to this conversation’s trip plan. Reuse the server-stored party and price; only pass returned experienceId and slotId. Repeated requests do not duplicate a choice. This is a temporary planning selection, not a reservation, booking, or payment. If time is ambiguous, ask which returned slot first. Search again if options expired.',
+    visibility: ['model', 'app'],
+    // Like flight/stay selection this only changes temporary caller state;
+    // there is no provider write, inventory hold, reservation, or payment.
+    annotations: annotations.readOnly(),
+    input: demoAddExperienceInputSchema,
+    output: demoAddExperienceOutputSchema,
+    fulfil: ({ input, context, connectors }) => {
+      const current = connectors.state.readState({ handle: 'experience_selections' });
+      const states = connectors.demo.prepare_states({ experienceState: current.value });
+      const gateway = connectors.demo.execute({
+        kind: 'experience_select', experienceState: states.experienceState.optional(),
+        experienceReadOk: current.ok.optional(),
+        experienceId: input.experienceId, slotId: input.slotId, requestedAt: context['temporal.instant'],
+      });
+      const patch = when(gateway['experienceSelection.status'].equals('selected'), () => connectors.state.patchState({
+        handle: 'experience_selections', expectedRevision: current.revision, value: gateway.nextExperienceState,
+      }));
+      const acknowledged = connectors.demo.acknowledge_experience_selection({
+        proposal: gateway.experienceSelection, patchOk: patch.ok.optional(),
+      });
+      return {
+        status: acknowledged.status, message: acknowledged.message, selection: acknowledged.selection.optional(),
+        requestedExperienceId: input.experienceId, requestedSlotId: input.slotId,
+      };
+    },
+    viewTitle: 'Experience added to your trip',
+    viewDescription: 'Acknowledged planning selection with its chosen date, time, party, and separate fictional price.',
+    invoking: 'Adding experience to your trip…',
+    invoked: 'Experience selection checked',
+    view: { component: 'experience-added', entry: './views/experience-added.tsx' },
     ...viewPolicy,
   });
 }
@@ -94,6 +146,7 @@ function searchDemoHotels(viewPolicy: Readonly<Record<string, unknown>>) {
           searchId: gateway['result.searchId'],
           updatedAt: context['temporal.instant'],
           records: gateway.records,
+          searchResult: gateway.result,
         },
       });
       return {
@@ -137,6 +190,7 @@ function searchLiveHotels(viewPolicy: Readonly<Record<string, unknown>>) {
           searchId: gateway['result.searchId'],
           updatedAt: context['temporal.instant'],
           records: gateway.records,
+          searchResult: gateway.result,
         },
       });
       return {
@@ -156,6 +210,28 @@ function searchLiveHotels(viewPolicy: Readonly<Record<string, unknown>>) {
     invoking: 'Searching current stays…',
     invoked: 'Hotel search complete',
     view: { component: 'hotel-results', entry: './views/hotel-results.tsx' },
+    ...viewPolicy,
+  });
+}
+
+function openReturnedHotel(viewPolicy: Readonly<Record<string, unknown>>) {
+  return tool('open_hotel', {
+    title: 'Open a returned hotel',
+    description: 'Open the existing hotel widget when the traveler names a hotel to show, inspect, choose, or add. Matches only this conversation’s most recent returned stays, including those beyond the first three cards. One match opens details with Choose this stay; multiple matches show matching cards. Use this instead of repeating a city search or only saying select it in the widget. Does not search providers, change selections, reserve, or book. If absent or expired, explain that and offer a fresh search; never invent a hotel or substitute an unrelated stay.',
+    annotations: annotations.readOnly(),
+    input: openHotelInputSchema,
+    output: openHotelOutputSchema,
+    fulfil: ({ input, connectors }) => {
+      const current = connectors.state.readState({ handle: 'demo_hotel_selections' });
+      const states = connectors.demo.prepare_states({ hotelState: current.value });
+      const opened = connectors.demo.open_hotel({ hotelName: input.hotelName, hotelState: states.hotelState.optional(), readOk: current.ok.optional() });
+      return { status: opened.status, message: opened.message, result: opened.result.optional(), focusedSelectionId: opened.focusedSelectionId.optional(), selectedSelectionId: opened.selectedSelectionId.optional() };
+    },
+    viewTitle: 'Your requested stay',
+    viewDescription: 'The requested returned hotel, ready to inspect and choose. A name with multiple matches shows only those options. Opening never selects or reserves a stay.',
+    invoking: 'Opening the requested stay…',
+    invoked: 'Hotel lookup complete',
+    view: { component: 'open-hotel', entry: './views/open-hotel.tsx' },
     ...viewPolicy,
   });
 }
@@ -252,18 +328,23 @@ function reviewDemoTrip(viewPolicy: Readonly<Record<string, unknown>>) {
   return tool('review_trip', {
     title: 'Review selected trip',
     description:
-      'Review the active application-selected flight and stay with illustrative rewards context. Reads server-owned opaque selections only; it never accepts copied prices or identifiers and cannot book, pay, or redeem.',
+      'Review any currently selected flight, stay, and fictional experiences with separate prices and illustrative rewards. A single selected component is a valid plan. Missing components are optional; use returned planningContext for relevant next suggestions. Reads server-owned selections only and cannot book, pay, or redeem.',
     annotations: annotations.readOnly(),
     input: z.object({}),
     output: demoTripReviewSchema,
-    fulfil: ({ connectors }) => {
+    fulfil: ({ context, connectors }) => {
       const flights = connectors.state.readState({ handle: 'flight_selections' }).value;
       const hotels = connectors.state.readState({ handle: 'demo_hotel_selections' }).value;
-      const states = connectors.demo.prepare_states({ flightState: flights, hotelState: hotels });
+      const experiences = connectors.state.readState({ handle: 'experience_selections' });
+      const states = connectors.demo.prepare_states({ flightState: flights, hotelState: hotels, experienceState: experiences.value });
       const gateway = connectors.demo.execute({
         kind: 'review',
         flightState: states.flightState.optional(),
         hotelState: states.hotelState.optional(),
+        experienceState: states.experienceState.optional(),
+        experienceReadOk: experiences.ok.optional(),
+        requestedAt: context['temporal.instant'],
+        aliases: { ...DEMO_DESTINATION_ALIASES, ...DEMO_EXPERIENCE_ALIASES },
         loyalty: getSyntheticLoyaltyOverview(),
       });
       return {
@@ -273,6 +354,9 @@ function reviewDemoTrip(viewPolicy: Readonly<Record<string, unknown>>) {
         fallback: gateway['review.fallback'],
         flight: gateway['review.flight'].optional(),
         stay: gateway['review.stay'].optional(),
+        experiences: gateway['review.experiences'],
+        planningContext: gateway['review.planningContext'].optional(),
+        notes: gateway['review.notes'].optional(),
         loyalty: gateway['review.loyalty'],
         missing: gateway['review.missing'],
       };
@@ -281,7 +365,7 @@ function reviewDemoTrip(viewPolicy: Readonly<Record<string, unknown>>) {
     viewDescription: 'Separate live-flight and synthetic-stay provenance with illustrative rewards.',
     invoking: 'Reviewing selected travel…',
     invoked: 'Trip review ready',
-    view: { component: 'loyalty-overview', entry: './views/loyalty-overview.tsx' },
+    view: { component: 'trip-review', entry: './views/trip-review.tsx' },
     ...viewPolicy,
   });
 }
@@ -327,13 +411,15 @@ export function createDemoCapabilities(
     ? searchLiveHotels(viewPolicies.hotel)
     : searchDemoHotels(viewPolicies.hotel);
   const experiences = searchDemoExperiences(viewPolicies.experience);
+  const openHotel = openReturnedHotel(viewPolicies.hotel);
   const loyalty = openDemoLoyalty(viewPolicies.loyalty);
   const rewardFlights = compareDemoRewardFlights(viewPolicies.loyalty);
   const insurance = compareDemoTravelInsurance(viewPolicies.insurance);
-  const review = reviewDemoTrip(viewPolicies.loyalty);
+  const review = reviewDemoTrip(viewPolicies.review);
   const selectHotel = selectDemoHotel();
+  const addExperience = addDemoExperience(viewPolicies.experience);
   return {
-    all: [searchHotels, experiences, loyalty, rewardFlights, insurance, review, selectHotel] as const,
-    publicSurface: [searchHotels, experiences, loyalty, rewardFlights, insurance, review, selectHotel] as const,
+    all: [searchHotels, openHotel, experiences, loyalty, rewardFlights, insurance, review, selectHotel, addExperience] as const,
+    publicSurface: [searchHotels, openHotel, experiences, loyalty, rewardFlights, insurance, review, selectHotel, addExperience] as const,
   };
 }

@@ -1,0 +1,51 @@
+/* Approved inline trip-review layout, following docs/brand/wayfare-brand-guidelines.md. */
+.wf-review{container-type:inline-size;width:100%;max-width:100%}.wf-review,.wf-review *{box-sizing:border-box}
+.wf-review .wf-review-back{padding:9px 12px;display:flex;justify-content:flex-start}
+.wf-review .wf-review-back button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;border:1px solid transparent;border-radius:999px;padding:10px 12px;font:550 14px/1.35 'Host Grotesk Variable',sans-serif;color:var(--cc-text);background:transparent;cursor:pointer}
+.wf-review .wf-review-back .cc-icon{width:20px;height:20px;flex-shrink:0;margin:0}
+.cc-app.wf-review{padding:0;min-width:0;border:1px solid var(--cc-border);border-radius:23px;overflow:hidden;background:var(--cc-bg);font-family:'Host Grotesk Variable','Host Grotesk',sans-serif;color:var(--cc-text);font-size:16px;line-height:1.55}
+.wf-review .wf-review-header{padding:23px 24px 17px;display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.wf-review .wf-review-header h2{font-size:25px;font-weight:600;letter-spacing:-.035em;line-height:1.2;margin:0}
+.wf-review .wf-review-header p{font-size:14px;color:var(--cc-muted);margin:7px 0 0}
+.wf-review .wf-review-badge{display:inline-flex;flex-shrink:0;border-radius:999px;background:var(--cc-surface-muted);padding:7px 10px;font-size:11px;font-weight:600;color:#147d83}
+.wf-review .wf-review-content{padding:0 24px 23px}
+.wf-review .wf-review-section{border-top:1px solid var(--cc-border);padding:20px 0}
+.wf-review .wf-review-section-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:13px}
+.wf-review .wf-review-section-heading strong{font-size:13px;font-weight:600}
+.wf-review .wf-review-section-heading span{font-size:12px;color:var(--cc-muted)}
+.wf-review .wf-review-row{display:flex;align-items:flex-start;justify-content:space-between;gap:22px}
+.wf-review .wf-review-facts{display:flex;align-items:flex-start;gap:12px;min-width:0}
+.wf-review .wf-review-facts>.cc-icon{width:20px;height:20px;flex-shrink:0;margin:3px 0 0}
+.wf-review h3{font-size:16px;font-weight:600;line-height:1.25;letter-spacing:-.02em;margin:0}
+.wf-review .wf-review-row p{font-size:13px;color:var(--cc-muted);margin:5px 0 0;line-height:1.55}
+.wf-review .wf-review-price{white-space:nowrap;text-align:right}
+.wf-review .wf-review-price strong{display:block;font-size:18px;font-weight:600;letter-spacing:-.04em;line-height:1.55}
+.wf-review .wf-review-price span{display:block;color:var(--cc-muted);font-size:12px;margin-top:3px}
+.wf-review .wf-review-experiences{display:grid;gap:20px}
+.wf-review .wf-review-experience{display:grid;grid-template-columns:86px minmax(0,1fr) auto;align-items:center;gap:15px}
+.wf-review .wf-review-thumbnail{height:86px;width:86px;border-radius:12px;overflow:hidden;background:linear-gradient(120deg,#147d83,#6cf)}
+.wf-review .wf-review-thumbnail img{width:100%;height:100%;object-fit:cover;display:block}
+.wf-review .wf-review-experience h3{margin:0 0 5px}
+.wf-review .wf-review-experience p{font-size:13px;color:var(--cc-muted);line-height:1.55;margin:0}
+.wf-review .wf-review-experience .wf-review-price strong{font-size:19px}
+.wf-review .wf-review-experience .wf-review-price span{font-size:11px}
+.wf-review .wf-review-status{font-size:12px;color:var(--cc-muted);display:flex;align-items:center;gap:5px;margin-top:8px}
+.wf-review .wf-review-status .cc-icon{height:15px;width:15px;margin:0;flex-shrink:0}
+.wf-review .wf-review-note{background:var(--cc-surface-muted);border-radius:13px;padding:14px 16px;font-size:13px;line-height:1.55;color:var(--cc-muted)}
+.wf-review .wf-review-note strong{color:var(--cc-text);font-weight:550}
+.wf-review .wf-review-note p{margin:0}
+.wf-review .wf-review-suggestions{font-size:13px;color:var(--cc-muted);margin-top:17px}
+.wf-review .wf-review-suggestions p{margin:0}
+.wf-review .wf-review-suggestions>div{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.wf-review .wf-review-suggestions+.wf-review-note{margin-top:16px}
+.wf-review button.wf-review-suggestion{display:inline-flex;align-items:center;justify-content:center;min-height:44px;margin:0;padding:10px 18px;border:1px solid var(--cc-border);border-radius:999px;background:var(--cc-bg);color:var(--cc-text);font-family:inherit;font-size:13px;line-height:1.35;font-weight:550;cursor:pointer}
+.wf-review .wf-review-footer{border-top:1px solid var(--cc-border);padding-top:18px;margin-top:20px}
+.wf-review .wf-review-footer>p{font-size:12px;color:var(--cc-muted);line-height:1.55;margin:0 0 13px}
+.wf-review button.wf-review-primary{display:flex;align-items:center;justify-content:center;gap:9px;background:var(--cc-text);color:var(--cc-bg);border:1px solid var(--cc-text);min-height:50px;width:100%;font:550 16px/1.35 'Host Grotesk Variable','Host Grotesk',sans-serif;border-radius:999px;padding:10px 18px;margin:0;cursor:pointer}
+.wf-review button:disabled{cursor:default;opacity:.55}
+.wf-review button:focus-visible{outline:2px solid var(--cc-text);outline-offset:3px}
+.wf-review .wf-review-empty{padding:20px 0;text-align:center}
+.wf-review .wf-review-empty h3{font-size:18px;margin-bottom:12px}
+.wf-review .wf-review-empty p{font-size:14px;color:var(--cc-muted)}
+.wf-review .wf-review-feedback{padding:24px}
+@container(max-width:640px){.wf-review .wf-review-header{padding:20px 18px 17px}.wf-review .wf-review-header h2{font-size:22px}.wf-review .wf-review-badge{font-size:10px;padding:6px 8px}.wf-review .wf-review-content{padding:0 17px 20px}.wf-review .wf-review-experience{grid-template-columns:64px minmax(0,1fr);gap:12px}.wf-review .wf-review-thumbnail{width:64px;height:80px}.wf-review .wf-review-experience>.wf-review-price{grid-column:2;text-align:left}.wf-review .wf-review-experience .wf-review-price strong{font-size:18px;display:inline}.wf-review .wf-review-experience .wf-review-price span{display:inline;margin-left:7px}.wf-review .wf-review-row{gap:12px;flex-wrap:wrap}.wf-review .wf-review-row>.wf-review-price{margin-left:32px;text-align:left}.wf-review .wf-review-footer>p{font-size:11px}}

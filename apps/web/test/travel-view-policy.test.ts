@@ -63,7 +63,19 @@ describe('inline travel view admission', () => {
     ['flight search', searchView],
     ['travel starter', starterView],
     ['demo hotel search', hotelView],
+    ['named hotel details', {
+      id: 'opened-hotel',
+      tool: 'open_hotel',
+      resourceUri: 'ui://nuitee_travel_mcp_app_starter/open_hotel_widget',
+      result: { status: 'ready' },
+    }],
     ['fictional experience search', experienceView],
+    ['experience selection acknowledgment', {
+      id: 'experience-added',
+      tool: 'add_experience_to_trip',
+      resourceUri: 'ui://nuitee_travel_mcp_app_starter/add_experience_to_trip_widget',
+      result: { status: 'selected' },
+    }],
     ['demo loyalty overview', loyaltyView],
     ['illustrative reward-flight comparison', rewardFlightView],
     ['trip review', reviewView],
@@ -73,6 +85,10 @@ describe('inline travel view admission', () => {
   });
 
   it.each([
+    ['named hotel tool with a search resource', {
+      ...hotelView,
+      tool: 'open_hotel',
+    }],
     ['approved tool with the other approved URI', {
       ...searchView,
       resourceUri: starterView.resourceUri,

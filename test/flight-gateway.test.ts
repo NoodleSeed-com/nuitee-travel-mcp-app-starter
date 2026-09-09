@@ -32,6 +32,15 @@ function searchResponseWithEncodedBytes(bytes: number) {
 }
 
 describe('Nuitee gateway search preparation', () => {
+  it('retains explicit activity dates for trip discovery without sending them to the flight provider', () => {
+    const activityDates = { startDate: '2030-04-21', endDate: '2030-04-24' };
+    const { result, callOperation } = search({ activityDates });
+    expect(result.searchContext).toHaveProperty('activityDates', activityDates);
+    expect(result.records?.[0]?.planningContext).toHaveProperty('activityDates', activityDates);
+    expect(callOperation.mock.calls[0]?.[1]).not.toHaveProperty('activityDates');
+    expect(gatewayOutputSchema.safeParse(result).success).toBe(true);
+  });
+
   it('runs in the deterministic compute sandbox without a Date global', () => {
     const sandboxed = gatewayWithoutDate();
     const result = sandboxed(
@@ -188,6 +197,11 @@ describe('Nuitee gateway normalization', () => {
     const { result } = search();
     expect(result.itineraries).toHaveLength(1);
     expect(result.records).toHaveLength(1);
+    expect(result.records?.[0]?.planningContext).toEqual({
+      origin: 'QZX', destination: 'QZY', departureDate: '2030-04-20',
+      adults: 1, children: 0, infants: 0, currency: 'CAD',
+    });
+    expect(result.records?.[0]?.planningContext).not.toHaveProperty('returnDate');
     expect(result.itineraries?.[0]).toMatchObject({
       route: {
         origin: 'QZX',

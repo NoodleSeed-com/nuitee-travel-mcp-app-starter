@@ -1,9 +1,10 @@
 import '@fontsource-variable/host-grotesk';
 import '@noodleseed/one/react/styles.css';
 import { useEffect, useRef, useState } from 'react';
-import type { DemoHotel, DemoHotelSearchOutput } from '../demo-schemas.js';
-import { useCallTool, useLayout, useRequestDisplayMode, useToolInfo, useUpdateModelContext, useViewState, useWidgetReady } from '../helpers.js';
+import type { DemoHotel, DemoHotelSearchOutput, OpenHotelOutput } from '../demo-schemas.js';
+import { Frame, useCallTool, useLayout, useRequestDisplayMode, useToolInfo, useUpdateModelContext, useViewState, useWidgetReady } from '../helpers.js';
 import { HotelJourney, initialHotelJourney, type HotelJourneyState } from './hotel-journey.js';
+import { InlineTripReview } from './trip-review.js';
 import './travel.css';
 
 export { HotelJourney as HotelResultsView } from './hotel-journey.js';
@@ -115,10 +116,25 @@ export function isDemoHotelSearchOutput(value: unknown): value is DemoHotelSearc
 }
 
 
-export function restoreHotelJourney(value: unknown, result: DemoHotelSearchOutput): HotelJourneyState {
+export function isOpenHotelOutput(value: unknown): value is OpenHotelOutput {
+  const opened = record(value);
+  if (!opened || !boundedString(opened.message, 2, 320)) return false;
+  if (opened.status === 'not_found' || opened.status === 'unavailable') {
+    return opened.result === undefined && opened.focusedSelectionId === undefined && opened.selectedSelectionId === undefined;
+  }
+  if (opened.status !== 'ready' || !isDemoHotelSearchOutput(opened.result) || !opened.result.hotels.length) return false;
+  return (opened.focusedSelectionId === undefined || opened.result.hotels.length === 1 && opened.result.hotels[0]!.selectionId === opened.focusedSelectionId) &&
+    (opened.selectedSelectionId === undefined || opened.result.hotels.some(hotel => hotel.selectionId === opened.selectedSelectionId));
+}
+
+export function restoreHotelJourney(value: unknown, result: DemoHotelSearchOutput, focusedSelectionId?: string): HotelJourneyState {
   const saved = record(value);
+  const initial = initialHotelJourney(result.searchId);
+  if (focusedSelectionId && result.hotels.length === 1 && result.hotels[0]!.selectionId === focusedSelectionId) {
+    Object.assign(initial, { screen: 'detail', detailId: focusedSelectionId });
+  }
   if (!saved || saved.searchId !== result.searchId || !['shortlist', 'detail', 'explore'].includes(String(saved.screen)) ||
-      !Array.isArray(saved.compareIds) || !boundedInteger(saved.shown, 3, 10)) return initialHotelJourney(result.searchId);
+      !Array.isArray(saved.compareIds) || !boundedInteger(saved.shown, 3, 10)) return initial;
   const ids = new Set(result.hotels.map(hotel => hotel.selectionId));
   return {
     searchId: result.searchId,
@@ -131,9 +147,13 @@ export function restoreHotelJourney(value: unknown, result: DemoHotelSearchOutpu
 }
 
 export default function HotelResults() {
+  return <HotelWidget toolName="search_hotels" />;
+}
+
+export function HotelWidget({ toolName }: { readonly toolName: 'search_hotels' | 'open_hotel' }) {
   const ready = useWidgetReady();
   const layout = useLayout();
-  const toolInfo = useToolInfo('search_hotels');
+  const toolInfo = useToolInfo(toolName);
   const selectHotel = useCallTool('select_hotel');
   const requestDisplayMode = useRequestDisplayMode();
   const updateModelContext = useUpdateModelContext();
@@ -141,28 +161,39 @@ export default function HotelResults() {
   const [savedJourney, setJourney] = useViewState<HotelJourneyState | undefined>('hotel_journey', undefined);
   const [pendingSelectionId, setPendingSelectionId] = useState<string>();
   const [selectionError, setSelectionError] = useState<string>();
+  const [showTripReview, setShowTripReview] = useState(false);
   const inFlight = useRef(false);
   const pending = !ready || Object.keys(toolInfo).length === 0;
-  const result = isDemoHotelSearchOutput(toolInfo.structuredContent) ? toolInfo.structuredContent : undefined;
+  const opened = toolName === 'open_hotel' && isOpenHotelOutput(toolInfo.structuredContent) ? toolInfo.structuredContent : undefined;
+  const result = toolInfo.isError ? undefined : toolName === 'open_hotel' ? opened?.result
+    : isDemoHotelSearchOutput(toolInfo.structuredContent) ? toolInfo.structuredContent : undefined;
   const latestSearchId = useRef(result?.searchId);
   latestSearchId.current = result?.searchId;
-  const journey = result ? restoreHotelJourney(savedJourney, result) : undefined;
-  const chosen = result?.hotels.find(hotel => hotel.selectionId === selected);
+  const journey = result ? restoreHotelJourney(savedJourney, result, opened?.focusedSelectionId) : undefined;
+  const chosen = result?.hotels.find(hotel => hotel.selectionId === (selected ?? opened?.selectedSelectionId));
   const inspected = result?.hotels.find(hotel => hotel.selectionId === journey?.detailId);
   const comparisonIds = journey?.compareIds.join(',') ?? '';
 
   useEffect(() => { setSelectionError(undefined); }, [result?.searchId]);
   useEffect(() => {
-    if (!ready || !result || !layout.supports?.modelContext) return;
+    if (showTripReview || !ready || !result || !layout.supports?.modelContext) return;
     void updateModelContext({
       content: [{ type: 'text', text: chosen ? `Selected stay: ${chosen.name}. Nothing booked, held, or paid.` : 'Hotel options remain unselected.' }],
       structuredContent: { hotelSearchId: result.searchId, selectedHotel: chosen ? { selectionId: chosen.selectionId, name: chosen.name } : null,
         inspectedHotel: inspected ? { selectionId: inspected.selectionId, name: inspected.name } : null,
         comparingHotelIds: journey?.compareIds ?? [] },
     }).catch(() => { /* Host context delivery is optional; server selections remain authoritative. */ });
-  }, [ready, result?.searchId, chosen?.selectionId, inspected?.selectionId, comparisonIds, layout.supports?.modelContext, updateModelContext]);
+  }, [showTripReview, ready, result?.searchId, chosen?.selectionId, inspected?.selectionId, comparisonIds, layout.supports?.modelContext, updateModelContext]);
 
-  return <HotelJourney
+  if (!pending && !toolInfo.isError && opened && opened.status !== 'ready') return <Frame
+    className={`cc-app cc-hotel-results cc-hotel-journey${layout.host === 'chatgpt' ? ' cc-host-styled' : ''}`}
+    data-theme={layout.host === 'chatgpt' ? layout.theme : 'light'} displayMode="auto" title="Requested stay">
+    <p role="status">{opened.message}</p>
+  </Frame>;
+
+  return <>
+    <div hidden={showTripReview} inert={showTripReview ? true : undefined}>
+    <HotelJourney
     result={result}
     state={pending ? 'loading' : toolInfo.isError ? 'error' : result ? undefined : 'malformed'}
     displayMode={layout.displayMode}
@@ -174,6 +205,7 @@ export default function HotelResults() {
     selectedSelectionId={chosen?.selectionId}
     pendingSelectionId={pendingSelectionId}
     selectionError={selectionError}
+    onReview={ready && chosen && !pendingSelectionId ? () => setShowTripReview(true) : undefined}
     onExpand={ready && layout.supports?.fullscreen ? () => { void requestDisplayMode('fullscreen').catch(() => {}); } : undefined}
     onReturn={ready && layout.displayMode === 'fullscreen' ? () => { void requestDisplayMode('inline').catch(() => {}); } : undefined}
     onAdd={ready && result ? async selectionId => {
@@ -198,5 +230,8 @@ export default function HotelResults() {
         setPendingSelectionId(undefined);
       }
     } : undefined}
-  />;
+  />
+    </div>
+    {showTripReview ? <InlineTripReview onBack={() => setShowTripReview(false)} backLabel="Back to stays" /> : null}
+  </>;
 }

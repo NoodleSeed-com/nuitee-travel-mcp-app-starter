@@ -1,0 +1,12 @@
+/* Direct discovery reuses the approved cards, chooser and confirmation unchanged. */
+.cc-app.wf-experience-discovery{box-sizing:border-box;width:100%;max-width:100%;min-width:0;padding:0;border:1px solid var(--cc-border);border-radius:23px;overflow:hidden;background:var(--cc-bg)}
+.wf-experience-discovery>.cc-app{border:0;border-radius:0;box-shadow:none}
+.wf-discovery-toolbar{display:flex;justify-content:flex-start;padding:9px 12px}
+.wf-discovery-toolbar button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;border:1px solid transparent;border-radius:999px;padding:10px 12px;font:550 14px/1.35 'Host Grotesk Variable',sans-serif;color:var(--cc-text);background:transparent;cursor:pointer}
+.wf-discovery-toolbar .cc-icon{width:20px;height:20px;flex-shrink:0;margin:0}
+.wf-experience-discovery .wf-discovery-note{margin:0 24px 16px;padding:14px 16px;border-radius:13px;background:var(--cc-surface-muted);color:var(--cc-muted);font-size:13px;line-height:1.55;overflow-wrap:anywhere}
+.wf-discovery-note strong{color:var(--cc-text);font-weight:550}
+.wf-experience-discovery .wf-discovery-note p{margin:4px 0 0}
+.wf-discovery-feedback{display:grid;gap:16px;justify-items:start;padding:8px 24px 24px}
+.wf-discovery-toolbar button:focus-visible{outline:2px solid var(--cc-text);outline-offset:3px}
+@media(max-width:640px){.wf-experience-discovery .wf-discovery-note{margin-left:18px;margin-right:18px}}

@@ -26,6 +26,7 @@ export type SearchInput = {
   readonly tripType?: unknown;
   readonly departureDate?: unknown;
   readonly returnDate?: unknown;
+  readonly activityDates?: unknown;
   readonly adults?: unknown;
   readonly children?: unknown;
   readonly infants?: unknown;
@@ -43,6 +44,17 @@ export type SelectionRecord = {
   readonly originalTotal: number;
   readonly currency: string;
   readonly expiresAt?: string;
+  readonly planningContext?: {
+    readonly origin: string;
+    readonly destination: string;
+    readonly departureDate: string;
+    readonly returnDate?: string;
+    readonly activityDates?: { readonly startDate: string; readonly endDate: string };
+    readonly adults: number;
+    readonly children: number;
+    readonly infants: number;
+    readonly currency: string;
+  };
 };
 
 export type SelectionState = {
@@ -418,6 +430,10 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
       ? 'ROUND_TRIP'
       : 'ONE_WAY';
   const returnDate = tripType === 'ROUND_TRIP' ? requestedReturnDate : undefined;
+  const suppliedActivityDates = object(search?.activityDates);
+  const activityDates = validDate(suppliedActivityDates?.startDate) && validDate(suppliedActivityDates?.endDate)
+    && suppliedActivityDates.endDate > suppliedActivityDates.startDate
+    ? { startDate: suppliedActivityDates.startDate, endDate: suppliedActivityDates.endDate } : undefined;
   const adults = finiteNumber(search?.adults);
   const children = finiteNumber(search?.children);
   const infants = finiteNumber(search?.infants);
@@ -467,6 +483,7 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
     tripType,
     departureDate,
     ...(returnDate ? { returnDate } : {}),
+    ...(activityDates ? { activityDates } : {}),
     adults,
     children,
     infants,
@@ -770,6 +787,12 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
       searchId,
       originalTotal: total,
       currency: priceCurrency,
+      planningContext: {
+        origin: origin!, destination: destination!, departureDate: departureDate as string,
+        ...(returnDate ? { returnDate: returnDate as string } : {}),
+        ...(activityDates ? { activityDates } : {}),
+        adults: adults!, children: children!, infants: infants!, currency: priceCurrency,
+      },
       ...(expiration ? { expiresAt: expiration } : {}),
     });
   }

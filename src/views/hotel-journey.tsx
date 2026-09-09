@@ -40,7 +40,7 @@ function StayPrice({ hotel, locale }: { readonly hotel: DemoHotel; readonly loca
   </div>;
 }
 
-export function HotelJourney({ result, state, displayMode, theme = 'light', appearance = 'wayfare', locale = 'en-CA', selectedSelectionId, pendingSelectionId, selectionError, onAdd, onExpand, onReturn, experience, onExperienceChange }: {
+export function HotelJourney({ result, state, displayMode, theme = 'light', appearance = 'wayfare', locale = 'en-CA', selectedSelectionId, pendingSelectionId, selectionError, onAdd, onReview, onExpand, onReturn, experience, onExperienceChange }: {
   readonly result?: DemoHotelSearchOutput;
   readonly state?: 'loading' | 'error' | 'malformed';
   readonly displayMode: string;
@@ -51,6 +51,7 @@ export function HotelJourney({ result, state, displayMode, theme = 'light', appe
   readonly pendingSelectionId?: string;
   readonly selectionError?: string;
   readonly onAdd?: (selectionId: string) => void;
+  readonly onReview?: () => void;
   readonly onExpand?: () => void;
   readonly onReturn?: () => void;
   readonly experience?: HotelJourneyState;
@@ -96,7 +97,10 @@ export function HotelJourney({ result, state, displayMode, theme = 'light', appe
   </Action>;
   const feedback = <>
     {selectionError ? <Feedback status="error">{selectionError}</Feedback> : null}
-    {selected ? <p className="cc-stay-selected-note" role="status">{selected.name} selected. Nothing was booked, held, or paid.</p> : null}
+    {selected ? <div className="cc-stay-selected-note">
+      <div role="status"><strong><CheckIcon />Stay added to your trip</strong><p>{selected.name} · Not reserved</p><small>Nothing was booked, held, or paid.</small></div>
+      {onReview ? <Action type="button" variant="primary" data-trip-review-trigger disabled={Boolean(pendingSelectionId)} onClick={onReview}>Review my trip</Action> : null}
+    </div> : null}
   </>;
 
   if (current.screen === 'detail' && detail) return wrapper(<>
