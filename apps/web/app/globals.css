@@ -1409,7 +1409,7 @@ code {
 .travel-message--assistant > pre,
 .travel-message--assistant > blockquote,
 .travel-message--assistant > table {
-  max-width: 48rem;
+  max-width: 100%;
 }
 
 .travel-message noodle-app-view {

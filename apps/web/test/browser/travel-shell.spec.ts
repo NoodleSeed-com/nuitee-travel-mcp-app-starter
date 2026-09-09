@@ -1750,7 +1750,7 @@ test('proves premium active conversation, chronological nested Apps, keyboard or
   for (const bounds of [assistantCopyBounds, firstAppBounds, travelerBounds, conversationBounds]) {
     expect(bounds).not.toBeNull();
   }
-  expect(assistantCopyBounds!.width).toBeLessThan(firstAppBounds!.width);
+  expect(assistantCopyBounds!.width).toBeCloseTo(firstAppBounds!.width, 0);
   expect(travelerBounds!.x).toBeGreaterThan(assistantCopyBounds!.x);
   const transcriptContentRight = await transcript.evaluate((element) => {
     const content = element.querySelector('ol');

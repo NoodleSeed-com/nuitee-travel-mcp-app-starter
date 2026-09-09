@@ -43,6 +43,7 @@ export const nuiteeHttp = connector('nuitee_flights_http')
         type: 'read',
         method: 'POST',
         limits: { maxResponseBytes: 6 * 1024 * 1024 },
+        resilience: { timeoutMs: 75_000 },
         path: '/flights/rates',
         input: searchRequestSchema,
         output: z.object({ raw: z.unknown() }),
@@ -112,7 +113,7 @@ export const nuiteeGateway = connector('nuitee_flights_gateway')
       search: 'nuitee_flights_http.search',
       verify: 'nuitee_flights_http.verify',
     },
-    limits: { timeoutMs: 12_000, maxHostCalls: 1 },
+    limits: { timeoutMs: 80_000, maxHostCalls: 1 },
     run: runNuiteeGateway,
   });
 

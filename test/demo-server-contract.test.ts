@@ -60,8 +60,12 @@ describe('Wayfare expanded travel profile', () => {
     expect(manifest.state.handles.demo_hotel_selections).toBeDefined();
   });
 
-  it('keeps capability choice inside one agent-led journey', async () => {
-    const manifest = await demoLiveApp.toManifest() as any;
+  it.each([
+    ['live', demoLiveApp],
+    ['embedded', demoEmbeddedApp],
+    ['preview', demoPreviewApp],
+  ])('keeps capability choice inside one agent-led %s journey', async (_profile, app) => {
+    const manifest = await app.toManifest() as any;
     const guide = manifest.server.agentGuide;
     const wire = JSON.stringify(guide);
 
@@ -75,6 +79,17 @@ describe('Wayfare expanded travel profile', () => {
     expect(wire).toContain('Flight and hotel results come from connected Nuitee provider searches');
     expect(wire).toContain('illustrative');
     expect(wire).not.toContain('plan_everything');
+
+    const narrationRule = guide.boundaries.find((boundary: string) =>
+      boundary.includes('at most two short sentences'));
+    expect(narrationRule).toBeDefined();
+    expect(manifest.server.instructions).toContain(narrationRule);
+    expect(manifest.widgets.find((widget: any) => widget.tool === 'search_flights')?.description)
+      .toContain(narrationRule);
+    const searchSteps = guide.workflows.flatMap((workflow: any) => workflow.steps)
+      .filter((step: any) => step.capability.name === 'search_flights');
+    expect(searchSteps).toHaveLength(2);
+    for (const step of searchSteps) expect(step.guidance).toContain(narrationRule);
   });
 
   it('leaves every normal starter entrypoint on its existing capability surface', async () => {

@@ -145,7 +145,7 @@ Deterministic local browser evidence proves this composition only against a loop
 2. The model calls `search_flights` immediately from the typed facts. One-way, one adult, and Economy are visible defaults when the traveler does not supply a return trip, party, or cabin; a generic passenger count is treated as adults unless children or infants are explicit. The guest website may suggest an untrusted derived origin, currency, and pricing market when those facts are omitted; explicit traveler text always wins. Other hosts and unresolved website sessions retain USD and the US pricing market. The response states the applied assumptions and offers adjustment after the read-only search rather than requiring confirmation first.
 3. The compute gateway validates route/date/traveler relationships against server-authoritative time.
 4. The gateway calls the allowlisted search operation once. Tool input cannot select an origin, URL, path, method, header, credential, or provider offer ID.
-5. The connector sends the exact request to `POST /flights/rates` and injects `X-API-Key` from the managed secret.
+5. The connector sends the exact request to `POST /flights/rates` and injects `X-API-Key` from the managed secret. Search explicitly allows 75 seconds for the HTTP response, with an 80-second enclosing compute deadline so slower provider searches can finish.
 6. Search permits up to 6 MiB at connector and application parsing boundaries. The gateway flattens bounded journeys, keeps one valid offer per itinerary, normalizes at most ten, and accepts only exact allowlisted Nuitee airline-image origins.
 7. Every provider offer ID becomes a private caller-scoped record. Public output receives only an application-issued `sel_…` handle.
 8. The tool replaces `flight_selections` using revision control and a 30-minute TTL; a new search begins with no active selection.
@@ -153,6 +153,29 @@ Deterministic local browser evidence proves this composition only against a loop
 10. Validated planning and search results drive the compact Current trip summary inside the conversation. The summary never parses Assistant prose or stores identifiers.
 
 If validation or the provider fails, the application returns bounded sanitized state and consults no fixture. A valid empty result clears stale route projection and reports no fares found.
+
+### Flight result narration
+
+For successful or partial searches in a host that supports the linked flight
+widget, the widget carries comparison and selection. Default assistant prose
+before and after it totals at most two short sentences: acknowledge the result,
+add only an essential assumption or caveat missing from the widget, and offer at
+most one useful next step. It does not repeat the search summary, append a fare
+catalog or cheapest/fastest ranking, or list unseen fares to compensate for the
+three-card inline limit. An existing active selection does not prompt another
+choice unless the traveler asks to change it.
+
+Explicit requests for recommendations, textual comparisons, or specific details
+receive focused answers grounded in returned facts. Hosts without widgets and
+reported widget failures retain useful text comparisons. Empty or failed
+searches explain the actual outcome and next action without pointing to missing
+cards. Partial-data and verification cautions remain truthful.
+
+The policy is included in server instructions, both flight-search workflows,
+and the flight widget descriptions. The website preserves the typed transcript;
+it does not hide assistant messages or parse prose to remove repetitions.
+Local validation proves that the policy is delivered in compiled metadata;
+model adherence requires a conversation against the updated assistant deployment.
 
 ## Fictional experience discovery
 
