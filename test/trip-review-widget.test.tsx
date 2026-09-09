@@ -24,6 +24,18 @@ const review: any = {
   planningContext: { destination: 'Lisbon', startDate: '2030-04-20', endDate: '2030-04-23', adults: 2, children: 0, currency: 'CAD', meetingArea: 'Belém marina meeting point' },
 };
 describe('trip planning review', () => {
+  const flight = { dataSource: 'live_nuitee_selection', selectionId: `sel_${'b'.repeat(32)}`, searchPrice: { total: 500, currency: 'CAD' }, disclosure: 'Fare verification needed.' } as const;
+  it('shows the selected airline logo without cropping it into a destination photo', () => {
+    const html = renderToStaticMarkup(<TripReviewView data={{ ...review, flight: { ...flight, airlineLogoUrl: 'https://sandbox.nuitee.flights/static/images/airlines/ZZ.png' } }} />);
+    expect(html).toContain('src="https://sandbox.nuitee.flights/static/images/airlines/ZZ.png"');
+    expect(html).toContain('referrerPolicy="no-referrer"');
+    expect(html).toContain('wf-review-flight-thumbnail');
+  });
+  it.each([undefined, 'javascript:alert(1)', 'https://untrusted.example/a.jpg', 'https://sandbox.nuitee.flights.evil.example/static/images/airlines/ZZ.png'])('keeps the flight readable with an icon when its logo is unusable: %s', airlineLogoUrl => {
+    const html = renderToStaticMarkup(<TripReviewView data={{ ...review, experiences: [], flight: { ...flight, airlineLogoUrl } }} />);
+    expect(html).toContain('Your selected flight');
+    expect(html).not.toContain('<img');
+  });
   const stay = { dataSource: 'live_nuitee', selectionId: `hsel_${'b'.repeat(32)}`, propertyName: 'Selected Lisbon Hotel', city: 'Lisbon', checkInDate: '2030-04-20', checkOutDate: '2030-04-23', nights: 3, rooms: 1, staySubtotal: { amount: 500, currency: 'CAD' } };
   it('shows the selected stay photo with the existing review thumbnail geometry', () => {
     const html = renderToStaticMarkup(<TripReviewView data={{ ...review, stay: { ...stay, imageUrl: 'https://static.cupid.travel/selected-hotel.jpg' } }} />);

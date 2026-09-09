@@ -633,9 +633,14 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
     ...(experiences.length ? [] : ['experiences']),
   ];
   const ready = Boolean(flight || stay || experiences.length);
+  const flightLogo = string(flight?.airlineLogoUrl);
+  const safeFlightLogo = flightLogo && flightLogo.length <= 2_048
+    && /^https:\/\/(?:sandbox|production)\.nuitee\.flights\/static\/images\/airlines\/[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.(?:png|svg|webp)$/.test(flightLogo)
+    ? flightLogo : undefined;
   const flightReview = flight ? {
     dataSource: 'live_nuitee_selection',
     selectionId: flight.selectionId,
+    ...(safeFlightLogo ? { airlineLogoUrl: safeFlightLogo } : {}),
     ...(string(record(flight.planningContext)?.origin) ? { origin: record(flight.planningContext)!.origin } : {}),
     ...(string(record(flight.planningContext)?.destination) ? { destination: record(flight.planningContext)!.destination } : {}),
     searchPrice: {

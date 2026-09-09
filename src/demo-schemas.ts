@@ -1,6 +1,6 @@
 import { z } from '@noodleseed/one';
 import { travelCompanionDemoConfig } from './demo-config.js';
-import { activityDatesSchema, selectionIdSchema } from './flight-schemas.js';
+import { activityDatesSchema, airlineLogoSchema, selectionIdSchema } from './flight-schemas.js';
 
 export const syntheticDataSourceSchema = z.literal('illustrative');
 export const hotelDataSourceSchema = z.enum(['live_nuitee', 'illustrative']);
@@ -487,6 +487,7 @@ export const demoInsuranceComparisonOutputSchema = z.object({
 export const demoTripReviewFlightSchema = z.object({
   dataSource: z.literal('live_nuitee_selection'),
   selectionId: selectionIdSchema,
+  airlineLogoUrl: airlineLogoSchema.optional(),
   origin: z.string().regex(/^[A-Z]{3}$/).optional(),
   destination: z.string().regex(/^[A-Z]{3}$/).optional(),
   searchPrice: z.object({

@@ -363,7 +363,7 @@ export const hotelDemoViewPolicy = {
   ...sharedWidgetDomainPolicy,
   csp: {
     connectDomains: [...mapboxOrigins],
-    resourceDomains: [...hotelImageOrigins, 'https://images.unsplash.com', ...mapboxOrigins],
+    resourceDomains: [...hotelImageOrigins, 'https://images.unsplash.com', ...mapboxOrigins, ...flightViewPolicy.csp.resourceDomains],
     frameDomains: [],
   },
 };
@@ -381,7 +381,7 @@ export const experienceDemoViewPolicy = {
   ...sharedWidgetDomainPolicy,
   csp: {
     connectDomains: [],
-    resourceDomains: ['https://images.unsplash.com', ...hotelImageOrigins],
+    resourceDomains: ['https://images.unsplash.com', ...hotelImageOrigins, ...flightViewPolicy.csp.resourceDomains],
     frameDomains: [],
   },
 };

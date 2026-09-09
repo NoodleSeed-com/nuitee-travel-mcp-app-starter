@@ -35,7 +35,7 @@ export const moneySchema = z.object({
 export const selectionIdSchema = z.string().regex(/^sel_[a-f0-9]{32}$/);
 const iataSchema = z.string().regex(/^[A-Z]{3}$/);
 const durationMinutesSchema = z.number().int().nonnegative().max(10_080);
-const airlineLogoSchema = z.string().max(2048).regex(
+export const airlineLogoSchema = z.string().max(2048).regex(
   /^https:\/\/(?:sandbox|production)\.nuitee\.flights\/static\/images\/airlines\/[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.(?:png|svg|webp)$/,
 );
 const carrierSchema = z.object({
@@ -244,6 +244,7 @@ export const selectionRecordSchema = z.object({
   searchId: z.string().max(39),
   originalTotal: z.number().nonnegative().max(100_000_000),
   currency: z.string().regex(/^[A-Z]{3}$/),
+  airlineLogoUrl: airlineLogoSchema.optional(),
   expiresAt: z.string().max(64).optional(),
   planningContext: z.object({
     origin: z.string().regex(/^[A-Z]{3}$/),

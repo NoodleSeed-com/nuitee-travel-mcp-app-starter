@@ -17,6 +17,39 @@ const review = {
 let root: Root | undefined;
 afterEach(() => { root?.unmount(); root = undefined; document.body.innerHTML = ''; document.body.style.zoom = ''; });
 
+it('shows a contained airline logo and keeps fallback and prices aligned at mobile widths and zoom', async () => {
+  const airlineLogoUrl = 'https://sandbox.nuitee.flights/static/images/airlines/ZZ.png';
+  const flightReview = { ...review, experiences: [], missing: ['stay', 'experiences'], flight: {
+    dataSource: 'live_nuitee_selection', selectionId: `sel_${'b'.repeat(32)}`,
+    searchPrice: { total: 1743.32, currency: 'EUR' }, airlineLogoUrl,
+    disclosure: 'Flight search price selected in this session; fare verification is needed.',
+  } } as DemoTripReview;
+  const node = document.createElement('div'); document.body.append(node); root = createRoot(node);
+  root.render(<TripReviewView data={flightReview} onSuggest={() => {}} onContinue={() => {}} />);
+  await expect.element(page.getByRole('heading', { name: 'Your selected flight' })).toBeVisible();
+  const photo = document.querySelector('.wf-review-flight-thumbnail img')!;
+  expect(photo.getAttribute('src')).toBe(airlineLogoUrl);
+  expect(photo.getAttribute('referrerpolicy')).toBe('no-referrer');
+  expect(getComputedStyle(photo).objectFit).toBe('contain');
+  expect(getComputedStyle(photo).padding).toBe('12px');
+  photo.dispatchEvent(new Event('error'));
+  await expect.poll(() => document.querySelector('.wf-review-flight-thumbnail img')).toBeNull();
+  expect(document.querySelector('.wf-review-flight-thumbnail .cc-icon')).not.toBeNull();
+  for (const [width, zoom] of [[882, 1], [366, 1], [320, 1], [640, 2]] as const) {
+    await page.viewport(width, 1100);
+    document.body.style.zoom = String(zoom);
+    await expect.poll(() => document.querySelector('.wf-review-flight-thumbnail')!.getBoundingClientRect().width / zoom).toBe(width / zoom > 640 ? 86 : 64);
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width);
+    const facts = document.querySelector('.wf-review-flight h3')!.getBoundingClientRect();
+    const price = document.querySelector('.wf-review-flight .wf-review-price')!.getBoundingClientRect();
+    if (width / zoom <= 640) expect(Math.abs(facts.left - price.left)).toBeLessThan(1);
+    await page.screenshot({ path: `__screenshots__/flight-review-thumbnail-${width}-${zoom}.png`, fullPage: true });
+  }
+  const changedLogo = airlineLogoUrl.replace('ZZ.png', 'QZ.png');
+  root.render(<TripReviewView data={{ ...flightReview, flight: { ...flightReview.flight!, airlineLogoUrl: changedLogo } }} />);
+  await expect.poll(() => document.querySelector('.wf-review-flight-thumbnail img')?.getAttribute('src')).toBe(changedLogo);
+});
+
 it('keeps the stay thumbnail, fallback and price aligned at desktop, mobile and zoom', async () => {
   const stayReview = { ...review, experiences: [], missing: ['flight', 'experiences'], stay: {
     dataSource: 'live_nuitee', selectionId: `hsel_${'b'.repeat(32)}`,

@@ -305,7 +305,17 @@ describe('hotel widget map CSP', () => {
 describe('experience widget image CSP', () => {
   it('allows bounded experience and inline stay image origins without provider connections', () => {
     expect(experienceDemoViewPolicy.csp.connectDomains).toEqual([]);
-    expect(experienceDemoViewPolicy.csp.resourceDomains).toEqual(['https://images.unsplash.com', 'https://snaphotelapi.com', 'https://static.cupid.travel']);
+    expect(experienceDemoViewPolicy.csp.resourceDomains).toEqual(['https://images.unsplash.com', 'https://snaphotelapi.com', 'https://static.cupid.travel', 'https://sandbox.nuitee.flights', 'https://production.nuitee.flights']);
     expect(experienceDemoViewPolicy.csp.frameDomains).toEqual([]);
   });
+});
+
+it('allows selected airline logos in hotel, experience and standalone trip reviews as resources only', () => {
+  for (const policy of [hotelDemoViewPolicy, experienceDemoViewPolicy]) {
+    for (const origin of ['https://sandbox.nuitee.flights', 'https://production.nuitee.flights']) {
+      expect(policy.csp.resourceDomains).toContain(origin);
+      expect(policy.csp.connectDomains).not.toContain(origin);
+    }
+    expect(policy.csp.resourceDomains.some(origin => origin.includes('*'))).toBe(false);
+  }
 });
