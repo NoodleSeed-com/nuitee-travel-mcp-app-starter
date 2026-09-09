@@ -95,11 +95,15 @@ it('opens real carousel and chooser in place, adds only an explicit slot, then r
   await page.getByRole('button', { name: 'Review my trip' }).click();
   await page.getByRole('button', { name: 'Explore experiences' }).click();
   await expect.element(page.getByRole('status')).toHaveTextContent('Finding fictional experience ideas');
+  expect(getComputedStyle(document.querySelector('.wf-experience-discovery .nsr-frame-surface')!).borderTopWidth).toBe('0px');
   expect(bridge.search).toHaveBeenCalledExactlyOnceWith({ destination: 'Tokyo', startDate: '2026-10-10', endDate: '2026-10-11', adults: 2, children: 0, currency: 'CAD', accessibility: 'ANY' });
   expect(bridge.call).toHaveBeenCalledTimes(2);
   resolveSearch({ structuredContent: searched.experienceResult });
   await expect.element(page.getByRole('heading', { name: 'Tokyo experience ideas' })).toBeVisible();
   expect(document.querySelectorAll('.cc-experience-card')).toHaveLength(3);
+  expect(getComputedStyle(document.querySelector('.wf-experience-discovery')!).borderTopWidth).toBe('1px');
+  expect(getComputedStyle(document.querySelector('.wf-experience-discovery .nsr-frame-surface')!).borderTopWidth).toBe('0px');
+  expect(getComputedStyle(document.querySelector('.cc-experience-card')!).borderTopWidth).toBe('1px');
   await expect.element(page.getByText(/Using your flight date as a starting point/)).toBeVisible();
   expect(bridge.send).not.toHaveBeenCalled();
   expect(bridge.add).not.toHaveBeenCalled();
