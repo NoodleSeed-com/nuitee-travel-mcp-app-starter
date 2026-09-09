@@ -1,0 +1,74 @@
+/* Inline points design follows docs/brand/wayfare-brand-guidelines.md and the approved trip-review preview. */
+.cc-app.wf-trip-points{container-type:inline-size;width:100%;max-width:100%;min-width:0;padding:0;border:1px solid var(--cc-border);border-radius:23px;background:var(--cc-bg);color:var(--cc-text);font-family:'Host Grotesk Variable','Host Grotesk',sans-serif;font-size:16px;line-height:1.55;overflow-wrap:anywhere}
+.wf-trip-points,.wf-trip-points *{box-sizing:border-box}
+.wf-trip-points h2,.wf-trip-points h3,.wf-trip-points p{margin:0}
+.wf-trip-points button{min-width:44px;min-height:44px;border-radius:999px;font:inherit;cursor:pointer;transition:background-color 140ms,border-color 140ms}
+.wf-trip-points button:focus-visible{outline:2px solid var(--cc-text);outline-offset:3px}
+.wf-trip-points button:disabled{cursor:default}
+.wf-trip-points .wf-trip-points-back{padding:9px 12px;display:flex}
+.wf-trip-points .wf-trip-points-back button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 12px;border:1px solid transparent;background:transparent;color:var(--cc-text);font-size:14px;font-weight:550;line-height:1.35}
+.wf-trip-points .wf-trip-points-back .cc-icon{width:20px;height:20px;margin:0;flex-shrink:0}
+.wf-trip-points .wf-trip-points-header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:23px 24px 17px}
+.wf-trip-points .wf-trip-points-header>div{min-width:0}
+.wf-trip-points .wf-trip-points-context{margin-top:7px;font-size:14px;color:var(--cc-muted)}
+.wf-trip-points .wf-trip-points-badge{display:inline-flex;flex-shrink:0;padding:7px 10px;border-radius:999px;background:var(--cc-surface-muted);color:#147d83;font-size:11px;font-weight:600}
+.wf-trip-points .wf-trip-points-header h2{font-size:25px;font-weight:600;line-height:1.2;letter-spacing:-.035em}
+.wf-trip-points .wf-trip-points-header h2:focus{outline:none}
+.wf-trip-points .wf-trip-points-content{min-width:0;padding:0 24px 23px}
+.wf-trip-points .wf-trip-points-intro{display:flex;align-items:flex-start;gap:12px;border-top:1px solid var(--cc-border);padding:24px 0}
+.wf-trip-points .wf-trip-points-intro>div:last-child{min-width:0}
+.wf-trip-points .wf-trip-points-intro h3{font-size:19px;font-weight:600;line-height:1.3;letter-spacing:-.02em}
+.wf-trip-points .wf-trip-points-intro p{max-width:640px;margin-top:7px;font-size:13px;color:var(--cc-muted)}
+.wf-trip-points .wf-trip-points-glyph{display:grid;place-items:center;flex-shrink:0;width:36px;height:36px;border-radius:50%;background:var(--cc-surface-muted);color:#147d83}
+.wf-trip-points .wf-trip-points-glyph svg{width:20px;height:20px}
+.wf-trip-points .wf-trip-points-balance{padding:23px;margin-bottom:20px;border-radius:16px;background:var(--cc-surface-muted)}
+.wf-trip-points .wf-trip-points-balance>span{font-size:13px;color:var(--cc-muted)}
+.wf-trip-points .wf-trip-points-balance>strong{display:block;font-size:38px;font-weight:600;line-height:1.2;letter-spacing:-.04em;margin-top:8px;font-variant-numeric:tabular-nums}
+.wf-trip-points .wf-trip-points-balance strong small{font-size:17px;font-weight:400;letter-spacing:normal;color:var(--cc-muted)}
+.wf-trip-points .wf-trip-points-balance p{font-size:12px;margin-top:10px;color:var(--cc-muted)}
+.wf-trip-points .cc-card-carousel{position:relative;margin-bottom:23px}
+.wf-trip-points .cc-card-carousel-nav{display:none}
+.wf-trip-points .cc-card-carousel-nav:has(button:not(:disabled)){display:contents}
+.wf-trip-points .cc-card-carousel-nav>span{display:none}
+.wf-trip-points .cc-card-carousel-nav button{position:absolute;top:45%;display:grid;place-items:center;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:1px solid var(--cc-border);border-radius:50%;background:var(--cc-bg);box-shadow:0 3px 14px rgb(13 13 13 / .1)}
+.wf-trip-points .cc-card-carousel-nav button:first-of-type{left:-10px}
+.wf-trip-points .cc-card-carousel-nav button:last-of-type{right:-10px}
+.wf-trip-points .cc-card-carousel-nav button:disabled{opacity:.5}
+.wf-trip-points .cc-card-carousel-track.wf-trip-points-options{gap:16px;padding:4px;scrollbar-width:none}
+.wf-trip-points .cc-card-carousel-track.wf-trip-points-options::-webkit-scrollbar{display:none}
+.wf-trip-points .wf-trip-points-options>.cc-card-carousel-item{flex-basis:calc((100% - 16px)/2)}
+.wf-trip-points .wf-trip-points-options>.cc-card-carousel-item:only-child{flex-basis:100%}
+.wf-trip-points .wf-trip-points-option{display:flex;flex-direction:column;align-items:flex-start;gap:9px;min-width:0;padding:20px;border:1px solid var(--cc-border);border-radius:16px;background:var(--cc-bg);text-align:left}
+.wf-trip-points .wf-trip-points-option h3{font-size:13px;font-weight:500;line-height:1.4;color:var(--cc-muted)}
+.wf-trip-points .wf-trip-points-option .wf-trip-points-route{font-size:12px;color:var(--cc-muted)}
+.wf-trip-points .wf-trip-points-option>strong{font-size:20px;font-weight:600;line-height:1.35;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.wf-trip-points .wf-trip-points-option strong small{display:block;font-size:15px;font-weight:400;letter-spacing:normal;color:var(--cc-muted);margin-top:3px}
+.wf-trip-points .wf-trip-points-option>span{font-size:13px;color:var(--cc-muted)}
+.wf-trip-points .wf-trip-points-choice{display:flex;align-items:center;justify-content:center;gap:6px;max-width:100%;margin-top:auto;padding:9px 12px;border:1px solid var(--cc-border);background:var(--cc-bg);color:var(--cc-text);font-size:12px;font-weight:550;line-height:1.4;text-align:center}
+.wf-trip-points .wf-trip-points-choice[aria-pressed=true]{background:var(--cc-selected);border-color:var(--cc-selected);color:#0d0d0d}
+.wf-trip-points .wf-trip-points-choice .cc-icon{width:15px;height:15px;flex-shrink:0;margin:0}
+.wf-trip-points .wf-trip-points-budget{margin-bottom:24px}
+.wf-trip-points .wf-trip-points-budget h3{font-size:17px;font-weight:600;line-height:1.3;letter-spacing:-.02em}
+.wf-trip-points .wf-trip-points-budget dl{margin:12px 0}
+.wf-trip-points .wf-trip-points-budget dl>div{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid var(--cc-border);font-size:13px}
+.wf-trip-points .wf-trip-points-budget dt{color:var(--cc-muted)}
+.wf-trip-points .wf-trip-points-budget dd{margin:0;text-align:right;font-weight:550;font-variant-numeric:tabular-nums}
+.wf-trip-points .wf-trip-points-budget>p{display:flex;align-items:flex-start;gap:8px;background:var(--cc-surface-muted);padding:14px 16px;border-radius:13px;font-size:13px;color:var(--cc-muted)}
+.wf-trip-points .wf-trip-points-budget>p svg{width:18px;height:18px;flex-shrink:0;margin-top:2px}
+.wf-trip-points .wf-trip-points-footer{border-top:1px solid var(--cc-border);padding-top:18px;margin-top:2px}
+.wf-trip-points .wf-trip-points-footer>p{font-size:12px;color:var(--cc-muted);line-height:1.55;margin-bottom:13px}
+.wf-trip-points .wf-trip-points-primary{display:flex;align-items:center;justify-content:center;min-height:50px;width:100%;padding:10px 18px;border:1px solid var(--cc-text);background:var(--cc-text);color:var(--cc-bg);font-size:16px;font-weight:550;line-height:1.35}
+.wf-trip-points .wf-trip-points-feedback,.wf-trip-points .wf-trip-points-empty,.wf-trip-points .wf-trip-points-loading{width:100%;padding:24px 0}
+.wf-trip-points .wf-trip-points-feedback h3,.wf-trip-points .wf-trip-points-empty h3{font-size:18px;font-weight:600;line-height:1.3}
+.wf-trip-points .wf-trip-points-feedback p,.wf-trip-points .wf-trip-points-empty p,.wf-trip-points .wf-trip-points-loading>p{font-size:13px;color:var(--cc-muted);margin-top:9px}
+.wf-trip-points .wf-trip-points-secondary{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;margin-top:16px;background:var(--cc-bg);color:var(--cc-text);border:1px solid var(--cc-border);font-size:13px;font-weight:550}
+.wf-trip-points .wf-trip-points-skeleton{display:grid;gap:20px;width:100%;margin-top:20px}
+.wf-trip-points .wf-trip-points-skeleton span{display:block;background:var(--cc-surface-muted);border-radius:16px}
+.wf-trip-points .wf-trip-points-skeleton-balance{height:156px}
+.wf-trip-points .wf-trip-points-skeleton>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.wf-trip-points .wf-trip-points-skeleton>div span{height:212px}
+.wf-trip-points .wf-trip-points-skeleton-budget{height:180px}
+@media(hover:hover) and (pointer:fine){.wf-trip-points .wf-trip-points-back button:hover{background:var(--cc-surface-muted)}.wf-trip-points .wf-trip-points-choice:hover,.wf-trip-points .wf-trip-points-secondary:hover{border-color:var(--cc-muted)}}
+@container(max-width:640px){.wf-trip-points .wf-trip-points-header{padding:20px 18px 17px}.wf-trip-points .wf-trip-points-header h2{font-size:22px}.wf-trip-points .wf-trip-points-badge{font-size:10px;padding:6px 8px}.wf-trip-points .wf-trip-points-content{padding:0 17px 20px}.wf-trip-points .wf-trip-points-intro h3{font-size:18px}.wf-trip-points .wf-trip-points-option{padding:16px}.wf-trip-points .wf-trip-points-option>strong{font-size:18px}}
+@container(max-width:560px){.wf-trip-points .wf-trip-points-options>.cc-card-carousel-item{flex-basis:calc(100% - 18px)}.wf-trip-points .wf-trip-points-budget dl>div{font-size:12px;gap:12px}.wf-trip-points .wf-trip-points-budget dd{max-width:46%}.wf-trip-points .wf-trip-points-skeleton>div{grid-template-columns:minmax(0,1fr)}.wf-trip-points .wf-trip-points-skeleton>div span:last-child{display:none}}
+@media(prefers-reduced-motion:reduce){.wf-trip-points *,.wf-trip-points *::before,.wf-trip-points *::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}}

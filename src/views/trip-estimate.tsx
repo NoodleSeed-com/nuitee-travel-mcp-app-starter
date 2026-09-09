@@ -16,7 +16,7 @@ export function TripEstimate({ data, locale = 'en-CA', party }: { readonly data:
   const providers = estimate.items.filter(item => item.source === 'provider_search');
   const fictional = estimate.items.filter(item => item.source === 'fictional');
   const providerLabel = providers.length === 2 ? 'Flight + stay search prices' : providers[0]?.component === 'flight' ? 'Flight search price' : 'Stay search price';
-  const fictionalLabel = fictional.some(item => item.component === 'stay') ? fictional.some(item => item.component === 'experience') ? 'Fictional stay + experiences' : 'Fictional stay' : `Fictional experience${fictional.length === 1 ? '' : 's'}`;
+  const fictionalLabel = `Fictional ${[fictional.some(item => item.component === 'stay') ? 'stay' : '', fictional.some(item => item.component === 'experience') ? 'experiences' : '', fictional.some(item => item.component === 'protection') ? 'protection' : ''].filter(Boolean).join(' + ')}`;
   return <section className="wf-estimate" aria-labelledby={`${id}-heading`}>
     <div className="wf-estimate-head">
       <div><h3 id={`${id}-heading`}>Trip planning estimate</h3><p>{complete ? `${party ? `For ${party} · all` : 'All'} selected items in ${estimate.currency}` : 'Keep every price in its original currency'}</p></div>
@@ -32,7 +32,7 @@ export function TripEstimate({ data, locale = 'en-CA', party }: { readonly data:
         {providers.map((item, index) => <div key={`provider-${index}`}><dt>{item.label}<small>Provider search price</small></dt><dd>{value(item)}</dd></div>)}
         {complete && providers.length ? <div className="wf-estimate-subtotal"><dt>Provider search subtotal</dt><dd>{total(estimate.providerSubtotalMinor!)}</dd></div> : null}
         {fictional.map((item, index) => <div key={`fictional-${index}`}><dt>{item.label}<small>Fictional {item.component} price</small></dt><dd>{value(item)}</dd></div>)}
-        <div><dt>Protection<small>Optional · nothing selected</small></dt><dd>Not included</dd></div>
+        {!fictional.some(item => item.component === 'protection') ? <div><dt>Protection<small>Optional · nothing selected</small></dt><dd>Not included</dd></div> : null}
         <div><dt>Points applied<small>No redemption supported</small></dt><dd>None</dd></div>
       </dl>
       <p>Not a package quote or amount to pay. Flight and stay prices need their own checks. Unknown fees are not treated as included.</p>

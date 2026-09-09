@@ -1,9 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import type { DemoTripReview } from '../src/demo-schemas.js';
-import { planTripExperienceSearch } from '../src/views/trip-experience-search.js';
+import { planTripExperienceSearch, tripPlanningSnapshot } from '../src/views/trip-experience-search.js';
+import { compareSyntheticTravelInsurance } from '../src/demo-fixtures.js';
 
 const review = { planningContext: { source: 'flight', dateBasis: 'flight_departure', destination: 'LIS', startDate: '2026-09-18', adults: 2, children: 0, currency: 'CAD' } } as DemoTripReview;
 describe('direct trip experience search', () => {
+  it('drops the prior protection estimate from a provisional newly-added experience snapshot', () => {
+    const plan = compareSyntheticTravelInsurance({ destination: 'Lisbon', departureDate: '2026-09-16', returnDate: '2026-09-17', adults: 2, children: 0, residenceCountry: 'CA', currency: 'EUR' }).plans[0]!;
+    const data = { ...review, flight: { selectionId: 'flight', searchPrice: { total: 100, currency: 'EUR' } }, experiences: [], missing: ['stay', 'experiences'], protection: { plan, comparisonId: 'comparison' } } as unknown as DemoTripReview;
+    const added = { selectionId: 'new', experience: { title: 'New activity' }, slot: { startLocal: '2026-09-16T10:00:00', timeZone: 'Europe/Lisbon' }, searchContext: { adults: 2 }, totalPrice: { amountMinor: 2000, currency: 'EUR' } } as DemoTripReview['experiences'][number];
+    expect(tripPlanningSnapshot(data).planningEstimate.totalMinor).toBe(13400);
+    const snapshot = tripPlanningSnapshot(data, added);
+    expect(snapshot.protection).toBeNull();
+    expect(snapshot.planningEstimate.totalMinor).toBe(12000);
+    expect(snapshot.planningEstimate.items.some(item => item.component === 'protection')).toBe(false);
+  });
   it('uses a labelled one-day flight-date suggestion, never a made-up stay window', () => {
     const planned = planTripExperienceSearch(review);
     expect(planned.input).toMatchObject({ destination: 'LIS', startDate: '2026-09-18', endDate: '2026-09-19', adults: 2, currency: 'CAD', accessibility: 'ANY' });

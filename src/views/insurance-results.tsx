@@ -62,7 +62,7 @@ function hasForbiddenInsuranceKey(value: unknown): boolean {
   return false;
 }
 
-function isSearchContext(value: unknown) {
+export function isInsuranceSearchContext(value: unknown) {
   const context = record(value);
   return Boolean(
     context
@@ -90,7 +90,7 @@ function isSearchContext(value: unknown) {
   );
 }
 
-function isPlan(value: unknown): value is DemoInsurancePlan {
+export function isInsurancePlan(value: unknown): value is DemoInsurancePlan {
   const plan = record(value);
   if (
     !plan
@@ -140,14 +140,14 @@ export function isDemoInsuranceComparisonOutput(
     && boundedString(result.fallback, 40, 700)
     && typeof result.comparisonId === 'string'
     && /^inscmp_[a-f0-9]{32}$/u.test(result.comparisonId)
-    && isSearchContext(result.searchContext)
+    && isInsuranceSearchContext(result.searchContext)
     && Array.isArray(result.assumptions)
     && result.assumptions.length >= 1
     && result.assumptions.length <= 6
     && result.assumptions.every((item) => boundedString(item, 20, 180))
     && Array.isArray(result.plans)
     && result.plans.length === 3
-    && result.plans.every(isPlan)
+    && result.plans.every(isInsurancePlan)
   );
 }
 
