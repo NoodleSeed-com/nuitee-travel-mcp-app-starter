@@ -18,6 +18,7 @@ import {
   type TravelDefaults,
 } from '../lib/travel-defaults';
 import { projectTrip, type TripProjection } from '../lib/trip-projection';
+import { isInlineTravelView } from '../lib/travel-view-policy';
 import {
   progressForEvent,
   type ToolActivity,
@@ -179,6 +180,9 @@ export function TravelConversation({
   const transcriptContentRef = useRef<HTMLOListElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const followLatestRef = useRef(true);
+  const scrollToLatestRef = useRef<() => void>(() => {});
+  const [scrollingToLatest, setScrollingToLatest] = useState(false);
+  const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [activity, setActivity] = useState<ToolActivity | null>(null);
   const [initialPromptState, setInitialPromptState] = useState<
     'pending' | 'sending' | 'failed' | 'sent'
@@ -191,12 +195,27 @@ export function TravelConversation({
   terminalRef.current = terminal;
   onInitialPromptAcceptedRef.current = onInitialPromptAccepted;
 
+  // Widget follow-ups use the SDK directly, bypassing the website composer.
+  // A new traveler turn is explicit intent to continue; assistant-only growth
+  // must still respect a reader who has scrolled back through the transcript.
+  const latestTraveler = messages.findLast(message => message.role === 'user');
+  const lastTravelerIdRef = useRef(latestTraveler?.id);
+  useEffect(() => {
+    if (!latestTraveler || lastTravelerIdRef.current === latestTraveler.id) return;
+    lastTravelerIdRef.current = latestTraveler.id;
+    const prompt = latestTraveler.parts.filter(part => part.type === 'text').map(part => part.text).join('\n');
+    if (prompt.trim()) lastPromptRef.current = prompt;
+    followLatestRef.current = true;
+    scrollToLatestRef.current();
+  }, [latestTraveler?.id]);
+
   useEffect(() => {
     if (!durableInitialPrompt) {
       let active = true;
       queueMicrotask(() => {
         if (
           !active
+          || initialPromptState !== 'pending'
           || initialPromptSendingRef.current
           || initialPromptAcceptedRef.current
           || stopRequestedRef.current
@@ -255,27 +274,88 @@ export function TravelConversation({
 
   useEffect(() => {
     const content = transcriptContentRef.current;
-    if (!content || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => {
-      if (followLatestRef.current) {
-        conversationEndRef.current?.scrollIntoView?.({ block: 'end' });
-      }
+    let scrolling = false;
+    let settleTimer: ReturnType<typeof setTimeout> | undefined;
+    const nearEnd = () => isNearTranscriptEnd({
+      clientHeight: window.innerHeight,
+      scrollHeight: document.documentElement.scrollHeight,
+      scrollTop: window.scrollY,
     });
-    observer.observe(content);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
     const updateFollowState = () => {
-      followLatestRef.current = isNearTranscriptEnd({
-        clientHeight: window.innerHeight,
-        scrollHeight: document.documentElement.scrollHeight,
-        scrollTop: window.scrollY,
-      });
+      // Native smooth scrolling emits intermediate positions. Those are not
+      // a request to stop following, nor should streaming restart the animation.
+      if (scrolling) return;
+      followLatestRef.current = nearEnd();
+      setShowJumpToLatest(!followLatestRef.current);
     };
+    const finishScroll = () => {
+      if (!scrolling) return;
+      scrolling = false;
+      clearTimeout(settleTimer);
+      setScrollingToLatest(false);
+      // A widget can grow during the animation. Follow that new content only
+      // after this movement finishes, and only if the reader has not interrupted.
+      if (followLatestRef.current && !nearEnd()) {
+        scrollToLatestRef.current();
+      } else {
+        updateFollowState();
+      }
+    };
+    scrollToLatestRef.current = () => {
+      followLatestRef.current = true;
+      if (scrolling || nearEnd()) return;
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      scrolling = !reducedMotion;
+      setScrollingToLatest(scrolling);
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: reducedMotion ? 'instant' : 'smooth' });
+      // scrollend is not available in every host browser. The fallback releases
+      // the animation lock without repeatedly scheduling more animations.
+      if (scrolling) settleTimer = setTimeout(() => {
+        scrolling = false;
+        setScrollingToLatest(false);
+        updateFollowState();
+      }, 1500);
+    };
+    const interruptScroll = () => {
+      if (!scrolling) return;
+      scrolling = false;
+      clearTimeout(settleTimer);
+      followLatestRef.current = false;
+      setScrollingToLatest(false);
+      window.scrollTo({ top: window.scrollY, behavior: 'instant' });
+      setShowJumpToLatest(!nearEnd());
+    };
+    const interruptWithKeyboard = (event: KeyboardEvent) => {
+      if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key)
+        && !(event.target instanceof Element && event.target.closest('input, textarea, button, [contenteditable="true"]'))) interruptScroll();
+    };
+    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(() => {
+      if (followLatestRef.current && !scrolling) {
+        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+      }
+      setShowJumpToLatest(!nearEnd());
+    });
+    if (content) observer?.observe(content);
     updateFollowState();
     window.addEventListener('scroll', updateFollowState, { passive: true });
-    return () => window.removeEventListener('scroll', updateFollowState);
+    window.addEventListener('resize', updateFollowState);
+    window.addEventListener('scrollend', finishScroll);
+    window.addEventListener('wheel', interruptScroll, { passive: true });
+    window.addEventListener('touchstart', interruptScroll, { passive: true });
+    window.addEventListener('pointerdown', interruptScroll, { passive: true });
+    window.addEventListener('keydown', interruptWithKeyboard);
+    return () => {
+      clearTimeout(settleTimer);
+      scrollToLatestRef.current = () => {};
+      observer?.disconnect();
+      window.removeEventListener('scroll', updateFollowState);
+      window.removeEventListener('resize', updateFollowState);
+      window.removeEventListener('scrollend', finishScroll);
+      window.removeEventListener('wheel', interruptScroll);
+      window.removeEventListener('touchstart', interruptScroll);
+      window.removeEventListener('pointerdown', interruptScroll);
+      window.removeEventListener('keydown', interruptWithKeyboard);
+    };
   }, []);
 
   useEffect(() => {
@@ -300,7 +380,10 @@ export function TravelConversation({
         setActivity(progress);
         return;
       }
-      if (event.event === 'tool_completed') {
+      // The linked App may arrive before tool_completed while the assistant
+      // continues writing. Its matching invocation no longer needs a skeleton.
+      if (event.event === 'tool_completed'
+        || (event.event === 'view_available' && isInlineTravelView(event.data))) {
         activeActivities.delete(event.data.id);
         setActivity(newestActivity(activeActivities));
         if (activeActivities.size === 0) {
@@ -347,9 +430,15 @@ export function TravelConversation({
 
   function sendFollowUp(prompt: string) {
     followLatestRef.current = true;
-    conversationEndRef.current?.scrollIntoView?.({ block: 'end' });
+    scrollToLatestRef.current();
     lastPromptRef.current = prompt;
     void client.sendMessage(prompt).catch(() => undefined);
+  }
+
+  function jumpToLatest() {
+    followLatestRef.current = true;
+    scrollToLatestRef.current();
+    conversationEndRef.current?.focus({ preventScroll: true });
   }
 
   function stopGenerating() {
@@ -379,7 +468,7 @@ export function TravelConversation({
     && (initialPromptProgress || Boolean(activity) || busy);
   const statusLabel = terminal || stopRequested || !responseInProgress
     ? ''
-    : 'Thinking…';
+    : activity?.skeleton === 'hotels' ? 'Finding stays…' : 'Thinking…';
   let activityInsertionIndex = visibleMessages.length;
   for (let index = visibleMessages.length - 1; index >= 0; index -= 1) {
     if (visibleMessages[index]?.role === 'user') {
@@ -387,6 +476,11 @@ export function TravelConversation({
       break;
     }
   }
+  const waitingForFollowUp = !terminal && responseInProgress
+    && visibleMessages.filter(message => message.role === 'user').length > 1
+    && !visibleMessages.slice(activityInsertionIndex).some(message => message.role === 'assistant'
+      && message.parts.some(part => (part.type === 'text' && part.text.trim()) || part.type === 'data-view'));
+  const jumpToLatestPending = scrollingToLatest || waitingForFollowUp;
   const errorPresentation = error && !hasToolError
     ? presentAssistantError(error)
     : null;
@@ -395,6 +489,7 @@ export function TravelConversation({
     <li
       className="travel-conversation__activity"
       data-active={statusLabel ? 'true' : 'false'}
+      data-skeleton={statusLabel ? activity?.skeleton : undefined}
       key="assistant-activity"
     >
       <p
@@ -404,6 +499,21 @@ export function TravelConversation({
       >
         {statusLabel ? <TextShimmer>{statusLabel}</TextShimmer> : null}
       </p>
+      {statusLabel && activity?.skeleton === 'hotels' ? (
+        <div className="travel-hotel-loading" aria-hidden="true">
+          <div className="travel-hotel-loading__panel">
+            <div className="travel-hotel-loading__heading"><span /><span /><span /><span /></div>
+            <div className="travel-hotel-skeletons" aria-hidden="true">
+              {[0, 1, 2].map(index => (
+                <div className="travel-hotel-skeleton" key={index}>
+                  <div className="travel-hotel-skeleton__photo" />
+                  <div className="travel-hotel-skeleton__body"><span /><span /><span /><span /><span /><span /><span /></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </li>
   );
 
@@ -464,7 +574,7 @@ export function TravelConversation({
             : null}
         </ol>
         {awaitingAssistantContent ? <ImmersiveConversationSkeleton /> : null}
-        <div aria-hidden="true" data-testid="conversation-end" ref={conversationEndRef} />
+        <div aria-label="Latest conversation" role="group" tabIndex={-1} data-testid="conversation-end" ref={conversationEndRef} />
       </div>
       {appearance === 'immersive' ? (
         <ImmersiveTripRail
@@ -554,6 +664,8 @@ export function TravelConversation({
         busy={responseInProgress}
         error={Boolean(errorPresentation || hasToolError || projection.phase === 'error')}
         formLabel="Continue trip"
+        jumpToLatestPending={jumpToLatestPending}
+        onJumpToLatest={showJumpToLatest || jumpToLatestPending ? jumpToLatest : undefined}
         onStop={stopGenerating}
         onSubmit={sendFollowUp}
         placeholder={copy.placeholder}

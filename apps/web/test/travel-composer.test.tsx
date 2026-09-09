@@ -9,6 +9,19 @@ afterEach(() => {
 });
 
 describe('Wayfare travel composer motion', () => {
+  it('keeps the loading circle clickable and restores the down-arrow without changing the control', () => {
+    const jump = vi.fn();
+    const { rerender } = render(<TravelComposer onSubmit={vi.fn()} onJumpToLatest={jump} jumpToLatestPending />);
+    const button = screen.getByRole('button', { name: 'Jump to latest message' });
+    expect(button).toHaveAttribute('data-loading', 'true');
+    expect(button).toBeEnabled();
+    fireEvent.click(button);
+    expect(jump).toHaveBeenCalledOnce();
+    rerender(<TravelComposer onSubmit={vi.fn()} onJumpToLatest={jump} />);
+    expect(screen.getByRole('button', { name: 'Jump to latest message' })).toBe(button);
+    expect(button).toHaveAttribute('data-loading', 'false');
+  });
+
   it('keeps one usable form inside the branded bottom beam', () => {
     const onSubmit = vi.fn();
 

@@ -127,7 +127,7 @@ function searchDemoHotels(viewPolicy: Readonly<Record<string, unknown>>) {
   return tool('search_hotels', {
     title: 'Compare hotels',
     description:
-      'Compare deterministic illustrative hotel options for Wayfare. This never checks live hotel availability and cannot reserve or book. Use a city name or supported metro/IATA code with exact stay dates.',
+      'Compare deterministic illustrative hotel options for Wayfare. This never checks live hotel availability and cannot reserve or book. Reuse the known destination and dates. Resolve next week as the same local weekday seven days later. If omitted, browse 1 night, 1 adult and 1 room, with visible adjustable assumptions. Pass resolved exact stay dates.',
     annotations: annotations.readOnly(),
     input: demoHotelSearchInputSchema,
     output: demoHotelSearchOutputSchema,
@@ -173,7 +173,7 @@ function searchLiveHotels(viewPolicy: Readonly<Record<string, unknown>>) {
   return tool('search_hotels', {
     title: 'Search hotels',
     description:
-      'Search current Nuitee hotel rates and availability for exact stay dates. Use a city name with its two-letter country code, or an IATA airport code. Results are read-only, can change, and do not hold or reserve a room.',
+      'Search current Nuitee hotel rates and availability. Reuse destination and dates from the conversation; never ask for them again after a date-only reply. Resolve next week as the same local weekday seven days later. If omitted, browse 1 night, 1 adult and 1 room, showing adjustable assumptions without asking for confirmation. Preserve explicit dates, nights, guests and rooms. Pass exact stay dates and a city with its two-letter country code, or an IATA airport code. Results are read-only, can change, and do not hold or reserve a room.',
     annotations: annotations.readOnly(),
     input: demoHotelSearchInputSchema,
     output: demoHotelSearchOutputSchema,

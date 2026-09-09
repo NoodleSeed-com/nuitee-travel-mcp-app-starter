@@ -95,6 +95,19 @@ const render = (props: Parameters<typeof HotelResultsView>[0]) =>
 const visibleText = (markup: string) => markup.replace(/<[^>]*>/gu, ' ');
 
 describe('Wayfare conversational hotel widget', () => {
+  it.each(['https://static.cupid.travel', 'https://snaphotelapi.com'])('accepts and renders a returned photo from %s', (origin) => {
+    const withPhoto = { ...result, hotels: [{ ...hotel(0), imageUrl: `${origin}/fixture-hotel.jpg` }] };
+    expect(isDemoHotelSearchOutput(withPhoto)).toBe(true);
+    const html = render({ result: withPhoto, displayMode: 'inline' });
+    expect(html).toContain(`${origin}/fixture-hotel.jpg`);
+    expect(html).toContain('referrerPolicy="no-referrer"');
+    expect(html).not.toContain('Photo not provided');
+  });
+
+  it.each(['http://static.cupid.travel/a.jpg', 'https://static.cupid.travel.evil.example/a.jpg', 'https://static.cupid.travel@evil.example/a.jpg', 'https://static.cupid.travel:8443/a.jpg'])('rejects an unapproved image URL: %s', (imageUrl) => {
+    expect(isDemoHotelSearchOutput({ ...result, hotels: [{ ...hotel(0), imageUrl }] })).toBe(false);
+  });
+
   it('renders loading without actionable fake hotels', () => {
     const html = render({ state: 'loading', displayMode: 'inline' });
     expect(html).toContain('aria-busy="true"');

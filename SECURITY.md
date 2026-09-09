@@ -42,7 +42,8 @@ Audit the exact compiled CSP when enabling it in a host. FlightResults may load 
 The experience tool runs solely against the bundled fictional catalog and
 makes no provider HTTP call. Its widget may load fixed decorative photography
 from `https://images.unsplash.com`, as declared by its resource-only CSP; hotel
-results may load provider images from `https://snaphotelapi.com`. These resource
+results may load provider images from `https://snaphotelapi.com` and
+`https://static.cupid.travel`, using no-referrer image requests. These resource
 requests disclose ordinary network metadata to the image hosts and do not
 prove live inventory, an operator relationship, or booking support. Experience
 inspection/comparison identifiers represent view state, not reservation tokens

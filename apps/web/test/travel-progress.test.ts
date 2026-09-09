@@ -53,7 +53,7 @@ describe('plain-language assistant activity', () => {
     expect(progressForEvent({
       event: 'tool_started',
       data: { id: 'call-hotel', tool: 'search_hotels' },
-    })).toEqual({ label: 'Finding stays' });
+    })).toEqual({ label: 'Finding stays', skeleton: 'hotels' });
   });
 
   it.each<AssistantClientEvent>([

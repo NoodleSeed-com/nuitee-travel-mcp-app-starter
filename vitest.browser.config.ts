@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react';
 import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
 
+const tripReviewImages = /^https:\/\/(?:static\.cupid\.travel\/browser-fixture(?:-changed)?\.jpg|sandbox\.nuitee\.flights\/static\/images\/airlines\/(?:ZZ|QZ)\.png)$/;
+const tripReviewImage = '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#147d83"/></svg>';
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
@@ -21,6 +24,20 @@ export default defineConfig(({ mode }) => {
       browser: {
         enabled: true,
         headless: true,
+        commands: {
+          async mockTripReviewImages({ page }) {
+            // Native <img> loads bypass the fetch stub. Serve only these
+            // fictional fixture URLs locally, without contacting a provider.
+            await page.route(tripReviewImages, route => route.fulfill({
+              status: 200,
+              contentType: 'image/svg+xml',
+              body: tripReviewImage,
+            }));
+          },
+          async restoreTripReviewImages({ page }) {
+            await page.unroute(tripReviewImages);
+          },
+        },
         provider: playwright({
           contextOptions: {
             reducedMotion: 'reduce',

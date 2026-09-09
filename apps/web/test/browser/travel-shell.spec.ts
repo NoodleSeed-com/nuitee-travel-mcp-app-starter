@@ -991,7 +991,7 @@ test('captures premium landing visual evidence at every required viewport', asyn
   });
 });
 
-test('submits one broad intent through one assistant turn', async ({ page }) => {
+test('submits one broad intent without automatically resending a failed turn', async ({ page }) => {
   const submittedPrompts: string[] = [];
   let sessionRequests = 0;
   await page.route('**/v1/assistant/public-sessions', async (route) => {
@@ -1025,6 +1025,16 @@ test('submits one broad intent through one assistant turn', async ({ page }) => 
   await page.getByRole('button', { name: 'Submit trip request' }).click();
 
   await expect.poll(() => submittedPrompts).toEqual([prompt]);
+  await expect(page.getByRole('heading', {
+    name: 'The travel assistant could not continue',
+  })).toBeVisible();
+  // Observe the settled error briefly; the old assertion could finish before
+  // an effect rerender silently resubmitted the failed initial message.
+  await page.waitForTimeout(250);
+  expect(submittedPrompts).toEqual([prompt]);
+  // This generic fixture error is non-retryable. Explicit retries for a
+  // retryable error are covered by the conversation component unit test.
+  await expect(page.getByRole('button', { name: 'Try again', exact: true })).toHaveCount(0);
   expect(sessionRequests).toBe(1);
 });
 

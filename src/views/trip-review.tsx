@@ -9,6 +9,8 @@ import './travel.css';
 import './trip-review.css';
 import { TripExperienceDiscovery } from './trip-experience-discovery.js';
 import { planTripExperienceSearch, tripPlanningSnapshot, type TripExperienceSearchPlan } from './trip-experience-search.js';
+import { TripHotelDiscovery } from './trip-hotel-discovery.js';
+import { planTripHotelSearch, type TripHotelSearchPlan } from './trip-hotel-search.js';
 
 export type MissingTripComponent = 'flight' | 'stay' | 'experiences';
 type ReviewState = 'loading' | 'error' | 'malformed';
@@ -47,6 +49,28 @@ function dateLabel(date: string, locale: string, options: Intl.DateTimeFormatOpt
 }
 const money = (amount: number, currency: string, locale: string) => new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: currency === 'JPY' ? 0 : 2 }).format(amount);
 
+function FlightThumbnail({ imageUrl }: { readonly imageUrl?: string }) {
+  const [failedUrl, setFailedUrl] = useState<string>();
+  const safe = typeof imageUrl === 'string' && imageUrl.length <= 2_048
+    && /^https:\/\/(?:sandbox|production)\.nuitee\.flights\/static\/images\/airlines\/[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.(?:png|svg|webp)$/.test(imageUrl);
+  return <div className="wf-review-thumbnail wf-review-flight-thumbnail" aria-hidden="true">
+    {safe && failedUrl !== imageUrl
+      ? <img src={imageUrl} alt="" referrerPolicy="no-referrer" onError={() => setFailedUrl(imageUrl)} />
+      : <PlaneIcon />}
+  </div>;
+}
+
+function StayThumbnail({ imageUrl }: { readonly imageUrl?: string }) {
+  const [failedUrl, setFailedUrl] = useState<string>();
+  const safe = typeof imageUrl === 'string' && imageUrl.length <= 2_048
+    && /^https:\/\/(?:snaphotelapi\.com|static\.cupid\.travel)\/[^\s\\]*$/i.test(imageUrl);
+  return <div className="wf-review-thumbnail wf-review-stay-thumbnail" aria-hidden="true">
+    {safe && failedUrl !== imageUrl
+      ? <img src={imageUrl} alt="" referrerPolicy="no-referrer" onError={() => setFailedUrl(imageUrl)} />
+      : <BedIcon />}
+  </div>;
+}
+
 export function tripSuggestion(data: DemoTripReview, component: MissingTripComponent): string {
   const c = data.planningContext;
   const destination = c?.destination;
@@ -73,7 +97,7 @@ export function continuePlanningPrompt(data: DemoTripReview): string {
   return `Let’s continue planning${destination}. ${selected ? `I already have ${selected} selected.` : 'Nothing is selected yet.'} ${data.missing.length ? `Suggest the next useful step from these optional missing items: ${data.missing.map(item => labels[item]).join(', ')}.` : 'Ask what I would like to refine next.'}${location ? ` Keep suggestions relevant to ${location}.` : ''} Use the dates and travelers already established. Do not repeat the trip review or display another plan card unless I ask to review it; continue from the current selections shown in the widget. Do not recheck my flight fare just to continue planning. Ask at most one short question, only for what the next search still needs. Nothing is booked.`;
 }
 
-export function TripReviewView({ data, state, locale = 'en-CA', onSuggest, disabledSuggestions, onContinue, actionError, onBack, backLabel = 'Back to selection', onRetry }: {
+export function TripReviewView({ data, state, locale = 'en-CA', onSuggest, disabledSuggestions, onContinue, actionError, actionNotice, actionsPending, onBack, backLabel = 'Back to selection', onRetry }: {
   readonly data?: DemoTripReview;
   readonly state?: ReviewState;
   readonly locale?: string;
@@ -81,6 +105,8 @@ export function TripReviewView({ data, state, locale = 'en-CA', onSuggest, disab
   readonly disabledSuggestions?: readonly MissingTripComponent[];
   readonly onContinue?: () => void;
   readonly actionError?: string;
+  readonly actionNotice?: string;
+  readonly actionsPending?: boolean;
   readonly onBack?: () => void;
   readonly backLabel?: string;
   readonly onRetry?: () => void;
@@ -100,14 +126,16 @@ export function TripReviewView({ data, state, locale = 'en-CA', onSuggest, disab
     {back}
     <header className="wf-review-header"><div><h2 ref={heading} tabIndex={onBack ? -1 : undefined}>{destination ? `Your ${destination} plan` : 'Your trip plan'}</h2><p>{[dates, party].filter(Boolean).join(' · ') || 'Selected in this conversation'}</p></div><span className="wf-review-badge">{selected} selected</span></header>
     <div className="wf-review-content">
-      {data.flight ? <section className="wf-review-section" aria-label="Selected flight"><div className="wf-review-section-heading"><strong>Flight</strong><span>Selected</span></div><div className="wf-review-row"><div className="wf-review-facts"><PlaneIcon /><div><h3>Your selected flight</h3><p>Search selection · Fare verification needed</p></div></div><div className="wf-review-price"><strong>{money(data.flight.searchPrice.total, data.flight.searchPrice.currency, locale)}</strong><span>{data.flight.searchPrice.currency} · Search price</span></div></div></section> : null}
-      {data.stay ? <section className="wf-review-section" aria-label="Selected stay"><div className="wf-review-section-heading"><strong>Stay</strong><span>Selected</span></div><div className="wf-review-row"><div className="wf-review-facts"><BedIcon /><div><h3>{data.stay.propertyName}</h3><p>{dateLabel(data.stay.checkInDate, locale)}–{dateLabel(data.stay.checkOutDate, locale)} · {data.stay.nights} {data.stay.nights === 1 ? 'night' : 'nights'} · {data.stay.rooms} {data.stay.rooms === 1 ? 'room' : 'rooms'}</p><p>{data.stay.dataSource === 'illustrative' ? 'Fictional stay · No reservation' : 'Provider search selection · No room reserved'}</p></div></div><div className="wf-review-price"><strong>{money(data.stay.staySubtotal.amount, data.stay.staySubtotal.currency, locale)}</strong><span>{data.stay.staySubtotal.currency} · Stay subtotal</span></div></div></section> : null}
+      {data.flight ? <section className="wf-review-section wf-review-flight" aria-label="Selected flight"><div className="wf-review-section-heading"><strong>Flight</strong><span>Selected</span></div><div className="wf-review-row"><div className="wf-review-facts"><FlightThumbnail imageUrl={data.flight.airlineLogoUrl} /><div><h3>Your selected flight</h3><p>Search selection · Fare verification needed</p></div></div><div className="wf-review-price"><strong>{money(data.flight.searchPrice.total, data.flight.searchPrice.currency, locale)}</strong><span>{data.flight.searchPrice.currency} · Search price</span></div></div></section> : null}
+      {data.stay ? <section className="wf-review-section wf-review-stay" aria-label="Selected stay"><div className="wf-review-section-heading"><strong>Stay</strong><span>Selected</span></div><div className="wf-review-row"><div className="wf-review-facts"><StayThumbnail imageUrl={data.stay.imageUrl} /><div><h3>{data.stay.propertyName}</h3><p>{dateLabel(data.stay.checkInDate, locale)}–{dateLabel(data.stay.checkOutDate, locale)} · {data.stay.nights} {data.stay.nights === 1 ? 'night' : 'nights'} · {data.stay.rooms} {data.stay.rooms === 1 ? 'room' : 'rooms'}</p><p>{data.stay.dataSource === 'illustrative' ? 'Fictional stay · No reservation' : 'Provider search selection · No room reserved'}</p></div></div><div className="wf-review-price"><strong>{money(data.stay.staySubtotal.amount, data.stay.staySubtotal.currency, locale)}</strong><span>{data.stay.staySubtotal.currency} · Stay subtotal</span></div></div></section> : null}
       {data.experiences.length ? <section className="wf-review-section" aria-label="Selected experiences"><div className="wf-review-section-heading"><strong>Experiences</strong><span>{data.experiences.length} selected · Wayfare demo</span></div><div className="wf-review-experiences">{data.experiences.map(selection => <div className="wf-review-experience" key={selection.selectionId}><div className="wf-review-thumbnail"><img src={experiencePhoto(selection.experience).url} alt="" onError={event => { event.currentTarget.hidden = true; }} /></div><div><h3>{selection.experience.title}</h3><p>{dateLabel(selection.slot.startLocal, locale, { weekday: 'long', day: 'numeric', month: 'short' })} · {selection.slot.startLocal.slice(11, 16)}</p><p>{selection.experience.city} time · {selection.searchContext.adults} {selection.searchContext.adults === 1 ? 'adult' : 'adults'}</p><span className="wf-review-status"><CheckIcon />Selected · Not reserved</span></div><div className="wf-review-price"><strong>{formatExperienceMoney(selection.totalPrice.amountMinor, selection.totalPrice.currency, locale, true)}</strong><span>{selection.totalPrice.currency} · Fictional price</span></div></div>)}</div></section> : null}
       {!selected ? <section className="wf-review-empty"><h3>Your plan is open</h3><p>Start with the part of the trip you need. Flights, stays, and experiences are optional choices.</p></section> : null}
       {!data.flight && !data.stay && data.experiences.length ? <div className="wf-review-note"><strong>Your experience is part of the plan.</strong> You can plan activities here even if you’ve arranged your flight and hotel elsewhere.</div> : null}
-      {data.missing.length ? <div className="wf-review-suggestions"><p>{selected ? `Need help with the rest${destination ? ` in ${destination}` : ''}?` : 'What would you like to explore?'}</p><div>{data.missing.map(component => <Action key={component} type="button" className="wf-review-suggestion" disabled={!onSuggest || disabledSuggestions?.includes(component)} onClick={() => onSuggest?.(component)}>{labels[component]}</Action>)}</div>{!onSuggest || disabledSuggestions?.length ? <p>Ask in the conversation to continue planning.</p> : null}</div> : null}
+      {data.missing.length ? <div className="wf-review-suggestions"><p>{selected ? `Need help with the rest${destination ? ` in ${destination}` : ''}?` : 'What would you like to explore?'}</p><div>{data.missing.map(component => <Action key={component} type="button" className="wf-review-suggestion" disabled={actionsPending || !onSuggest || disabledSuggestions?.includes(component)} onClick={() => onSuggest?.(component)}>{labels[component]}</Action>)}</div>{!onSuggest || disabledSuggestions?.length ? <p>Ask in the conversation to continue planning.</p> : null}</div> : null}
+      {actionsPending ? <p role="status">Checking your current selections…</p> : null}
+      {actionNotice ? <p role="status">{actionNotice}</p> : null}
       {data.notes?.length ? <div className="wf-review-note" role="status">{data.notes.map(note => <p key={note}>{note}</p>)}</div> : null}
-      <footer className="wf-review-footer"><p>A plan, not a booking. Experience prices are fictional; flight and stay prices remain separate and need their own checks.</p>{actionError ? <Feedback status="error">{actionError}</Feedback> : null}{onContinue ? <Action type="button" className="wf-review-primary" variant="primary" onClick={onContinue}>Continue planning</Action> : null}</footer>
+      <footer className="wf-review-footer"><p>A plan, not a booking. Experience prices are fictional; flight and stay prices remain separate and need their own checks.</p>{actionError ? <Feedback status="error">{actionError}</Feedback> : null}{onContinue ? <Action type="button" className="wf-review-primary" variant="primary" disabled={actionsPending} onClick={onContinue}>Continue planning</Action> : null}</footer>
     </div>
   </section>;
 }
@@ -118,7 +146,10 @@ function TripReviewPanel({ data: initialData, state: initialState, onBack, backL
   const send = useSendFollowUpMessage();
   const updateContext = useUpdateModelContext();
   const [actionError, setActionError] = useState<string>();
-  const [discovery, setDiscovery] = useState<TripExperienceSearchPlan>();
+  const [actionNotice, setActionNotice] = useState<string>();
+  const [discovery, setDiscovery] = useState<{ kind: 'experiences'; plan: TripExperienceSearchPlan } | { kind: 'stay'; plan: TripHotelSearchPlan }>();
+  const [actionsPending, setActionsPending] = useState(false);
+  const actionInFlight = useRef(false);
   const [fresh, setFresh] = useState<{ data?: DemoTripReview; state?: ReviewState }>();
   const review = useCallTool('review_trip');
   const generation = useRef(0);
@@ -127,7 +158,7 @@ function TripReviewPanel({ data: initialData, state: initialState, onBack, backL
   const state = fresh ? fresh.state : initialState;
   const refreshReview = () => {
     const request = ++generation.current;
-    setDiscovery(undefined); setActionError(undefined); setFresh({ state: 'loading' });
+    setDiscovery(undefined); setActionError(undefined); setActionNotice(undefined); setFresh({ state: 'loading' });
     void review.callToolAsync({}).then(response => {
       if (request === generation.current) setFresh(response.isError ? { state: 'error' } : isTripPlanningReview(response.structuredContent) ? { data: response.structuredContent } : { state: 'malformed' });
     }).catch(() => { if (request === generation.current) setFresh({ state: 'error' }); });
@@ -137,17 +168,55 @@ function TripReviewPanel({ data: initialData, state: initialState, onBack, backL
     if (discovery || !ready || !data || !layout.supports?.modelContext) return;
     void updateContext({ content: [{ type: 'text', text: data.fallback }], structuredContent: { tripPlanning: tripPlanningSnapshot(data) } }).catch(() => undefined);
   }, [ready, contextKey, Boolean(discovery), layout.supports?.modelContext, updateContext]);
-  const followUp = (prompt: string) => { setActionError(undefined); void send({ prompt }).catch(() => setActionError('The conversation could not be opened. Please type your request in the chat.')); };
   const supportsFollowUp = ready && layout.supports?.followUpMessage;
-  if (data && discovery?.input) return <TripExperienceDiscovery review={data} plan={{ ...discovery, input: discovery.input }} onBack={refreshReview} />;
-  return <TripReviewView data={data} locale={layout.locale ?? 'en-CA'} state={state} onBack={onBack} backLabel={backLabel} onRetry={fresh ? refreshReview : onRetry} actionError={actionError}
-    disabledSuggestions={supportsFollowUp ? undefined : ['flight', 'stay']}
-    onSuggest={ready && data ? component => {
-      if (component !== 'experiences') { if (supportsFollowUp) followUp(tripSuggestion(data, component)); return; }
-      const plan = planTripExperienceSearch(data);
-      setActionError(plan.error);
-      if (plan.input) setDiscovery(plan);
-    } : undefined} onContinue={supportsFollowUp && data ? () => followUp(continuePlanningPrompt(data)) : undefined} />;
+  const navigate = async (requested: MissingTripComponent | 'continue') => {
+    if (actionInFlight.current) return;
+    actionInFlight.current = true; setActionsPending(true); setActionError(undefined); setActionNotice(undefined);
+    const request = ++generation.current;
+    try {
+      // Historical widgets cannot know about later selections. Read current
+      // server state before searching; this never verifies fares or books.
+      const response = await review.callToolAsync({});
+      if (request !== generation.current) return;
+      if (response.isError || !isTripPlanningReview(response.structuredContent)) {
+        setActionError('Your current selections could not be checked. Try again; no new search was started.'); return;
+      }
+      const current = response.structuredContent;
+      setFresh({ data: current });
+      const component = requested === 'continue'
+        ? (['stay', 'experiences', 'flight'] as const).find(item => current.missing.includes(item))
+        : requested;
+      if (component && !current.missing.includes(component)) {
+        setActionNotice('That part of your trip is already selected. Your current plan is shown here.'); return;
+      }
+      let reason: string | undefined;
+      if (component === 'stay') {
+        const plan = planTripHotelSearch(current);
+        if (plan.input) { setDiscovery({ kind: 'stay', plan }); return; }
+        reason = plan.error;
+      } else if (component === 'experiences') {
+        const plan = planTripExperienceSearch(current);
+        if (plan.input) { setDiscovery({ kind: 'experiences', plan }); return; }
+        reason = plan.error;
+      }
+      if (!supportsFollowUp) { setActionError(reason ?? 'Continue in the conversation to plan the next part of your trip.'); return; }
+      if (layout.supports?.modelContext) await updateContext({ content: [{ type: 'text', text: current.fallback }], structuredContent: { tripPlanning: tripPlanningSnapshot(current) } }).catch(() => undefined);
+      if (request !== generation.current) return;
+      try { await send({ prompt: component ? `${tripSuggestion(current, component)}${reason ? ` ${reason}` : ''}` : continuePlanningPrompt(current) }); }
+      catch { if (request === generation.current) setActionError('The conversation could not be opened. Please type your request in the chat.'); }
+    } catch {
+      if (request === generation.current) setActionError('Your current selections could not be checked. Try again; no new search was started.');
+    } finally {
+      actionInFlight.current = false;
+      if (request === generation.current) setActionsPending(false);
+    }
+  };
+  if (data && discovery?.kind === 'experiences' && discovery.plan.input) return <TripExperienceDiscovery review={data} plan={{ ...discovery.plan, input: discovery.plan.input }} onBack={refreshReview} />;
+  if (data && discovery?.kind === 'stay' && discovery.plan.input) return <TripHotelDiscovery review={data} plan={{ ...discovery.plan, input: discovery.plan.input }} onBack={refreshReview} />;
+  return <TripReviewView data={data} locale={layout.locale ?? 'en-CA'} state={state} onBack={onBack} backLabel={backLabel} onRetry={fresh ? refreshReview : onRetry} actionError={actionError} actionNotice={actionNotice} actionsPending={actionsPending}
+    disabledSuggestions={supportsFollowUp ? undefined : ['flight', ...(data && planTripHotelSearch(data).input ? [] : ['stay' as const])]}
+    onSuggest={ready && data ? component => { void navigate(component); } : undefined}
+    onContinue={ready && data ? () => { void navigate('continue'); } : undefined} />;
 }
 
 // Navigation reads authoritative state without starting a conversational turn.

@@ -1,7 +1,9 @@
 import { runInNewContext } from 'node:vm';
 import { describe, expect, it, vi } from 'vitest';
-import { demoHotelSearchOutputSchema, demoHotelSelectionRecordSchema } from '../src/demo-schemas.js';
+import { demoHotelSearchOutputSchema, demoHotelSelectionRecordSchema, demoTripReviewSchema } from '../src/demo-schemas.js';
 import { runHotelGateway } from '../src/hotel-runtime.js';
+import { runDemoGateway } from '../src/demo-runtime.js';
+import { getSyntheticLoyaltyOverview } from '../src/demo-fixtures.js';
 
 const search = {
   destination: 'Lisbon',
@@ -53,6 +55,29 @@ const response = {
 };
 
 describe('Nuitee hotel gateway', () => {
+  it.each(['https://static.cupid.travel', 'https://snaphotelapi.com'])('preserves provider photos from %s', (origin) => {
+    const raw = { ...response, hotels: [{ ...response.hotels[0], thumbnail: `${origin}/fixture-thumbnail.jpg`, main_photo: `${origin}/fixture-main.jpg` }] };
+    const output = runHotelGateway({ search }, { callOperation: () => ({ raw }) });
+    expect(output.result).toMatchObject({ status: 'success', hotels: [{ imageUrl: `${origin}/fixture-thumbnail.jpg` }] });
+    expect(demoHotelSearchOutputSchema.safeParse(output.result).success).toBe(true);
+    const records = (output.records as unknown[]).map(value => demoHotelSelectionRecordSchema.parse(value));
+    expect(records[0]).toHaveProperty('imageUrl', `${origin}/fixture-thumbnail.jpg`);
+    const review = runDemoGateway({ kind: 'review', flightState: {}, hotelState: { records, activeSelectionId: records[0]!.selectionId }, loyalty: getSyntheticLoyaltyOverview() });
+    expect(demoTripReviewSchema.parse(review.review).stay).toHaveProperty('imageUrl', `${origin}/fixture-thumbnail.jpg`);
+    expect(JSON.stringify(review)).not.toContain('provider-offer-must-stay-private');
+  });
+
+  it.each([
+    'http://static.cupid.travel/photo.jpg',
+    'https://static.cupid.travel.evil.example/photo.jpg',
+    'https://static.cupid.travel@evil.example/photo.jpg',
+    'https://static.cupid.travel:8443/photo.jpg',
+    'https://untrusted.example/photo.jpg',
+  ])('rejects an unapproved thumbnail and falls back to the approved main photo: %s', (thumbnail) => {
+    const output = runHotelGateway({ search }, { callOperation: () => ({ raw: { ...response, hotels: [{ ...response.hotels[0], thumbnail, main_photo: 'https://static.cupid.travel/fixture-main.jpg' }] } }) });
+    expect(output.result).toMatchObject({ hotels: [{ imageUrl: 'https://static.cupid.travel/fixture-main.jpg' }] });
+  });
+
   it('runs without browser or clock globals and normalizes a bounded live rate', () => {
     const sandboxed = runInNewContext(`(${runHotelGateway.toString()})`, {
       Date: undefined,

@@ -201,7 +201,7 @@ const travelCompanionDemoAgentGuide = {
         {
           capability: { kind: 'tool' as const, name: 'search_hotels' },
           guidance:
-            'Use exact check-in and check-out dates. Apply two adults, one room, and CAD only when the traveler omitted those values. For a city name, supply its two-letter destination country code; an IATA airport code can be used directly. Recommend only hotels actually returned by this search, never a hotel from general knowledge as if it were selectable. The widget initially shows three stays but the traveler may request any returned stay by name. State assumptions, keep the current-rate/no-reservation disclosure visible, and never substitute another city after an empty result.',
+            'Search immediately using the destination, dates, nights, guests, rooms and currency already supplied in the conversation or selected trip context. Never ask again for a known destination, including after a date-only follow-up. Resolve “next week” as the same local weekday seven days later from the server-provided local date. Convert a stated number of nights to the check-out date. If no stay length or end date is known, browse one night; if no guest or room count is known, use one adult and one room. Preserve explicit choices, including a known trip end date, over these browsing defaults. Use CAD only if no currency is known. State assumptions briefly with the results, for example “Starting with 1 night, 1 adult, 1 room; tell me if you would like different dates or more nights.” Do not wait for confirmation of these read-only search defaults. Ask one short question only for an essential missing or genuinely ambiguous destination or date; usable relative dates do not need clarification. For a clear city, supply its two-letter destination country code; an IATA airport code can be used directly. Flight dates may be provisional browsing defaults, not confirmed local arrival or check-in. Recommend only hotels actually returned by this search, never a hotel from general knowledge as if it were selectable. The widget initially shows three stays but the traveler may request any returned stay by name. Keep the current-rate/no-reservation disclosure visible, and never substitute another city after an empty result. If a provider request fails, preserve all known search details, explain the failure briefly and offer to retry them; do not restart the intake questions.',
         },
         {
           capability: { kind: 'tool' as const, name: 'open_hotel' },
@@ -343,9 +343,11 @@ const flightViewPolicy = {
   },
 };
 
+const hotelImageOrigins = ['https://snaphotelapi.com', 'https://static.cupid.travel'];
+
 const expandedFlightViewPolicy = {
   ...flightViewPolicy,
-  csp: { ...flightViewPolicy.csp, resourceDomains: [...flightViewPolicy.csp.resourceDomains, 'https://images.unsplash.com'] },
+  csp: { ...flightViewPolicy.csp, resourceDomains: [...flightViewPolicy.csp.resourceDomains, 'https://images.unsplash.com', ...hotelImageOrigins] },
 };
 
 const mapboxOrigins = [
@@ -361,7 +363,7 @@ export const hotelDemoViewPolicy = {
   ...sharedWidgetDomainPolicy,
   csp: {
     connectDomains: [...mapboxOrigins],
-    resourceDomains: ['https://snaphotelapi.com', 'https://images.unsplash.com', ...mapboxOrigins],
+    resourceDomains: [...hotelImageOrigins, 'https://images.unsplash.com', ...mapboxOrigins, ...flightViewPolicy.csp.resourceDomains],
     frameDomains: [],
   },
 };
@@ -379,7 +381,7 @@ export const experienceDemoViewPolicy = {
   ...sharedWidgetDomainPolicy,
   csp: {
     connectDomains: [],
-    resourceDomains: ['https://images.unsplash.com'],
+    resourceDomains: ['https://images.unsplash.com', ...hotelImageOrigins, ...flightViewPolicy.csp.resourceDomains],
     frameDomains: [],
   },
 };

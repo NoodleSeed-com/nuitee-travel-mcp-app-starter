@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUpIcon, StopIcon } from '@heroicons/react/24/outline';
+import { ArrowDownIcon, ArrowPathIcon, ArrowUpIcon, StopIcon } from '@heroicons/react/24/outline';
 import { type FormEvent, type Ref, useEffect, useState } from 'react';
 import { BorderBeam } from './ui/border-beam-search';
 
@@ -11,6 +11,8 @@ interface TravelComposerProps {
   readonly formLabel?: string;
   readonly inputId?: string;
   readonly inputRef?: Ref<HTMLTextAreaElement>;
+  readonly jumpToLatestPending?: boolean;
+  readonly onJumpToLatest?: () => void;
   readonly onStop?: () => void;
   readonly onSubmit: (prompt: string) => void;
   readonly placeholder?: string;
@@ -31,6 +33,8 @@ export function TravelComposer({
   formLabel = 'Start a trip',
   inputId,
   inputRef,
+  jumpToLatestPending = false,
+  onJumpToLatest,
   onStop,
   onSubmit,
   placeholder = 'Ask about dates, airports, or a route',
@@ -128,6 +132,19 @@ export function TravelComposer({
       data-wayfare-composer-beam="true"
       data-composer-state={composerState}
     >
+      {onJumpToLatest ? (
+        <button
+          aria-label="Jump to latest message"
+          aria-description={jumpToLatestPending ? 'Moving to the latest turn or waiting for its reply. You can still jump down.' : undefined}
+          className="travel-composer__jump-latest"
+          data-loading={jumpToLatestPending ? 'true' : 'false'}
+          onClick={onJumpToLatest}
+          title="Jump to latest message"
+          type="button"
+        >
+          {jumpToLatestPending ? <ArrowPathIcon aria-hidden="true" /> : <ArrowDownIcon aria-hidden="true" />}
+        </button>
+      ) : null}
       <BorderBeam
         active={!error && busy}
         borderRadius={999}

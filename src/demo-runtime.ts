@@ -633,9 +633,14 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
     ...(experiences.length ? [] : ['experiences']),
   ];
   const ready = Boolean(flight || stay || experiences.length);
+  const flightLogo = string(flight?.airlineLogoUrl);
+  const safeFlightLogo = flightLogo && flightLogo.length <= 2_048
+    && /^https:\/\/(?:sandbox|production)\.nuitee\.flights\/static\/images\/airlines\/[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.(?:png|svg|webp)$/.test(flightLogo)
+    ? flightLogo : undefined;
   const flightReview = flight ? {
     dataSource: 'live_nuitee_selection',
     selectionId: flight.selectionId,
+    ...(safeFlightLogo ? { airlineLogoUrl: safeFlightLogo } : {}),
     ...(string(record(flight.planningContext)?.origin) ? { origin: record(flight.planningContext)!.origin } : {}),
     ...(string(record(flight.planningContext)?.destination) ? { destination: record(flight.planningContext)!.destination } : {}),
     searchPrice: {
@@ -646,10 +651,15 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
     disclosure: 'Live Nuitee search price selected in this session; it still requires fare verification.',
   } : undefined;
   const stayDataSource = stay?.dataSource === 'live_nuitee' ? 'live_nuitee' : 'illustrative';
+  const stayImage = string(stay?.imageUrl);
+  const safeStayImage = stayImage && stayImage.length <= 2_048
+    && /^https:\/\/(?:snaphotelapi\.com|static\.cupid\.travel)\/[^\s\\]*$/i.test(stayImage)
+    ? stayImage : undefined;
   const stayReview = stay ? {
     dataSource: stayDataSource,
     selectionId: stay.selectionId,
     propertyName: stay.propertyName,
+    ...(safeStayImage ? { imageUrl: safeStayImage } : {}),
     city: stay.city,
     checkInDate: stay.checkInDate,
     checkOutDate: stay.checkOutDate,

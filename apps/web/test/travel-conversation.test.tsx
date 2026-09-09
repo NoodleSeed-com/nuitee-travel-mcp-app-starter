@@ -103,6 +103,55 @@ afterEach(() => {
 });
 
 describe('guest travel conversation lifecycle', () => {
+  it('does not automatically resend a rejected initial prompt on rerender', async () => {
+    client.sendMessage.mockRejectedValueOnce(new Error('Fictional service failure'));
+    const view = render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Find a stay in Lisbon');
+    await act(async () => {});
+    expect(client.sendMessage).toHaveBeenCalledTimes(1);
+    view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
+    await act(async () => {});
+    expect(client.sendMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows hotel card skeletons only while the hotel search is running', async () => {
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Hotels in Lisbon next week');
+    await waitFor(() => expect(client.subscribe).toHaveBeenCalled());
+    act(() => client.emit({ event: 'tool_started', data: { id: 'hotel-search', tool: 'search_hotels' } }));
+    expect(document.querySelectorAll('.travel-hotel-skeleton')).toHaveLength(3);
+    expect(document.querySelector('.travel-hotel-skeletons')).toHaveAttribute('aria-hidden', 'true');
+    act(() => client.emit({ event: 'tool_completed', data: { id: 'hotel-search', tool: 'search_hotels', result: { status: 'error' } } }));
+    expect(document.querySelector('.travel-hotel-skeletons')).toBeNull();
+  });
+
+  it('removes the hotel skeleton when its view arrives before tool completion', async () => {
+    assistantMock.useNoodleAssistant.mockReturnValue({ client, messages: [], status: 'streaming' });
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Hotels in Lisbon next week');
+    await waitFor(() => expect(client.subscribe).toHaveBeenCalled());
+    act(() => client.emit({ event: 'tool_started', data: { id: 'hotels-1', tool: 'search_hotels' } }));
+    expect(document.querySelectorAll('.travel-hotel-skeleton')).toHaveLength(3);
+    const view = { id: 'hotels-1', tool: 'search_hotels', resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_hotels_widget', result: { status: 'success' } };
+    // A historical view or a rejected tool/resource pair cannot finish this search.
+    act(() => client.emit({ event: 'view_available', data: { ...view, id: 'older-hotels' } }));
+    act(() => client.emit({ event: 'view_available', data: { ...view, resourceUri: 'ui://unknown/widget' } }));
+    expect(document.querySelectorAll('.travel-hotel-skeleton')).toHaveLength(3);
+    act(() => client.emit({ event: 'view_available', data: view }));
+    expect(document.querySelector('.travel-hotel-skeletons')).toBeNull();
+    expect(screen.queryByText('Finding stays…')).toBeNull();
+    expect(conversationStatus()).toHaveTextContent('Thinking…');
+    expect(screen.getByRole('region', { name: 'Travel conversation' })).toHaveAttribute('aria-busy', 'true');
+
+    // A second search has its own loading lifecycle; the late first completion
+    // must not hide its skeleton, nor must another tool's result.
+    act(() => client.emit({ event: 'tool_started', data: { id: 'hotels-2', tool: 'search_hotels' } }));
+    act(() => client.emit({ event: 'tool_completed', data: { id: 'hotels-1', tool: 'search_hotels', result: {} } }));
+    act(() => client.emit({ event: 'view_available', data: { id: 'flights-1', tool: 'search_flights', resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget', result: {} } }));
+    expect(document.querySelectorAll('.travel-hotel-skeleton')).toHaveLength(3);
+    act(() => client.emit({ event: 'view_available', data: { ...view, id: 'hotels-2', result: { status: 'error' } } }));
+    expect(document.querySelector('.travel-hotel-skeletons')).toBeNull();
+  });
   it('does not initialize the assistant before the first submit', () => {
     render(<TravelAssistantPage runtime={readyRuntime} />);
 
@@ -1045,12 +1094,70 @@ describe('guest travel conversation lifecycle', () => {
     expect(client.sendMessage).toHaveBeenCalledWith('JFK to Lisbon next month');
   });
 
+  it('follows a widget-originated traveler turn but does not pull the reader down for assistant-only updates', async () => {
+    let messages: Array<{ id: string; role: 'user' | 'assistant'; parts: Array<{ type: 'text'; text: string }> }> = [
+      { id: 'first-user', role: 'user', parts: [{ type: 'text', text: 'Plan Lisbon' }] },
+      { id: 'first-answer', role: 'assistant', parts: [{ type: 'text', text: 'Your trip widget' }] },
+    ];
+    assistantMock.useNoodleAssistant.mockImplementation(() => ({ client, messages, status: 'ready', error: undefined }));
+    const view = render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Plan Lisbon');
+    const end = await screen.findByTestId('conversation-end');
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(100);
+    vi.spyOn(window, 'scrollY', 'get').mockReturnValue(200);
+    vi.spyOn(document.documentElement, 'scrollHeight', 'get').mockReturnValue(2000);
+    fireEvent.scroll(window);
+    messages = [...messages, { id: 'widget-follow-up', role: 'user', parts: [{ type: 'text', text: 'Find flights to Lisbon' }] }];
+    view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledWith({ top: 2000, behavior: 'smooth' }));
+    fireEvent.wheel(window, { deltaY: -100 });
+    scrollTo.mockClear();
+    fireEvent.scroll(window);
+    messages = [...messages, { id: 'second-answer', role: 'assistant', parts: [{ type: 'text', text: 'Where are you flying from?' }] }];
+    view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
+    act(() => resizeCallback?.([], {} as ResizeObserver));
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+
+  it('offers a jump to latest while reading above new content and resumes following on click', async () => {
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Plan Lisbon');
+    const end = await screen.findByTestId('conversation-end');
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    let scrollY = 200;
+    vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(100);
+    vi.spyOn(window, 'scrollY', 'get').mockImplementation(() => scrollY);
+    vi.spyOn(document.documentElement, 'scrollHeight', 'get').mockReturnValue(2000);
+    fireEvent.scroll(window);
+    act(() => resizeCallback?.([], {} as ResizeObserver));
+    expect(scrollTo).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Jump to latest message' }));
+    expect(scrollTo).toHaveBeenCalledWith({ top: 2000, behavior: 'smooth' });
+    expect(screen.getByRole('button', { name: 'Jump to latest message' })).toHaveAttribute('data-loading', 'true');
+    expect(end).toHaveFocus();
+    // Intermediate animation events and streaming resizes must not cancel or
+    // restart the smooth movement before its destination is reached.
+    scrollY = 900;
+    fireEvent.scroll(window);
+    act(() => resizeCallback?.([], {} as ResizeObserver));
+    expect(scrollTo).toHaveBeenCalledOnce();
+    scrollY = 1900;
+    fireEvent.scroll(window);
+    fireEvent(window, new Event('scrollend'));
+    expect(screen.queryByRole('button', { name: 'Jump to latest message' })).not.toBeInTheDocument();
+    act(() => resizeCallback?.([], {} as ResizeObserver));
+    expect(scrollTo).toHaveBeenLastCalledWith({ top: 2000, behavior: 'instant' });
+    scrollY = 200;
+    fireEvent.resize(window);
+    expect(screen.getByRole('button', { name: 'Jump to latest message' })).toBeVisible();
+  });
+
   it('preserves upward reading, follows near-end growth, and disconnects its observer', async () => {
     const view = render(<TravelAssistantPage runtime={readyRuntime} />);
     submitPrompt('JFK to Lisbon next month');
     const end = await screen.findByTestId('conversation-end');
-    const scrollIntoView = vi.fn();
-    end.scrollIntoView = scrollIntoView;
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
     let scrollY = 600;
     vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(100);
     vi.spyOn(window, 'scrollY', 'get').mockImplementation(() => scrollY);
@@ -1060,24 +1167,68 @@ describe('guest travel conversation lifecycle', () => {
     fireEvent.scroll(window);
     expect(resizeCallback).toBeTypeOf('function');
     resizeCallback?.([], {} as ResizeObserver);
-    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(scrollTo).not.toHaveBeenCalled();
 
     scrollY = 870;
     fireEvent.scroll(window);
     resizeCallback?.([], {} as ResizeObserver);
-    expect(scrollIntoView).toHaveBeenCalledOnce();
+    expect(scrollTo).toHaveBeenCalledOnce();
 
-    scrollIntoView.mockClear();
+    scrollTo.mockClear();
     scrollY = 600;
     fireEvent.scroll(window);
     fireEvent.change(screen.getByRole('textbox', {
       name: 'Ask the travel assistant',
     }), { target: { value: 'Avoid overnight connections' } });
     fireEvent.submit(screen.getByRole('form', { name: 'Continue trip' }));
-    expect(scrollIntoView).toHaveBeenCalledOnce();
+    expect(scrollTo).toHaveBeenCalledOnce();
 
     view.unmount();
     expect(resizeDisconnect).toHaveBeenCalledOnce();
+  });
+
+  it('uses an immediate jump for reduced motion, with no animation lock', async () => {
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Plan Lisbon');
+    await screen.findByTestId('conversation-end');
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }));
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(100);
+    vi.spyOn(window, 'scrollY', 'get').mockReturnValue(200);
+    vi.spyOn(document.documentElement, 'scrollHeight', 'get').mockReturnValue(2000);
+    fireEvent.scroll(window);
+    fireEvent.click(screen.getByRole('button', { name: 'Jump to latest message' }));
+    expect(scrollTo).toHaveBeenCalledWith({ top: 2000, behavior: 'instant' });
+    expect(screen.getByRole('button', { name: 'Jump to latest message' })).toHaveAttribute('data-loading', 'false');
+  });
+
+  it.each(['reply', 'error', 'stop'] as const)('clears follow-up loading on %s and keeps the jump usable while waiting', async finish => {
+    let messages = [
+      { id: 'first-user', role: 'user', parts: [{ type: 'text', text: 'Plan Lisbon' }] },
+      { id: 'first-answer', role: 'assistant', parts: [{ type: 'text', text: 'Your previous plan' }] },
+      { id: 'follow-up', role: 'user', parts: [{ type: 'text', text: 'Find flights' }] },
+    ];
+    let status = 'streaming';
+    assistantMock.useNoodleAssistant.mockImplementation(() => ({ client, messages, status }));
+    const view = render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Plan Lisbon');
+    await screen.findByTestId('conversation-end');
+    const jump = screen.getByRole('button', { name: 'Jump to latest message' });
+    expect(jump).toHaveAttribute('data-loading', 'true');
+    expect(jump).toBeEnabled();
+    vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(100);
+    vi.spyOn(window, 'scrollY', 'get').mockReturnValue(200);
+    vi.spyOn(document.documentElement, 'scrollHeight', 'get').mockReturnValue(2000);
+    fireEvent.scroll(window);
+    if (finish === 'reply') {
+      messages = [...messages, { id: 'reply', role: 'assistant', parts: [{ type: 'text', text: 'Which airport?' }] }];
+    } else if (finish === 'error') {
+      status = 'error';
+    } else {
+      fireEvent.click(screen.getByRole('button', { name: 'Stop generating' }));
+    }
+    view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
+    expect(jump).toHaveAttribute('data-loading', 'false');
   });
 
   it('renders the typed transcript instead of role placeholders', async () => {

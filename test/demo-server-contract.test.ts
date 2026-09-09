@@ -42,6 +42,18 @@ function modelVisible(manifest: any) {
 }
 
 describe('Wayfare expanded travel profile', () => {
+  it('makes hotel discovery reuse context and expose adjustable one-night, one-person defaults', async () => {
+    const manifest = await demoEmbeddedApp.toManifest() as any;
+    const search = manifest.tools.find((entry: any) => entry.name === 'search_hotels');
+    expect(search.description).toContain('never ask for them again after a date-only reply');
+    expect(search.description).toContain('same local weekday seven days later');
+    expect(search.description).toContain('1 night, 1 adult and 1 room');
+    expect(search.inputSchema.properties.adults.default).toBe(1);
+    expect(search.inputSchema.properties.rooms.default).toBe(1);
+    const source = await readFile(new URL('../src/travel-server.ts', import.meta.url), 'utf8');
+    expect(source).toContain('If a provider request fails, preserve all known search details');
+    expect(source).not.toContain('Apply two adults, one room');
+  });
   it('reopens returned hotels read-only using the existing snapshot and widget-only selection', async () => {
     const manifest = await demoEmbeddedApp.toManifest() as any;
     const open = manifest.tools.find((entry: any) => entry.name === 'open_hotel');
@@ -285,13 +297,25 @@ describe('hotel widget map CSP', () => {
 
   it('retains the bounded Nuitee hotel-image origin', () => {
     expect(hotelDemoViewPolicy.csp.resourceDomains).toContain('https://snaphotelapi.com');
+    expect(hotelDemoViewPolicy.csp.resourceDomains).toContain('https://static.cupid.travel');
+    expect(hotelDemoViewPolicy.csp.connectDomains).not.toContain('https://static.cupid.travel');
   });
 });
 
 describe('experience widget image CSP', () => {
-  it('allows only the bounded Unsplash image origin', () => {
+  it('allows bounded experience and inline stay image origins without provider connections', () => {
     expect(experienceDemoViewPolicy.csp.connectDomains).toEqual([]);
-    expect(experienceDemoViewPolicy.csp.resourceDomains).toEqual(['https://images.unsplash.com']);
+    expect(experienceDemoViewPolicy.csp.resourceDomains).toEqual(['https://images.unsplash.com', 'https://snaphotelapi.com', 'https://static.cupid.travel', 'https://sandbox.nuitee.flights', 'https://production.nuitee.flights']);
     expect(experienceDemoViewPolicy.csp.frameDomains).toEqual([]);
   });
+});
+
+it('allows selected airline logos in hotel, experience and standalone trip reviews as resources only', () => {
+  for (const policy of [hotelDemoViewPolicy, experienceDemoViewPolicy]) {
+    for (const origin of ['https://sandbox.nuitee.flights', 'https://production.nuitee.flights']) {
+      expect(policy.csp.resourceDomains).toContain(origin);
+      expect(policy.csp.connectDomains).not.toContain(origin);
+    }
+    expect(policy.csp.resourceDomains.some(origin => origin.includes('*'))).toBe(false);
+  }
 });

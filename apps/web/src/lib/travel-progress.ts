@@ -4,6 +4,7 @@ import type { TripPhase } from './trip-projection';
 export interface ToolActivity {
   readonly label: string;
   readonly phase?: TripPhase;
+  readonly skeleton?: 'hotels';
 }
 
 export function progressForEvent(
@@ -23,7 +24,7 @@ export function progressForEvent(
     case 'verify_flight_offer':
       return { label: 'Verifying the current fare', phase: 'verifying' };
     case 'search_hotels':
-      return { label: 'Finding stays' };
+      return { label: 'Finding stays', skeleton: 'hotels' };
     case 'open_hotel':
       return { label: 'Opening your requested stay' };
     case 'select_hotel':

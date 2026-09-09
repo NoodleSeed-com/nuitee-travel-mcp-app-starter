@@ -97,7 +97,9 @@ Despite the command's historical name, `dev:demo` selects the **expanded live pr
 
 The CLI's local secret fallback reads the project-root `.env`; restart after configuration changes. Keep keys out of source, prompts, screenshots, browser variables, and Git history. Local configuration does not configure a hosted service.
 
-Try a future flight search, choose a returned option, and verify the current fare. For hotels, provide a destination and check-in/check-out dates, inspect the returned stay, and select it. Both journeys stop before booking.
+Try a future flight search, choose a returned option, and verify the current fare. For hotels, provide a destination and date, inspect the returned stay, and select it. The assistant reuses known trip details; otherwise a hotel search starts with 1 night, 1 adult and 1 room, with adjustable assumptions shown. “Next week” means the same local weekday seven days later. Both journeys stop before booking.
+
+Trip-review actions refresh the current selections before continuing. Known-date stay and experience searches open in the same widget. Actions that need conversation scroll smoothly to the new traveler turn, with immediate movement for reduced motion. A clickable loading circle indicates movement or a pending follow-up reply, then returns to a down-arrow when there is content below. Hotel searches show card skeletons while loading; failed photos keep an honest fallback without hiding the stay.
 
 ### 2. Choose the conversational host
 

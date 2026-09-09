@@ -1,10 +1,11 @@
 import '@fontsource-variable/host-grotesk';
 import '@noodleseed/one/react/styles.css';
 import { useEffect, useRef, useState } from 'react';
-import type { DemoHotel, DemoHotelSearchOutput, OpenHotelOutput } from '../demo-schemas.js';
+import type { DemoHotel, DemoHotelSearchOutput, DemoTripReview, OpenHotelOutput } from '../demo-schemas.js';
 import { Frame, useCallTool, useLayout, useRequestDisplayMode, useToolInfo, useUpdateModelContext, useViewState, useWidgetReady } from '../helpers.js';
 import { HotelJourney, initialHotelJourney, type HotelJourneyState } from './hotel-journey.js';
 import { InlineTripReview } from './trip-review.js';
+import { tripPlanningSnapshot } from './trip-experience-search.js';
 import './travel.css';
 
 export { HotelJourney as HotelResultsView } from './hotel-journey.js';
@@ -66,7 +67,7 @@ function isDemoHotel(value: unknown): value is DemoHotel {
     isDemoMoney(hotel.staySubtotal) &&
     typeof hotel.taxesAndFeesIncluded === 'boolean' &&
     boundedString(hotel.policySummary, 2, 200) &&
-    (hotel.imageUrl === undefined || (boundedString(hotel.imageUrl, 1, 2_048) && /^https:\/\/snaphotelapi\.com\//i.test(hotel.imageUrl))) &&
+    (hotel.imageUrl === undefined || (boundedString(hotel.imageUrl, 1, 2_048) && /^https:\/\/(?:snaphotelapi\.com|static\.cupid\.travel)\//i.test(hotel.imageUrl))) &&
     (hotel.reviewScore === undefined || (typeof hotel.reviewScore === 'number' && hotel.reviewScore >= 0 && hotel.reviewScore <= 10)) &&
     (hotel.reviewCount === undefined || boundedInteger(hotel.reviewCount, 0, 10_000_000))
   );
@@ -151,9 +152,19 @@ export default function HotelResults() {
 }
 
 export function HotelWidget({ toolName }: { readonly toolName: 'search_hotels' | 'open_hotel' }) {
+  const toolInfo = useToolInfo(toolName);
+  return <HotelSelectionJourney toolName={toolName} toolInfo={toolInfo} />;
+}
+
+export function HotelSelectionJourney({ toolName = 'search_hotels', toolInfo, onReview, onBusyChange, tripReview }: {
+  readonly toolName?: 'search_hotels' | 'open_hotel';
+  readonly toolInfo: { readonly structuredContent?: unknown; readonly isError?: boolean };
+  readonly onReview?: () => void;
+  readonly onBusyChange?: (busy: boolean) => void;
+  readonly tripReview?: DemoTripReview;
+}) {
   const ready = useWidgetReady();
   const layout = useLayout();
-  const toolInfo = useToolInfo(toolName);
   const selectHotel = useCallTool('select_hotel');
   const requestDisplayMode = useRequestDisplayMode();
   const updateModelContext = useUpdateModelContext();
@@ -175,11 +186,16 @@ export function HotelWidget({ toolName }: { readonly toolName: 'search_hotels' |
   const comparisonIds = journey?.compareIds.join(',') ?? '';
 
   useEffect(() => { setSelectionError(undefined); }, [result?.searchId]);
+  useEffect(() => { onBusyChange?.(Boolean(pendingSelectionId)); }, [pendingSelectionId, onBusyChange]);
   useEffect(() => {
     if (showTripReview || !ready || !result || !layout.supports?.modelContext) return;
     void updateModelContext({
       content: [{ type: 'text', text: chosen ? `Selected stay: ${chosen.name}. Nothing booked, held, or paid.` : 'Hotel options remain unselected.' }],
-      structuredContent: { hotelSearchId: result.searchId, selectedHotel: chosen ? { selectionId: chosen.selectionId, name: chosen.name } : null,
+      structuredContent: { hotelSearchId: result.searchId, hotelSearchContext: result.searchContext,
+        ...(tripReview ? { tripPlanning: { ...tripPlanningSnapshot(tripReview),
+          staySelectionId: chosen?.selectionId ?? tripReview.stay?.selectionId ?? null,
+          missing: tripReview.missing.filter(component => component !== 'stay' || !chosen),
+        } } : {}), selectedHotel: chosen ? { selectionId: chosen.selectionId, name: chosen.name } : null,
         inspectedHotel: inspected ? { selectionId: inspected.selectionId, name: inspected.name } : null,
         comparingHotelIds: journey?.compareIds ?? [] },
     }).catch(() => { /* Host context delivery is optional; server selections remain authoritative. */ });
@@ -205,7 +221,7 @@ export function HotelWidget({ toolName }: { readonly toolName: 'search_hotels' |
     selectedSelectionId={chosen?.selectionId}
     pendingSelectionId={pendingSelectionId}
     selectionError={selectionError}
-    onReview={ready && chosen && !pendingSelectionId ? () => setShowTripReview(true) : undefined}
+    onReview={ready && chosen && !pendingSelectionId ? onReview ?? (() => setShowTripReview(true)) : undefined}
     onExpand={ready && layout.supports?.fullscreen ? () => { void requestDisplayMode('fullscreen').catch(() => {}); } : undefined}
     onReturn={ready && layout.displayMode === 'fullscreen' ? () => { void requestDisplayMode('inline').catch(() => {}); } : undefined}
     onAdd={ready && result ? async selectionId => {

@@ -49,7 +49,14 @@
 .cc-stay-comparison article { display: flex; flex-direction: column; gap: 12px; }
 .cc-stay-comparison h3 { font-size: .95rem; }
 .cc-stay-map-summary { padding: 14px 0; display: grid; gap: 10px; }
-.cc-stay-skeleton { width: 100%; height: 280px; margin-top: 12px; border-radius: 18px; background: var(--cc-surface-muted); }
+.cc-stay-skeletons { display: flex; gap: 16px; width: 100%; overflow: hidden; margin-top: 12px; }
+.cc-stay-skeleton { flex: 0 0 min(270px, 100%); border: 1px solid var(--cc-border); border-radius: 18px; overflow: hidden; }
+.cc-stay-skeleton-photo { height: 140px; background: var(--cc-surface-muted); }
+.cc-stay-skeleton-body { display: grid; gap: 12px; padding: 16px; }
+.cc-stay-skeleton-body span { height: 16px; border-radius: 6px; background: var(--cc-surface-muted); }
+.cc-stay-skeleton-body span:nth-child(2) { width: 65%; }
+.cc-stay-skeleton-body span:nth-child(3) { width: 45%; height: 24px; }
+.cc-stay-skeleton-body span:last-child { height: 44px; border-radius: 999px; }
 .cc-hotel-journey.cc-host-styled {
   --font-sans: var(--font-sans-host, ui-sans-serif, system-ui, sans-serif);
   font-family: var(--font-sans);
