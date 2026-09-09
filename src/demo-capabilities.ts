@@ -347,6 +347,7 @@ function reviewDemoTrip(viewPolicy: Readonly<Record<string, unknown>>) {
         aliases: { ...DEMO_DESTINATION_ALIASES, ...DEMO_EXPERIENCE_ALIASES },
         loyalty: getSyntheticLoyaltyOverview(),
       });
+      const estimate = connectors.demo.estimate_trip({ review: gateway.review });
       return {
         status: gateway['review.status'],
         dataSource: gateway['review.dataSource'],
@@ -359,6 +360,7 @@ function reviewDemoTrip(viewPolicy: Readonly<Record<string, unknown>>) {
         notes: gateway['review.notes'].optional(),
         loyalty: gateway['review.loyalty'],
         missing: gateway['review.missing'],
+        planningEstimate: estimate,
       };
     },
     viewTitle: 'Trip and rewards review',

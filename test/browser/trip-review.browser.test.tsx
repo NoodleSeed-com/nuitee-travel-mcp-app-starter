@@ -27,6 +27,41 @@ const review = {
 let root: Root | undefined;
 afterEach(() => { root?.unmount(); root = undefined; document.body.innerHTML = ''; document.body.style.zoom = ''; });
 
+it('matches the approved estimate layout and expands a source-aware price breakdown at every viewport', async () => {
+  const data = { ...review, missing: [],
+    flight: { dataSource: 'live_nuitee_selection', selectionId: `sel_${'b'.repeat(32)}`, searchPrice: { total: 1743.32, currency: 'EUR' }, disclosure: 'Fare verification needed.' },
+    stay: { dataSource: 'live_nuitee', selectionId: `hsel_${'b'.repeat(32)}`, propertyName: 'Selected Lisbon Hotel', city: 'Lisbon', checkInDate: '2026-09-16', checkOutDate: '2026-09-17', nights: 1, rooms: 1, staySubtotal: { amount: 323.33, currency: 'EUR' } },
+    experiences: [{ ...review.experiences[0]!, totalPrice: { amountMinor: 9200, currency: 'EUR' } }],
+  } as DemoTripReview;
+  const node = document.createElement('div'); document.body.append(node); root = createRoot(node);
+  root.render(<TripReviewView data={data} locale="en-IE" onContinue={() => {}} />);
+  await expect.element(page.getByRole('heading', { name: 'Trip planning estimate' })).toBeVisible();
+  await expect.element(page.getByText('€2,158.65', { exact: true })).toBeVisible();
+  const toggle = page.getByRole('button', { name: 'View price breakdown' });
+  await toggle.click();
+  await expect.element(page.getByText('Provider search subtotal', { exact: true })).toBeVisible();
+  await expect.element(page.getByText('Points applied', { exact: false })).toBeVisible();
+  await expect.element(page.getByText('Not included', { exact: true })).toBeVisible();
+  for (const [width, zoom] of [[1024, 1], [390, 1], [320, 1], [640, 2]] as const) {
+    await page.viewport(width, 1300);
+    document.body.style.zoom = String(zoom);
+    await expect.poll(() => document.documentElement.scrollWidth).toBeLessThanOrEqual(width);
+    const panel = document.querySelector('.wf-estimate')!;
+    expect(getComputedStyle(panel).borderRadius).toBe('16px');
+    expect(getComputedStyle(document.querySelector('.wf-estimate-toggle')!).minHeight).toBe('44px');
+    // Breakpoints follow the actual widget container, not the host viewport.
+    const containerWidth = document.querySelector('.wf-review')!.getBoundingClientRect().width / zoom;
+    await expect.poll(() => getComputedStyle(panel).paddingLeft).toBe(containerWidth > 760 ? '22px' : '16px');
+    await page.screenshot({ path: `__screenshots__/trip-estimate-${width}-${zoom}.png`, fullPage: true });
+  }
+  root.render(<TripReviewView data={{ ...data, flight: { ...data.flight!, searchPrice: { total: 1743.32, currency: 'CAD' } } }} locale="en-IE" />);
+  await expect.element(page.getByText('Separate currencies', { exact: true })).toBeVisible();
+  expect(document.querySelector('.wf-estimate')!.textContent).not.toContain('€2,158.65');
+  expect(document.querySelector('.wf-estimate')!.textContent).toContain('No combined total shown');
+  await page.getByRole('button', { name: 'Hide price breakdown' }).click();
+  await expect.element(page.getByRole('button', { name: 'View price breakdown' })).toHaveAttribute('aria-expanded', 'false');
+});
+
 it('shows the airline logo without a grey surround and keeps fallback and prices aligned at mobile widths and zoom', async () => {
   const airlineLogoUrl = 'https://sandbox.nuitee.flights/static/images/airlines/ZZ.png';
   const flightReview = { ...review, experiences: [], missing: ['stay', 'experiences'], flight: {

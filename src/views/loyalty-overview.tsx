@@ -115,12 +115,10 @@ const isFlightSelection = (value: unknown) => {
   const price = record(flight?.searchPrice);
   return (
     flight !== undefined &&
-    price !== undefined &&
     flight?.dataSource === 'live_nuitee_selection' &&
     typeof flight.selectionId === 'string' &&
     /^sel_[a-f0-9]{32}$/.test(flight.selectionId) &&
-    boundedAmount(price?.total) &&
-    isCurrency(price?.currency) &&
+    (flight.searchPrice === null || (boundedAmount(price?.total) && isCurrency(price?.currency))) &&
     (flight.expiresAt === undefined || boundedString(flight.expiresAt, 1, 64)) &&
     boundedString(flight.disclosure, 20, 240)
   );
@@ -331,7 +329,7 @@ function TripReview({ data, locale }: {
               </span>
               <h3>Selected flight</h3>
               <strong>
-                {money(data.flight.searchPrice.total, data.flight.searchPrice.currency)}
+                {data.flight.searchPrice ? money(data.flight.searchPrice.total, data.flight.searchPrice.currency) : 'Price unavailable'}
               </strong>
               <p>{data.flight.disclosure}</p>
               {data.flight.expiresAt ? <small>Offer expiry: {data.flight.expiresAt}</small> : null}

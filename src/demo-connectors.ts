@@ -3,6 +3,7 @@ import { selectionStateSchema } from './flight-schemas.js';
 import { runDemoGateway } from './demo-runtime.js';
 import { acknowledgeExperienceSelection, prepareSelectionStates } from './selection-state.js';
 import { openStoredHotel } from './hotel-opening.js';
+import { tripPlanningEstimate } from './trip-planning-estimate.js';
 import {
   demoHotelSearchInputSchema,
   demoHotelSearchOutputSchema,
@@ -22,6 +23,7 @@ import {
   demoRewardFlightSearchOutputSchema,
   demoSelectHotelOutputSchema,
   demoTripReviewSchema,
+  tripPlanningEstimateSchema,
   openHotelOutputSchema,
 } from './demo-schemas.js';
 
@@ -65,6 +67,13 @@ export const demoGatewayOutputSchema = z.object({
 
 export const demoGateway = connector('wayfare_preview_gateway')
   .version('1.0.0')
+  .compute('estimate_trip', {
+    type: 'read',
+    input: z.object({ review: demoTripReviewSchema }),
+    output: tripPlanningEstimateSchema,
+    limits: { timeoutMs: 1_000 },
+    run: tripPlanningEstimate,
+  })
   .compute('open_hotel', {
     type: 'read',
     input: z.object({ hotelName: z.string().max(100), hotelState: demoHotelSelectionStateSchema.optional(), readOk: z.boolean().optional() }),

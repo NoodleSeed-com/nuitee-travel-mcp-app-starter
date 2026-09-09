@@ -722,9 +722,9 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
     review: {
       status: ready ? 'ready' : 'incomplete',
       dataSource: 'illustrative',
-      disclosure: 'Selected items are a conversation plan, not reservations. Experiences and rewards are illustrative; each flight and stay identifies its own source. Prices remain separate. Nothing was booked, paid, or redeemed.',
+      disclosure: 'Selected items are a conversation plan, not reservations. Experiences and rewards are illustrative; flight and stay prices identify their source. Any combined planning estimate is not a quote or amount to pay. Nothing was booked, paid, or redeemed.',
       fallback: ready
-        ? `Your selected trip is ready to review: ${[...(flight ? ['flight'] : []), ...(stay ? ['stay'] : []), ...(experiences.length ? [`${experiences.length} fictional experience${experiences.length === 1 ? '' : 's'}`] : [])].join(', ')}. Other components are optional; prices stay separate and nothing is reserved.${notes.length ? ` ${notes[0]}` : ''}`
+        ? `Your selected trip is ready to review: ${[...(flight ? ['flight'] : []), ...(stay ? ['stay'] : []), ...(experiences.length ? [`${experiences.length} fictional experience${experiences.length === 1 ? '' : 's'}`] : [])].join(', ')}. Other components are optional; prices keep their own sources and nothing is reserved.${notes.length ? ` ${notes[0]}` : ''}`
         : `No current trip selections are saved. Choose a flight, stay, or experience to start a plan.${notes.length ? ` ${notes[0]}` : ''}`,
       ...(flightReview ? { flight: flightReview } : {}),
       ...(stayReview ? { stay: stayReview } : {}),

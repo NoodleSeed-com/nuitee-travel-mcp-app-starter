@@ -493,7 +493,7 @@ export const demoTripReviewFlightSchema = z.object({
   searchPrice: z.object({
     total: z.number().nonnegative().max(100_000_000),
     currency: z.string().regex(/^[A-Z]{3}$/),
-  }),
+  }).nullable().describe('Selected search price, or explicit null when unavailable. Never infer zero.'),
   expiresAt: z.string().max(64).optional(),
   disclosure: z.string().trim().min(20).max(240),
 });
@@ -528,6 +528,24 @@ export const demoTripPlanningContextSchema = z.object({
   propertyName: z.string().min(2).max(100).optional(),
 });
 
+export const tripPlanningEstimateSchema = z.object({
+  status: z.enum(['complete', 'mixed_currencies', 'incomplete', 'empty']),
+  items: z.array(z.object({
+    component: z.enum(['flight', 'stay', 'experience']),
+    label: z.string().max(100),
+    source: z.enum(['provider_search', 'fictional']),
+    currency: z.string().regex(/^[A-Z]{3}$/).optional(),
+    fractionDigits: z.number().int().min(0).max(2).optional(),
+    amountMinor: z.number().int().nonnegative().max(10_000_000_000).optional(),
+    amount: z.number().nonnegative().max(100_000_000).optional(),
+  })).max(10),
+  currency: z.string().regex(/^[A-Z]{3}$/).optional(),
+  fractionDigits: z.number().int().min(0).max(2).optional(),
+  totalMinor: z.number().int().nonnegative().max(100_000_000_000).optional(),
+  providerSubtotalMinor: z.number().int().nonnegative().max(100_000_000_000).optional(),
+  fictionalSubtotalMinor: z.number().int().nonnegative().max(100_000_000_000).optional(),
+});
+
 export const demoTripReviewSchema = z.object({
   status: z.enum(['ready', 'incomplete']),
   dataSource: syntheticDataSourceSchema,
@@ -537,6 +555,7 @@ export const demoTripReviewSchema = z.object({
   stay: demoTripReviewStaySchema.optional(),
   experiences: z.array(demoExperienceSelectionSchema).max(8),
   loyalty: demoLoyaltyOverviewSchema,
+  planningEstimate: tripPlanningEstimateSchema.optional(),
   missing: z.array(z.enum(['flight', 'stay', 'experiences'])).max(3),
   planningContext: demoTripPlanningContextSchema.optional(),
   notes: z.array(z.string().min(1).max(240)).max(3).optional(),

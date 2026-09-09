@@ -1,5 +1,6 @@
 import type { DemoExperienceSearchOutput, DemoExperienceSelection, DemoTripReview } from '../demo-schemas.js';
 import { isExperienceSearchContext } from './experience-selection-data.js';
+import { tripPlanningEstimate } from '../trip-planning-estimate.js';
 
 export type TripExperienceSearchPlan = {
   readonly input?: DemoExperienceSearchOutput['searchContext'];
@@ -36,5 +37,6 @@ export function tripPlanningSnapshot(review: DemoTripReview, added?: DemoExperie
   const experiences = added ? [...review.experiences.filter(item => item.selectionId !== added.selectionId), added] : review.experiences;
   return { flightSelectionId: review.flight?.selectionId ?? null, staySelectionId: review.stay?.selectionId ?? null,
     experiences: experiences.map(s => ({ selectionId: s.selectionId, title: s.experience.title, startLocal: s.slot.startLocal, timeZone: s.slot.timeZone, adults: s.searchContext.adults })),
-    missing: review.missing.filter(item => item !== 'experiences' || !experiences.length), context: review.planningContext ?? null };
+    missing: review.missing.filter(item => item !== 'experiences' || !experiences.length), context: review.planningContext ?? null,
+    planningEstimate: tripPlanningEstimate({ review: { ...review, experiences } }) };
 }

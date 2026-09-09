@@ -42,6 +42,15 @@ function modelVisible(manifest: any) {
 }
 
 describe('Wayfare expanded travel profile', () => {
+  it('returns the planning estimate from a read-only computation over server-owned review data', async () => {
+    const manifest = await demoEmbeddedApp.toManifest() as any;
+    const review = manifest.tools.find((entry: any) => entry.name === 'review_trip');
+    expect(review.fulfilment.steps.at(-1).use).toBe('demo.estimate_trip');
+    expect(JSON.stringify(review.outputSchema.properties.planningEstimate)).toContain('mixed_currencies');
+    expect(JSON.stringify(review.outputSchema.properties.planningEstimate)).toContain('providerSubtotalMinor');
+    expect(Object.keys(review.inputSchema.properties)).toEqual([]);
+    expect(review.annotations.readOnlyHint).toBe(true);
+  });
   it('makes hotel discovery reuse context and expose adjustable one-night, one-person defaults', async () => {
     const manifest = await demoEmbeddedApp.toManifest() as any;
     const search = manifest.tools.find((entry: any) => entry.name === 'search_hotels');
