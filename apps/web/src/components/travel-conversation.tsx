@@ -18,6 +18,7 @@ import {
   type TravelDefaults,
 } from '../lib/travel-defaults';
 import { projectTrip, type TripProjection } from '../lib/trip-projection';
+import { isInlineTravelView } from '../lib/travel-view-policy';
 import {
   progressForEvent,
   type ToolActivity,
@@ -314,7 +315,10 @@ export function TravelConversation({
         setActivity(progress);
         return;
       }
-      if (event.event === 'tool_completed') {
+      // The linked App may arrive before tool_completed while the assistant
+      // continues writing. Its matching invocation no longer needs a skeleton.
+      if (event.event === 'tool_completed'
+        || (event.event === 'view_available' && isInlineTravelView(event.data))) {
         activeActivities.delete(event.data.id);
         setActivity(newestActivity(activeActivities));
         if (activeActivities.size === 0) {
@@ -409,6 +413,7 @@ export function TravelConversation({
     <li
       className="travel-conversation__activity"
       data-active={statusLabel ? 'true' : 'false'}
+      data-skeleton={statusLabel ? activity?.skeleton : undefined}
       key="assistant-activity"
     >
       <p
@@ -418,7 +423,21 @@ export function TravelConversation({
       >
         {statusLabel ? <TextShimmer>{statusLabel}</TextShimmer> : null}
       </p>
-      {statusLabel && activity?.skeleton === 'hotels' ? <div className="travel-hotel-skeletons" aria-hidden="true">{[0, 1, 2].map(index => <div className="travel-hotel-skeleton" key={index}><div className="travel-hotel-skeleton__photo" /><div className="travel-hotel-skeleton__body"><span /><span /><span /><span /></div></div>)}</div> : null}
+      {statusLabel && activity?.skeleton === 'hotels' ? (
+        <div className="travel-hotel-loading" aria-hidden="true">
+          <div className="travel-hotel-loading__panel">
+            <div className="travel-hotel-loading__heading"><span /><span /><span /><span /></div>
+            <div className="travel-hotel-skeletons" aria-hidden="true">
+              {[0, 1, 2].map(index => (
+                <div className="travel-hotel-skeleton" key={index}>
+                  <div className="travel-hotel-skeleton__photo" />
+                  <div className="travel-hotel-skeleton__body"><span /><span /><span /><span /><span /><span /><span /></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </li>
   );
 

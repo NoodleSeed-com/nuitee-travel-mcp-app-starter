@@ -113,6 +113,34 @@ describe('guest travel conversation lifecycle', () => {
     act(() => client.emit({ event: 'tool_completed', data: { id: 'hotel-search', tool: 'search_hotels', result: { status: 'error' } } }));
     expect(document.querySelector('.travel-hotel-skeletons')).toBeNull();
   });
+
+  it('removes the hotel skeleton when its view arrives before tool completion', async () => {
+    assistantMock.useNoodleAssistant.mockReturnValue({ client, messages: [], status: 'streaming' });
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Hotels in Lisbon next week');
+    await waitFor(() => expect(client.subscribe).toHaveBeenCalled());
+    act(() => client.emit({ event: 'tool_started', data: { id: 'hotels-1', tool: 'search_hotels' } }));
+    expect(document.querySelectorAll('.travel-hotel-skeleton')).toHaveLength(3);
+    const view = { id: 'hotels-1', tool: 'search_hotels', resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_hotels_widget', result: { status: 'success' } };
+    // A historical view or a rejected tool/resource pair cannot finish this search.
+    act(() => client.emit({ event: 'view_available', data: { ...view, id: 'older-hotels' } }));
+    act(() => client.emit({ event: 'view_available', data: { ...view, resourceUri: 'ui://unknown/widget' } }));
+    expect(document.querySelectorAll('.travel-hotel-skeleton')).toHaveLength(3);
+    act(() => client.emit({ event: 'view_available', data: view }));
+    expect(document.querySelector('.travel-hotel-skeletons')).toBeNull();
+    expect(screen.queryByText('Finding stays…')).toBeNull();
+    expect(conversationStatus()).toHaveTextContent('Thinking…');
+    expect(screen.getByRole('region', { name: 'Travel conversation' })).toHaveAttribute('aria-busy', 'true');
+
+    // A second search has its own loading lifecycle; the late first completion
+    // must not hide its skeleton, nor must another tool's result.
+    act(() => client.emit({ event: 'tool_started', data: { id: 'hotels-2', tool: 'search_hotels' } }));
+    act(() => client.emit({ event: 'tool_completed', data: { id: 'hotels-1', tool: 'search_hotels', result: {} } }));
+    act(() => client.emit({ event: 'view_available', data: { id: 'flights-1', tool: 'search_flights', resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget', result: {} } }));
+    expect(document.querySelectorAll('.travel-hotel-skeleton')).toHaveLength(3);
+    act(() => client.emit({ event: 'view_available', data: { ...view, id: 'hotels-2', result: { status: 'error' } } }));
+    expect(document.querySelector('.travel-hotel-skeletons')).toBeNull();
+  });
   it('does not initialize the assistant before the first submit', () => {
     render(<TravelAssistantPage runtime={readyRuntime} />);
 
