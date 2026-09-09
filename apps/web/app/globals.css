@@ -197,6 +197,40 @@ code {
   margin: 0;
 }
 
+.travel-composer__jump-latest {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  transform: translateX(-50%);
+  border: 1px solid var(--travel-boundary);
+  border-radius: 50%;
+  background: var(--travel-raised);
+  color: var(--travel-ink);
+  box-shadow: 0 3px 12px rgb(13 13 13 / 0.1);
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .travel-composer__jump-latest:hover {
+    border-color: var(--travel-muted);
+  }
+}
+
+.travel-composer__jump-latest:focus-visible {
+  outline: 2px solid var(--travel-ink);
+  outline-offset: 3px;
+}
+
+.travel-composer__jump-latest svg {
+  width: 20px;
+  height: 20px;
+}
+
 .travel-composer__controls {
   display: flex;
   flex: 0 0 auto;

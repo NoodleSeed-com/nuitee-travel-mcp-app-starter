@@ -180,6 +180,7 @@ export function TravelConversation({
   const transcriptContentRef = useRef<HTMLOListElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const followLatestRef = useRef(true);
+  const [showJumpToLatest, setShowJumpToLatest] = useState(false);
   const [activity, setActivity] = useState<ToolActivity | null>(null);
   const [initialPromptState, setInitialPromptState] = useState<
     'pending' | 'sending' | 'failed' | 'sent'
@@ -270,27 +271,30 @@ export function TravelConversation({
 
   useEffect(() => {
     const content = transcriptContentRef.current;
-    if (!content || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => {
+    const nearEnd = () => isNearTranscriptEnd({
+      clientHeight: window.innerHeight,
+      scrollHeight: document.documentElement.scrollHeight,
+      scrollTop: window.scrollY,
+    });
+    const updateFollowState = () => {
+      followLatestRef.current = nearEnd();
+      setShowJumpToLatest(!followLatestRef.current);
+    };
+    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(() => {
       if (followLatestRef.current) {
         conversationEndRef.current?.scrollIntoView?.({ block: 'end' });
       }
+      setShowJumpToLatest(!nearEnd());
     });
-    observer.observe(content);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const updateFollowState = () => {
-      followLatestRef.current = isNearTranscriptEnd({
-        clientHeight: window.innerHeight,
-        scrollHeight: document.documentElement.scrollHeight,
-        scrollTop: window.scrollY,
-      });
-    };
+    if (content) observer?.observe(content);
     updateFollowState();
     window.addEventListener('scroll', updateFollowState, { passive: true });
-    return () => window.removeEventListener('scroll', updateFollowState);
+    window.addEventListener('resize', updateFollowState);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('scroll', updateFollowState);
+      window.removeEventListener('resize', updateFollowState);
+    };
   }, []);
 
   useEffect(() => {
@@ -368,6 +372,14 @@ export function TravelConversation({
     conversationEndRef.current?.scrollIntoView?.({ block: 'end' });
     lastPromptRef.current = prompt;
     void client.sendMessage(prompt).catch(() => undefined);
+  }
+
+  function jumpToLatest() {
+    followLatestRef.current = true;
+    // Include the sticky composer so the final answer is not hidden behind it.
+    // An instant jump also respects reduced motion and cannot fight streaming.
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+    conversationEndRef.current?.focus({ preventScroll: true });
   }
 
   function stopGenerating() {
@@ -498,7 +510,7 @@ export function TravelConversation({
             : null}
         </ol>
         {awaitingAssistantContent ? <ImmersiveConversationSkeleton /> : null}
-        <div aria-hidden="true" data-testid="conversation-end" ref={conversationEndRef} />
+        <div aria-label="Latest conversation" role="group" tabIndex={-1} data-testid="conversation-end" ref={conversationEndRef} />
       </div>
       {appearance === 'immersive' ? (
         <ImmersiveTripRail
@@ -588,6 +600,7 @@ export function TravelConversation({
         busy={responseInProgress}
         error={Boolean(errorPresentation || hasToolError || projection.phase === 'error')}
         formLabel="Continue trip"
+        onJumpToLatest={showJumpToLatest ? jumpToLatest : undefined}
         onStop={stopGenerating}
         onSubmit={sendFollowUp}
         placeholder={copy.placeholder}

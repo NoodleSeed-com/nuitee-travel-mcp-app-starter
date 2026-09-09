@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-test('a widget follow-up moves to the new turn without trapping scroll', async ({ page }) => {
+test('a widget follow-up moves to the new turn and offers a jump back to latest', async ({ page, baseURL }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   const frame = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
   const html = `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{margin:0;padding:16px;font:16px system-ui}button{min-height:44px;padding:12px 20px}</style></head><body><h2>Selected trip fixture</h2><button disabled>Find a stay</button><script>
     addEventListener('message', event => {
@@ -17,7 +18,7 @@ test('a widget follow-up moves to the new turn without trapping scroll', async (
   const pending = new Promise<void>(resolve => { release = resolve; });
   await page.route('**/v1/assistant/public-sessions', route => route.fulfill({ json: {
     token: 'browser-fixture-token', expiresAt: '2099-01-01T00:00:00.000Z',
-    endpoints: { turns: 'http://127.0.0.1:3108/widget-fixture/turns', toolConfirmations: 'http://127.0.0.1:3108/widget-fixture/confirmations' },
+    endpoints: { turns: `${baseURL}/widget-fixture/turns`, toolConfirmations: `${baseURL}/widget-fixture/confirmations` },
   } }));
   await page.route('**/widget-fixture/turns', async route => {
     turns += 1;
@@ -40,13 +41,42 @@ test('a widget follow-up moves to the new turn without trapping scroll', async (
   await expect(app.getByRole('button', { name: 'Find a stay' })).toBeEnabled();
   await expect(page.getByText(/Trip planning fixture paragraph 45/)).toBeVisible();
   await host.scrollIntoViewIfNeeded();
+  const jump = page.getByRole('button', { name: 'Jump to latest message' });
+  await expect(jump).toBeInViewport();
+  const circle = await jump.boundingBox();
+  const icon = await jump.locator('svg').boundingBox();
+  const composer = await page.locator('.travel-composer-beam--conversation').boundingBox();
+  expect(circle!.width).toBe(44);
+  expect(circle!.height).toBe(44);
+  expect(Math.abs(circle!.x + 22 - icon!.x - icon!.width / 2)).toBeLessThan(1);
+  expect(Math.abs(circle!.y + 22 - icon!.y - icon!.height / 2)).toBeLessThan(1);
+  expect(composer!.y - circle!.y - circle!.height).toBe(12);
+  await page.screenshot({ path: testInfo.outputPath('jump-to-latest.png') });
+  await jump.focus();
+  await jump.press('Enter');
+  await expect(jump).toBeHidden();
+  await expect(page.getByTestId('conversation-end')).toBeFocused();
+  await expect(page.getByText(/Trip planning fixture paragraph 45/)).toBeInViewport();
+  expect(turns).toBe(1);
+  await host.scrollIntoViewIfNeeded();
   const before = await page.evaluate(() => window.scrollY);
   await app.getByRole('button', { name: 'Find a stay' }).click();
   await expect.poll(() => turns).toBe(2);
   const sent = page.getByRole('article', { name: 'Traveler message' }).filter({ hasText: 'Find a stay for my selected trip.' });
   await expect(sent).toBeInViewport();
   expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(before + 300);
+  // Read the older widget while the follow-up is pending. New assistant text
+  // must not pull the reader down; the arrow provides the explicit way back.
+  await host.scrollIntoViewIfNeeded();
+  await expect(jump).toBeInViewport();
+  const readingPosition = await page.evaluate(() => window.scrollY);
   release();
   await expect(page.getByText('Hotel search fixture complete.')).toBeVisible();
+  expect(Math.abs(await page.evaluate(() => window.scrollY) - readingPosition)).toBeLessThan(5);
+  await expect(jump).toBeInViewport();
+  await jump.click();
+  await expect(jump).toBeHidden();
+  await expect(page.getByText('Hotel search fixture complete.')).toBeInViewport();
+  expect(turns).toBe(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(await page.evaluate(() => innerWidth));
 });

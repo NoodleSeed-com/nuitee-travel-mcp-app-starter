@@ -1108,6 +1108,32 @@ describe('guest travel conversation lifecycle', () => {
     expect(scrollIntoView).not.toHaveBeenCalled();
   });
 
+  it('offers a jump to latest while reading above new content and resumes following on click', async () => {
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Plan Lisbon');
+    const end = await screen.findByTestId('conversation-end');
+    const scrollIntoView = vi.fn(); end.scrollIntoView = scrollIntoView;
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+    let scrollY = 200;
+    vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(100);
+    vi.spyOn(window, 'scrollY', 'get').mockImplementation(() => scrollY);
+    vi.spyOn(document.documentElement, 'scrollHeight', 'get').mockReturnValue(2000);
+    fireEvent.scroll(window);
+    act(() => resizeCallback?.([], {} as ResizeObserver));
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Jump to latest message' }));
+    expect(scrollTo).toHaveBeenCalledWith({ top: 2000, behavior: 'instant' });
+    expect(end).toHaveFocus();
+    scrollY = 1900;
+    fireEvent.scroll(window);
+    expect(screen.queryByRole('button', { name: 'Jump to latest message' })).not.toBeInTheDocument();
+    act(() => resizeCallback?.([], {} as ResizeObserver));
+    expect(scrollIntoView).toHaveBeenCalledOnce();
+    scrollY = 200;
+    fireEvent.resize(window);
+    expect(screen.getByRole('button', { name: 'Jump to latest message' })).toBeVisible();
+  });
+
   it('preserves upward reading, follows near-end growth, and disconnects its observer', async () => {
     const view = render(<TravelAssistantPage runtime={readyRuntime} />);
     submitPrompt('JFK to Lisbon next month');
