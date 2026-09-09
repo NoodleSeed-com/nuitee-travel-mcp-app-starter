@@ -215,6 +215,7 @@ export function TravelConversation({
       queueMicrotask(() => {
         if (
           !active
+          || initialPromptState !== 'pending'
           || initialPromptSendingRef.current
           || initialPromptAcceptedRef.current
           || stopRequestedRef.current

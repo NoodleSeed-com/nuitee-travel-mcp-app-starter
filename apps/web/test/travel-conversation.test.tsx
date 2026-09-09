@@ -103,6 +103,17 @@ afterEach(() => {
 });
 
 describe('guest travel conversation lifecycle', () => {
+  it('does not automatically resend a rejected initial prompt on rerender', async () => {
+    client.sendMessage.mockRejectedValueOnce(new Error('Fictional service failure'));
+    const view = render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Find a stay in Lisbon');
+    await act(async () => {});
+    expect(client.sendMessage).toHaveBeenCalledTimes(1);
+    view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
+    await act(async () => {});
+    expect(client.sendMessage).toHaveBeenCalledTimes(1);
+  });
+
   it('shows hotel card skeletons only while the hotel search is running', async () => {
     render(<TravelAssistantPage runtime={readyRuntime} />);
     submitPrompt('Hotels in Lisbon next week');
