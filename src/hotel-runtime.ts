@@ -198,7 +198,7 @@ export function runHotelGateway(
       checkin: checkInDate,
       checkout: checkOutDate,
       timeout: 10,
-      maxRatesPerHotel: 1,
+      maxRatesPerHotel: 5,
       limit: 10,
       includeHotelData: true,
       stream: false,

@@ -20,7 +20,7 @@ const hotelRatesRequestSchema = z.object({
   checkin: z.iso.date(),
   checkout: z.iso.date(),
   timeout: z.number().int().min(1).max(20),
-  maxRatesPerHotel: z.number().int().min(1).max(3),
+  maxRatesPerHotel: z.number().int().min(1).max(5),
   limit: z.number().int().min(1).max(10),
   includeHotelData: z.boolean(),
   stream: z.literal(false),
