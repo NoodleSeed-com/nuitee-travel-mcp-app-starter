@@ -13,7 +13,7 @@ import {
 import { createDemoCapabilities } from './demo-capabilities.js';
 import { travelCompanionDemoConfig } from './demo-config.js';
 import { demoGateway } from './demo-connectors.js';
-import { demoHomeOutputSchema, demoHotelSelectionStateSchema, demoExperienceSelectionStateSchema } from './demo-schemas.js';
+import { demoHomeOutputSchema, demoHotelSelectionStateSchema, demoExperienceSelectionStateSchema, tripProtectionStateSchema } from './demo-schemas.js';
 import { noodleState, nuiteeGateway, nuiteeHttp } from './flight-connectors.js';
 import { nuiteeHotelsGateway, nuiteeHotelsHttp } from './hotel-connectors.js';
 import {
@@ -711,6 +711,13 @@ export function createTravelServer(
                 ttlSeconds: 1_800,
                 schema: demoExperienceSelectionStateSchema,
               },
+              protection_selections: {
+                kind: 'selection' as const,
+                scope: 'caller' as const,
+                version: 'v1',
+                ttlSeconds: 1_800,
+                schema: tripProtectionStateSchema,
+              },
             } : {}),
           },
         },
@@ -759,6 +766,13 @@ export function createTravelServer(
                 version: 'v1',
                 ttlSeconds: 1_800,
                 schema: demoExperienceSelectionStateSchema,
+              },
+              protection_selections: {
+                kind: 'selection' as const,
+                scope: 'caller' as const,
+                version: 'v1',
+                ttlSeconds: 1_800,
+                schema: tripProtectionStateSchema,
               },
             },
           },

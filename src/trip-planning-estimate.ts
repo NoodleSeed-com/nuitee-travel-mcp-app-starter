@@ -1,5 +1,5 @@
 export type TripEstimateItem = {
-  component: 'flight' | 'stay' | 'experience';
+  component: 'flight' | 'stay' | 'experience' | 'protection';
   label: string;
   source: 'provider_search' | 'fictional';
   currency?: string;
@@ -20,7 +20,7 @@ export type TripPlanningEstimate = {
 
 // Self-contained for the Noodle compute boundary and shared by the actual UI.
 // No FX lookup, points deduction, per-person multiplication or invented fees.
-export function tripPlanningEstimate(input: { review: unknown }): TripPlanningEstimate {
+export function tripPlanningEstimate(input: { review: unknown; protection?: unknown }): TripPlanningEstimate {
   const record = (value: unknown): Record<string, unknown> | undefined => value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : undefined;
   const review = record(input.review) ?? {};
   const items: TripEstimateItem[] = [];
@@ -44,6 +44,8 @@ export function tripPlanningEstimate(input: { review: unknown }): TripPlanningEs
     const title = record(record(selection)?.experience)?.title;
     append('experience', typeof title === 'string' && title.length <= 100 ? title : 'Experience', 'fictional', record(selection)?.totalPrice, 'amountMinor', true);
   }
+  const protection = record(input.protection ?? review.protection);
+  if (protection) append('protection', 'Protection', 'fictional', record(protection.plan)?.illustrativePrice, 'amount');
   if (!items.length) return { status: 'empty', items };
   if (items.some(item => item.amountMinor === undefined)) return { status: 'incomplete', items };
   if (new Set(items.map(item => item.currency)).size !== 1) return { status: 'mixed_currencies', items };

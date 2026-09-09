@@ -1,7 +1,8 @@
 import { connector, z } from '@noodleseed/one';
 import { selectionStateSchema } from './flight-schemas.js';
 import { runDemoGateway } from './demo-runtime.js';
-import { acknowledgeExperienceSelection, prepareSelectionStates } from './selection-state.js';
+import { acknowledgeExperienceSelection, acknowledgeProtectionComparison, prepareSelectionStates } from './selection-state.js';
+import { runTripProtection } from './trip-protection.js';
 import { openStoredHotel } from './hotel-opening.js';
 import { tripPlanningEstimate } from './trip-planning-estimate.js';
 import {
@@ -24,6 +25,9 @@ import {
   demoSelectHotelOutputSchema,
   demoTripReviewSchema,
   tripPlanningEstimateSchema,
+  tripProtectionSelectionSchema,
+  tripProtectionStateSchema,
+  tripProtectionResultSchema,
   openHotelOutputSchema,
 } from './demo-schemas.js';
 
@@ -69,10 +73,36 @@ export const demoGateway = connector('wayfare_preview_gateway')
   .version('1.0.0')
   .compute('estimate_trip', {
     type: 'read',
-    input: z.object({ review: demoTripReviewSchema }),
+    input: z.object({ review: demoTripReviewSchema, protection: tripProtectionSelectionSchema.optional() }),
     output: tripPlanningEstimateSchema,
     limits: { timeoutMs: 1_000 },
     run: tripPlanningEstimate,
+  })
+  .compute('protection', {
+    type: 'read',
+    input: z.object({
+      kind: z.enum(['prepare', 'select', 'review', 'acknowledge']),
+      review: demoTripReviewSchema.optional(), comparison: demoInsuranceComparisonOutputSchema.optional(),
+      state: tripProtectionStateSchema.optional(), readOk: z.boolean().optional(), tripReadOk: z.boolean().optional(),
+      requestedAt: z.string().datetime().optional(), action: z.enum(['select', 'remove']).optional(),
+      comparisonId: z.string().regex(/^inscmp_[a-f0-9]{32}$/).optional(), planId: z.string().regex(/^inplan_[a-f0-9]{32}$/).optional(),
+      proposal: tripProtectionResultSchema.optional(), patchOk: z.boolean().optional(),
+    }),
+    output: z.object({
+      status: z.enum(['selected', 'removed', 'already_selected', 'unavailable', 'conflict', 'expired']).optional(),
+      message: z.string().min(1).max(240).optional(), note: z.string().min(1).max(240).optional(),
+      selection: tripProtectionSelectionSchema.optional(), nextState: tripProtectionStateSchema.optional(),
+      canSelect: z.boolean().optional(), mayWrite: z.boolean().optional(),
+    }),
+    limits: { timeoutMs: 1_000 },
+    run: runTripProtection,
+  })
+  .compute('acknowledge_protection_comparison', {
+    type: 'read',
+    input: z.object({ proposal: z.object({ canSelect: z.boolean(), message: z.string().max(240) }), patchOk: z.boolean().optional() }),
+    output: z.object({ canSelect: z.boolean(), message: z.string().min(1).max(240) }),
+    limits: { timeoutMs: 1_000 },
+    run: acknowledgeProtectionComparison,
   })
   .compute('open_hotel', {
     type: 'read',
@@ -83,8 +113,8 @@ export const demoGateway = connector('wayfare_preview_gateway')
   })
   .compute('prepare_states', {
     type: 'read',
-    input: z.object({ flightState: z.unknown().optional(), hotelState: z.unknown().optional(), experienceState: z.unknown().optional() }),
-    output: z.object({ flightState: selectionStateSchema.optional(), hotelState: demoHotelSelectionStateSchema.optional(), experienceState: demoExperienceSelectionStateSchema.optional() }),
+    input: z.object({ flightState: z.unknown().optional(), hotelState: z.unknown().optional(), experienceState: z.unknown().optional(), flightReadOk: z.boolean().optional(), hotelReadOk: z.boolean().optional(), experienceReadOk: z.boolean().optional() }),
+    output: z.object({ flightState: selectionStateSchema.optional(), hotelState: demoHotelSelectionStateSchema.optional(), experienceState: demoExperienceSelectionStateSchema.optional(), tripReadOk: z.boolean().optional() }),
     limits: { timeoutMs: 1_000 },
     run: prepareSelectionStates,
   })

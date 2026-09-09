@@ -33,6 +33,7 @@ const demoTools = [
   'review_trip',
   'select_hotel',
   'add_experience_to_trip',
+  'select_trip_protection',
 ];
 
 function modelVisible(manifest: any) {
@@ -42,6 +43,15 @@ function modelVisible(manifest: any) {
 }
 
 describe('Wayfare expanded travel profile', () => {
+  it('keeps optional protection choices caller-scoped, bounded and acknowledged', async () => {
+    const manifest = await demoEmbeddedApp.toManifest() as any;
+    const select = manifest.tools.find((entry: any) => entry.name === 'select_trip_protection');
+    expect(select).toMatchObject({ visibility: ['app'], annotations: { readOnlyHint: true } });
+    expect(Object.keys(select.inputSchema.properties)).toEqual(['action', 'comparisonId', 'planId']);
+    expect(JSON.stringify(select)).toContain('expectedRevision');
+    expect(JSON.stringify(select)).toContain('patchOk');
+    expect(manifest.state.handles.protection_selections).toMatchObject({ kind: 'selection', scope: 'caller', ttlSeconds: 1800 });
+  });
   it('returns the planning estimate from a read-only computation over server-owned review data', async () => {
     const manifest = await demoEmbeddedApp.toManifest() as any;
     const review = manifest.tools.find((entry: any) => entry.name === 'review_trip');

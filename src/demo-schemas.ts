@@ -482,7 +482,32 @@ export const demoInsuranceComparisonOutputSchema = z.object({
   searchContext: demoInsuranceComparisonInputSchema,
   assumptions: z.array(z.string().trim().min(20).max(180)).min(1).max(6),
   plans: z.array(demoInsurancePlanSchema).length(3),
+  planning: z.object({ canSelect: z.boolean(), message: z.string().min(1).max(240) }).optional(),
 });
+
+export const tripProtectionSelectionSchema = z.object({
+  comparisonId: demoInsuranceComparisonIdSchema,
+  plan: demoInsurancePlanSchema,
+  searchContext: demoInsuranceComparisonInputSchema,
+  tripKey: z.string().min(1).max(3000),
+  addedAt: z.string().datetime(),
+  expiresAt: z.string().datetime(),
+});
+export const tripProtectionStateSchema = z.object({
+  comparison: z.object({ result: demoInsuranceComparisonOutputSchema, tripKey: z.string().min(1).max(3000), createdAt: z.string().datetime(), expiresAt: z.string().datetime() }).nullable().optional(),
+  selected: tripProtectionSelectionSchema.nullable().optional(),
+});
+export const tripProtectionActionSchema = z.object({
+  action: z.enum(['select', 'remove']),
+  comparisonId: demoInsuranceComparisonIdSchema,
+  planId: demoInsurancePlanIdSchema,
+});
+export const tripProtectionResultSchema = z.object({
+  status: z.enum(['selected', 'removed', 'already_selected', 'unavailable', 'conflict', 'expired']),
+  message: z.string().min(1).max(240),
+  selection: tripProtectionSelectionSchema.optional(),
+});
+export type TripProtectionSelection = z.infer<typeof tripProtectionSelectionSchema>;
 
 export const demoTripReviewFlightSchema = z.object({
   dataSource: z.literal('live_nuitee_selection'),
@@ -531,14 +556,14 @@ export const demoTripPlanningContextSchema = z.object({
 export const tripPlanningEstimateSchema = z.object({
   status: z.enum(['complete', 'mixed_currencies', 'incomplete', 'empty']),
   items: z.array(z.object({
-    component: z.enum(['flight', 'stay', 'experience']),
+    component: z.enum(['flight', 'stay', 'experience', 'protection']),
     label: z.string().max(100),
     source: z.enum(['provider_search', 'fictional']),
     currency: z.string().regex(/^[A-Z]{3}$/).optional(),
     fractionDigits: z.number().int().min(0).max(2).optional(),
     amountMinor: z.number().int().nonnegative().max(10_000_000_000).optional(),
     amount: z.number().nonnegative().max(100_000_000).optional(),
-  })).max(10),
+  })).max(11),
   currency: z.string().regex(/^[A-Z]{3}$/).optional(),
   fractionDigits: z.number().int().min(0).max(2).optional(),
   totalMinor: z.number().int().nonnegative().max(100_000_000_000).optional(),
@@ -556,6 +581,8 @@ export const demoTripReviewSchema = z.object({
   experiences: z.array(demoExperienceSelectionSchema).max(8),
   loyalty: demoLoyaltyOverviewSchema,
   planningEstimate: tripPlanningEstimateSchema.optional(),
+  protection: tripProtectionSelectionSchema.optional(),
+  protectionNote: z.string().min(1).max(240).optional(),
   missing: z.array(z.enum(['flight', 'stay', 'experiences'])).max(3),
   planningContext: demoTripPlanningContextSchema.optional(),
   notes: z.array(z.string().min(1).max(240)).max(3).optional(),
