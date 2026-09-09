@@ -191,6 +191,20 @@ export function TravelConversation({
   terminalRef.current = terminal;
   onInitialPromptAcceptedRef.current = onInitialPromptAccepted;
 
+  // Widget follow-ups use the SDK directly, bypassing the website composer.
+  // A new traveler turn is explicit intent to continue; assistant-only growth
+  // must still respect a reader who has scrolled back through the transcript.
+  const latestTraveler = messages.findLast(message => message.role === 'user');
+  const lastTravelerIdRef = useRef(latestTraveler?.id);
+  useEffect(() => {
+    if (!latestTraveler || lastTravelerIdRef.current === latestTraveler.id) return;
+    lastTravelerIdRef.current = latestTraveler.id;
+    const prompt = latestTraveler.parts.filter(part => part.type === 'text').map(part => part.text).join('\n');
+    if (prompt.trim()) lastPromptRef.current = prompt;
+    followLatestRef.current = true;
+    conversationEndRef.current?.scrollIntoView?.({ block: 'end' });
+  }, [latestTraveler?.id]);
+
   useEffect(() => {
     if (!durableInitialPrompt) {
       let active = true;
@@ -379,7 +393,7 @@ export function TravelConversation({
     && (initialPromptProgress || Boolean(activity) || busy);
   const statusLabel = terminal || stopRequested || !responseInProgress
     ? ''
-    : 'Thinking…';
+    : activity?.skeleton === 'hotels' ? 'Finding stays…' : 'Thinking…';
   let activityInsertionIndex = visibleMessages.length;
   for (let index = visibleMessages.length - 1; index >= 0; index -= 1) {
     if (visibleMessages[index]?.role === 'user') {
@@ -404,6 +418,7 @@ export function TravelConversation({
       >
         {statusLabel ? <TextShimmer>{statusLabel}</TextShimmer> : null}
       </p>
+      {statusLabel && activity?.skeleton === 'hotels' ? <div className="travel-hotel-skeletons" aria-hidden="true">{[0, 1, 2].map(index => <div className="travel-hotel-skeleton" key={index}><div className="travel-hotel-skeleton__photo" /><div className="travel-hotel-skeleton__body"><span /><span /><span /><span /></div></div>)}</div> : null}
     </li>
   );
 

@@ -1457,6 +1457,15 @@ code {
   line-height: 1.45;
 }
 
+.travel-hotel-skeletons { display: flex; gap: 16px; width: 100%; min-width: 0; overflow: hidden; margin-top: 12px; }
+.travel-hotel-skeleton { flex: 0 0 min(270px, 100%); border: 1px solid var(--travel-boundary); border-radius: 18px; overflow: hidden; }
+.travel-hotel-skeleton__photo { height: 140px; background: color-mix(in srgb, var(--travel-boundary) 35%, var(--travel-raised)); }
+.travel-hotel-skeleton__body { display: grid; gap: 12px; padding: 16px; }
+.travel-hotel-skeleton__body span { height: 16px; border-radius: 6px; background: color-mix(in srgb, var(--travel-boundary) 35%, var(--travel-raised)); }
+.travel-hotel-skeleton__body span:nth-child(2) { width: 65%; }
+.travel-hotel-skeleton__body span:nth-child(3) { width: 45%; height: 24px; }
+.travel-hotel-skeleton__body span:last-child { height: 44px; border-radius: 999px; }
+
 .travel-search-refinements {
   display: flex;
   flex-wrap: wrap;

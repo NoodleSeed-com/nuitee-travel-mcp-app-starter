@@ -144,7 +144,7 @@ export function runHotelGateway(
   const destinationCode = string(search.countryCode, 2)?.toUpperCase();
   const checkInDate = string(search.checkInDate, 10) ?? '';
   const checkOutDate = string(search.checkOutDate, 10) ?? '';
-  const adults = Math.max(1, Math.floor(number(search.adults) ?? 2));
+  const adults = Math.max(1, Math.floor(number(search.adults) ?? 1));
   const children = Math.max(0, Math.floor(number(search.children) ?? 0));
   const rooms = Math.max(1, Math.floor(number(search.rooms) ?? 1));
   const currency = (string(search.currency, 3) ?? 'CAD').toUpperCase();

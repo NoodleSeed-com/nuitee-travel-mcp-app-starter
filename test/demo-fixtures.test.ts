@@ -501,6 +501,12 @@ describe('synthetic Wayfare travel fixtures', () => {
   });
 });
 
+it('uses one adult and one room only when hotel counts are omitted', () => {
+  const { adults: _adults, rooms: _rooms, ...withoutCounts } = searchInput;
+  expect(demoHotelSearchInputSchema.parse(withoutCounts)).toMatchObject({ adults: 1, rooms: 1 });
+  expect(demoHotelSearchInputSchema.parse({ ...withoutCounts, adults: 4, rooms: 2 })).toMatchObject({ adults: 4, rooms: 2 });
+});
+
 describe('hotel coordinates', () => {
   it('gives every hotel fixture a mappable coordinate pair', () => {
     for (const fixtures of Object.values(DEMO_HOTEL_CATALOG)) {

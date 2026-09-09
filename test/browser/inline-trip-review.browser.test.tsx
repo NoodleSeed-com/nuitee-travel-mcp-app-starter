@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
-const bridge = vi.hoisted(() => ({ call: vi.fn(), search: vi.fn(), add: vi.fn(), send: vi.fn(), context: vi.fn(), followUp: true }));
+const bridge = vi.hoisted(() => ({ call: vi.fn(), search: vi.fn(), hotels: vi.fn(), selectHotel: vi.fn(), add: vi.fn(), send: vi.fn(), context: vi.fn(), followUp: true }));
 vi.mock('../../src/helpers.js', async importOriginal => ({
   ...await importOriginal<typeof import('../../src/helpers.js')>(),
   useWidgetReady: () => true,
   useLayout: () => ({ locale: 'en-CA', displayMode: 'inline', supports: { followUpMessage: bridge.followUp, modelContext: true } }),
-  useCallTool: (name: string) => ({ callToolAsync: name === 'search_experiences' ? bridge.search : name === 'add_experience_to_trip' ? bridge.add : bridge.call }),
+  useCallTool: (name: string) => ({ callToolAsync: name === 'search_experiences' ? bridge.search : name === 'search_hotels' ? bridge.hotels : name === 'select_hotel' ? bridge.selectHotel : name === 'add_experience_to_trip' ? bridge.add : bridge.call }),
   useViewState: (_key: string, initial: unknown) => useState(initial),
   useSendFollowUpMessage: () => bridge.send,
   useUpdateModelContext: () => bridge.context,
@@ -15,7 +15,7 @@ vi.mock('../../src/helpers.js', async importOriginal => ({
 import { InlineTripReview } from '../../src/views/trip-review.js';
 import { runDemoGateway } from '../../src/demo-runtime.js';
 import { DEMO_EXPERIENCE_ALIASES, DEMO_EXPERIENCE_CATALOG } from '../../src/experience-fixtures.js';
-import type { DemoExperienceSearchOutput, DemoExperienceSelection } from '../../src/demo-schemas.js';
+import type { DemoExperienceSearchOutput, DemoExperienceSelection, DemoHotelSearchOutput, DemoTripReview } from '../../src/demo-schemas.js';
 
 const review = {
   status: 'ready', experiences: [], missing: ['stay', 'experiences'],
@@ -49,7 +49,7 @@ it('loads fresh trip state in the same widget without a chat message, with prese
   bridge.call.mockResolvedValue({ structuredContent: { ...review, flight: { ...review.flight, searchPrice: { total: 1350, currency: 'CAD' } } } });
   await page.getByRole('button', { name: 'Review my trip' }).click();
   await expect.element(page.getByText('$1,350.00', { exact: true })).toBeVisible();
-  expect(bridge.call).toHaveBeenCalledTimes(2);
+  expect(bridge.call).toHaveBeenCalledTimes(3);
 });
 
 it('shows loading, rejects malformed results and retries without inventing selections', async () => {
@@ -66,7 +66,7 @@ it('shows loading, rejects malformed results and retries without inventing selec
   expect(bridge.send).not.toHaveBeenCalled();
 });
 
-it('still hands stay searches to the conversation once, without another inline review call', async () => {
+it('refreshes selections before handing a stay search with missing dates to the conversation once', async () => {
   bridge.call.mockResolvedValue({ structuredContent: review });
   mount();
   await page.getByRole('button', { name: 'Review my trip' }).click();
@@ -76,7 +76,7 @@ it('still hands stay searches to the conversation once, without another inline r
     expect(bridge.send).toHaveBeenCalledTimes(index + 1);
     expect(bridge.send).toHaveBeenLastCalledWith({ prompt: expect.stringContaining('Do not repeat the trip review, display another plan card, or recheck my flight fare for this search') });
     expect(bridge.send).toHaveBeenLastCalledWith({ prompt: expect.stringContaining('one short question for only the missing') });
-    expect(bridge.call).toHaveBeenCalledExactlyOnceWith({});
+    expect(bridge.call).toHaveBeenCalledTimes(2);
   }
 });
 
@@ -96,7 +96,7 @@ it('opens real carousel and chooser in place, adds only an explicit slot, then r
   await page.getByRole('button', { name: 'Explore experiences' }).click();
   await expect.element(page.getByRole('status')).toHaveTextContent('Finding fictional experience ideas');
   expect(bridge.search).toHaveBeenCalledExactlyOnceWith({ destination: 'Tokyo', startDate: '2026-10-10', endDate: '2026-10-11', adults: 2, children: 0, currency: 'CAD', accessibility: 'ANY' });
-  expect(bridge.call).toHaveBeenCalledTimes(1);
+  expect(bridge.call).toHaveBeenCalledTimes(2);
   resolveSearch({ structuredContent: searched.experienceResult });
   await expect.element(page.getByRole('heading', { name: 'Tokyo experience ideas' })).toBeVisible();
   expect(document.querySelectorAll('.cc-experience-card')).toHaveLength(3);
@@ -130,7 +130,7 @@ it('opens real carousel and chooser in place, adds only an explicit slot, then r
   await expect.element(page.getByRole('heading', { name: 'Your Tokyo plan' })).toBeVisible();
   await expect.element(page.getByRole('region', { name: 'Selected flight' })).toBeVisible();
   await expect.element(page.getByRole('region', { name: 'Selected experiences' })).toBeVisible();
-  expect(bridge.call).toHaveBeenCalledTimes(2);
+  expect(bridge.call).toHaveBeenCalledTimes(3);
   expect(bridge.send).not.toHaveBeenCalled();
 });
 
@@ -146,7 +146,7 @@ it('allows Back during a pending search, ignores its late answer, and uses a fre
   resolve({ structuredContent: experienceSearch().experienceResult });
   await expect.element(page.getByRole('heading', { name: 'Your Tokyo plan' })).toBeVisible();
   expect(document.querySelector('.cc-experience-card')).toBeNull();
-  expect(bridge.call).toHaveBeenCalledTimes(2);
+  expect(bridge.call).toHaveBeenCalledTimes(3);
   expect(bridge.send).not.toHaveBeenCalled();
 });
 
@@ -196,4 +196,147 @@ it('shows the existing honest empty state for an unsupported city and preserves 
   await page.getByRole('button', { name: 'Back to your trip' }).click();
   await expect.element(page.getByRole('heading', { name: 'Your Madrid plan' })).toBeVisible();
   expect(bridge.send).not.toHaveBeenCalled();
+});
+
+const stayInput = { destination: 'LIS', countryCode: 'PT', checkInDate: '2026-09-18', checkOutDate: '2026-09-21', adults: 2, children: 0, rooms: 1, currency: 'CAD' } as const;
+const stayResult: DemoHotelSearchOutput = {
+  status: 'success', dataSource: 'illustrative', searchId: `hsearch_${'b'.repeat(32)}`, searchContext: stayInput,
+  message: 'Three illustrative Lisbon stays.', disclosure: 'Illustrative stays, not live availability. Nothing reserved.', fallback: 'Three illustrative stays in Lisbon, no room held or booked.',
+  hotels: Array.from({ length: 3 }, (_, index) => ({
+    selectionId: `hsel_${String(index).padStart(32, '0')}`, dataSource: 'illustrative', name: `Lisbon Test Stay ${index + 1}`, city: 'Lisbon', countryCode: 'PT', neighborhood: 'Baixa',
+    description: 'An illustrative central stay.', roomName: 'King room', category: 4, amenities: ['Wi-Fi'], nights: 3, rooms: 1,
+    nightlyPrice: { amount: 200, currency: 'CAD' }, staySubtotal: { amount: 600, currency: 'CAD' }, taxesAndFeesIncluded: false, policySummary: 'Illustrative cancellation terms; no reservation.',
+  })),
+};
+const flightReview: DemoTripReview = {
+  ...review, status: 'ready', missing: ['stay', 'experiences'],
+  planningContext: { source: 'flight', dateBasis: 'flight_departure', destination: 'LIS', countryCode: 'PT', startDate: stayInput.checkInDate, endDate: stayInput.checkOutDate, adults: 2, currency: 'CAD' },
+};
+const chosenHotel = stayResult.hotels[0]!;
+const stayReview: DemoTripReview = {
+  ...flightReview, flight: undefined, missing: ['flight', 'experiences'],
+  stay: { selectionId: chosenHotel.selectionId, propertyName: chosenHotel.name, city: chosenHotel.city, checkInDate: stayInput.checkInDate, checkOutDate: stayInput.checkOutDate, nights: 3, rooms: 1, staySubtotal: chosenHotel.staySubtotal, dataSource: 'illustrative' },
+  planningContext: { source: 'stay', dateBasis: 'stay', destination: 'Lisbon', countryCode: 'PT', propertyName: chosenHotel.name, startDate: stayInput.checkInDate, endDate: stayInput.checkOutDate, adults: 2, currency: 'CAD' },
+};
+
+it('finds stays inline with known dates, acknowledges selection, and preserves the flight in review', async () => {
+  await page.viewport(900, 1200);
+  bridge.call.mockResolvedValue({ structuredContent: flightReview });
+  let resolve!: (value: unknown) => void;
+  bridge.hotels.mockImplementationOnce(() => new Promise(done => { resolve = done; }));
+  mount();
+  await page.getByRole('button', { name: 'Review my trip' }).click();
+  await page.getByRole('button', { name: 'Find a stay' }).click();
+  await expect.element(page.getByRole('button', { name: 'Back to your trip' })).toBeEnabled();
+  await expect.element(page.getByRole('status')).toHaveTextContent('Finding stays');
+  expect(document.querySelectorAll('.cc-stay-skeleton')).toHaveLength(3);
+  expect(bridge.hotels).toHaveBeenCalledExactlyOnceWith(stayInput);
+  expect(bridge.send).not.toHaveBeenCalled();
+  resolve({ structuredContent: stayResult });
+  await expect.element(page.getByRole('button', { name: `View stay: ${chosenHotel.name}` })).toBeVisible();
+  await expect.element(page.getByText(/Using your flight dates as a starting point/)).toBeVisible();
+  expect(bridge.selectHotel).not.toHaveBeenCalled();
+  await page.screenshot({ path: '__screenshots__/direct-trip-stays-desktop.png', fullPage: true });
+  await page.viewport(320, 1000);
+  expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(320);
+  await page.screenshot({ path: '__screenshots__/direct-trip-stays-mobile.png', fullPage: true });
+  await page.viewport(900, 1200);
+  await page.getByRole('button', { name: `View stay: ${chosenHotel.name}` }).click();
+  let acknowledge!: (value: unknown) => void;
+  bridge.selectHotel.mockImplementationOnce(() => new Promise(done => { acknowledge = done; }));
+  await page.getByRole('button', { name: 'Choose this stay' }).click();
+  await expect.element(page.getByRole('button', { name: 'Back to your trip' })).toBeDisabled();
+  acknowledge({ structuredContent: { status: 'selected', selectionId: chosenHotel.selectionId } });
+  await expect.element(page.getByText('Stay added to your trip', { exact: true })).toBeVisible();
+  await expect.poll(() => bridge.context.mock.lastCall?.[0].structuredContent.tripPlanning).toMatchObject({ staySelectionId: chosenHotel.selectionId, flightSelectionId: review.flight.selectionId, missing: ['experiences'] });
+  bridge.call.mockResolvedValue({ structuredContent: { ...stayReview, flight: flightReview.flight, missing: ['experiences'] } });
+  await page.getByRole('button', { name: 'Review my trip', exact: true }).click();
+  await expect.element(page.getByRole('region', { name: 'Selected stay' })).toBeVisible();
+  await expect.element(page.getByRole('region', { name: 'Selected flight' })).toBeVisible();
+  expect(bridge.selectHotel).toHaveBeenCalledExactlyOnceWith({ selectionId: chosenHotel.selectionId });
+  expect(bridge.send).not.toHaveBeenCalled();
+});
+
+it('continues a hotel-only plan inline without the failing generic conversation request', async () => {
+  bridge.call.mockResolvedValue({ structuredContent: stayReview });
+  bridge.search.mockImplementation(input => Promise.resolve({ structuredContent: experienceSearch(input).experienceResult }));
+  // A failing chat transport must not block an inline continuation.
+  mount();
+  bridge.send.mockRejectedValue(new Error('Request Failed'));
+  await page.getByRole('button', { name: 'Review my trip' }).click();
+  await expect.element(page.getByRole('button', { name: 'Find flights' })).toBeVisible();
+  await expect.element(page.getByRole('button', { name: 'Explore experiences' })).toBeVisible();
+  await page.getByRole('button', { name: 'Continue planning' }).click();
+  await expect.element(page.getByRole('heading', { name: 'Lisbon experience ideas' })).toBeVisible();
+  expect(bridge.search).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ destination: 'Lisbon', startDate: stayInput.checkInDate, endDate: stayInput.checkOutDate }));
+  expect(bridge.send).not.toHaveBeenCalled();
+  expect(bridge.hotels).not.toHaveBeenCalled();
+});
+
+it.each(['Continue planning', 'Find a stay'])('refreshes a stale plan before %s so an already selected stay is not searched again', async label => {
+  bridge.call.mockResolvedValueOnce({ structuredContent: flightReview }).mockResolvedValue({ structuredContent: { ...stayReview, flight: flightReview.flight, missing: ['experiences'] } });
+  bridge.search.mockImplementation(input => Promise.resolve({ structuredContent: experienceSearch(input).experienceResult }));
+  mount();
+  await page.getByRole('button', { name: 'Review my trip' }).click();
+  await page.getByRole('button', { name: label }).click();
+  if (label === 'Continue planning') await expect.element(page.getByRole('heading', { name: 'Lisbon experience ideas' })).toBeVisible();
+  else {
+    await expect.element(page.getByText('That part of your trip is already selected. Your current plan is shown here.')).toBeVisible();
+    expect(document.body.textContent).not.toContain('Request failed');
+    await expect.element(page.getByRole('region', { name: 'Selected stay' })).toBeVisible();
+  }
+  expect(bridge.hotels).not.toHaveBeenCalled();
+  expect(bridge.send).not.toHaveBeenCalled();
+});
+
+it('guards duplicate navigation and failed state reads without changing selections or starting a search', async () => {
+  let resolve!: (value: unknown) => void;
+  bridge.call.mockResolvedValueOnce({ structuredContent: flightReview }).mockImplementationOnce(() => new Promise(done => { resolve = done; })).mockResolvedValue({ structuredContent: flightReview });
+  bridge.hotels.mockResolvedValue({ structuredContent: stayResult });
+  mount();
+  await page.getByRole('button', { name: 'Review my trip' }).click();
+  await page.getByRole('button', { name: 'Continue planning' }).click();
+  await expect.element(page.getByRole('button', { name: 'Continue planning' })).toBeDisabled();
+  await expect.element(page.getByRole('button', { name: 'Find a stay' })).toBeDisabled();
+  expect(bridge.call).toHaveBeenCalledTimes(2);
+  resolve({ isError: true });
+  await expect.element(page.getByText(/Your current selections could not be checked/)).toBeVisible();
+  expect(bridge.hotels).not.toHaveBeenCalled();
+  expect(bridge.send).not.toHaveBeenCalled();
+  await page.getByRole('button', { name: 'Continue planning' }).click();
+  await expect.element(page.getByRole('button', { name: `View stay: ${chosenHotel.name}` })).toBeVisible();
+  expect(bridge.hotels).toHaveBeenCalledTimes(1);
+});
+
+it('ignores a late hotel result after Back and offers retry for failed or malformed results', async () => {
+  bridge.call.mockResolvedValue({ structuredContent: flightReview });
+  let resolve!: (value: unknown) => void;
+  bridge.hotels.mockImplementationOnce(() => new Promise(done => { resolve = done; }))
+    .mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({ structuredContent: { status: 'success' } })
+    .mockResolvedValueOnce({ structuredContent: { ...stayResult, status: 'empty', hotels: [] } });
+  mount();
+  await page.getByRole('button', { name: 'Review my trip' }).click();
+  await page.getByRole('button', { name: 'Find a stay' }).click();
+  await page.getByRole('button', { name: 'Back to your trip' }).click();
+  resolve({ structuredContent: stayResult });
+  await expect.element(page.getByRole('heading', { name: 'Your LIS plan' })).toBeVisible();
+  expect(document.querySelector('.cc-stay-card')).toBeNull();
+  await page.getByRole('button', { name: 'Find a stay' }).click();
+  await expect.element(page.getByText(/Stays could not load/)).toBeVisible();
+  await page.getByRole('button', { name: 'Try again' }).click();
+  await expect.element(page.getByText(/The hotel result was incomplete/)).toBeVisible();
+  await page.getByRole('button', { name: 'Try again' }).click();
+  await expect.element(page.getByText('No stays found', { exact: true })).toBeVisible();
+  expect(bridge.send).not.toHaveBeenCalled();
+});
+
+it('keeps the selected stay and offers chat recovery when an explicit flight follow-up fails', async () => {
+  bridge.call.mockResolvedValue({ structuredContent: stayReview });
+  mount();
+  bridge.send.mockRejectedValue(new Error('Request Failed'));
+  await page.getByRole('button', { name: 'Review my trip' }).click();
+  await page.getByRole('button', { name: 'Find flights' }).click();
+  await expect.element(page.getByText('The conversation could not be opened. Please type your request in the chat.')).toBeVisible();
+  await expect.element(page.getByRole('region', { name: 'Selected stay' })).toBeVisible();
+  expect(bridge.send).toHaveBeenCalledExactlyOnceWith({ prompt: expect.stringContaining('Find flights to Lisbon') });
 });

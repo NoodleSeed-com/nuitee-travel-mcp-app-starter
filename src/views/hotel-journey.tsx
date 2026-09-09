@@ -77,7 +77,7 @@ export function HotelJourney({ result, state, displayMode, theme = 'light', appe
   const className = `cc-app cc-hotel-results cc-hotel-journey${appearance === 'host' ? ' cc-host-styled' : ''}`;
   const wrapper = (content: ReactNode, title = 'Stays') => <Frame className={className} data-theme={appearance === 'host' ? theme : 'light'} displayMode="auto" title={title}>{content}</Frame>;
 
-  if (state === 'loading') return wrapper(<div className="cc-stay-loading" role="status" aria-busy="true"><p>Finding stays…</p><div className="cc-stay-skeleton" aria-hidden="true" /></div>);
+  if (state === 'loading') return wrapper(<div className="cc-stay-loading" role="status" aria-busy="true"><p>Finding stays…</p><div className="cc-stay-skeletons" aria-hidden="true">{[0, 1, 2].map(index => <div className="cc-stay-skeleton" key={index}><div className="cc-stay-skeleton-photo" /><div className="cc-stay-skeleton-body"><span /><span /><span /><span /></div></div>)}</div></div>);
   if (state || !result) return wrapper(<Feedback status="error">{state === 'error' ? 'The hotel search could not load. Try again; nothing was selected.' : 'The hotel result was incomplete and could not be shown safely. Try the search again.'}</Feedback>);
   if (result.status === 'error') return wrapper(<Feedback status="error">{result.error?.message ?? result.message} No room was held or reserved.</Feedback>);
   if (result.status === 'empty') return wrapper(<p>{result.message} Try different dates or a nearby destination.</p>, 'No stays found');

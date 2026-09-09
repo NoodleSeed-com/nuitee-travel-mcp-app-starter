@@ -103,6 +103,16 @@ afterEach(() => {
 });
 
 describe('guest travel conversation lifecycle', () => {
+  it('shows hotel card skeletons only while the hotel search is running', async () => {
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Hotels in Lisbon next week');
+    await waitFor(() => expect(client.subscribe).toHaveBeenCalled());
+    act(() => client.emit({ event: 'tool_started', data: { id: 'hotel-search', tool: 'search_hotels' } }));
+    expect(document.querySelectorAll('.travel-hotel-skeleton')).toHaveLength(3);
+    expect(document.querySelector('.travel-hotel-skeletons')).toHaveAttribute('aria-hidden', 'true');
+    act(() => client.emit({ event: 'tool_completed', data: { id: 'hotel-search', tool: 'search_hotels', result: { status: 'error' } } }));
+    expect(document.querySelector('.travel-hotel-skeletons')).toBeNull();
+  });
   it('does not initialize the assistant before the first submit', () => {
     render(<TravelAssistantPage runtime={readyRuntime} />);
 
@@ -1043,6 +1053,31 @@ describe('guest travel conversation lifecycle', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
 
     expect(client.sendMessage).toHaveBeenCalledWith('JFK to Lisbon next month');
+  });
+
+  it('follows a widget-originated traveler turn but does not pull the reader down for assistant-only updates', async () => {
+    let messages: Array<{ id: string; role: 'user' | 'assistant'; parts: Array<{ type: 'text'; text: string }> }> = [
+      { id: 'first-user', role: 'user', parts: [{ type: 'text', text: 'Plan Lisbon' }] },
+      { id: 'first-answer', role: 'assistant', parts: [{ type: 'text', text: 'Your trip widget' }] },
+    ];
+    assistantMock.useNoodleAssistant.mockImplementation(() => ({ client, messages, status: 'ready', error: undefined }));
+    const view = render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Plan Lisbon');
+    const end = await screen.findByTestId('conversation-end');
+    const scrollIntoView = vi.fn(); end.scrollIntoView = scrollIntoView;
+    vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(100);
+    vi.spyOn(window, 'scrollY', 'get').mockReturnValue(200);
+    vi.spyOn(document.documentElement, 'scrollHeight', 'get').mockReturnValue(2000);
+    fireEvent.scroll(window);
+    messages = [...messages, { id: 'widget-follow-up', role: 'user', parts: [{ type: 'text', text: 'Find flights to Lisbon' }] }];
+    view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+    scrollIntoView.mockClear();
+    fireEvent.scroll(window);
+    messages = [...messages, { id: 'second-answer', role: 'assistant', parts: [{ type: 'text', text: 'Where are you flying from?' }] }];
+    view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
+    act(() => resizeCallback?.([], {} as ResizeObserver));
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 
   it('preserves upward reading, follows near-end growth, and disconnects its observer', async () => {

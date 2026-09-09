@@ -61,7 +61,7 @@ export const demoHotelSearchInputSchema = z.object({
     .describe('Two-letter destination country code when destination is a city name'),
   checkInDate: calendarDateSchema.describe('Check-in date in YYYY-MM-DD format'),
   checkOutDate: calendarDateSchema.describe('Check-out date in YYYY-MM-DD format'),
-  adults: z.number().int().min(1).max(8).default(2),
+  adults: z.number().int().min(1).max(8).default(1),
   children: z.number().int().min(0).max(6).default(0),
   rooms: z.number().int().min(1).max(4).default(1),
   currency: demoCurrencySchema.default('CAD'),
