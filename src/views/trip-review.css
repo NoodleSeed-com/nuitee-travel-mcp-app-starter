@@ -25,6 +25,9 @@
 .wf-review .wf-review-experience{display:grid;grid-template-columns:86px minmax(0,1fr) auto;align-items:center;gap:15px}
 .wf-review .wf-review-thumbnail{height:86px;width:86px;border-radius:12px;overflow:hidden;background:linear-gradient(120deg,#147d83,#6cf)}
 .wf-review .wf-review-thumbnail img{width:100%;height:100%;object-fit:cover;display:block}
+.wf-review .wf-review-stay-thumbnail{display:grid;place-items:center;flex-shrink:0;background:var(--cc-surface-muted)}
+.wf-review .wf-review-stay-thumbnail>.cc-icon{width:24px;height:24px;color:var(--cc-muted)}
+.wf-review .wf-review-stay .wf-review-facts{align-items:center}
 .wf-review .wf-review-experience h3{margin:0 0 5px}
 .wf-review .wf-review-experience p{font-size:13px;color:var(--cc-muted);line-height:1.55;margin:0}
 .wf-review .wf-review-experience .wf-review-price strong{font-size:19px}
@@ -49,3 +52,4 @@
 .wf-review .wf-review-empty p{font-size:14px;color:var(--cc-muted)}
 .wf-review .wf-review-feedback{padding:24px}
 @container(max-width:640px){.wf-review .wf-review-header{padding:20px 18px 17px}.wf-review .wf-review-header h2{font-size:22px}.wf-review .wf-review-badge{font-size:10px;padding:6px 8px}.wf-review .wf-review-content{padding:0 17px 20px}.wf-review .wf-review-experience{grid-template-columns:64px minmax(0,1fr);gap:12px}.wf-review .wf-review-thumbnail{width:64px;height:80px}.wf-review .wf-review-experience>.wf-review-price{grid-column:2;text-align:left}.wf-review .wf-review-experience .wf-review-price strong{font-size:18px;display:inline}.wf-review .wf-review-experience .wf-review-price span{display:inline;margin-left:7px}.wf-review .wf-review-row{gap:12px;flex-wrap:wrap}.wf-review .wf-review-row>.wf-review-price{margin-left:32px;text-align:left}.wf-review .wf-review-footer>p{font-size:11px}}
+@container(max-width:640px){.wf-review .wf-review-stay .wf-review-row>.wf-review-price{margin-left:76px}}

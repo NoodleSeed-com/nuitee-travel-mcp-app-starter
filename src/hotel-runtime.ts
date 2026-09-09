@@ -287,6 +287,7 @@ export function runHotelGateway(
       dataSource: 'live_nuitee',
       providerOfferId: offerId,
       propertyName: name,
+      ...(hotel.imageUrl ? { imageUrl: hotel.imageUrl } : {}),
       city,
       checkInDate,
       checkOutDate,

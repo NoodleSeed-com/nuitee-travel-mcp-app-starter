@@ -24,6 +24,18 @@ const review: any = {
   planningContext: { destination: 'Lisbon', startDate: '2030-04-20', endDate: '2030-04-23', adults: 2, children: 0, currency: 'CAD', meetingArea: 'Belém marina meeting point' },
 };
 describe('trip planning review', () => {
+  const stay = { dataSource: 'live_nuitee', selectionId: `hsel_${'b'.repeat(32)}`, propertyName: 'Selected Lisbon Hotel', city: 'Lisbon', checkInDate: '2030-04-20', checkOutDate: '2030-04-23', nights: 3, rooms: 1, staySubtotal: { amount: 500, currency: 'CAD' } };
+  it('shows the selected stay photo with the existing review thumbnail geometry', () => {
+    const html = renderToStaticMarkup(<TripReviewView data={{ ...review, stay: { ...stay, imageUrl: 'https://static.cupid.travel/selected-hotel.jpg' } }} />);
+    expect(html).toContain('src="https://static.cupid.travel/selected-hotel.jpg"');
+    expect(html).toContain('referrerPolicy="no-referrer"');
+    expect(html).toContain('wf-review-stay-thumbnail');
+  });
+  it.each([undefined, 'https://untrusted.example/a.jpg', 'https://static.cupid.travel.evil.example/a.jpg', 'http://static.cupid.travel/a.jpg'])('keeps a readable stay with an icon when its photo is unusable: %s', imageUrl => {
+    const html = renderToStaticMarkup(<TripReviewView data={{ ...review, experiences: [], stay: { ...stay, imageUrl } }} />);
+    expect(html).toContain('Selected Lisbon Hotel');
+    expect(html).not.toContain('<img');
+  });
   it('continues from selected context without requesting another review', () => {
     const prompt = continuePlanningPrompt(review);
     expect(prompt).toContain('Lisbon');

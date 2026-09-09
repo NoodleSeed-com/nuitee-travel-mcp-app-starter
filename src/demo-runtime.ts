@@ -646,10 +646,15 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
     disclosure: 'Live Nuitee search price selected in this session; it still requires fare verification.',
   } : undefined;
   const stayDataSource = stay?.dataSource === 'live_nuitee' ? 'live_nuitee' : 'illustrative';
+  const stayImage = string(stay?.imageUrl);
+  const safeStayImage = stayImage && stayImage.length <= 2_048
+    && /^https:\/\/(?:snaphotelapi\.com|static\.cupid\.travel)\/[^\s\\]*$/i.test(stayImage)
+    ? stayImage : undefined;
   const stayReview = stay ? {
     dataSource: stayDataSource,
     selectionId: stay.selectionId,
     propertyName: stay.propertyName,
+    ...(safeStayImage ? { imageUrl: safeStayImage } : {}),
     city: stay.city,
     checkInDate: stay.checkInDate,
     checkOutDate: stay.checkOutDate,

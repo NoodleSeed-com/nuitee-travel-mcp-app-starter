@@ -17,6 +17,34 @@ const review = {
 let root: Root | undefined;
 afterEach(() => { root?.unmount(); root = undefined; document.body.innerHTML = ''; document.body.style.zoom = ''; });
 
+it('keeps the stay thumbnail, fallback and price aligned at desktop, mobile and zoom', async () => {
+  const stayReview = { ...review, experiences: [], missing: ['flight', 'experiences'], stay: {
+    dataSource: 'live_nuitee', selectionId: `hsel_${'b'.repeat(32)}`,
+    propertyName: 'Selected Lisbon Hotel', city: 'Lisbon', checkInDate: '2026-09-18', checkOutDate: '2026-09-21', nights: 3, rooms: 1,
+    staySubtotal: { amount: 519.23, currency: 'CAD' }, imageUrl: 'https://static.cupid.travel/browser-fixture.jpg',
+  } } as DemoTripReview;
+  const node = document.createElement('div'); document.body.append(node); root = createRoot(node);
+  root.render(<TripReviewView data={stayReview} onSuggest={() => {}} onContinue={() => {}} />);
+  await expect.element(page.getByRole('heading', { name: 'Selected Lisbon Hotel' })).toBeVisible();
+  const photo = document.querySelector('.wf-review-stay-thumbnail img')!;
+  expect(photo.getAttribute('referrerpolicy')).toBe('no-referrer');
+  photo.dispatchEvent(new Event('error'));
+  await expect.poll(() => document.querySelector('.wf-review-stay-thumbnail img')).toBeNull();
+  expect(document.querySelector('.wf-review-stay-thumbnail .cc-icon')).not.toBeNull();
+  for (const [width, zoom] of [[882, 1], [366, 1], [320, 1], [640, 2]] as const) {
+    await page.viewport(width, 1100);
+    document.body.style.zoom = String(zoom);
+    await expect.poll(() => document.querySelector('.wf-review-stay-thumbnail')!.getBoundingClientRect().width / zoom).toBe(width / zoom > 640 ? 86 : 64);
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width);
+    const facts = document.querySelector('.wf-review-stay h3')!.getBoundingClientRect();
+    const price = document.querySelector('.wf-review-stay .wf-review-price')!.getBoundingClientRect();
+    if (width / zoom <= 640) expect(Math.abs(facts.left - price.left)).toBeLessThan(1);
+    await page.screenshot({ path: `__screenshots__/stay-review-thumbnail-${width}-${zoom}.png`, fullPage: true });
+  }
+  root.render(<TripReviewView data={{ ...stayReview, stay: { ...stayReview.stay!, imageUrl: 'https://static.cupid.travel/browser-fixture-changed.jpg' } }} />);
+  await expect.poll(() => document.querySelector('.wf-review-stay-thumbnail img')?.getAttribute('src')).toBe('https://static.cupid.travel/browser-fixture-changed.jpg');
+});
+
 it('keeps breathing room between flight-only suggestions and the date note at narrow widths and zoom', async () => {
   const flightReview = {
     ...review, experiences: [], missing: ['stay', 'experiences'],

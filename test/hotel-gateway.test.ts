@@ -1,7 +1,9 @@
 import { runInNewContext } from 'node:vm';
 import { describe, expect, it, vi } from 'vitest';
-import { demoHotelSearchOutputSchema, demoHotelSelectionRecordSchema } from '../src/demo-schemas.js';
+import { demoHotelSearchOutputSchema, demoHotelSelectionRecordSchema, demoTripReviewSchema } from '../src/demo-schemas.js';
 import { runHotelGateway } from '../src/hotel-runtime.js';
+import { runDemoGateway } from '../src/demo-runtime.js';
+import { getSyntheticLoyaltyOverview } from '../src/demo-fixtures.js';
 
 const search = {
   destination: 'Lisbon',
@@ -58,6 +60,11 @@ describe('Nuitee hotel gateway', () => {
     const output = runHotelGateway({ search }, { callOperation: () => ({ raw }) });
     expect(output.result).toMatchObject({ status: 'success', hotels: [{ imageUrl: `${origin}/fixture-thumbnail.jpg` }] });
     expect(demoHotelSearchOutputSchema.safeParse(output.result).success).toBe(true);
+    const records = (output.records as unknown[]).map(value => demoHotelSelectionRecordSchema.parse(value));
+    expect(records[0]).toHaveProperty('imageUrl', `${origin}/fixture-thumbnail.jpg`);
+    const review = runDemoGateway({ kind: 'review', flightState: {}, hotelState: { records, activeSelectionId: records[0]!.selectionId }, loyalty: getSyntheticLoyaltyOverview() });
+    expect(demoTripReviewSchema.parse(review.review).stay).toHaveProperty('imageUrl', `${origin}/fixture-thumbnail.jpg`);
+    expect(JSON.stringify(review)).not.toContain('provider-offer-must-stay-private');
   });
 
   it.each([
