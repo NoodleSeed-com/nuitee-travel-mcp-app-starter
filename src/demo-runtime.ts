@@ -678,13 +678,12 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
   } : selectedExperience && experienceContext ? {
     source: 'experience', destination: selectedExperience.city, countryCode: selectedExperience.countryCode,
     startDate: experienceContext.startDate, endDate: experienceContext.endDate, dateBasis: 'experience_search',
-    adults: experienceContext.adults, children: experienceContext.children, currency: experienceContext.currency,
+    currency: experienceContext.currency,
     meetingArea: selectedExperience.meetingArea,
   } : flightContext ? {
     source: 'flight', destination: flightContext.destination, origin: flightContext.origin,
     startDate: flightContext.departureDate, ...(flightContext.returnDate ? { endDate: flightContext.returnDate } : {}),
-    dateBasis: 'flight_departure', adults: flightContext.adults, children: flightContext.children,
-    infants: flightContext.infants, currency: flightContext.currency,
+    dateBasis: 'flight_departure', currency: flightContext.currency,
     ...(record(flightContext.activityDates) ? { activityDates: flightContext.activityDates } : {}),
   } : undefined;
   const canonicalDestination = (value: unknown) => {
@@ -695,13 +694,15 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
     && canonicalDestination(flightContext.destination) === canonicalDestination(basePlanningContext.destination)
     && flightContext.departureDate === basePlanningContext.startDate && flightContext.returnDate === basePlanningContext.endDate
     ? flightContext : undefined;
-  const matchingExperience = experiences.find((entry) => {
+  const matchingExperiences = experiences.filter((entry) => {
     const context = record(entry.searchContext);
     return basePlanningContext && canonicalDestination(record(entry.experience)?.city) === canonicalDestination(basePlanningContext.destination)
       && context?.startDate === basePlanningContext.startDate && context?.endDate === basePlanningContext.endDate;
   });
-  const matchingExperienceContext = record(matchingExperience?.searchContext);
-  const parties = [staySearchContext, matchingFlight, matchingExperienceContext].filter((entry): entry is Record<string, unknown> => Boolean(entry));
+  // Party fields are added only after all matching selections agree. A flight-only
+  // plan retains its own party even when no return date is available yet.
+  const parties = [staySearchContext, basePlanningContext?.source === 'flight' ? flightContext : matchingFlight,
+    ...matchingExperiences.map(entry => record(entry.searchContext))].filter((entry): entry is Record<string, unknown> => Boolean(entry));
   const conflictingParty = parties.some(entry => entry.adults !== parties[0]?.adults || entry.children !== parties[0]?.children
     || (number(entry.infants) ?? 0) !== (number(parties[0]?.infants) ?? 0));
   const partyContext = conflictingParty ? undefined : parties[0];
@@ -722,9 +723,9 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
     review: {
       status: ready ? 'ready' : 'incomplete',
       dataSource: 'illustrative',
-      disclosure: 'Selected items are a conversation plan, not reservations. Experiences and rewards are illustrative; each flight and stay identifies its own source. Prices remain separate. Nothing was booked, paid, or redeemed.',
+      disclosure: 'Selected items are a conversation plan, not reservations. Experiences and rewards are illustrative; flight and stay prices identify their source. Any combined planning estimate is not a quote or amount to pay. Nothing was booked, paid, or redeemed.',
       fallback: ready
-        ? `Your selected trip is ready to review: ${[...(flight ? ['flight'] : []), ...(stay ? ['stay'] : []), ...(experiences.length ? [`${experiences.length} fictional experience${experiences.length === 1 ? '' : 's'}`] : [])].join(', ')}. Other components are optional; prices stay separate and nothing is reserved.${notes.length ? ` ${notes[0]}` : ''}`
+        ? `Your selected trip is ready to review: ${[...(flight ? ['flight'] : []), ...(stay ? ['stay'] : []), ...(experiences.length ? [`${experiences.length} fictional experience${experiences.length === 1 ? '' : 's'}`] : [])].join(', ')}. Other components are optional; prices keep their own sources and nothing is reserved.${notes.length ? ` ${notes[0]}` : ''}`
         : `No current trip selections are saved. Choose a flight, stay, or experience to start a plan.${notes.length ? ` ${notes[0]}` : ''}`,
       ...(flightReview ? { flight: flightReview } : {}),
       ...(stayReview ? { stay: stayReview } : {}),

@@ -1,8 +1,9 @@
 import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import { demoGatewayOutputSchema } from '../src/demo-connectors.js';
-import { getSyntheticLoyaltyOverview } from '../src/demo-fixtures.js';
+import { compareSyntheticTravelInsurance, getSyntheticLoyaltyOverview } from '../src/demo-fixtures.js';
 import { runDemoGateway } from '../src/demo-runtime.js';
+import { runTripProtection } from '../src/trip-protection.js';
 import {
   demoAddExperienceInputSchema,
   demoExperienceSelectionStateSchema,
@@ -193,7 +194,7 @@ describe('server-owned experience planning selections', () => {
     const flight = {
       selectionId: 'sel_0123456789abcdef0123456789abcdef', offerId: 'private-provider-id', searchId: 'search_test',
       originalTotal: 400, currency: 'EUR', expiresAt: '2030-04-01T12:15:00.000Z',
-      planningContext: { origin: 'YYZ', destination: 'LIS', departureDate: '2030-04-20', adults: 2, children: 0, infants: 0, currency: 'EUR' },
+      planningContext: { origin: 'YYZ', destination: 'LIS', departureDate: '2030-04-20', adults: 2, children: 0, infants: 1, currency: 'EUR' },
     };
     const reviewed = demoGatewayOutputSchema.parse(runDemoGateway({
       kind: 'review', hotelState: undefined,
@@ -204,6 +205,7 @@ describe('server-owned experience planning selections', () => {
     expect(reviewed.flight).toMatchObject({ origin: 'YYZ', destination: 'LIS' });
     expect(reviewed.planningContext).toMatchObject({
       source: 'flight', destination: 'LIS', origin: 'YYZ', startDate: '2030-04-20', dateBasis: 'flight_departure',
+      adults: 2, children: 0, infants: 1,
     });
     expect(reviewed.planningContext).not.toHaveProperty('endDate');
     expect(reviewed.notes?.join(' ')).toContain('Confirm local arrival');
@@ -271,6 +273,55 @@ describe('server-owned experience planning selections', () => {
     expect(review('hsearch_ffffffffffffffffffffffffffffffff').planningContext).not.toHaveProperty('adults');
     expect(review(stay.searchId, true).planningContext).not.toHaveProperty('adults');
     expect(review(stay.searchId, true).notes).toContain('Selected components have different participant details. Confirm who is joining the next part of the trip.');
+  });
+
+  it.each([
+    ['experience', { adults: 3 }], ['experience', { children: 1 }], ['experience', { infants: 1 }],
+    ['stay', { adults: 3 }], ['stay', { children: 1 }], ['stay', { infants: 1 }],
+  ] as const)('clears conflicting participant counts for a %s-based plan: %j', (source, difference) => {
+    const { added } = firstSelection();
+    const flight = {
+      selectionId: 'sel_0123456789abcdef0123456789abcdef', originalTotal: 400, currency: 'EUR',
+      planningContext: { origin: 'YYZ', destination: 'LIS', departureDate: searchContext.startDate,
+        returnDate: searchContext.endDate, adults: 2, children: 0, infants: 0, currency: 'EUR', ...difference },
+    };
+    const stay = {
+      selectionId: 'hsel_0123456789abcdef0123456789abcdef', searchId: 'hsearch_0123456789abcdef0123456789abcdef',
+      dataSource: 'illustrative', propertyName: 'Fictional Lisbon Studio', city: 'Lisbon',
+      checkInDate: searchContext.startDate, checkOutDate: searchContext.endDate, nights: 3, rooms: 1,
+      staySubtotal: { amount: 240, currency: 'EUR' },
+    };
+    const reviewed = demoGatewayOutputSchema.parse(runDemoGateway({
+      kind: 'review', requestedAt, experienceReadOk: true, experienceState: added.nextExperienceState,
+      flightState: { records: [flight], activeSelectionId: flight.selectionId },
+      hotelState: source === 'stay' ? { records: [stay], activeSelectionId: stay.selectionId,
+        searchResult: { searchId: stay.searchId, searchContext: { adults: 2, children: 0 } } } : undefined,
+      aliases: DEMO_EXPERIENCE_ALIASES, loyalty: getSyntheticLoyaltyOverview(),
+    })).review!;
+    expect(reviewed.planningContext).toMatchObject({ source, destination: 'Lisbon', origin: 'YYZ' });
+    for (const field of ['adults', 'children', 'infants']) expect(reviewed.planningContext).not.toHaveProperty(field);
+    expect(reviewed.notes).toContain('Selected components have different participant details. Confirm who is joining the next part of the trip.');
+    expect(reviewed.experiences[0]!.searchContext.adults).toBe(2);
+    const comparison = compareSyntheticTravelInsurance({ destination: 'Lisbon', departureDate: searchContext.startDate,
+      returnDate: searchContext.endDate, adults: 2, children: 0, residenceCountry: 'CA', currency: 'EUR' });
+    expect(runTripProtection({ kind: 'prepare', review: reviewed, comparison, state: {},
+      readOk: true, tripReadOk: true, requestedAt })).toMatchObject({ canSelect: false, mayWrite: false });
+  });
+
+  it('checks every matching experience party instead of retaining the first selection’s counts', () => {
+    const first = firstSelection().added.experienceSelection!.selection!;
+    const searched = search(undefined, { adults: 3 });
+    const experience = searched.experienceResult!.experiences[0]!;
+    const second = add(searched.nextExperienceState, experience.experienceId, experience.slots[0]!.slotId).experienceSelection!.selection!;
+    const reviewed = demoGatewayOutputSchema.parse(runDemoGateway({
+      kind: 'review', requestedAt, flightState: undefined, hotelState: undefined, experienceReadOk: true,
+      experienceState: { updatedAt: requestedAt, records: [], selected: [first, second] },
+      aliases: DEMO_EXPERIENCE_ALIASES, loyalty: getSyntheticLoyaltyOverview(),
+    })).review!;
+    expect(reviewed.planningContext).toMatchObject({ source: 'experience', destination: 'Lisbon' });
+    for (const field of ['adults', 'children', 'infants']) expect(reviewed.planningContext).not.toHaveProperty(field);
+    expect(reviewed.notes).toContain('Selected components have different participant details. Confirm who is joining the next part of the trip.');
+    expect(reviewed.experiences.map(selection => selection.searchContext.adults)).toEqual([2, 3]);
   });
 
   it('bounds stored choices and stays self-contained in serialized compute', () => {

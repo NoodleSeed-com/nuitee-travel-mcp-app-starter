@@ -48,7 +48,7 @@ it('loads fresh trip state in the same widget without a chat message, with prese
   await expect.element(page.getByRole('button', { name: 'Review my trip' })).toHaveFocus();
   bridge.call.mockResolvedValue({ structuredContent: { ...review, flight: { ...review.flight, searchPrice: { total: 1350, currency: 'CAD' } } } });
   await page.getByRole('button', { name: 'Review my trip' }).click();
-  await expect.element(page.getByText('$1,350.00', { exact: true })).toBeVisible();
+  await expect.element(page.getByRole('region', { name: 'Selected flight' }).getByText('$1,350.00', { exact: true })).toBeVisible();
   expect(bridge.call).toHaveBeenCalledTimes(3);
 });
 
@@ -63,6 +63,16 @@ it('shows loading, rejects malformed results and retries without inventing selec
   bridge.call.mockResolvedValueOnce({ structuredContent: review });
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect.element(page.getByRole('heading', { name: 'Your Tokyo plan' })).toBeVisible();
+  expect(bridge.send).not.toHaveBeenCalled();
+});
+
+it('keeps an explicitly unpriced flight visible in the actual inline review without inventing a total', async () => {
+  bridge.call.mockResolvedValue({ structuredContent: { ...review, flight: { ...review.flight, searchPrice: null } } });
+  mount();
+  await page.getByRole('button', { name: 'Review my trip' }).click();
+  await expect.element(page.getByRole('heading', { name: 'Your selected flight' })).toBeVisible();
+  await expect.element(page.getByText('Price unavailable', { exact: true })).toBeVisible();
+  await expect.element(page.getByText('Total incomplete', { exact: true })).toBeVisible();
   expect(bridge.send).not.toHaveBeenCalled();
 });
 

@@ -13,7 +13,7 @@ import {
 import { createDemoCapabilities } from './demo-capabilities.js';
 import { travelCompanionDemoConfig } from './demo-config.js';
 import { demoGateway } from './demo-connectors.js';
-import { demoHomeOutputSchema, demoHotelSelectionStateSchema, demoExperienceSelectionStateSchema } from './demo-schemas.js';
+import { demoHomeOutputSchema, demoHotelSelectionStateSchema, demoExperienceSelectionStateSchema, tripProtectionStateSchema } from './demo-schemas.js';
 import { noodleState, nuiteeGateway, nuiteeHttp } from './flight-connectors.js';
 import { nuiteeHotelsGateway, nuiteeHotelsHttp } from './hotel-connectors.js';
 import {
@@ -167,7 +167,7 @@ const travelAgentGuide = {
 
 const travelCompanionDemoAgentGuide = {
   description:
-    'Guide one agent-led conversation across current flights and hotels, fictional Lisbon and Tokyo experience discovery, illustrative travel-protection comparisons, and illustrative rewards while keeping every source boundary visible.',
+    'Guide one agent-led conversation across current flights and hotels, fictional Lisbon and Tokyo experience discovery, illustrative travel-protection comparisons and planning choices, source-aware trip estimates, and illustrative rewards while keeping every source boundary visible.',
   useWhen: [
     ...travelAgentGuide.useWhen,
     'A traveler describes a broad trip goal without choosing a travel capability.',
@@ -243,19 +243,19 @@ const travelCompanionDemoAgentGuide = {
         {
           capability: { kind: 'tool' as const, name: 'compare_reward_flights' },
           guidance:
-            'Call this tool immediately when the traveler asks for flights with points, flights they could book with points, reward flights, or what “these points” could cover. Do not refuse a “book with points” request solely because redemption is unavailable; interpret it as a request for an illustrative comparison, then state that actual booking and redemption are unavailable. Reuse the fixed illustrative profile balance of 42,500 points unless the traveler explicitly supplies another points budget. A missing route or date is valid: show flexible illustrative ideas from the profile’s Toronto starting point rather than asking a question or refusing. If a route or date is supplied, preserve it. State that options, points, taxes, and availability are illustrative and that no points can be applied or redeemed.',
+            'Call this tool immediately when the traveler asks for flights with points, flights they could book with points, reward flights, or what “these points” could cover. Do not refuse a “book with points” request solely because redemption is unavailable; interpret it as a request for an illustrative comparison, then state that actual booking and redemption are unavailable. Reuse the fixed illustrative profile balance of 42,500 points unless the traveler explicitly supplies another points budget. A missing route or date is valid: show flexible illustrative ideas from the profile’s Toronto starting point rather than asking a question or refusing. If a route or date is supplied, preserve it. State that options, points, taxes, and availability are illustrative and that no points can be applied or redeemed. Inline Explore points opens these separate reward examples without changing the cash flight selection or trip estimate. Within the sample points budget does not mean the selected cash fare is eligible or that award seats exist. If profile data is unavailable, label any example balance as a sample, never the traveler’s balance.',
         },
       ],
     },
     {
       id: 'review_selections',
       title: 'Review selected travel',
-      intent: 'Review whichever flight, stay, and experiences the traveler selected, with each component’s source and price kept clear.',
+      intent: 'Review selected travel, its source-aware planning estimate, and any acknowledged optional protection concept without implying a bookable package.',
       steps: [
         {
           capability: { kind: 'tool' as const, name: 'review_trip' },
           guidance:
-            'Call when the traveler explicitly asks to review their trip or selected choices, including experience-only, flight-only, stay-only, and mixed plans. Widget Review my trip buttons read the plan directly and replace their own screen without starting a model turn. Continue planning is not a request for another review: use the supplied widget tripPlanning context to suggest a relevant next step, and do not call review_trip or repeat the plan card merely to continue planning or search a missing component. Do not require a flight or hotel before showing the plan. Read the server-owned selections; keep component prices separately sourced, and never present a package total or imply booking, payment, points application, or redemption. Treat missing components as optional next steps. Keep suggestions relevant to planningContext: find stays near the selected experience meeting area, experiences around the chosen stay, and travel for the selected destination/date window. A flight_departure date basis is not a confirmed local arrival/check-in date: clarify arrival timing or missing return/end dates before booking-specific assumptions. Reuse known origin/party/currency and ask only what the next search needs. Do not claim measured proximity without supporting location evidence. Let the review widget carry the details instead of repeating every row in prose.',
+            'Call when the traveler explicitly asks to review their trip or selected choices, including experience-only, flight-only, stay-only, and mixed plans. Widget Review my trip buttons read the plan directly and replace their own screen without starting a model turn. Continue planning is not a request for another review: use the supplied widget tripPlanning context to suggest a relevant next step, and do not call review_trip or repeat the plan card merely to continue planning or search a missing component. Do not require a flight or hotel before showing the plan. Read server-owned selections and the returned planningEstimate. A complete same-currency value may be described only as a trip planning estimate, not a package quote or amount to pay. Preserve the provider-search versus fictional-item subtotals. For mixed currencies or incomplete prices, show the returned component prices without combining or treating unknowns as zero. Do not apply points, imply booking or payment, or calculate a redemption discount. An acknowledged optional protection concept is a planning choice only, never insurance in force. Treat missing components as optional next steps. Keep suggestions relevant to planningContext: find stays near the selected experience meeting area, experiences around the chosen stay, and travel for the selected destination/date window. A flight_departure date basis is not a confirmed local arrival/check-in date: clarify arrival timing or missing return/end dates before booking-specific assumptions. Reuse known origin/party/currency and ask only what the next search needs. Do not claim measured proximity without supporting location evidence. Let the review widget carry the details instead of repeating every row in prose.',
         },
       ],
     },
@@ -267,7 +267,7 @@ const travelCompanionDemoAgentGuide = {
         {
           capability: { kind: 'tool' as const, name: 'compare_travel_insurance' },
           guidance:
-            'Reuse the destination, exact trip dates, and traveler counts already present in the conversation. Resolve a usable relative date before calling the tool. If residence or currency is omitted, use the tool defaults and state them as illustrative assumptions rather than confirmed customer facts. Present all three concepts neutrally; never label one recommended or suitable. Do not collect health history, diagnoses, exact dates of birth, passport details, payment information, or other sensitive data. Explain that no insurer, eligibility, availability, or policy wording was checked and that nothing can be purchased.',
+            'Reuse the destination, exact trip dates, and traveler counts already present in the conversation. Resolve a usable relative date before calling the tool. If residence or currency is omitted, use the tool defaults and state them as illustrative assumptions rather than confirmed customer facts. Present all three concepts neutrally; never label one recommended or suitable. Do not collect health history, diagnoses, exact dates of birth, passport details, payment information, or other sensitive data. Explain that no insurer, eligibility, availability, or policy wording was checked and that nothing can be purchased. The review widget can open an inline comparison and offers explicit Add to plan (demo) and Remove actions. Say a concept is added or removed only after the app confirms its caller-scoped planning-state update. A comparison alone never selects a concept. Do not claim a failed, stale or expired selection succeeded; do not collect extra sensitive details to make the demo work. Known unsupported dates, party or currency must not be silently replaced with supported values.',
         },
       ],
     },
@@ -287,7 +287,9 @@ const travelCompanionDemoAgentGuide = {
     'Travel-protection comparisons are illustrative concepts only. Never describe them as an insurance quote, policy, recommendation, eligibility decision, coverage guarantee, or purchasable product.',
     'Experience results for Lisbon and Tokyo are fictional Wayfare demo content. An acknowledged add stores a current-conversation planning selection only. Never describe it as live operator inventory, held admission, persistent account storage, or a bookable reservation; unsupported cities remain a normal empty catalog result.',
     'Never collect health history, diagnoses, exact dates of birth, passport details, or payment information for an illustrative travel-protection comparison.',
-    'Never combine separately sourced flight and hotel prices into a factual or bookable package total.',
+    'Never combine separately sourced flight and hotel prices into a factual or bookable package total. Use only the returned same-currency planning estimate, explicitly distinguishing provider search prices from fictional items. Do not invent exchange rates, missing prices or fee inclusion.',
+    'Points comparisons never discount the selected cash fare or planning estimate. Sample-budget sufficiency is not verified reward eligibility or availability.',
+    'A saved protection concept is a short-lived conversation planning preference, not a policy, quote, purchase or coverage. The traveler is not insured by adding it. Expired or changed-trip concepts must not appear as current choices.',
   ],
   examples: [
     ...travelAgentGuide.examples,
@@ -723,6 +725,13 @@ export function createTravelServer(
                 ttlSeconds: 1_800,
                 schema: demoExperienceSelectionStateSchema,
               },
+              protection_selections: {
+                kind: 'selection' as const,
+                scope: 'caller' as const,
+                version: 'v1',
+                ttlSeconds: 1_800,
+                schema: tripProtectionStateSchema,
+              },
             } : {}),
           },
         },
@@ -771,6 +780,13 @@ export function createTravelServer(
                 version: 'v1',
                 ttlSeconds: 1_800,
                 schema: demoExperienceSelectionStateSchema,
+              },
+              protection_selections: {
+                kind: 'selection' as const,
+                scope: 'caller' as const,
+                version: 'v1',
+                ttlSeconds: 1_800,
+                schema: tripProtectionStateSchema,
               },
             },
           },

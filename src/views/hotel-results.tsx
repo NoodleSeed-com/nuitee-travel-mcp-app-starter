@@ -193,6 +193,7 @@ export function HotelSelectionJourney({ toolName = 'search_hotels', toolInfo, on
       content: [{ type: 'text', text: chosen ? `Selected stay: ${chosen.name}. Nothing booked, held, or paid.` : 'Hotel options remain unselected.' }],
       structuredContent: { hotelSearchId: result.searchId, hotelSearchContext: result.searchContext,
         ...(tripReview ? { tripPlanning: { ...tripPlanningSnapshot(tripReview),
+          ...(chosen && chosen.selectionId !== tripReview.stay?.selectionId ? { protection: null, planningEstimate: null, estimateStatus: 'Refresh trip review for the updated estimate.' } : {}),
           staySelectionId: chosen?.selectionId ?? tripReview.stay?.selectionId ?? null,
           missing: tripReview.missing.filter(component => component !== 'stay' || !chosen),
         } } : {}), selectedHotel: chosen ? { selectionId: chosen.selectionId, name: chosen.name } : null,

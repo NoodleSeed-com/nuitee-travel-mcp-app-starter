@@ -53,5 +53,18 @@
 .wf-review .wf-review-empty h3{font-size:18px;margin-bottom:12px}
 .wf-review .wf-review-empty p{font-size:14px;color:var(--cc-muted)}
 .wf-review .wf-review-feedback{padding:24px}
+.wf-review .wf-review-optional{display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:start;column-gap:12px;border-top:1px solid var(--cc-border);padding:23px 0}
+.wf-review .wf-review-optional-icon{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--cc-surface-muted);color:#147d83}
+.wf-review .wf-review-optional-icon svg{width:20px;height:20px;margin:0}
+.wf-review .wf-review-optional-copy h3{font-size:16px;margin:0 0 6px}
+.wf-review .wf-review-optional-copy p{font-size:13px;color:var(--cc-muted);margin:3px 0 0}
+.wf-review .wf-review-optional-copy strong{color:var(--cc-text);font-weight:550}
+.wf-review .wf-review-optional-copy small{display:block;font-size:11px;color:var(--cc-muted);margin-top:9px;max-width:470px}
+.wf-review .wf-review-optional .wf-review-suggestion{gap:8px;padding:10px 16px}
+.wf-review .wf-review-optional button svg{width:17px;height:17px;margin:0;flex-shrink:0}
+.wf-review .wf-review-optional-actions{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.wf-review button.wf-review-remove{display:flex;align-items:center;justify-content:center;gap:5px;min-height:44px;padding:8px 12px;border:0;border-radius:999px;background:transparent;color:var(--cc-muted);font:400 12px/1.4 'Host Grotesk Variable',sans-serif;cursor:pointer}
+@container(max-width:760px){.wf-review .wf-review-optional{grid-template-columns:36px minmax(0,1fr)}.wf-review .wf-review-optional>.wf-review-suggestion,.wf-review .wf-review-optional-actions{grid-column:2;justify-self:start;margin-top:14px;align-items:flex-start}.wf-review .wf-review-optional-actions{flex-direction:row;align-items:center;flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){.wf-review *{scroll-behavior:auto!important}}
 @container(max-width:640px){.wf-review .wf-review-header{padding:20px 18px 17px}.wf-review .wf-review-header h2{font-size:22px}.wf-review .wf-review-badge{font-size:10px;padding:6px 8px}.wf-review .wf-review-content{padding:0 17px 20px}.wf-review .wf-review-experience{grid-template-columns:64px minmax(0,1fr);gap:12px}.wf-review .wf-review-thumbnail{width:64px;height:80px}.wf-review .wf-review-experience>.wf-review-price{grid-column:2;text-align:left}.wf-review .wf-review-experience .wf-review-price strong{font-size:18px;display:inline}.wf-review .wf-review-experience .wf-review-price span{display:inline;margin-left:7px}.wf-review .wf-review-row{gap:12px;flex-wrap:wrap}.wf-review .wf-review-row>.wf-review-price{margin-left:32px;text-align:left}.wf-review .wf-review-footer>p{font-size:11px}}
 @container(max-width:640px){.wf-review .wf-review-stay .wf-review-row>.wf-review-price,.wf-review .wf-review-flight .wf-review-row>.wf-review-price{margin-left:76px}}
