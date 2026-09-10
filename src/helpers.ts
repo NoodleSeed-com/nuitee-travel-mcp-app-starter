@@ -20,6 +20,7 @@ export const {
   useBranding,
   useCallTool,
   useLayout,
+  useOpenExternal,
   useRequestDisplayMode,
   useSendFollowUpMessage,
   useToolInfo,

@@ -1,5 +1,5 @@
 export type TripEstimateItem = {
-  component: 'flight' | 'stay' | 'experience' | 'protection';
+  component: 'flight' | 'stay' | 'experience' | 'protection' | 'car';
   label: string;
   source: 'provider_search' | 'fictional';
   currency?: string;
@@ -45,6 +45,7 @@ export function tripPlanningEstimate(input: { review: unknown; protection?: unkn
     append('experience', typeof title === 'string' && title.length <= 100 ? title : 'Experience', 'fictional', record(selection)?.totalPrice, 'amountMinor', true);
   }
   const protection = record(input.protection ?? review.protection);
+  if (review.car !== undefined) append('car', 'Car rental', 'fictional', record(review.car)?.totalPrice, 'amount');
   if (protection) append('protection', 'Protection', 'fictional', record(protection.plan)?.illustrativePrice, 'amount');
   if (!items.length) return { status: 'empty', items };
   if (items.some(item => item.amountMinor === undefined)) return { status: 'incomplete', items };

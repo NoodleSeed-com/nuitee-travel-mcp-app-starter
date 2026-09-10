@@ -13,6 +13,8 @@ import {
 import { createDemoCapabilities } from './demo-capabilities.js';
 import { travelCompanionDemoConfig } from './demo-config.js';
 import { demoGateway } from './demo-connectors.js';
+import { carGateway } from './car-connectors.js';
+import { carStateSchema } from './car-schemas.js';
 import { demoHomeOutputSchema, demoHotelSelectionStateSchema, demoExperienceSelectionStateSchema, tripProtectionStateSchema } from './demo-schemas.js';
 import { noodleState, nuiteeGateway, nuiteeHttp } from './flight-connectors.js';
 import { nuiteeHotelsGateway, nuiteeHotelsHttp } from './hotel-connectors.js';
@@ -169,6 +171,7 @@ const travelCompanionDemoAgentGuide = {
   description:
     'Guide one agent-led conversation across current flights and hotels, fictional Lisbon and Tokyo experience discovery, illustrative travel-protection comparisons and planning choices, source-aware trip estimates, and illustrative rewards while keeping every source boundary visible.',
   useWhen: [
+    'A traveler wants to browse, compare or add a fictional rental-car concept to the trip, including a named model.',
     ...travelAgentGuide.useWhen,
     'A traveler describes a broad trip goal without choosing a travel capability.',
     'A traveler wants to continue a trip using route, dates, travelers, preferences, or selections already established in the conversation.',
@@ -179,6 +182,15 @@ const travelCompanionDemoAgentGuide = {
     'A traveler wants fictional experience ideas for Lisbon or Tokyo, or asks whether the bounded demo catalog supports another destination.',
   ],
   workflows: [
+    {
+      id: 'discover_demo_cars',
+      title: 'Explore cars for the trip plan',
+      intent: 'Compare fictional car concepts and let the traveler explicitly add one without claiming rental inventory or booking.',
+      steps: [{
+        capability: { kind: 'tool' as const, name: 'search_cars' },
+        guidance: 'Reuse the selected trip or conversation destination, dates, traveler count and currency. Search immediately without a repeated questionnaire. Resolve next week to the same local weekday seven days later. Omitted dates may browse seven days from today for three rental days and one adult, with visible adjustable assumptions; explicit trip dates always win. The demo catalog supports Lisbon and Tokyo only. Use carName only for a model the traveler named: one match opens details, ambiguous names show matches. Do not substitute an unrelated model. A request to add a named car opens its details with Add car to my trip; selection is performed only by that explicit widget action. Search alone never adds or reserves a car. Keep the narration brief and let the widget show the carousel, photos, sample price and rental terms. No local inventory, exact model, driver eligibility, pickup appointment or rental coverage has been checked. If the widget is unavailable, describe returned choices and explain that selection requires the widget.',
+      }],
+    },
     ...travelAgentGuide.workflows,
     {
       id: 'discover_experiences',
@@ -255,7 +267,7 @@ const travelCompanionDemoAgentGuide = {
         {
           capability: { kind: 'tool' as const, name: 'review_trip' },
           guidance:
-            'Call when the traveler explicitly asks to review their trip or selected choices, including experience-only, flight-only, stay-only, and mixed plans. Widget Review my trip buttons read the plan directly and replace their own screen without starting a model turn. Continue planning is not a request for another review: use the supplied widget tripPlanning context to suggest a relevant next step, and do not call review_trip or repeat the plan card merely to continue planning or search a missing component. Do not require a flight or hotel before showing the plan. Read server-owned selections and the returned planningEstimate. A complete same-currency value may be described only as a trip planning estimate, not a package quote or amount to pay. Preserve the provider-search versus fictional-item subtotals. For mixed currencies or incomplete prices, show the returned component prices without combining or treating unknowns as zero. Do not apply points, imply booking or payment, or calculate a redemption discount. An acknowledged optional protection concept is a planning choice only, never insurance in force. Treat missing components as optional next steps. Keep suggestions relevant to planningContext: find stays near the selected experience meeting area, experiences around the chosen stay, and travel for the selected destination/date window. A flight_departure date basis is not a confirmed local arrival/check-in date: clarify arrival timing or missing return/end dates before booking-specific assumptions. Reuse known origin/party/currency and ask only what the next search needs. Do not claim measured proximity without supporting location evidence. Let the review widget carry the details instead of repeating every row in prose.',
+            'Call when the traveler explicitly asks to review their trip or selected choices, including car-only, experience-only, flight-only, stay-only, and mixed plans. Widget Review my trip buttons read the plan directly and replace their own screen without starting a model turn. Continue planning is not a request for another review: use the supplied widget tripPlanning context to suggest a relevant next step, and do not call review_trip or repeat the plan card merely to continue planning or search a missing component. Do not require a flight or hotel before showing the plan. Read server-owned selections and the returned planningEstimate. A complete same-currency value may be described only as a trip planning estimate, not a package quote or amount to pay. Preserve the provider-search versus fictional-item subtotals. For mixed currencies or incomplete prices, show the returned component prices without combining or treating unknowns as zero. Do not apply points, imply booking or payment, or calculate a redemption discount. An acknowledged optional protection concept is a planning choice only, never insurance in force. Treat missing components as optional next steps. Keep suggestions relevant to planningContext: find stays near the selected experience meeting area, experiences around the chosen stay, and travel for the selected destination/date window. A flight_departure date basis is not a confirmed local arrival/check-in date: clarify arrival timing or missing return/end dates before booking-specific assumptions. Reuse known origin/party/currency and ask only what the next search needs. Do not claim measured proximity without supporting location evidence. Let the review widget carry the details instead of repeating every row in prose.',
         },
       ],
     },
@@ -273,6 +285,7 @@ const travelCompanionDemoAgentGuide = {
     },
   ],
   boundaries: [
+    'Car rental is a fictional planning fleet. Add, replace and remove require an acknowledged widget selection; no booking, payment, licence check, local availability, guaranteed trim, points redemption or rental damage/liability coverage is provided. Car pickup and return dates are browsing assumptions, not confirmed flight arrival or hotel dates. Preserve other trip selections. Expired references must be refreshed rather than invented.',
     ...travelAgentGuide.boundaries.filter((boundary) =>
       boundary !== 'Do not imply booking, payment, ticketing, cancellation, loyalty, hotel, car, or transaction support.'),
     'Treat capability choice as internal orchestration. Never ask the traveler to choose Flights, Stays, Rewards, or Travel Protection before describing the trip.',
@@ -292,6 +305,7 @@ const travelCompanionDemoAgentGuide = {
     'A saved protection concept is a short-lived conversation planning preference, not a policy, quote, purchase or coverage. The traveler is not insured by adding it. Expired or changed-trip concepts must not appear as current choices.',
   ],
   examples: [
+    { prompt: 'Show me the Honda Civic for my Lisbon trip.', workflow: 'discover_demo_cars' },
     ...travelAgentGuide.examples,
     {
       prompt: 'What food and culture experiences could we do in Lisbon?',
@@ -363,7 +377,7 @@ const hotelImageOrigins = ['https://snaphotelapi.com', 'https://static.cupid.tra
 
 const expandedFlightViewPolicy = {
   ...flightViewPolicy,
-  csp: { ...flightViewPolicy.csp, resourceDomains: [...flightViewPolicy.csp.resourceDomains, 'https://images.unsplash.com', ...hotelImageOrigins] },
+  csp: { ...flightViewPolicy.csp, resourceDomains: [...flightViewPolicy.csp.resourceDomains, 'https://images.unsplash.com', 'https://upload.wikimedia.org', 'https://thumb.wikimedia.org', ...hotelImageOrigins] },
 };
 
 const mapboxOrigins = [
@@ -379,7 +393,7 @@ export const hotelDemoViewPolicy = {
   ...sharedWidgetDomainPolicy,
   csp: {
     connectDomains: [...mapboxOrigins],
-    resourceDomains: [...hotelImageOrigins, 'https://images.unsplash.com', ...mapboxOrigins, ...flightViewPolicy.csp.resourceDomains],
+    resourceDomains: [...hotelImageOrigins, 'https://images.unsplash.com', 'https://upload.wikimedia.org', 'https://thumb.wikimedia.org', ...mapboxOrigins, ...flightViewPolicy.csp.resourceDomains],
     frameDomains: [],
   },
 };
@@ -397,7 +411,7 @@ export const experienceDemoViewPolicy = {
   ...sharedWidgetDomainPolicy,
   csp: {
     connectDomains: [],
-    resourceDomains: ['https://images.unsplash.com', ...hotelImageOrigins, ...flightViewPolicy.csp.resourceDomains],
+    resourceDomains: ['https://images.unsplash.com', 'https://upload.wikimedia.org', 'https://thumb.wikimedia.org', ...hotelImageOrigins, ...flightViewPolicy.csp.resourceDomains],
     frameDomains: [],
   },
 };
@@ -694,7 +708,7 @@ export function createTravelServer(
         },
         use: {
           gateway: nuiteeGateway,
-          ...(demo ? { demo: demoGateway, hotels: nuiteeHotelsGateway } : {}),
+          ...(demo ? { demo: demoGateway, cars: carGateway, hotels: nuiteeHotelsGateway } : {}),
           state: noodleState,
         },
         provides: {
@@ -711,6 +725,7 @@ export function createTravelServer(
               schema: selectionStateSchema,
             },
             ...(demo ? {
+              car_selections: {kind:'selection' as const,scope:'caller' as const,version:'v1',ttlSeconds:1800,schema:carStateSchema},
               demo_hotel_selections: {
                 kind: 'selection' as const,
                 scope: 'caller' as const,
@@ -756,10 +771,12 @@ export function createTravelServer(
         ...(demo ? {
           use: {
             demo: demoGateway,
+            cars: carGateway,
             state: noodleState,
           },
           state: {
             handles: {
+              car_selections: {kind:'selection' as const,scope:'caller' as const,version:'v1',ttlSeconds:1800,schema:carStateSchema},
               flight_selections: {
                 kind: 'selection' as const,
                 scope: 'caller' as const,
@@ -795,7 +812,7 @@ export function createTravelServer(
 
   return server(
     'nuitee_travel_mcp_app_starter',
-    { ...options, instructions: `${options.instructions} ${flightResultsPresentation}` },
+    { ...options, ...(demo ? {handoff:{allowedDomains:['https://commons.wikimedia.org','https://creativecommons.org']}} : {}), instructions: `${options.instructions} ${flightResultsPresentation}` },
     capabilities.all,
   );
 }

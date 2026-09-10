@@ -125,6 +125,16 @@ describe('guest travel conversation lifecycle', () => {
     expect(document.querySelector('.travel-hotel-skeletons')).toBeNull();
   });
 
+  it('replaces the car skeleton immediately when the matching widget arrives', async () => {
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Cars in Lisbon next week');
+    await waitFor(() => expect(client.subscribe).toHaveBeenCalled());
+    act(() => client.emit({event:'tool_started',data:{id:'cars-1',tool:'search_cars'}}));
+    expect(document.querySelectorAll('.travel-car-loading__card')).toHaveLength(3);
+    act(() => client.emit({event:'view_available',data:{id:'cars-1',tool:'search_cars',resourceUri:'ui://nuitee_travel_mcp_app_starter/search_cars_widget',result:{status:'success'}}}));
+    expect(document.querySelector('.travel-car-loading')).toBeNull();
+  });
+
   it('removes the hotel skeleton when its view arrives before tool completion', async () => {
     assistantMock.useNoodleAssistant.mockReturnValue({ client, messages: [], status: 'streaming' });
     render(<TravelAssistantPage runtime={readyRuntime} />);

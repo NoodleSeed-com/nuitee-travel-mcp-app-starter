@@ -34,6 +34,8 @@ const demoTools = [
   'select_hotel',
   'add_experience_to_trip',
   'select_trip_protection',
+  'search_cars',
+  'select_car',
 ];
 
 function modelVisible(manifest: any) {
@@ -86,7 +88,7 @@ describe('Wayfare expanded travel profile', () => {
     expect(manifest.tools.map((entry: any) => entry.name)).toEqual(demoTools);
     expect(manifest.tools.find((entry: any) => entry.name === 'search_hotels')?.description)
       .toContain('illustrative');
-    expect(Object.keys(manifest.connectors)).toEqual(['demo', 'state']);
+    expect(Object.keys(manifest.connectors)).toEqual(['demo', 'cars', 'state']);
     expect(manifest.provides).toBeUndefined();
     expect(manifest.state.handles.demo_hotel_selections).toBeDefined();
   });
@@ -150,6 +152,7 @@ describe('Wayfare expanded travel profile', () => {
       'compare_travel_insurance',
       'review_trip',
       'add_experience_to_trip',
+      'search_cars',
     ]);
     for (const name of demoTools) {
       expect(manifest.tools.filter((entry: any) => entry.name === name)).toHaveLength(1);
@@ -339,7 +342,7 @@ describe('hotel widget map CSP', () => {
 describe('experience widget image CSP', () => {
   it('allows bounded experience and inline stay image origins without provider connections', () => {
     expect(experienceDemoViewPolicy.csp.connectDomains).toEqual([]);
-    expect(experienceDemoViewPolicy.csp.resourceDomains).toEqual(['https://images.unsplash.com', 'https://snaphotelapi.com', 'https://static.cupid.travel', 'https://sandbox.nuitee.flights', 'https://production.nuitee.flights']);
+    expect(experienceDemoViewPolicy.csp.resourceDomains).toEqual(['https://images.unsplash.com', 'https://upload.wikimedia.org', 'https://thumb.wikimedia.org', 'https://snaphotelapi.com', 'https://static.cupid.travel', 'https://sandbox.nuitee.flights', 'https://production.nuitee.flights']);
     expect(experienceDemoViewPolicy.csp.frameDomains).toEqual([]);
   });
 });

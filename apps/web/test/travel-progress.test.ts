@@ -10,6 +10,8 @@ describe('plain-language assistant activity', () => {
     ['select_flight_offer', 'Saving your fare choice'],
     ['verify_flight_offer', 'Verifying the current fare'],
     ['search_hotels', 'Finding stays'],
+    ['search_cars', 'Finding your kind of drive'],
+    ['select_car', 'Updating your car choice'],
     ['open_hotel', 'Opening your requested stay'],
     ['select_hotel', 'Adding the stay'],
     ['open_loyalty', 'Opening illustrative rewards'],

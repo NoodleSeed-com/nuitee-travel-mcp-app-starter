@@ -1,0 +1,26 @@
+.wf-review .wf-review-car-thumbnail {
+  background: var(--cc-surface-muted);
+}
+.wf-review .wf-review-car-thumbnail img {
+  object-fit: contain;
+}
+.wf-review .wf-review-car-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.wf-cars .browse-assumptions {
+  margin: 0 30px 22px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.wf-cars .browse-assumptions p + p {
+  margin-top: 5px;
+}
+@media (max-width: 700px) {
+  .wf-cars .browse-assumptions {
+    margin: 0 18px 18px;
+    font-size: 11px;
+  }
+}
