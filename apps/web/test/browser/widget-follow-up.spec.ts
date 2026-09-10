@@ -100,7 +100,12 @@ test(`a widget follow-up scrolls with loading feedback (${reducedMotion})`, asyn
   expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(before + 300);
   // Read the older widget while the follow-up is pending. New assistant text
   // must not pull the reader down; the arrow provides the explicit way back.
+  // Real scroll input interrupts any remaining smooth follow-up animation;
+  // a programmatic scrollIntoViewIfNeeded does not send that reader input.
+  await page.mouse.move(5, 5);
+  await page.mouse.wheel(0, -120);
   await host.scrollIntoViewIfNeeded();
+  await expect(host).toBeInViewport();
   await expect(jump).toBeInViewport();
   const readingPosition = await page.evaluate(() => window.scrollY);
   release();
