@@ -26,6 +26,8 @@ import {
   demoTripReviewSchema,
   openHotelInputSchema,
   openHotelOutputSchema,
+  tripProtectionActionSchema,
+  tripProtectionResultSchema,
 } from './demo-schemas.js';
 import { demoHotelSelectionIdSchema } from './demo-schemas.js';
 
@@ -297,12 +299,25 @@ function compareDemoTravelInsurance(viewPolicy: Readonly<Record<string, unknown>
     annotations: annotations.readOnly(),
     input: demoInsuranceComparisonInputSchema,
     output: demoInsuranceComparisonOutputSchema,
-    fulfil: ({ input, connectors }) => {
+    fulfil: ({ input, context, connectors }) => {
       const gateway = connectors.demo.execute({
         kind: 'insurance_compare',
         insuranceComparison: input,
         insuranceCatalog: DEMO_INSURANCE_PLAN_CATALOG,
       });
+      const flights = connectors.state.readState({ handle: 'flight_selections' });
+      const hotels = connectors.state.readState({ handle: 'demo_hotel_selections' });
+      const experiences = connectors.state.readState({ handle: 'experience_selections' });
+      const states = connectors.demo.prepare_states({ flightState: flights.value, hotelState: hotels.value, experienceState: experiences.value,
+        flightReadOk: flights.ok.optional(), hotelReadOk: hotels.ok.optional(), experienceReadOk: experiences.ok.optional() });
+      const trip = connectors.demo.execute({ kind: 'review', flightState: states.flightState.optional(), hotelState: states.hotelState.optional(),
+        experienceState: states.experienceState.optional(), experienceReadOk: experiences.ok.optional(), requestedAt: context['temporal.instant'],
+        aliases: { ...DEMO_DESTINATION_ALIASES, ...DEMO_EXPERIENCE_ALIASES }, loyalty: getSyntheticLoyaltyOverview() });
+      const current = connectors.state.readState({ handle: 'protection_selections' });
+      const prepared = connectors.demo.protection({ kind: 'prepare', review: trip.review, comparison: gateway.insuranceResult,
+        state: current.value, readOk: current.ok.optional(), tripReadOk: states.tripReadOk.optional(), requestedAt: context['temporal.instant'] });
+      const patch = when(prepared.mayWrite.equals(true), () => connectors.state.patchState({ handle: 'protection_selections', expectedRevision: current.revision, value: prepared.nextState }));
+      const planning = connectors.demo.acknowledge_protection_comparison({ proposal: { canSelect: prepared.canSelect, message: prepared.message }, patchOk: patch.ok.optional() });
       return {
         status: gateway['insuranceResult.status'],
         dataSource: gateway['insuranceResult.dataSource'],
@@ -313,6 +328,7 @@ function compareDemoTravelInsurance(viewPolicy: Readonly<Record<string, unknown>
         searchContext: gateway['insuranceResult.searchContext'],
         assumptions: gateway['insuranceResult.assumptions'],
         plans: gateway['insuranceResult.plans'],
+        planning,
       };
     },
     viewTitle: 'Illustrative travel protection',
@@ -333,10 +349,11 @@ function reviewDemoTrip(viewPolicy: Readonly<Record<string, unknown>>) {
     input: z.object({}),
     output: demoTripReviewSchema,
     fulfil: ({ context, connectors }) => {
-      const flights = connectors.state.readState({ handle: 'flight_selections' }).value;
-      const hotels = connectors.state.readState({ handle: 'demo_hotel_selections' }).value;
+      const flights = connectors.state.readState({ handle: 'flight_selections' });
+      const hotels = connectors.state.readState({ handle: 'demo_hotel_selections' });
       const experiences = connectors.state.readState({ handle: 'experience_selections' });
-      const states = connectors.demo.prepare_states({ flightState: flights, hotelState: hotels, experienceState: experiences.value });
+      const states = connectors.demo.prepare_states({ flightState: flights.value, hotelState: hotels.value, experienceState: experiences.value,
+        flightReadOk: flights.ok.optional(), hotelReadOk: hotels.ok.optional(), experienceReadOk: experiences.ok.optional() });
       const gateway = connectors.demo.execute({
         kind: 'review',
         flightState: states.flightState.optional(),
@@ -347,6 +364,10 @@ function reviewDemoTrip(viewPolicy: Readonly<Record<string, unknown>>) {
         aliases: { ...DEMO_DESTINATION_ALIASES, ...DEMO_EXPERIENCE_ALIASES },
         loyalty: getSyntheticLoyaltyOverview(),
       });
+      const current = connectors.state.readState({ handle: 'protection_selections' });
+      const protection = connectors.demo.protection({ kind: 'review', review: gateway.review, state: current.value,
+        readOk: current.ok.optional(), tripReadOk: states.tripReadOk.optional(), requestedAt: context['temporal.instant'] });
+      const estimate = connectors.demo.estimate_trip({ review: gateway.review, protection: protection.selection.optional() });
       return {
         status: gateway['review.status'],
         dataSource: gateway['review.dataSource'],
@@ -359,6 +380,9 @@ function reviewDemoTrip(viewPolicy: Readonly<Record<string, unknown>>) {
         notes: gateway['review.notes'].optional(),
         loyalty: gateway['review.loyalty'],
         missing: gateway['review.missing'],
+        planningEstimate: estimate,
+        protection: protection.selection.optional(),
+        protectionNote: protection.note.optional(),
       };
     },
     viewTitle: 'Trip and rewards review',
@@ -403,6 +427,31 @@ function selectDemoHotel() {
   });
 }
 
+function selectTripProtection() {
+  return tool('select_trip_protection', {
+    title: 'Remember a demo protection choice', visibility: ['app'],
+    description: 'Explicitly add or remove a returned fictional protection concept from the current conversation plan. Uses only caller-owned comparison references and confirms state persistence. Never purchases insurance or creates coverage.',
+    annotations: annotations.readOnly(), input: tripProtectionActionSchema, output: tripProtectionResultSchema,
+    fulfil: ({ input, context, connectors }) => {
+      const flights = connectors.state.readState({ handle: 'flight_selections' });
+      const hotels = connectors.state.readState({ handle: 'demo_hotel_selections' });
+      const experiences = connectors.state.readState({ handle: 'experience_selections' });
+      const states = connectors.demo.prepare_states({ flightState: flights.value, hotelState: hotels.value, experienceState: experiences.value,
+        flightReadOk: flights.ok.optional(), hotelReadOk: hotels.ok.optional(), experienceReadOk: experiences.ok.optional() });
+      const trip = connectors.demo.execute({ kind: 'review', flightState: states.flightState.optional(), hotelState: states.hotelState.optional(),
+        experienceState: states.experienceState.optional(), experienceReadOk: experiences.ok.optional(), requestedAt: context['temporal.instant'],
+        aliases: { ...DEMO_DESTINATION_ALIASES, ...DEMO_EXPERIENCE_ALIASES }, loyalty: getSyntheticLoyaltyOverview() });
+      const current = connectors.state.readState({ handle: 'protection_selections' });
+      const proposal = connectors.demo.protection({ kind: 'select', review: trip.review, state: current.value,
+        readOk: current.ok.optional(), tripReadOk: states.tripReadOk.optional(), requestedAt: context['temporal.instant'],
+        action: input.action, comparisonId: input.comparisonId, planId: input.planId });
+      const patch = when(proposal.mayWrite.equals(true), () => connectors.state.patchState({ handle: 'protection_selections', expectedRevision: current.revision, value: proposal.nextState }));
+      const acknowledged = connectors.demo.protection({ kind: 'acknowledge', proposal: { status: proposal.status, message: proposal.message, selection: proposal.selection.optional() }, patchOk: patch.ok.optional() });
+      return { status: acknowledged.status, message: acknowledged.message, selection: acknowledged.selection.optional() };
+    },
+  });
+}
+
 export function createDemoCapabilities(
   viewPolicies: DemoViewPolicies,
   options: { readonly liveHotels?: boolean } = {},
@@ -418,8 +467,9 @@ export function createDemoCapabilities(
   const review = reviewDemoTrip(viewPolicies.review);
   const selectHotel = selectDemoHotel();
   const addExperience = addDemoExperience(viewPolicies.experience);
+  const protection = selectTripProtection();
   return {
-    all: [searchHotels, openHotel, experiences, loyalty, rewardFlights, insurance, review, selectHotel, addExperience] as const,
-    publicSurface: [searchHotels, openHotel, experiences, loyalty, rewardFlights, insurance, review, selectHotel, addExperience] as const,
+    all: [searchHotels, openHotel, experiences, loyalty, rewardFlights, insurance, review, selectHotel, addExperience, protection] as const,
+    publicSurface: [searchHotels, openHotel, experiences, loyalty, rewardFlights, insurance, review, selectHotel, addExperience, protection] as const,
   };
 }

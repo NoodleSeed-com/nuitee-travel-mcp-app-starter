@@ -1,5 +1,6 @@
 import type { DemoExperienceSearchOutput, DemoExperienceSelection, DemoTripReview } from '../demo-schemas.js';
 import { isExperienceSearchContext } from './experience-selection-data.js';
+import { tripPlanningEstimate } from '../trip-planning-estimate.js';
 
 export type TripExperienceSearchPlan = {
   readonly input?: DemoExperienceSearchOutput['searchContext'];
@@ -34,7 +35,12 @@ export function planTripExperienceSearch(review: DemoTripReview): TripExperience
 
 export function tripPlanningSnapshot(review: DemoTripReview, added?: DemoExperienceSelection) {
   const experiences = added ? [...review.experiences.filter(item => item.selectionId !== added.selectionId), added] : review.experiences;
+  // A new component invalidates the prior protection-to-trip binding. Only a
+  // fresh authoritative review may include that protection in another estimate.
+  const protection = added && !review.experiences.some(item => item.selectionId === added.selectionId) ? undefined : review.protection;
   return { flightSelectionId: review.flight?.selectionId ?? null, staySelectionId: review.stay?.selectionId ?? null,
     experiences: experiences.map(s => ({ selectionId: s.selectionId, title: s.experience.title, startLocal: s.slot.startLocal, timeZone: s.slot.timeZone, adults: s.searchContext.adults })),
-    missing: review.missing.filter(item => item !== 'experiences' || !experiences.length), context: review.planningContext ?? null };
+    missing: review.missing.filter(item => item !== 'experiences' || !experiences.length), context: review.planningContext ?? null,
+    protection: protection ? { comparisonId: protection.comparisonId, planId: protection.plan.planId, name: protection.plan.name, illustrativePrice: protection.plan.illustrativePrice, expiresAt: protection.expiresAt } : null,
+    planningEstimate: tripPlanningEstimate({ review: { ...review, experiences, protection } }) };
 }

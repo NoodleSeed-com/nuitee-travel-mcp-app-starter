@@ -25,6 +25,13 @@ export default defineConfig(({ mode }) => {
         enabled: true,
         headless: true,
         commands: {
+          async tripOptionalFixtures() {
+            const fixtures = await import('./src/demo-fixtures.js');
+            return {
+              protection: fixtures.compareSyntheticTravelInsurance({ destination: 'Lisbon', departureDate: '2026-09-16', returnDate: '2026-09-17', adults: 2, children: 0, residenceCountry: 'CA', currency: 'EUR' }),
+              points: fixtures.searchSyntheticRewardFlights({ origin: 'Toronto', destination: 'Lisbon', departureDate: '2026-09-16', adults: 2, cabinClass: 'ECONOMY', pointsBudget: 42500, currency: 'EUR' }),
+            };
+          },
           async mockTripReviewImages({ page }) {
             // Native <img> loads bypass the fetch stub. Serve only these
             // fictional fixture URLs locally, without contacting a provider.

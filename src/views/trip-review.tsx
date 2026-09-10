@@ -1,6 +1,7 @@
 import '@fontsource-variable/host-grotesk';
 import '@noodleseed/one/react/styles.css';
 import { useEffect, useRef, useState } from 'react';
+import { ArrowRightIcon, ShieldCheckIcon, SparklesIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import type { DemoTripReview } from '../demo-schemas.js';
 import { Action, Feedback, useCallTool, useLayout, useSendFollowUpMessage, useToolInfo, useUpdateModelContext, useWidgetReady } from '../helpers.js';
 import { ArrowLeftIcon, BedIcon, CheckIcon, PlaneIcon } from './icons.js';
@@ -11,6 +12,10 @@ import { TripExperienceDiscovery } from './trip-experience-discovery.js';
 import { planTripExperienceSearch, tripPlanningSnapshot, type TripExperienceSearchPlan } from './trip-experience-search.js';
 import { TripHotelDiscovery } from './trip-hotel-discovery.js';
 import { planTripHotelSearch, type TripHotelSearchPlan } from './trip-hotel-search.js';
+import { TripEstimate } from './trip-estimate.js';
+import { TripOptionalFlow, type TripOptionalKind } from './trip-optional-flow.js';
+import { isTripProtectionSelection } from './trip-protection-data.js';
+import { planTripPoints } from './trip-optional-search.js';
 
 export type MissingTripComponent = 'flight' | 'stay' | 'experiences';
 type ReviewState = 'loading' | 'error' | 'malformed';
@@ -24,7 +29,7 @@ export function isTripPlanningReview(value: unknown): value is DemoTripReview {
   const data = record(value);
   if (!data || !['ready', 'incomplete'].includes(String(data.status)) || !text(data.fallback, 700) || !text(data.disclosure, 700) || !Array.isArray(data.experiences) || data.experiences.length > 8 || !data.experiences.every(isExperienceTripSelection) || !Array.isArray(data.missing)) return false;
   const flight = record(data.flight), stay = record(data.stay);
-  if (data.flight !== undefined && (!flight || !text(flight.selectionId, 80) || !moneyValid(flight.searchPrice, 'total') || !text(flight.disclosure))) return false;
+  if (data.flight !== undefined && (!flight || !text(flight.selectionId, 80) || (flight.searchPrice !== null && !moneyValid(flight.searchPrice, 'total')) || !text(flight.disclosure))) return false;
   if (data.stay !== undefined && (!stay || !text(stay.selectionId, 80) || !text(stay.propertyName, 100) || !text(stay.city, 100) || !dateValid(stay.checkInDate) || !dateValid(stay.checkOutDate) || stay.checkOutDate <= stay.checkInDate || !Number.isInteger(stay.nights) || Number(stay.nights) < 1 || Number(stay.nights) > 30 || !Number.isInteger(stay.rooms) || Number(stay.rooms) < 1 || Number(stay.rooms) > 4 || !moneyValid(stay.staySubtotal, 'amount') || !['live_nuitee', 'illustrative'].includes(String(stay.dataSource)))) return false;
   const missing = [...(!flight ? ['flight'] : []), ...(!stay ? ['stay'] : []), ...(data.experiences.length ? [] : ['experiences'])];
   if (data.missing.length !== missing.length || !data.missing.every(v => missing.includes(String(v))) || new Set(data.missing).size !== missing.length || (data.status === 'ready') !== Boolean(flight || stay || data.experiences.length)) return false;
@@ -40,6 +45,8 @@ export function isTripPlanningReview(value: unknown): value is DemoTripReview {
     for (const key of ['adults', 'children', 'infants']) if (context[key] !== undefined && (!Number.isInteger(context[key]) || Number(context[key]) < (key === 'adults' ? 1 : 0) || Number(context[key]) > (key === 'children' ? 8 : 9))) return false;
   }
   if (data.notes !== undefined && (!Array.isArray(data.notes) || data.notes.length > 3 || !data.notes.every(note => text(note, 240)))) return false;
+  if (data.protection !== undefined && !isTripProtectionSelection(data.protection)) return false;
+  if (data.protectionNote !== undefined && !text(data.protectionNote, 240)) return false;
   return true;
 }
 
@@ -97,7 +104,7 @@ export function continuePlanningPrompt(data: DemoTripReview): string {
   return `Let’s continue planning${destination}. ${selected ? `I already have ${selected} selected.` : 'Nothing is selected yet.'} ${data.missing.length ? `Suggest the next useful step from these optional missing items: ${data.missing.map(item => labels[item]).join(', ')}.` : 'Ask what I would like to refine next.'}${location ? ` Keep suggestions relevant to ${location}.` : ''} Use the dates and travelers already established. Do not repeat the trip review or display another plan card unless I ask to review it; continue from the current selections shown in the widget. Do not recheck my flight fare just to continue planning. Ask at most one short question, only for what the next search still needs. Nothing is booked.`;
 }
 
-export function TripReviewView({ data, state, locale = 'en-CA', onSuggest, disabledSuggestions, onContinue, actionError, actionNotice, actionsPending, onBack, backLabel = 'Back to selection', onRetry }: {
+export function TripReviewView({ data, state, locale = 'en-CA', onSuggest, disabledSuggestions, onContinue, actionError, actionNotice, actionsPending, onBack, backLabel = 'Back to selection', onRetry, onPoints, onProtection, onRemoveProtection }: {
   readonly data?: DemoTripReview;
   readonly state?: ReviewState;
   readonly locale?: string;
@@ -110,6 +117,9 @@ export function TripReviewView({ data, state, locale = 'en-CA', onSuggest, disab
   readonly onBack?: () => void;
   readonly backLabel?: string;
   readonly onRetry?: () => void;
+  readonly onPoints?: () => void;
+  readonly onProtection?: () => void;
+  readonly onRemoveProtection?: () => void;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => { if (onBack && data && !state) heading.current?.focus({ preventScroll: true }); }, [Boolean(onBack), Boolean(data), state]);
@@ -126,21 +136,35 @@ export function TripReviewView({ data, state, locale = 'en-CA', onSuggest, disab
     {back}
     <header className="wf-review-header"><div><h2 ref={heading} tabIndex={onBack ? -1 : undefined}>{destination ? `Your ${destination} plan` : 'Your trip plan'}</h2><p>{[dates, party].filter(Boolean).join(' · ') || 'Selected in this conversation'}</p></div><span className="wf-review-badge">{selected} selected</span></header>
     <div className="wf-review-content">
-      {data.flight ? <section className="wf-review-section wf-review-flight" aria-label="Selected flight"><div className="wf-review-section-heading"><strong>Flight</strong><span>Selected</span></div><div className="wf-review-row"><div className="wf-review-facts"><FlightThumbnail imageUrl={data.flight.airlineLogoUrl} /><div><h3>Your selected flight</h3><p>Search selection · Fare verification needed</p></div></div><div className="wf-review-price"><strong>{money(data.flight.searchPrice.total, data.flight.searchPrice.currency, locale)}</strong><span>{data.flight.searchPrice.currency} · Search price</span></div></div></section> : null}
+      {data.flight ? <section className="wf-review-section wf-review-flight" aria-label="Selected flight"><div className="wf-review-section-heading"><strong>Flight</strong><span>Selected</span></div><div className="wf-review-row"><div className="wf-review-facts"><FlightThumbnail imageUrl={data.flight.airlineLogoUrl} /><div><h3>Your selected flight</h3><p>Search selection · Fare verification needed</p></div></div><div className="wf-review-price"><strong>{data.flight.searchPrice ? money(data.flight.searchPrice.total, data.flight.searchPrice.currency, locale) : 'Price unavailable'}</strong><span>{data.flight.searchPrice ? `${data.flight.searchPrice.currency} · Search price` : 'Search price unknown'}</span></div></div></section> : null}
       {data.stay ? <section className="wf-review-section wf-review-stay" aria-label="Selected stay"><div className="wf-review-section-heading"><strong>Stay</strong><span>Selected</span></div><div className="wf-review-row"><div className="wf-review-facts"><StayThumbnail imageUrl={data.stay.imageUrl} /><div><h3>{data.stay.propertyName}</h3><p>{dateLabel(data.stay.checkInDate, locale)}–{dateLabel(data.stay.checkOutDate, locale)} · {data.stay.nights} {data.stay.nights === 1 ? 'night' : 'nights'} · {data.stay.rooms} {data.stay.rooms === 1 ? 'room' : 'rooms'}</p><p>{data.stay.dataSource === 'illustrative' ? 'Fictional stay · No reservation' : 'Provider search selection · No room reserved'}</p></div></div><div className="wf-review-price"><strong>{money(data.stay.staySubtotal.amount, data.stay.staySubtotal.currency, locale)}</strong><span>{data.stay.staySubtotal.currency} · Stay subtotal</span></div></div></section> : null}
       {data.experiences.length ? <section className="wf-review-section" aria-label="Selected experiences"><div className="wf-review-section-heading"><strong>Experiences</strong><span>{data.experiences.length} selected · Wayfare demo</span></div><div className="wf-review-experiences">{data.experiences.map(selection => <div className="wf-review-experience" key={selection.selectionId}><div className="wf-review-thumbnail"><img src={experiencePhoto(selection.experience).url} alt="" onError={event => { event.currentTarget.hidden = true; }} /></div><div><h3>{selection.experience.title}</h3><p>{dateLabel(selection.slot.startLocal, locale, { weekday: 'long', day: 'numeric', month: 'short' })} · {selection.slot.startLocal.slice(11, 16)}</p><p>{selection.experience.city} time · {selection.searchContext.adults} {selection.searchContext.adults === 1 ? 'adult' : 'adults'}</p><span className="wf-review-status"><CheckIcon />Selected · Not reserved</span></div><div className="wf-review-price"><strong>{formatExperienceMoney(selection.totalPrice.amountMinor, selection.totalPrice.currency, locale, true)}</strong><span>{selection.totalPrice.currency} · Fictional price</span></div></div>)}</div></section> : null}
+      <TripEstimate data={data} locale={locale} party={party} />
+      {selected > 0 ? <>
+        <section className="wf-review-optional" aria-label="Points possibilities">
+          <div className="wf-review-optional-icon"><SparklesIcon aria-hidden="true" /></div>
+          <div className="wf-review-optional-copy"><h3>Explore this trip with points</h3><p><strong>{new Intl.NumberFormat(locale).format(planTripPoints(data).input?.pointsBudget ?? 42500)} points</strong> in the sample rewards profile.</p><p>See how a reward-flight idea compares with your cash selection.</p><small>Example rewards only. Eligibility is not verified and no points can be redeemed.</small></div>
+          <Action data-trip-optional="points" type="button" className="wf-review-suggestion" aria-label="View points options" onClick={onPoints} disabled={actionsPending || !onPoints}>Explore points<ArrowRightIcon aria-hidden="true" /></Action>
+        </section>
+        <section className="wf-review-optional" aria-label="Travel protection">
+          <div className="wf-review-optional-icon"><ShieldCheckIcon aria-hidden="true" /></div>
+          <div className="wf-review-optional-copy"><h3>Travel protection</h3><p>{data.protection ? <><strong>{data.protection.plan.name}</strong> · {money(data.protection.plan.illustrativePrice.amount, data.protection.plan.illustrativePrice.currency, locale)} fictional price</> : 'Optional · Nothing selected'}</p><p>{data.protection ? 'Added to this demo plan only. You are not insured.' : 'Compare examples of medical, cancellation and baggage protection.'}</p><small>{data.protection ? 'No policy purchased, issued or checked.' : 'Illustrative concepts only. Not a quote or statement of coverage.'}</small>{data.protectionNote ? <p role="status">{data.protectionNote}</p> : null}</div>
+          <div className="wf-review-optional-actions"><Action data-trip-optional="protection" type="button" className="wf-review-suggestion" aria-label={data.protection ? 'Review protection' : 'Compare protection'} onClick={onProtection} disabled={actionsPending || !onProtection}>{data.protection ? 'Review concept' : 'Explore protection'}<ArrowRightIcon aria-hidden="true" /></Action>{data.protection ? <Action type="button" className="wf-review-remove" aria-label="Remove protection" onClick={onRemoveProtection} disabled={actionsPending || !onRemoveProtection}><XMarkIcon aria-hidden="true" />Remove</Action> : null}</div>
+        </section>
+      </> : null}
       {!selected ? <section className="wf-review-empty"><h3>Your plan is open</h3><p>Start with the part of the trip you need. Flights, stays, and experiences are optional choices.</p></section> : null}
       {!data.flight && !data.stay && data.experiences.length ? <div className="wf-review-note"><strong>Your experience is part of the plan.</strong> You can plan activities here even if you’ve arranged your flight and hotel elsewhere.</div> : null}
       {data.missing.length ? <div className="wf-review-suggestions"><p>{selected ? `Need help with the rest${destination ? ` in ${destination}` : ''}?` : 'What would you like to explore?'}</p><div>{data.missing.map(component => <Action key={component} type="button" className="wf-review-suggestion" disabled={actionsPending || !onSuggest || disabledSuggestions?.includes(component)} onClick={() => onSuggest?.(component)}>{labels[component]}</Action>)}</div>{!onSuggest || disabledSuggestions?.length ? <p>Ask in the conversation to continue planning.</p> : null}</div> : null}
       {actionsPending ? <p role="status">Checking your current selections…</p> : null}
       {actionNotice ? <p role="status">{actionNotice}</p> : null}
       {data.notes?.length ? <div className="wf-review-note" role="status">{data.notes.map(note => <p key={note}>{note}</p>)}</div> : null}
-      <footer className="wf-review-footer"><p>A plan, not a booking. Experience prices are fictional; flight and stay prices remain separate and need their own checks.</p>{actionError ? <Feedback status="error">{actionError}</Feedback> : null}{onContinue ? <Action type="button" className="wf-review-primary" variant="primary" disabled={actionsPending} onClick={onContinue}>Continue planning</Action> : null}</footer>
+      <footer className="wf-review-footer"><p>A plan, not a booking. Demo items are fictional. A planning estimate is not an amount to pay; provider prices still need their own checks.</p>{actionError ? <Feedback status="error">{actionError}</Feedback> : null}{onContinue ? <Action type="button" className="wf-review-primary" variant="primary" disabled={actionsPending} onClick={onContinue}>Continue planning</Action> : null}</footer>
     </div>
   </section>;
 }
 
 function TripReviewPanel({ data: initialData, state: initialState, onBack, backLabel, onRetry }: Pick<Parameters<typeof TripReviewView>[0], 'data' | 'state' | 'onBack' | 'backLabel' | 'onRetry'>) {
+  const panelHost = useRef<HTMLDivElement>(null);
   const ready = useWidgetReady();
   const layout = useLayout();
   const send = useSendFollowUpMessage();
@@ -148,27 +172,101 @@ function TripReviewPanel({ data: initialData, state: initialState, onBack, backL
   const [actionError, setActionError] = useState<string>();
   const [actionNotice, setActionNotice] = useState<string>();
   const [discovery, setDiscovery] = useState<{ kind: 'experiences'; plan: TripExperienceSearchPlan } | { kind: 'stay'; plan: TripHotelSearchPlan }>();
+  const [optional, setOptional] = useState<TripOptionalKind>();
+  const restoreTarget = useRef<TripOptionalKind | undefined>(undefined);
   const [actionsPending, setActionsPending] = useState(false);
   const actionInFlight = useRef(false);
   const [fresh, setFresh] = useState<{ data?: DemoTripReview; state?: ReviewState }>();
   const review = useCallTool('review_trip');
+  const protectionSelection = useCallTool('select_trip_protection');
+  const reviewCall = useRef(review.callToolAsync);
+  reviewCall.current = review.callToolAsync;
   const generation = useRef(0);
   useEffect(() => () => { generation.current += 1; }, []);
   const data = fresh ? fresh.data : initialData;
   const state = fresh ? fresh.state : initialState;
+  useEffect(() => {
+    if (!data?.protection) return;
+    let active = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const refresh = async () => {
+      if (!active) return;
+      if (actionInFlight.current) { timer = setTimeout(() => { void refresh(); }, 1000); return; }
+      const request = generation.current;
+      try {
+        // The browser clock only triggers a read. The server decides whether
+        // the choice expired or still belongs to the current trip.
+        const response = await reviewCall.current({});
+        if (!active || request !== generation.current) return;
+        if (response.isError || !isTripPlanningReview(response.structuredContent)) throw new Error('Review unavailable');
+        setFresh({ data: response.structuredContent });
+        const retained = response.structuredContent.protection;
+        if (retained?.comparisonId === data.protection?.comparisonId && retained?.plan.planId === data.protection?.plan.planId && retained?.expiresAt === data.protection?.expiresAt) {
+          // An ahead-of-server browser clock must not create a busy loop or
+          // abandon expiry checks. Recheck at a bounded one-minute interval.
+          timer = setTimeout(() => { void refresh(); }, 60_000);
+        }
+      } catch {
+        if (active && request === generation.current) setFresh({ data: { ...data, protection: undefined, protectionNote: 'Protection needs rechecking and is not included in this estimate. Reload your trip review to check the current choice.' } });
+      }
+    };
+    timer = setTimeout(() => { void refresh(); }, Math.max(0, Math.min(Date.parse(data.protection.expiresAt) - Date.now() + 250, 2_147_483_647)));
+    return () => { active = false; clearTimeout(timer); };
+  }, [data?.protection?.comparisonId, data?.protection?.plan.planId, data?.protection?.expiresAt]);
   const refreshReview = () => {
     const request = ++generation.current;
-    setDiscovery(undefined); setActionError(undefined); setActionNotice(undefined); setFresh({ state: 'loading' });
+    setDiscovery(undefined); setOptional(undefined); setActionError(undefined); setActionNotice(undefined); setFresh({ state: 'loading' });
     void review.callToolAsync({}).then(response => {
       if (request === generation.current) setFresh(response.isError ? { state: 'error' } : isTripPlanningReview(response.structuredContent) ? { data: response.structuredContent } : { state: 'malformed' });
     }).catch(() => { if (request === generation.current) setFresh({ state: 'error' }); });
   };
-  const contextKey = data ? JSON.stringify({ flight: data.flight?.selectionId, stay: data.stay?.selectionId, experiences: data.experiences.map(s => s.selectionId), missing: data.missing, context: data.planningContext }) : '';
+  const contextKey = data ? JSON.stringify(tripPlanningSnapshot(data)) : '';
+  useEffect(() => {
+    if (optional || state || !data || !restoreTarget.current) return;
+    const target = restoreTarget.current;
+    const frame = requestAnimationFrame(() => {
+      const button = panelHost.current?.querySelector<HTMLButtonElement>(`button[data-trip-optional="${target}"]`);
+      button?.focus({ preventScroll: true });
+      button?.scrollIntoView({ block: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+      restoreTarget.current = undefined;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [optional, state, data]);
   useEffect(() => {
     if (discovery || !ready || !data || !layout.supports?.modelContext) return;
     void updateContext({ content: [{ type: 'text', text: data.fallback }], structuredContent: { tripPlanning: tripPlanningSnapshot(data) } }).catch(() => undefined);
-  }, [ready, contextKey, Boolean(discovery), layout.supports?.modelContext, updateContext]);
+  }, [ready, contextKey, Boolean(discovery), optional, layout.supports?.modelContext, updateContext]);
   const supportsFollowUp = ready && layout.supports?.followUpMessage;
+  const openOptional = async (kind: TripOptionalKind) => {
+    if (actionInFlight.current) return;
+    actionInFlight.current = true; setActionsPending(true); setActionError(undefined); setActionNotice(undefined);
+    const request = ++generation.current;
+    try {
+      const response = await review.callToolAsync({});
+      if (request !== generation.current) return;
+      if (response.isError || !isTripPlanningReview(response.structuredContent)) { setActionError('Your current trip could not be checked. Try again; your selections are unchanged.'); return; }
+      setFresh({ data: response.structuredContent }); setOptional(kind);
+    } catch { if (request === generation.current) setActionError('Your current trip could not be checked. Try again.'); }
+    finally { actionInFlight.current = false; if (request === generation.current) setActionsPending(false); }
+  };
+  const removeProtection = async () => {
+    if (actionInFlight.current || !data?.protection) return;
+    actionInFlight.current = true; setActionsPending(true); setActionError(undefined); setActionNotice(undefined);
+    const request = ++generation.current;
+    const { comparisonId, plan } = data.protection;
+    try {
+      const response = await protectionSelection.callToolAsync({ action: 'remove', comparisonId, planId: plan.planId });
+      if (request !== generation.current) return;
+      const value = response.structuredContent as Record<string, unknown> | undefined;
+      if (response.isError || value?.status !== 'removed') { setActionError('Removal was not confirmed. Review the current protection choice before trying again.'); return; }
+      const refreshed = await review.callToolAsync({});
+      if (request !== generation.current) return;
+      if (refreshed.isError || !isTripPlanningReview(refreshed.structuredContent)) { setActionError('Removal was acknowledged, but your current trip could not load. Refresh the trip review to check.'); return; }
+      setFresh({ data: refreshed.structuredContent }); restoreTarget.current = 'protection';
+      setActionNotice(refreshed.structuredContent.protection ? 'Your latest trip has another protection choice. The current plan is shown.' : 'The protection example was removed. Your planning estimate is updated.');
+    } catch { if (request === generation.current) setActionError('Removal could not be confirmed. Refresh the trip review to check the current choice.'); }
+    finally { actionInFlight.current = false; if (request === generation.current) setActionsPending(false); }
+  };
   const navigate = async (requested: MissingTripComponent | 'continue') => {
     if (actionInFlight.current) return;
     actionInFlight.current = true; setActionsPending(true); setActionError(undefined); setActionNotice(undefined);
@@ -213,10 +311,14 @@ function TripReviewPanel({ data: initialData, state: initialState, onBack, backL
   };
   if (data && discovery?.kind === 'experiences' && discovery.plan.input) return <TripExperienceDiscovery review={data} plan={{ ...discovery.plan, input: discovery.plan.input }} onBack={refreshReview} />;
   if (data && discovery?.kind === 'stay' && discovery.plan.input) return <TripHotelDiscovery review={data} plan={{ ...discovery.plan, input: discovery.plan.input }} onBack={refreshReview} />;
-  return <TripReviewView data={data} locale={layout.locale ?? 'en-CA'} state={state} onBack={onBack} backLabel={backLabel} onRetry={fresh ? refreshReview : onRetry} actionError={actionError} actionNotice={actionNotice} actionsPending={actionsPending}
+  if (data && optional) return <TripOptionalFlow kind={optional} review={data} onBack={() => { restoreTarget.current = optional; refreshReview(); }} onSaved={(current, message) => { restoreTarget.current = optional; setFresh({ data: current }); setOptional(undefined); setActionNotice(message); }} />;
+  return <div ref={panelHost}><TripReviewView data={data} locale={layout.locale ?? 'en-CA'} state={state} onBack={onBack} backLabel={backLabel} onRetry={fresh ? refreshReview : onRetry} actionError={actionError} actionNotice={actionNotice} actionsPending={actionsPending}
+    onPoints={ready && data ? () => { void openOptional('points'); } : undefined}
+    onProtection={ready && data ? () => { void openOptional('protection'); } : undefined}
+    onRemoveProtection={ready && data?.protection ? () => { void removeProtection(); } : undefined}
     disabledSuggestions={supportsFollowUp ? undefined : ['flight', ...(data && planTripHotelSearch(data).input ? [] : ['stay' as const])]}
     onSuggest={ready && data ? component => { void navigate(component); } : undefined}
-    onContinue={ready && data ? () => { void navigate('continue'); } : undefined} />;
+    onContinue={ready && data ? () => { void navigate('continue'); } : undefined} /></div>;
 }
 
 // Navigation reads authoritative state without starting a conversational turn.

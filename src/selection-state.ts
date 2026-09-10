@@ -6,7 +6,19 @@ export function prepareSelectionStates(input: Record<string, unknown>): Record<s
     if (value === undefined || (value !== null && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0)) continue;
     output[key] = value;
   }
+  if (input.flightReadOk !== undefined || input.hotelReadOk !== undefined || input.experienceReadOk !== undefined) {
+    output.tripReadOk = input.flightReadOk === true && input.hotelReadOk === true && input.experienceReadOk === true;
+  }
   return output;
+}
+
+/** A comparison is selectable only when its bounded server snapshot was saved. */
+export function acknowledgeProtectionComparison(input: Record<string, unknown>) {
+  const proposal = input.proposal as { canSelect?: boolean; message?: string } | undefined;
+  return { canSelect: proposal?.canSelect === true && input.patchOk === true,
+    message: proposal?.canSelect === true && input.patchOk !== true
+      ? 'The comparison could not be saved. You can browse it, but compare again before adding a concept.'
+      : proposal?.message ?? 'This comparison is available to browse only.' };
 }
 
 /** Never turn a proposed experience choice into success without a committed CAS. */
