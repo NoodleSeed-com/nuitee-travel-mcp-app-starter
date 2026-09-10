@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
-const bridge = vi.hoisted(() => ({ call: vi.fn(), search: vi.fn(), hotels: vi.fn(), selectHotel: vi.fn(), add: vi.fn(), send: vi.fn(), context: vi.fn(), followUp: true }));
+const bridge = vi.hoisted(() => ({ call: vi.fn(), search: vi.fn(), hotels: vi.fn(), selectHotel: vi.fn(), add: vi.fn(), send: vi.fn(), context: vi.fn(), followUp: true, modelContext: true }));
 vi.mock('../../src/helpers.js', async importOriginal => ({
   ...await importOriginal<typeof import('../../src/helpers.js')>(),
   useWidgetReady: () => true,
-  useLayout: () => ({ locale: 'en-CA', displayMode: 'inline', supports: { followUpMessage: bridge.followUp, modelContext: true } }),
+  useLayout: () => ({ locale: 'en-CA', displayMode: 'inline', supports: { followUpMessage: bridge.followUp, modelContext: bridge.modelContext } }),
   useCallTool: (name: string) => ({ callToolAsync: name === 'search_experiences' ? bridge.search : name === 'search_hotels' ? bridge.hotels : name === 'select_hotel' ? bridge.selectHotel : name === 'add_experience_to_trip' ? bridge.add : bridge.call }),
   useViewState: (_key: string, initial: unknown) => useState(initial),
   useSendFollowUpMessage: () => bridge.send,
@@ -25,7 +25,7 @@ const review = {
   disclosure: 'A plan only; nothing reserved or paid.',
 };
 let root: Root | undefined;
-afterEach(() => { root?.unmount(); root = undefined; document.body.innerHTML = ''; vi.resetAllMocks(); bridge.followUp = true; });
+afterEach(() => { root?.unmount(); root = undefined; document.body.innerHTML = ''; vi.resetAllMocks(); bridge.followUp = true; bridge.modelContext = true; });
 function mount() {
   bridge.send.mockResolvedValue(undefined); bridge.context.mockResolvedValue(undefined);
   function Flow() {
@@ -43,7 +43,8 @@ it('loads fresh trip state in the same widget without a chat message, with prese
   expect(bridge.call).toHaveBeenCalledExactlyOnceWith({});
   expect(bridge.send).not.toHaveBeenCalled();
   await page.getByRole('button', { name: 'Continue planning' }).click();
-  expect(bridge.send).toHaveBeenCalledWith({ prompt: expect.stringContaining('Do not repeat the trip review') });
+  expect(bridge.send).toHaveBeenCalledWith({ prompt: 'Find a stay in Tokyo.' });
+  expect(bridge.context.mock.lastCall?.[0].content[1].text).toContain('Do not repeat the trip review');
   await page.getByRole('button', { name: 'Back to flight' }).click();
   await expect.element(page.getByRole('button', { name: 'Review my trip' })).toHaveFocus();
   bridge.call.mockResolvedValue({ structuredContent: { ...review, flight: { ...review.flight, searchPrice: { total: 1350, currency: 'CAD' } } } });
@@ -76,18 +77,67 @@ it('keeps an explicitly unpriced flight visible in the actual inline review with
   expect(bridge.send).not.toHaveBeenCalled();
 });
 
-it('refreshes selections before handing a stay search with missing dates to the conversation once', async () => {
+it('keeps stay-search instructions in model context and sends only the request to chat', async () => {
   bridge.call.mockResolvedValue({ structuredContent: review });
   mount();
   await page.getByRole('button', { name: 'Review my trip' }).click();
   await expect.element(page.getByRole('heading', { name: 'Your Tokyo plan' })).toBeVisible();
-  for (const [index, label] of ['Find a stay'].entries()) {
-    await page.getByRole('button', { name: label }).click();
-    expect(bridge.send).toHaveBeenCalledTimes(index + 1);
-    expect(bridge.send).toHaveBeenLastCalledWith({ prompt: expect.stringContaining('Do not repeat the trip review, display another plan card, or recheck my flight fare for this search') });
-    expect(bridge.send).toHaveBeenLastCalledWith({ prompt: expect.stringContaining('one short question for only the missing') });
-    expect(bridge.call).toHaveBeenCalledTimes(2);
-  }
+  await page.getByRole('button', { name: 'Find a stay' }).click();
+  expect(bridge.send).toHaveBeenCalledExactlyOnceWith({ prompt: 'Find a stay in Tokyo.' });
+  const context = bridge.context.mock.lastCall?.[0];
+  expect(context.structuredContent.tripPlanning.context).toMatchObject({ destination: 'Tokyo' });
+  expect(context.content[1].text).toContain('Do not repeat the trip review, display another plan card, or recheck my flight fare for this search');
+  expect(context.content[1].text).toContain('one short question for only the missing');
+  expect(bridge.call).toHaveBeenCalledTimes(2);
+});
+
+it('waits for fresh model context without overwriting it or leaking currency instructions into chat', async () => {
+  bridge.call.mockResolvedValue({ structuredContent: review });
+  mount();
+  await page.getByRole('button', { name: 'Review my trip' }).click();
+  await expect.element(page.getByRole('heading', { name: 'Your Tokyo plan' })).toBeVisible();
+  const current = { ...review, planningContext: { ...review.planningContext, destination: 'NRT', currency: 'GBP' } };
+  bridge.call.mockResolvedValue({ structuredContent: current });
+  bridge.context.mockClear();
+  let resolveContext!: () => void;
+  bridge.context.mockImplementationOnce(() => new Promise<void>(resolve => { resolveContext = resolve; }));
+  await page.getByRole('button', { name: 'Find a stay' }).click();
+  await expect.element(page.getByRole('button', { name: 'Find a stay' })).toBeDisabled();
+  expect(bridge.send).not.toHaveBeenCalled();
+  expect(bridge.context).toHaveBeenCalledTimes(1);
+  const context = bridge.context.mock.lastCall?.[0];
+  expect(context.structuredContent.tripPlanning.context).toMatchObject({ destination: 'NRT', currency: 'GBP' });
+  expect(context.content[0].text).toBe(current.fallback);
+  expect(context.content[1].text).toContain('Choose CAD, USD or EUR in the conversation for the hotel search');
+  expect(context.content[1].text).toContain('Do not treat flight departure or return dates as confirmed local arrival');
+  resolveContext();
+  await expect.poll(() => bridge.send.mock.calls.length).toBe(1);
+  expect(bridge.send).toHaveBeenCalledExactlyOnceWith({ prompt: 'Find a stay in NRT.' });
+  expect(bridge.context).toHaveBeenCalledTimes(1);
+});
+
+it('offers retry when model context fails without exposing instructions or starting an incomplete turn', async () => {
+  bridge.call.mockResolvedValue({ structuredContent: review });
+  mount();
+  await page.getByRole('button', { name: 'Review my trip' }).click();
+  await expect.element(page.getByRole('heading', { name: 'Your Tokyo plan' })).toBeVisible();
+  bridge.context.mockRejectedValueOnce(new Error('Context unavailable'));
+  await page.getByRole('button', { name: 'Find a stay' }).click();
+  await expect.element(page.getByText('Your trip details could not be shared with the conversation. Try again.')).toBeVisible();
+  expect(bridge.send).not.toHaveBeenCalled();
+  await expect.element(page.getByRole('button', { name: 'Find a stay' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Find a stay' }).click();
+  expect(bridge.send).toHaveBeenCalledExactlyOnceWith({ prompt: 'Find a stay in Tokyo.' });
+});
+
+it('keeps a useful factual request without model instructions when the host lacks model context', async () => {
+  bridge.modelContext = false;
+  bridge.call.mockResolvedValue({ structuredContent: review });
+  mount();
+  await page.getByRole('button', { name: 'Review my trip' }).click();
+  await page.getByRole('button', { name: 'Find a stay' }).click();
+  expect(bridge.context).not.toHaveBeenCalled();
+  expect(bridge.send).toHaveBeenCalledExactlyOnceWith({ prompt: 'Find a stay in Tokyo based on my flight departing 2026-10-10 for 2 adults, with prices in CAD.' });
 });
 
 function experienceSearch(input = { destination: 'Tokyo', startDate: '2026-10-10', endDate: '2026-10-11', adults: 2, children: 0, currency: 'CAD' }) {

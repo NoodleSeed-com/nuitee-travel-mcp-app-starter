@@ -207,6 +207,14 @@ and SDK widget messages, while assistant-only updates respect a reader who has
 scrolled up. Hotel skeletons cover both chat tool execution and inline search.
 There is no live admission check, reservation, or booking.
 
+Trip-review actions that continue in chat publish the current selections and
+search instructions through the model-context channel before sending a short
+traveler request, such as “Find a stay in NRT.” Instructions about missing dates,
+currency, and avoiding repeated reviews never become traveler messages. A failed
+context update offers retry before starting the turn; hosts without this channel
+receive a factual request with the known trip details. The existing product guide
+continues to own the travel workflow; this handoff changes its presentation only.
+
 The widget's fixed decorative photos load from `https://images.unsplash.com`
 under its resource-only CSP. They do not validate a fictional operator or its
 inventory. This ordinary image traffic is separate from the compute tool and
