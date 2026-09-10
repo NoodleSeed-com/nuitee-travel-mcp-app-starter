@@ -4,7 +4,7 @@ import type { TripPhase } from './trip-projection';
 export interface ToolActivity {
   readonly label: string;
   readonly phase?: TripPhase;
-  readonly skeleton?: 'hotels';
+  readonly skeleton?: 'hotels' | 'cars';
 }
 
 export function progressForEvent(
@@ -25,6 +25,10 @@ export function progressForEvent(
       return { label: 'Verifying the current fare', phase: 'verifying' };
     case 'search_hotels':
       return { label: 'Finding stays', skeleton: 'hotels' };
+    case 'search_cars':
+      return { label: 'Finding your kind of drive', skeleton: 'cars' };
+    case 'select_car':
+      return { label: 'Updating your car choice' };
     case 'open_hotel':
       return { label: 'Opening your requested stay' };
     case 'select_hotel':

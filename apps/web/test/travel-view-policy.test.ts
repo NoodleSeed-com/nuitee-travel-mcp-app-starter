@@ -70,6 +70,7 @@ describe('inline travel view admission', () => {
       result: { status: 'ready' },
     }],
     ['fictional experience search', experienceView],
+    ['fictional car search', { id:'cars',tool:'search_cars',resourceUri:'ui://nuitee_travel_mcp_app_starter/search_cars_widget',result:{status:'success'} }],
     ['experience selection acknowledgment', {
       id: 'experience-added',
       tool: 'add_experience_to_trip',

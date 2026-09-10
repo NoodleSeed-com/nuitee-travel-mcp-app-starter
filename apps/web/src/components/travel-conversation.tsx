@@ -27,6 +27,7 @@ import { TravelComposer } from './travel-composer';
 import { TextShimmer } from './ui/text-shimmer';
 import { TravelMessage } from './travel-message';
 import { TripBrief } from './trip-brief';
+import './car-loading.css';
 import {
   ImmersiveConversationSkeleton,
   ImmersiveTripRail,
@@ -468,7 +469,7 @@ export function TravelConversation({
     && (initialPromptProgress || Boolean(activity) || busy);
   const statusLabel = terminal || stopRequested || !responseInProgress
     ? ''
-    : activity?.skeleton === 'hotels' ? 'Finding stays…' : 'Thinking…';
+    : activity?.skeleton === 'hotels' ? 'Finding stays…' : activity?.skeleton === 'cars' ? 'Finding your kind of drive…' : 'Thinking…';
   let activityInsertionIndex = visibleMessages.length;
   for (let index = visibleMessages.length - 1; index >= 0; index -= 1) {
     if (visibleMessages[index]?.role === 'user') {
@@ -499,6 +500,7 @@ export function TravelConversation({
       >
         {statusLabel ? <TextShimmer>{statusLabel}</TextShimmer> : null}
       </p>
+      {statusLabel && activity?.skeleton === 'cars' ? <div className="travel-car-loading" aria-hidden="true"><div className="travel-car-loading__heading"><span/><span/></div><div className="travel-car-loading__track">{[0,1,2].map(index=><div className="travel-car-loading__card" key={index}><div/><span/><span/><span/><b/></div>)}</div></div> : null}
       {statusLabel && activity?.skeleton === 'hotels' ? (
         <div className="travel-hotel-loading" aria-hidden="true">
           <div className="travel-hotel-loading__panel">

@@ -6,6 +6,7 @@ const INLINE_TRAVEL_VIEW_URIS: Readonly<Record<string, string>> = {
   search_hotels: 'ui://nuitee_travel_mcp_app_starter/search_hotels_widget',
   open_hotel: 'ui://nuitee_travel_mcp_app_starter/open_hotel_widget',
   search_experiences: 'ui://nuitee_travel_mcp_app_starter/search_experiences_widget',
+  search_cars: 'ui://nuitee_travel_mcp_app_starter/search_cars_widget',
   add_experience_to_trip: 'ui://nuitee_travel_mcp_app_starter/add_experience_to_trip_widget',
   open_loyalty: 'ui://nuitee_travel_mcp_app_starter/open_loyalty_widget',
   compare_reward_flights: 'ui://nuitee_travel_mcp_app_starter/compare_reward_flights_widget',
