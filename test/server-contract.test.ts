@@ -200,6 +200,7 @@ describe('server contract', () => {
   });
 
   it('rejects lower-case airport codes through the registered flight-plan tool', async () => {
+    // This starts the CLI and local MCP runtime; allow for a cold CI runner.
     const error = await execFile(noodleCli, [
       'tools',
       'call',
@@ -208,7 +209,7 @@ describe('server contract', () => {
       '--args',
       JSON.stringify({ origin: 'isb', destination: 'NYC' }),
       '--json',
-    ]).then(
+    ], { timeout: 10_000 }).then(
       () => undefined,
       (failure) => failure,
     );
@@ -226,7 +227,7 @@ describe('server contract', () => {
         },
       },
     });
-  });
+  }, 15_000);
 
   it('rejects an impossible calendar date from the flight-plan elicitation form', () => {
     expect(flightPlanDatesSchema.safeParse({

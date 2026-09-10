@@ -1,6 +1,8 @@
 node_modules
 dist
 .pnpm-store/
+# pnpm owns the workspace lockfile.
+/package-lock.json
 .worktrees/
 .superpowers/
 .env
