@@ -16,7 +16,7 @@ export function TripEstimate({ data, locale = 'en-CA', party }: { readonly data:
   const providers = estimate.items.filter(item => item.source === 'provider_search');
   const fictional = estimate.items.filter(item => item.source === 'fictional');
   const providerLabel = providers.length === 2 ? 'Flight + stay search prices' : providers[0]?.component === 'flight' ? 'Flight search price' : 'Stay search price';
-  const fictionalLabel = `Fictional ${[fictional.some(item => item.component === 'stay') ? 'stay' : '', fictional.some(item => item.component === 'experience') ? 'experiences' : '', fictional.some(item => item.component === 'protection') ? 'protection' : ''].filter(Boolean).join(' + ')}`;
+  const fictionalLabel = `Fictional ${[fictional.some(item => item.component === 'stay') ? 'stay' : '', fictional.some(item => item.component === 'experience') ? 'experiences' : '', fictional.some(item => item.component === 'car') ? 'car rental' : '', fictional.some(item => item.component === 'protection') ? 'protection' : ''].filter(Boolean).join(' + ')}`;
   return <section className="wf-estimate" aria-labelledby={`${id}-heading`}>
     <div className="wf-estimate-head">
       <div><h3 id={`${id}-heading`}>Trip planning estimate</h3><p>{complete ? `${party ? `For ${party} · all` : 'All'} selected items in ${estimate.currency}` : 'Keep every price in its original currency'}</p></div>

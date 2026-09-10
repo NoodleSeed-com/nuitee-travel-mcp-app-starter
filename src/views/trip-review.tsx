@@ -15,6 +15,11 @@ import { planTripHotelSearch, type TripHotelSearchPlan } from './trip-hotel-sear
 import { TripEstimate } from './trip-estimate.js';
 import { TripOptionalFlow, type TripOptionalKind } from './trip-optional-flow.js';
 import { isTripProtectionSelection } from './trip-protection-data.js';
+import { TripCarDiscovery } from './car-results.js';
+import { carSearchForTrip, isCarSelection } from './car-data.js';
+import { carPhotos } from './car-photos.js';
+import type { CarSearchInput } from '../car-schemas.js';
+import { TruckIcon } from '@heroicons/react/24/outline';
 import { planTripPoints } from './trip-optional-search.js';
 
 export type MissingTripComponent = 'flight' | 'stay' | 'experiences';
@@ -29,14 +34,15 @@ export function isTripPlanningReview(value: unknown): value is DemoTripReview {
   const data = record(value);
   if (!data || !['ready', 'incomplete'].includes(String(data.status)) || !text(data.fallback, 700) || !text(data.disclosure, 700) || !Array.isArray(data.experiences) || data.experiences.length > 8 || !data.experiences.every(isExperienceTripSelection) || !Array.isArray(data.missing)) return false;
   const flight = record(data.flight), stay = record(data.stay);
+  if(data.car !== undefined && !isCarSelection(data.car)) return false;
   if (data.flight !== undefined && (!flight || !text(flight.selectionId, 80) || (flight.searchPrice !== null && !moneyValid(flight.searchPrice, 'total')) || !text(flight.disclosure))) return false;
   if (data.stay !== undefined && (!stay || !text(stay.selectionId, 80) || !text(stay.propertyName, 100) || !text(stay.city, 100) || !dateValid(stay.checkInDate) || !dateValid(stay.checkOutDate) || stay.checkOutDate <= stay.checkInDate || !Number.isInteger(stay.nights) || Number(stay.nights) < 1 || Number(stay.nights) > 30 || !Number.isInteger(stay.rooms) || Number(stay.rooms) < 1 || Number(stay.rooms) > 4 || !moneyValid(stay.staySubtotal, 'amount') || !['live_nuitee', 'illustrative'].includes(String(stay.dataSource)))) return false;
   const missing = [...(!flight ? ['flight'] : []), ...(!stay ? ['stay'] : []), ...(data.experiences.length ? [] : ['experiences'])];
-  if (data.missing.length !== missing.length || !data.missing.every(v => missing.includes(String(v))) || new Set(data.missing).size !== missing.length || (data.status === 'ready') !== Boolean(flight || stay || data.experiences.length)) return false;
+  if (data.missing.length !== missing.length || !data.missing.every(v => missing.includes(String(v))) || new Set(data.missing).size !== missing.length || (data.status === 'ready') !== Boolean(flight || stay || data.car || data.experiences.length)) return false;
   const context = record(data.planningContext);
   if (data.planningContext !== undefined && !context) return false;
   if (context) {
-    if (!text(context.destination, 100) || !['flight', 'stay', 'experience'].includes(String(context.source)) || !['flight_departure', 'stay', 'experience_search'].includes(String(context.dateBasis))) return false;
+    if (!text(context.destination, 100) || !['flight', 'stay', 'experience', 'car'].includes(String(context.source)) || !['flight_departure', 'stay', 'experience_search', 'car_rental'].includes(String(context.dateBasis))) return false;
     for (const key of ['meetingArea', 'propertyName', 'origin']) if (context[key] !== undefined && !text(context[key], 100)) return false;
     for (const key of ['startDate', 'endDate']) if (context[key] !== undefined && !dateValid(context[key])) return false;
     const activityDates = record(context.activityDates);
@@ -109,14 +115,14 @@ export function tripSuggestion(data: DemoTripReview, component: MissingTripCompo
 
 export function continuePlanningPrompt(data: DemoTripReview): string {
   const labels: Record<MissingTripComponent, string> = { flight: 'flights', stay: 'stays', experiences: 'experiences' };
-  const selected = [data.flight ? 'a flight' : '', data.stay ? 'a stay' : '', data.experiences.length ? 'experiences' : ''].filter(Boolean).join(', ');
+  const selected = [data.flight ? 'a flight' : '', data.stay ? 'a stay' : '', data.car ? 'a car' : '', data.experiences.length ? 'experiences' : ''].filter(Boolean).join(', ');
   const c = data.planningContext;
   const destination = c?.destination ? ` for ${c.destination}` : '';
   const location = c?.propertyName ?? c?.meetingArea;
   return `Let’s continue planning${destination}. ${selected ? `I already have ${selected} selected.` : 'Nothing is selected yet.'} ${data.missing.length ? `Suggest the next useful step from these optional missing items: ${data.missing.map(item => labels[item]).join(', ')}.` : 'Ask what I would like to refine next.'}${location ? ` Keep suggestions relevant to ${location}.` : ''} Use the dates and travelers already established. Do not repeat the trip review or display another plan card unless I ask to review it; continue from the current selections shown in the widget. Do not recheck my flight fare just to continue planning. Ask at most one short question, only for what the next search still needs. Nothing is booked.`;
 }
 
-export function TripReviewView({ data, state, locale = 'en-CA', onSuggest, disabledSuggestions, onContinue, actionError, actionNotice, actionsPending, onBack, backLabel = 'Back to selection', onRetry, onPoints, onProtection, onRemoveProtection }: {
+export function TripReviewView({ data, state, locale = 'en-CA', onSuggest, disabledSuggestions, onContinue, actionError, actionNotice, actionsPending, onBack, backLabel = 'Back to selection', onRetry, onPoints, onProtection, onRemoveProtection, onCars, onRemoveCar }: {
   readonly data?: DemoTripReview;
   readonly state?: ReviewState;
   readonly locale?: string;
@@ -132,13 +138,15 @@ export function TripReviewView({ data, state, locale = 'en-CA', onSuggest, disab
   readonly onPoints?: () => void;
   readonly onProtection?: () => void;
   readonly onRemoveProtection?: () => void;
+  readonly onCars?: () => void;
+  readonly onRemoveCar?: () => void;
 }) {
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => { if (onBack && data && !state) heading.current?.focus({ preventScroll: true }); }, [Boolean(onBack), Boolean(data), state]);
   const back = onBack ? <div className="wf-review-back"><Action type="button" onClick={onBack}><ArrowLeftIcon />{backLabel}</Action></div> : null;
   if (state === 'loading') return <section className="cc-app wf-review">{back}<div className="wf-review-feedback" role="status" aria-busy="true">Preparing your selected trip…</div></section>;
   if (state === 'error' || state === 'malformed' || !data) return <section className="cc-app wf-review">{back}<div className="wf-review-feedback"><Feedback status="error">{state === 'error' ? 'Your trip review could not load. Try again; your selections have not been changed.' : 'The trip result was incomplete, so no selections were inferred.'}</Feedback>{onRetry ? <Action className="wf-review-suggestion" type="button" onClick={onRetry}>Try again</Action> : null}</div></section>;
-  const selected = Number(Boolean(data.flight)) + Number(Boolean(data.stay)) + data.experiences.length;
+  const selected = Number(Boolean(data.flight)) + Number(Boolean(data.stay)) + Number(Boolean(data.car)) + data.experiences.length;
   const context = data.planningContext;
   const destination = context?.destination ?? data.stay?.city ?? data.experiences[0]?.experience.city;
   const dates = context?.startDate ? `${context.dateBasis === 'flight_departure' ? 'Flight dates: ' : ''}${dateLabel(context.startDate, locale)}${context.endDate ? `–${dateLabel(context.endDate, locale, { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}` : undefined;
@@ -151,6 +159,7 @@ export function TripReviewView({ data, state, locale = 'en-CA', onSuggest, disab
       {data.flight ? <section className="wf-review-section wf-review-flight" aria-label="Selected flight"><div className="wf-review-section-heading"><strong>Flight</strong><span>Selected</span></div><div className="wf-review-row"><div className="wf-review-facts"><FlightThumbnail imageUrl={data.flight.airlineLogoUrl} /><div><h3>Your selected flight</h3><p>Search selection · Fare verification needed</p></div></div><div className="wf-review-price"><strong>{data.flight.searchPrice ? money(data.flight.searchPrice.total, data.flight.searchPrice.currency, locale) : 'Price unavailable'}</strong><span>{data.flight.searchPrice ? `${data.flight.searchPrice.currency} · Search price` : 'Search price unknown'}</span></div></div></section> : null}
       {data.stay ? <section className="wf-review-section wf-review-stay" aria-label="Selected stay"><div className="wf-review-section-heading"><strong>Stay</strong><span>Selected</span></div><div className="wf-review-row"><div className="wf-review-facts"><StayThumbnail imageUrl={data.stay.imageUrl} /><div><h3>{data.stay.propertyName}</h3><p>{dateLabel(data.stay.checkInDate, locale)}–{dateLabel(data.stay.checkOutDate, locale)} · {data.stay.nights} {data.stay.nights === 1 ? 'night' : 'nights'} · {data.stay.rooms} {data.stay.rooms === 1 ? 'room' : 'rooms'}</p><p>{data.stay.dataSource === 'illustrative' ? 'Fictional stay · No reservation' : 'Provider search selection · No room reserved'}</p></div></div><div className="wf-review-price"><strong>{money(data.stay.staySubtotal.amount, data.stay.staySubtotal.currency, locale)}</strong><span>{data.stay.staySubtotal.currency} · Stay subtotal</span></div></div></section> : null}
       {data.experiences.length ? <section className="wf-review-section" aria-label="Selected experiences"><div className="wf-review-section-heading"><strong>Experiences</strong><span>{data.experiences.length} selected · Wayfare demo</span></div><div className="wf-review-experiences">{data.experiences.map(selection => <div className="wf-review-experience" key={selection.selectionId}><div className="wf-review-thumbnail"><img src={experiencePhoto(selection.experience).url} alt="" onError={event => { event.currentTarget.hidden = true; }} /></div><div><h3>{selection.experience.title}</h3><p>{dateLabel(selection.slot.startLocal, locale, { weekday: 'long', day: 'numeric', month: 'short' })} · {selection.slot.startLocal.slice(11, 16)}</p><p>{selection.experience.city} time · {selection.searchContext.adults} {selection.searchContext.adults === 1 ? 'adult' : 'adults'}</p><span className="wf-review-status"><CheckIcon />Selected · Not reserved</span></div><div className="wf-review-price"><strong>{formatExperienceMoney(selection.totalPrice.amountMinor, selection.totalPrice.currency, locale, true)}</strong><span>{selection.totalPrice.currency} · Fictional price</span></div></div>)}</div></section> : null}
+      {data.car ? <section className="wf-review-section"><div className="wf-review-section-heading"><strong>Car rental</strong><span>Selected · Wayfare demo</span></div><div className="wf-review-experience wf-review-car"><div className="wf-review-thumbnail wf-review-car-thumbnail"><img src={carPhotos[data.car.car.key]?.image} alt={data.car.car.name+' model reference'} onError={event=>{event.currentTarget.hidden=true;}}/></div><div><h3>{data.car.car.name}</h3><p>{dateLabel(data.car.searchContext.startDate,locale)}–{dateLabel(data.car.searchContext.endDate,locale)} · {data.car.pickup==='airport'?'Airport pickup':'Stay pickup'} assumption</p><p>Fictional fleet · No car reserved</p><div className="wf-review-car-actions"><Action type="button" className="wf-review-remove" onClick={onCars} disabled={actionsPending||!onCars}>Change car</Action><Action type="button" className="wf-review-remove" onClick={onRemoveCar} disabled={actionsPending||!onRemoveCar}><XMarkIcon/>Remove</Action></div></div><div className="wf-review-price"><strong>{money(data.car.totalPrice.amount,data.car.totalPrice.currency,locale)}</strong><span>{data.car.totalPrice.currency} · Fictional rental estimate</span></div></div></section> : onCars ? <section className="wf-review-optional"><div className="wf-review-optional-icon"><TruckIcon/></div><div className="wf-review-optional-copy"><h3>Leave room for a detour.</h3><p>Add a car if your trip takes you beyond the city.</p><small>Fictional rental concepts. Local availability is not checked.</small></div><Action type="button" className="wf-review-suggestion" onClick={onCars} disabled={actionsPending}>Explore cars<ArrowRightIcon/></Action></section> : null}
       <TripEstimate data={data} locale={locale} party={party} />
       {selected > 0 ? <>
         <section className="wf-review-optional" aria-label="Points possibilities">
@@ -183,7 +192,7 @@ function TripReviewPanel({ data: initialData, state: initialState, onBack, backL
   const updateContext = useUpdateModelContext();
   const [actionError, setActionError] = useState<string>();
   const [actionNotice, setActionNotice] = useState<string>();
-  const [discovery, setDiscovery] = useState<{ kind: 'experiences'; plan: TripExperienceSearchPlan } | { kind: 'stay'; plan: TripHotelSearchPlan }>();
+  const [discovery, setDiscovery] = useState<{ kind: 'experiences'; plan: TripExperienceSearchPlan } | { kind: 'stay'; plan: TripHotelSearchPlan } | {kind:'car';input:CarSearchInput}>();
   const [optional, setOptional] = useState<TripOptionalKind>();
   const restoreTarget = useRef<TripOptionalKind | undefined>(undefined);
   const [actionsPending, setActionsPending] = useState(false);
@@ -191,6 +200,7 @@ function TripReviewPanel({ data: initialData, state: initialState, onBack, backL
   const [fresh, setFresh] = useState<{ data?: DemoTripReview; state?: ReviewState }>();
   const review = useCallTool('review_trip');
   const protectionSelection = useCallTool('select_trip_protection');
+  const carSelection = useCallTool('select_car');
   const reviewCall = useRef(review.callToolAsync);
   reviewCall.current = review.callToolAsync;
   const generation = useRef(0);
@@ -261,6 +271,20 @@ function TripReviewPanel({ data: initialData, state: initialState, onBack, backL
       setFresh({ data: response.structuredContent }); setOptional(kind);
     } catch { if (request === generation.current) setActionError('Your current trip could not be checked. Try again.'); }
     finally { actionInFlight.current = false; if (request === generation.current) setActionsPending(false); }
+  };
+  const openCars = async () => {
+    if(actionInFlight.current||!ready)return;
+    actionInFlight.current=true;setActionsPending(true);setActionError(undefined);const request=++generation.current;
+    try {const response=await review.callToolAsync({});if(request!==generation.current)return;if(response.isError||!isTripPlanningReview(response.structuredContent))throw new Error('Review unavailable');const current=response.structuredContent;setFresh({data:current});const input=carSearchForTrip(current);if(input)setDiscovery({kind:'car',input});else setActionError('Tell the conversation your destination so we can show relevant cars.');}
+    catch{if(request===generation.current)setActionError('Your current trip could not be checked. Try again.');}
+    finally{actionInFlight.current=false;if(request===generation.current)setActionsPending(false);}
+  };
+  const removeCar = async () => {
+    if(actionInFlight.current||!ready||!data?.car)return;
+    actionInFlight.current=true;setActionsPending(true);setActionError(undefined);const request=++generation.current;
+    try{const response=await carSelection.callToolAsync({action:'remove',expectedSelectionId:data.car.selectionId});if(request!==generation.current)return;const result=response.structuredContent as Record<string,unknown>|undefined;if(response.isError||result?.status!=='removed'){setActionError('Removal was not confirmed. Refresh your trip before trying again.');return;}refreshReview();}
+    catch{if(request===generation.current)setActionError('Removal could not be confirmed. Refresh your trip to check.');}
+    finally{actionInFlight.current=false;setActionsPending(false);}
   };
   const removeProtection = async () => {
     if (actionInFlight.current || !data?.protection) return;
@@ -338,10 +362,13 @@ function TripReviewPanel({ data: initialData, state: initialState, onBack, backL
       if (request === generation.current) setActionsPending(false);
     }
   };
+  if (data && discovery?.kind === 'car') return <TripCarDiscovery input={discovery.input} onBack={refreshReview}/>;
   if (data && discovery?.kind === 'experiences' && discovery.plan.input) return <TripExperienceDiscovery review={data} plan={{ ...discovery.plan, input: discovery.plan.input }} onBack={refreshReview} />;
   if (data && discovery?.kind === 'stay' && discovery.plan.input) return <TripHotelDiscovery review={data} plan={{ ...discovery.plan, input: discovery.plan.input }} onBack={refreshReview} />;
   if (data && optional) return <TripOptionalFlow kind={optional} review={data} onBack={() => { restoreTarget.current = optional; refreshReview(); }} onSaved={(current, message) => { restoreTarget.current = optional; setFresh({ data: current }); setOptional(undefined); setActionNotice(message); }} />;
   return <div ref={panelHost}><TripReviewView data={data} locale={layout.locale ?? 'en-CA'} state={state} onBack={onBack} backLabel={backLabel} onRetry={fresh ? refreshReview : onRetry} actionError={actionError} actionNotice={actionNotice} actionsPending={actionsPending}
+    onCars={ready && data?.planningContext ? () => {void openCars();} : undefined}
+    onRemoveCar={ready && data?.car ? () => {void removeCar();} : undefined}
     onPoints={ready && data ? () => { void openOptional('points'); } : undefined}
     onProtection={ready && data ? () => { void openOptional('protection'); } : undefined}
     onRemoveProtection={ready && data?.protection ? () => { void removeProtection(); } : undefined}
