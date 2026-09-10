@@ -160,24 +160,27 @@ export function runTripProtection(input: TripProtectionInput): Record<string, un
   const context = record(review?.planningContext);
   const flight = record(review?.flight);
   const stay = record(review?.stay);
+  const car = record(review?.car);
   const experiences = Array.isArray(review?.experiences) ? review.experiences : [];
   const experiencesValid = (review?.experiences === undefined || Array.isArray(review.experiences))
     && experiences.length <= 8 && experiences.every(value => id(record(value)?.selectionId, 'esel'));
   const tripIds = {
     flight: flight?.selectionId ?? null,
     stay: stay?.selectionId ?? null,
+    ...(car ? {car:car.selectionId} : {}),
     experiences: experiencesValid ? experiences.map(value => record(value)!.selectionId as string).sort() : [],
   };
   const idsOk = (review?.flight === undefined || id(flight?.selectionId, 'sel'))
     && (review?.stay === undefined || id(stay?.selectionId, 'hsel')) && experiencesValid
     && new Set(tripIds.experiences).size === tripIds.experiences.length
-    && Boolean(tripIds.flight || tripIds.stay || tripIds.experiences.length);
+    && (review?.car === undefined || typeof car?.selectionId === 'string' && /^carsel_[a-f0-9]{16}$/.test(car.selectionId))
+    && Boolean(tripIds.flight || tripIds.stay || tripIds.experiences.length || car);
   const activity = context?.dateBasis === 'flight_departure' && context.activityDates !== undefined ? record(context.activityDates) : undefined;
   const startDate = activity ? activity.startDate : context?.startDate;
   const endDate = activity ? activity.endDate : context?.endDate;
   const duration = calendar(endDate) - calendar(startDate);
-  const contextOk = Boolean(context) && typeof context!.source === 'string' && ['flight', 'stay', 'experience'].includes(context!.source)
-    && typeof context!.dateBasis === 'string' && ['flight_departure', 'stay', 'experience_search'].includes(context!.dateBasis)
+  const contextOk = Boolean(context) && typeof context!.source === 'string' && ['flight', 'stay', 'experience', 'car'].includes(context!.source)
+    && typeof context!.dateBasis === 'string' && ['flight_departure', 'stay', 'experience_search', 'car_rental'].includes(context!.dateBasis)
     && text(context!.destination, 2, 100) && integer(context!.adults, 1, 8) && integer(context!.children, 0, 6)
     && (context!.adults as number) + (context!.children as number) <= 8
     && (context!.infants === undefined || context!.infants === 0) && currency(context!.currency)

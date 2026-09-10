@@ -1,4 +1,5 @@
 import { z } from '@noodleseed/one';
+import { carSelectionSchema } from './car-schemas.js';
 import { travelCompanionDemoConfig } from './demo-config.js';
 import { activityDatesSchema, airlineLogoSchema, selectionIdSchema } from './flight-schemas.js';
 
@@ -537,13 +538,13 @@ export const demoTripReviewStaySchema = z.object({
 });
 
 export const demoTripPlanningContextSchema = z.object({
-  source: z.enum(['flight', 'stay', 'experience']),
+  source: z.enum(['flight', 'stay', 'experience', 'car']),
   destination: z.string().min(2).max(100),
   countryCode: z.string().regex(/^[A-Z]{2}$/).optional(),
   origin: z.string().min(2).max(100).optional(),
   startDate: calendarDateSchema.optional(),
   endDate: calendarDateSchema.optional(),
-  dateBasis: z.enum(['flight_departure', 'stay', 'experience_search']),
+  dateBasis: z.enum(['flight_departure', 'stay', 'experience_search', 'car_rental']),
   activityDates: activityDatesSchema.optional(),
   adults: z.number().int().min(1).max(9).optional(),
   children: z.number().int().min(0).max(8).optional(),
@@ -556,14 +557,14 @@ export const demoTripPlanningContextSchema = z.object({
 export const tripPlanningEstimateSchema = z.object({
   status: z.enum(['complete', 'mixed_currencies', 'incomplete', 'empty']),
   items: z.array(z.object({
-    component: z.enum(['flight', 'stay', 'experience', 'protection']),
+    component: z.enum(['flight', 'stay', 'experience', 'protection', 'car']),
     label: z.string().max(100),
     source: z.enum(['provider_search', 'fictional']),
     currency: z.string().regex(/^[A-Z]{3}$/).optional(),
     fractionDigits: z.number().int().min(0).max(2).optional(),
     amountMinor: z.number().int().nonnegative().max(10_000_000_000).optional(),
     amount: z.number().nonnegative().max(100_000_000).optional(),
-  })).max(11),
+  })).max(12),
   currency: z.string().regex(/^[A-Z]{3}$/).optional(),
   fractionDigits: z.number().int().min(0).max(2).optional(),
   totalMinor: z.number().int().nonnegative().max(100_000_000_000).optional(),
@@ -579,6 +580,7 @@ export const demoTripReviewSchema = z.object({
   flight: demoTripReviewFlightSchema.optional(),
   stay: demoTripReviewStaySchema.optional(),
   experiences: z.array(demoExperienceSelectionSchema).max(8),
+  car: carSelectionSchema.optional(),
   loyalty: demoLoyaltyOverviewSchema,
   planningEstimate: tripPlanningEstimateSchema.optional(),
   protection: tripProtectionSelectionSchema.optional(),
@@ -587,8 +589,8 @@ export const demoTripReviewSchema = z.object({
   planningContext: demoTripPlanningContextSchema.optional(),
   notes: z.array(z.string().min(1).max(240)).max(3).optional(),
 }).refine(
-  ({ status, flight, stay, experiences }) =>
-    (status === 'ready') === Boolean(flight || stay || experiences.length),
+  ({ status, flight, stay, experiences, car }) =>
+    (status === 'ready') === Boolean(flight || stay || experiences.length || car),
   { path: ['status'], message: 'A trip review is ready when any component is selected.' },
 ).refine(
   ({ flight, stay, experiences, missing }) => JSON.stringify(missing) === JSON.stringify([

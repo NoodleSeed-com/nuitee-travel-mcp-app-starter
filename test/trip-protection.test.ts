@@ -189,6 +189,7 @@ describe('server-owned protection planning state', () => {
     for (const nextReview of [
       { ...review, flight: { selectionId: 'sel_ffffffffffffffffffffffffffffffff' } },
       { ...review, stay: { selectionId: 'hsel_ffffffffffffffffffffffffffffffff' } },
+      { ...review, car: { selectionId: 'carsel_ffffffffffffffff' } },
       { ...review, experiences: [{ selectionId: 'esel_ffffffffffffffffffffffffffffffff' }] },
       ...[{ adults: 3 }, { currency: 'USD' }, { startDate: '2030-04-21' }, { destination: 'Tokyo' }]
         .map(changes => ({ ...review, planningContext: { ...review.planningContext, ...changes } })),
