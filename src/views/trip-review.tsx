@@ -78,21 +78,33 @@ function StayThumbnail({ imageUrl }: { readonly imageUrl?: string }) {
   </div>;
 }
 
-export function tripSuggestion(data: DemoTripReview, component: MissingTripComponent): string {
+// This request can appear in chat. Search guidance belongs in model context.
+export function tripSuggestionRequest(data: DemoTripReview, component: MissingTripComponent, includeDetails = false): string {
   const c = data.planningContext;
   const destination = c?.destination;
+  const intent = component === 'flight'
+    ? `Find flights${c?.origin ? ` from ${c.origin}` : ''}${destination ? ` to ${destination}` : ' for my trip'}`
+    : component === 'stay' ? `Find a stay${destination ? ` in ${destination}` : ' for my trip'}`
+      : `Find experiences${destination ? ` in ${destination}` : ' for my trip'}`;
+  if (!includeDetails) return `${intent}.`;
   const near = c?.propertyName ?? c?.meetingArea;
   const dates = c?.dateBasis === 'flight_departure'
     ? ` based on my flight departing ${c.startDate ?? 'on the date already selected'}${c.endDate ? ` and returning ${c.endDate}` : ''}`
     : c?.startDate && c?.endDate ? ` from ${c.startDate} to ${c.endDate}` : c?.startDate ? ` starting ${c.startDate}` : '';
   const party = c?.adults ? ` for ${c.adults} adult${c.adults === 1 ? '' : 's'}${c.children ? ` and ${c.children} child${c.children === 1 ? '' : 'ren'}` : ''}${c.infants ? ` and ${c.infants} infant${c.infants === 1 ? '' : 's'}` : ''}` : '';
   const currency = c?.currency ? `, with prices in ${c.currency}` : '';
+  const location = near && component !== 'flight' ? ` ${component === 'stay' ? 'near' : 'around'} ${near}` : '';
+  return `${intent}${location}${dates}${party}${currency}.`;
+}
+
+export function tripSuggestion(data: DemoTripReview, component: MissingTripComponent): string {
+  const request = tripSuggestionRequest(data, component, true);
   const continuation = ' Do not repeat the trip review, display another plan card, or recheck my flight fare for this search. Continue from the selected context and our conversation.';
-  if (component === 'flight') return `Find flights${c?.origin ? ` from ${c.origin}` : ''}${destination ? ` to ${destination}` : ' for my trip'}${dates}${party}${currency}. Use the trip details already in our conversation and ask only for missing flight details.${continuation}`;
+  if (component === 'flight') return `${request} Use the trip details already in our conversation and ask only for missing flight details.${continuation}`;
   const dateGuidance = ` Reuse the stay or activity dates already established in our conversation. Search immediately when the required details are known. If dates are still missing, ask one short question for only the missing ${component === 'stay' ? 'check-in or check-out' : 'activity'} dates, without a trip recap. Do not require a return flight or an exact arrival time for this search.`;
-  const arrival = c?.dateBasis === 'flight_departure' ? ' Do not treat flight departure or return dates as confirmed local arrival, stay, or activity dates.' : '';
-  if (component === 'stay') return `Find a stay${destination ? ` in ${destination}` : ' for my trip'}${near ? ` near ${near}` : ''}${dates}${party}${currency}. Use my selected trip details; check what is known about the location before describing a stay as nearby.${continuation}${dateGuidance}${arrival}`;
-  return `Find experiences${destination ? ` in ${destination}` : ' for my trip'}${near ? ` around ${near}` : ''}${dates}${party}${currency}. Use my selected trip details; explain when distance or proximity is unknown.${continuation}${dateGuidance}${arrival}`;
+  const arrival = data.planningContext?.dateBasis === 'flight_departure' ? ' Do not treat flight departure or return dates as confirmed local arrival, stay, or activity dates.' : '';
+  if (component === 'stay') return `${request} Use my selected trip details; check what is known about the location before describing a stay as nearby.${continuation}${dateGuidance}${arrival}`;
+  return `${request} Use my selected trip details; explain when distance or proximity is unknown.${continuation}${dateGuidance}${arrival}`;
 }
 
 export function continuePlanningPrompt(data: DemoTripReview): string {
@@ -233,7 +245,8 @@ function TripReviewPanel({ data: initialData, state: initialState, onBack, backL
     return () => cancelAnimationFrame(frame);
   }, [optional, state, data]);
   useEffect(() => {
-    if (discovery || !ready || !data || !layout.supports?.modelContext) return;
+    // A refreshed review must not replace the pending action's model context.
+    if (actionInFlight.current || discovery || !ready || !data || !layout.supports?.modelContext) return;
     void updateContext({ content: [{ type: 'text', text: data.fallback }], structuredContent: { tripPlanning: tripPlanningSnapshot(data) } }).catch(() => undefined);
   }, [ready, contextKey, Boolean(discovery), optional, layout.supports?.modelContext, updateContext]);
   const supportsFollowUp = ready && layout.supports?.followUpMessage;
@@ -298,9 +311,25 @@ function TripReviewPanel({ data: initialData, state: initialState, onBack, backL
         reason = plan.error;
       }
       if (!supportsFollowUp) { setActionError(reason ?? 'Continue in the conversation to plan the next part of your trip.'); return; }
-      if (layout.supports?.modelContext) await updateContext({ content: [{ type: 'text', text: current.fallback }], structuredContent: { tripPlanning: tripPlanningSnapshot(current) } }).catch(() => undefined);
+      const prompt = component
+        ? tripSuggestionRequest(current, component, !layout.supports?.modelContext)
+        : `Let’s continue planning${current.planningContext?.destination ? ` for ${current.planningContext.destination}` : ' my trip'}.`;
+      if (layout.supports?.modelContext) {
+        try {
+          await updateContext({
+            content: [
+              { type: 'text', text: current.fallback },
+              { type: 'text', text: component ? `${tripSuggestion(current, component)}${reason ? ` ${reason}` : ''}` : continuePlanningPrompt(current) },
+            ],
+            structuredContent: { tripPlanning: tripPlanningSnapshot(current) },
+          });
+        } catch {
+          if (request === generation.current) setActionError('Your trip details could not be shared with the conversation. Try again.');
+          return;
+        }
+      }
       if (request !== generation.current) return;
-      try { await send({ prompt: component ? `${tripSuggestion(current, component)}${reason ? ` ${reason}` : ''}` : continuePlanningPrompt(current) }); }
+      try { await send({ prompt }); }
       catch { if (request === generation.current) setActionError('The conversation could not be opened. Please type your request in the chat.'); }
     } catch {
       if (request === generation.current) setActionError('Your current selections could not be checked. Try again; no new search was started.');

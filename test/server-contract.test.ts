@@ -110,6 +110,7 @@ describe('server contract', () => {
           method: 'POST',
           path: '/flights/rates',
           limits: { maxResponseBytes: 6 * 1024 * 1024 },
+          resilience: { timeoutMs: 75_000 },
         },
         verify: { method: 'POST', path: '/flights/verify' },
       },
@@ -119,7 +120,7 @@ describe('server contract', () => {
     expect(gateway).toMatchObject({
       operations: {
         execute: {
-          limits: { timeoutMs: 12_000, maxHostCalls: 1 },
+          limits: { timeoutMs: 80_000, maxHostCalls: 1 },
           calls: {
             search: 'nuitee_flights_http.search',
             verify: 'nuitee_flights_http.verify',
@@ -199,6 +200,7 @@ describe('server contract', () => {
   });
 
   it('rejects lower-case airport codes through the registered flight-plan tool', async () => {
+    // This starts the CLI and local MCP runtime; allow for a cold CI runner.
     const error = await execFile(noodleCli, [
       'tools',
       'call',
@@ -207,7 +209,7 @@ describe('server contract', () => {
       '--args',
       JSON.stringify({ origin: 'isb', destination: 'NYC' }),
       '--json',
-    ]).then(
+    ], { timeout: 10_000 }).then(
       () => undefined,
       (failure) => failure,
     );
@@ -225,7 +227,7 @@ describe('server contract', () => {
         },
       },
     });
-  });
+  }, 15_000);
 
   it('rejects an impossible calendar date from the flight-plan elicitation form', () => {
     expect(flightPlanDatesSchema.safeParse({
@@ -233,8 +235,12 @@ describe('server contract', () => {
     }).success).toBe(false);
   });
 
-  it('guides the assistant to make one progressive decision instead of interrogating', async () => {
-    const manifest = await embeddedApp.toManifest() as any;
+  it.each([
+    ['credential-free', offlineApp],
+    ['live', liveApp],
+    ['embedded', embeddedApp],
+  ])('guides the %s assistant to make one progressive decision instead of interrogating', async (_profile, app) => {
+    const manifest = await app.toManifest() as any;
     const guide = manifest.server.agentGuide;
 
     expect(guide.description).toContain('conversation-first flight discovery');
@@ -284,6 +290,17 @@ describe('server contract', () => {
     expect(guideWire).toContain('non-retryable');
     expect(guideWire).not.toContain('ask for currency');
     expect(guideWire).not.toContain('confirm before searching');
+
+    const narrationRule = guide.boundaries.find((boundary: string) =>
+      boundary.includes('at most two short sentences'));
+    expect(narrationRule).toBeDefined();
+    expect(manifest.server.instructions).toContain(narrationRule);
+    expect(manifest.widgets.find((widget: any) => widget.tool === 'search_flights')?.description)
+      .toContain(narrationRule);
+    const searchSteps = guide.workflows.flatMap((workflow: any) => workflow.steps)
+      .filter((step: any) => step.capability.name === 'search_flights');
+    expect(searchSteps).toHaveLength(2);
+    for (const step of searchSteps) expect(step.guidance).toContain(narrationRule);
   });
 
   it('keeps the credential-free server free of required managed secrets', async () => {
