@@ -29,6 +29,7 @@ export const starterConfig = {
     origins: [
       'http://localhost:3000',
       'http://localhost:3001',
+      'https://gowayfare.io',
     ],
   },
 } as const;
