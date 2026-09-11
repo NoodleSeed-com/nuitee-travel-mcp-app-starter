@@ -11,6 +11,7 @@ import { TravelEditorialFeature } from './travel-editorial-feature';
 import { TravelHero } from './travel-hero';
 
 interface TravelZeroStateProps {
+  readonly disabled?: boolean;
   readonly defaults?: TravelDefaults;
   readonly inputRef: Ref<HTMLTextAreaElement>;
   readonly launchError?: string | null;
@@ -18,6 +19,7 @@ interface TravelZeroStateProps {
 }
 
 export function TravelZeroState({
+  disabled = false,
   defaults = NEUTRAL_TRAVEL_DEFAULTS,
   inputRef,
   launchError = null,
@@ -27,11 +29,12 @@ export function TravelZeroState({
     <div className="travel-landing">
       <TravelHero
         defaults={defaults}
+        disabled={disabled}
         inputRef={inputRef}
         launchError={launchError}
         onStart={onStart}
       />
-      <TravelCapabilities />
+      <TravelCapabilities disabled={disabled} />
       <DestinationInspiration />
       <TravelEditorialFeature />
     </div>

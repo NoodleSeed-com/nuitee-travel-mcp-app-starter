@@ -9,6 +9,7 @@ import {
 } from '../lib/travel-defaults';
 
 interface UseTravelDefaultsOptions {
+  readonly businessCurrency?: SupportedCurrency;
   readonly country?: string;
   readonly locale?: string;
 }
@@ -29,7 +30,7 @@ export function useTravelDefaults(
   const [defaults, setDefaults] = useState<TravelDefaults>(() => {
     const marketCountry = country ?? resolveInitialMarketCountry(locale);
     return {
-      currency: resolveInitialCurrency({ locale, country }),
+      currency: options.businessCurrency || resolveInitialCurrency({ locale, country }),
       ...(marketCountry ? { marketCountry } : {}),
       source: country ? 'ip-country' : 'fallback',
     };
@@ -51,14 +52,14 @@ export function useTravelDefaults(
     setDefaults((current) => {
       if (current.source !== 'fallback') return current;
       return {
-        currency: userSelectedCurrencyRef.current
+        currency: userSelectedCurrencyRef.current || Boolean(options.businessCurrency)
           ? current.currency
           : resolveInitialCurrency({ locale: browserLocale }),
         ...(marketCountry ? { marketCountry } : {}),
         source: 'fallback',
       };
     });
-  }, [options.locale]);
+  }, [options.locale, options.businessCurrency]);
 
   return { ...defaults, setCurrency };
 }

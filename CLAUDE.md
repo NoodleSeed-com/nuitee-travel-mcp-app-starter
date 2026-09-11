@@ -29,3 +29,13 @@ transactions require explicit authorization for the action and target.
 Keep the capability boundary truthful: live flight/hotel reads, illustrative
 ancillaries, no booking or payment. Preserve unrelated work, use reviewed PRs,
 and never enable auto-merge or queue a PR without explicit user instruction.
+
+## Business workspace
+
+Read `docs/BUSINESS_WORKSPACE.md` and `docs/BUSINESS_WORKSPACE_ARCHITECTURE.md`
+before changing the owner portal or its storefront connection. The owner portal
+is `apps/business-portal`; `apps/web` remains the storefront. This is one business,
+with no superadmin or multi-tenant scope. Preserve immutable review, private preview
+and explicit publication. Never use an owner data directory as a test fixture.
+New feature work belongs in this combined repository; the standalone portal is a
+preserved fallback. Keep the unfinished hotel-checkout branch isolated.

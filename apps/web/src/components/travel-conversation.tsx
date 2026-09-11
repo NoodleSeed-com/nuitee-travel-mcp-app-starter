@@ -9,6 +9,8 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useBusinessBrand } from './business-brand';
+import { businessLocale } from '../lib/business-brand';
 import { siteConfig } from '../lib/site-config';
 import { presentAssistantError } from '../lib/assistant-error';
 import type { ReadyPublicAssistantRuntime } from '../lib/assistant-config';
@@ -47,7 +49,7 @@ interface TravelConversationProps {
   } | null;
 }
 
-function conversationCopy(projection: TripProjection) {
+function conversationCopy(projection: TripProjection, name = 'Wayfare') {
   if (projection.focus === 'stays') {
     return {
       title: projection.stayDestination ? `Stay in ${projection.stayDestination}` : 'Compare stays',
@@ -87,11 +89,11 @@ function conversationCopy(projection: TripProjection) {
     case 'rewards':
     case 'insurance':
     case 'trip-review':
-      return { title, placeholder: 'Tell Wayfare what you need…' };
+      return { title, placeholder: `Tell ${name} what you need…` };
     case 'error':
-      return { title, placeholder: 'Tell Wayfare what to change…' };
+      return { title, placeholder: `Tell ${name} what to change…` };
     case 'idle':
-      return { title, placeholder: 'Tell Wayfare what you need…' };
+      return { title, placeholder: `Tell ${name} what you need…` };
   }
 }
 
@@ -160,17 +162,19 @@ export function TravelConversation({
   onNewTrip,
   promptRequest,
 }: Readonly<TravelConversationProps>) {
+  const brand = useBusinessBrand();
   const durableInitialPrompt = Boolean(onInitialPromptAccepted);
   const [principalKey] = useState(() => crypto.randomUUID());
   const { client, messages, status, error } = useNoodleAssistant({
-    embedId: runtime.embedId,
-    serviceUrl: runtime.serviceUrl,
+    ...('sessionEndpoint' in runtime && runtime.sessionEndpoint
+      ? { sessionEndpoint: runtime.sessionEndpoint }
+      : { embedId: runtime.embedId!, serviceUrl: runtime.serviceUrl }),
     principalKey,
     clientContext: () => ({
-      locale: navigator.language,
+      locale: businessLocale(brand) || navigator.language,
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     }),
-    pageContext: () => toTravelPageContext(defaults),
+    pageContext: () => ({ ...toTravelPageContext(defaults), ...(brand ? { travelLanguage: brand.language } : {}) }),
   });
   const initialPromptSendingRef = useRef(false);
   const initialPromptAcceptedRef = useRef(false);
@@ -424,7 +428,7 @@ export function TravelConversation({
     () => currentTurnHasToolError(messages),
     [messages],
   );
-  const copy = conversationCopy(projection);
+  const copy = conversationCopy(projection, brand?.name);
   const awaitingAssistantContent = appearance === 'immersive'
     && busy
     && visibleMessages.every((message) => message.role === 'user');
@@ -534,7 +538,7 @@ export function TravelConversation({
     >
       <header className="travel-conversation__header">
         <p className="assistant-identity">
-          {siteConfig.brand.assistantName}
+          {brand ? `${brand.name} travel assistant` : siteConfig.brand.assistantName}
         </p>
         <h1>{copy.title}</h1>
         {appearance === 'immersive' && onNewTrip ? (

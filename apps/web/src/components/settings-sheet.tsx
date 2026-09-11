@@ -2,6 +2,7 @@
 
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useEffect, useRef } from 'react';
+import { useBusinessBrand } from './business-brand';
 import { siteConfig } from '../lib/site-config';
 
 interface SettingsSheetProps {
@@ -16,6 +17,7 @@ export function SettingsSheet({
   onClose,
 }: Readonly<SettingsSheetProps>) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const brand = useBusinessBrand();
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -75,7 +77,7 @@ export function SettingsSheet({
     >
       <header className="settings-sheet__header">
         <div>
-          <p className="settings-sheet__eyebrow">{siteConfig.brand.name}</p>
+          <p className="settings-sheet__eyebrow">{brand?.name || siteConfig.brand.name}</p>
           <h2 id="settings-title">Settings</h2>
         </div>
         <button

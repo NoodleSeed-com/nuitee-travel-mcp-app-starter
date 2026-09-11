@@ -2,6 +2,13 @@ export type PublicAssistantRuntime =
   | {
       readonly status: 'ready';
       readonly embedId: string;
+      readonly sessionEndpoint?: never;
+      readonly serviceUrl: string;
+    }
+  | {
+      readonly status: 'ready';
+      readonly sessionEndpoint: '/api/business/preview/session';
+      readonly embedId?: never;
       readonly serviceUrl: string;
     }
   | {

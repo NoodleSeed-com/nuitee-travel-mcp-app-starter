@@ -8,6 +8,7 @@ const rootFiles = new Set([
   'vite.config.ts', 'vitest.browser.config.ts',
 ]);
 const publicDocs = new Set([
+  'BUSINESS_WORKSPACE.md', 'BUSINESS_WORKSPACE_ARCHITECTURE.md', 'BUSINESS_WORKSPACE_CHECKPOINT.md',
   'FLY_DEPLOYMENT.md', 'EMBEDDED_ASSISTANT.md', 'WAYFARE_TRAVEL_COMPANION.md',
   'architecture.md', 'canonical-domain.md', 'customization.md', 'fixture-safety.md',
   'generated-agent-guidance.md', 'nuitee-flights-contract.md', 'oauth.md',
@@ -20,7 +21,9 @@ export function approvedPublicPath(path) {
   return path.startsWith('docs/') && publicDocs.has(path.slice(5));
 }
 export function forbiddenPublicPath(path) {
-  return path.split('/').some((part) => ['.git', '.noodle', 'node_modules', '.next', 'dist', '.worktrees', '.superpowers'].includes(part))
+  return path.split('/').some((part) => ['.git', '.local', '.noodle', 'node_modules', '.next', 'dist', '.worktrees', '.superpowers'].includes(part))
+    || /(?:^|\/)(?:\.business-runtime[^/]*|\.next-business[^/]*)/.test(path)
+    || /\.(?:sqlite|sqlite-journal|sqlite-wal|sqlite-shm|db)$/i.test(path)
     || /(?:^|\/)\.env(?:\..*)?$/.test(path) && !path.endsWith('/.env.example') && path !== '.env.example'
     || /\.(?:pem|p12|pfx|key)$/i.test(path);
 }

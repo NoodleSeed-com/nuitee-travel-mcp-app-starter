@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { ImmersiveExplorePage } from '../../src/components/experience/immersive-explore-page';
 import { resolvePublicAssistantRuntime } from '../../src/lib/assistant-config';
@@ -9,5 +10,6 @@ export const metadata: Metadata = {
 };
 
 export default function ExperiencePage() {
+  if (process.env.WAYFARE_BUSINESS_PORTAL_ORIGIN !== undefined) redirect('/');
   return <ImmersiveExplorePage runtime={resolvePublicAssistantRuntime(process.env)} />;
 }

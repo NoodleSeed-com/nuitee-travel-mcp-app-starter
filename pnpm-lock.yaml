@@ -21,6 +21,9 @@ importers:
         specifier: 2.2.0
         version: 2.2.0(react@19.2.8)
     devDependencies:
+      '@noodleseed/assistant':
+        specifier: 1.28.0
+        version: 1.28.0(@modelcontextprotocol/sdk@1.30.0(zod@4.4.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@noodleseed/one':
         specifier: 0.161.2
         version: 0.161.2
@@ -48,12 +51,17 @@ importers:
       typescript:
         specifier: 7.0.2
         version: 7.0.2
+      undici:
+        specifier: 8.7.0
+        version: 8.7.0
       vite:
         specifier: 8.2.2
         version: 8.2.2(@types/node@26.2.0)
       vitest:
         specifier: 4.1.11
         version: 4.1.11(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(@vitest/browser-playwright@4.1.11)(jsdom@29.1.1)(vite@8.2.2(@types/node@26.2.0))
+
+  apps/business-portal: {}
 
   apps/web:
     dependencies:
@@ -2112,6 +2120,10 @@ packages:
     resolution: {integrity: sha512-IDxfleLmmbSskfWSUATiN1nfn2rDuvnMOqb5CWR92iIfojA0Ud+ulOAAEQ57LPr9rWmsreUyf5lwyao+7GNNVw==}
     engines: {node: '>=20.18.1'}
 
+  undici@8.7.0:
+    resolution: {integrity: sha512-N7iQtfyLhIMOFgQubvmLV26svHpO0bqKnAiWotTQCVKCmWrcGbBotPuW1x+xwYZ2VHdSTVUfPQQnlEt1/LouTQ==}
+    engines: {node: '>=22.19.0'}
+
   unified@11.0.5:
     resolution: {integrity: sha512-xKvGhPWw3k84Qjh8bI3ZeJjqnyadK+GEFtazSfZv/rKeTkTjOJho6mFqh2SM96iIcZokxiOpg78GazTSg8+KHA==}
 
@@ -4152,6 +4164,8 @@ snapshots:
   undici-types@8.3.0: {}
 
   undici@7.29.0: {}
+
+  undici@8.7.0: {}
 
   unified@11.0.5:
     dependencies:

@@ -663,6 +663,13 @@ function createTravelCapabilities(live: boolean, profile: TravelServerProfile) {
 export function createTravelServer(
   mode: TravelServerMode,
   profile: TravelServerProfile = 'starter',
+  customize?: (source: {
+    options: Parameters<typeof server>[1];
+    capabilities: NonNullable<Parameters<typeof server>[2]>;
+  }) => {
+    options: Parameters<typeof server>[1];
+    capabilities: NonNullable<Parameters<typeof server>[2]>;
+  },
 ) {
   // All entrypoints share this product factory. Only the connector/model
   // credentials differ, which prevents local tests and external MCP hosts from
@@ -810,9 +817,10 @@ export function createTravelServer(
         } : {}),
       };
 
-  return server(
-    'nuitee_travel_mcp_app_starter',
-    { ...options, ...(demo ? {handoff:{allowedDomains:['https://commons.wikimedia.org','https://creativecommons.org']}} : {}), instructions: `${options.instructions} ${flightResultsPresentation}` },
-    capabilities.all,
-  );
+  const source = {
+    options: { ...options, ...(demo ? {handoff:{allowedDomains:['https://commons.wikimedia.org','https://creativecommons.org']}} : {}), instructions: `${options.instructions} ${flightResultsPresentation}` },
+    capabilities: capabilities.all,
+  };
+  const configured = customize ? customize(source) : source;
+  return server('nuitee_travel_mcp_app_starter', configured.options, configured.capabilities);
 }

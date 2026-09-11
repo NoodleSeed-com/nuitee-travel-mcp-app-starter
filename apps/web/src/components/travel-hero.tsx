@@ -7,9 +7,11 @@ import {
   type TravelDefaults,
 } from '../lib/travel-defaults';
 import { siteConfig } from '../lib/site-config';
+import { useBusinessBrand } from './business-brand';
 import { TravelComposer } from './travel-composer';
 
 interface TravelHeroProps {
+  readonly disabled?: boolean;
   readonly defaults?: TravelDefaults;
   readonly inputRef: Ref<HTMLTextAreaElement>;
   readonly launchError?: string | null;
@@ -21,19 +23,21 @@ interface TravelHeroProps {
  * capabilities are relevant after the traveler describes their intent.
  */
 export function TravelHero({
+  disabled = false,
   defaults = NEUTRAL_TRAVEL_DEFAULTS,
   inputRef,
   launchError,
   onStart,
 }: Readonly<TravelHeroProps>) {
+  const brand = useBusinessBrand();
   const [imageState, setImageState] = useState<'loading' | 'loaded' | 'error'>(
     'loading',
   );
   const animatedPlaceholders = [
     'Tokyo in spring',
     'A long weekend in New York',
-    'Return flights to London',
-    'Three nights in Lisbon',
+    ...(!brand || brand.capabilities.flights ? ['Return flights to London'] : []),
+    ...(!brand || brand.capabilities.hotels ? ['Three nights in Lisbon'] : []),
   ];
   const resetView = (event: ReactPointerEvent<HTMLDivElement>) => {
     event.currentTarget.style.setProperty('--travel-view-x', '0px');
@@ -89,10 +93,11 @@ export function TravelHero({
           <div className="travel-hero__interface">
             <div className="travel-hero__panel">
               <div className="travel-hero__copy">
-                <h1 id="travel-home-title">Tell us the trip you have in mind</h1>
+                <h1 id="travel-home-title">{brand?.welcome || 'Tell us the trip you have in mind'}</h1>
               </div>
               <TravelComposer
-                animatedPlaceholders={animatedPlaceholders}
+                animatedPlaceholders={disabled ? [] : animatedPlaceholders}
+                disabled={disabled}
                 error={Boolean(launchError)}
                 formLabel="Plan a trip"
                 inputId="travel-prompt"

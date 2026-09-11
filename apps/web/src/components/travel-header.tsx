@@ -28,7 +28,7 @@ import {
   type SupportedCurrency,
 } from '../lib/travel-defaults';
 import { TravelNavigationDialog } from './travel-navigation-dialog';
-import { WayfareMark } from './wayfare-mark';
+import { BusinessMark, useBusinessBrand } from './business-brand';
 
 const CURRENCY_FLAGS = {
   AED: AE,
@@ -95,6 +95,7 @@ export function TravelHeader({
   onOpenSettings,
   onPlanTrip,
 }: Readonly<TravelHeaderProps>) {
+  const brand = useBusinessBrand();
   const [menuOpen, setMenuOpen] = useState(false);
   const selectedCurrencyIndex = SUPPORTED_CURRENCIES.indexOf(currency);
   const [currencyOpen, setCurrencyOpen] = useState(false);
@@ -191,9 +192,9 @@ export function TravelHeader({
     <header className={`travel-header travel-header--${mode}`}>
       <a className="travel-wordmark" href="/">
         <span aria-hidden="true" className="travel-wordmark__mark">
-          <WayfareMark />
+          <BusinessMark />
         </span>
-        <span>{siteConfig.brand.name}</span>
+        <span>{brand?.name || siteConfig.brand.name}</span>
       </a>
       {mode === 'conversation' ? (
         <button

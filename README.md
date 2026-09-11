@@ -12,9 +12,33 @@
 
 Use this starter to turn trip intent into options, compare tradeoffs, remember a selection, and verify a flight fare. The same travel tools serve the website's embedded assistant and external MCP hosts.
 
+**Business owner workspace:** this checkout also includes the owner portal and its local traveler connection. Follow [Run your business workspace locally](docs/BUSINESS_WORKSPACE.md) to configure your own travel/model accounts, privately preview a reviewed version, and publish it to the local storefront.
+
 ![Wayfare homepage with its conversational composer and jet-window hero](docs/images/travel-home.png)
 
 *Actual local website, before a conversation starts. No credentials or live provider requests were used for these captures.*
+
+## Run the owner portal and traveler together
+
+Use Node.js 24.18 or later in the Node 24 line and pnpm 11.17.0. From this single
+checkout's repository root:
+
+```sh
+pnpm install --frozen-lockfile
+pnpm dev:business
+```
+
+Open the owner portal at [127.0.0.1:3103](http://127.0.0.1:3103/) and the traveler
+storefront at [localhost:3100](http://localhost:3100/). Enter your own Nuitée and
+model connections in the portal; no existing Wayfare secrets are imported.
+Saved settings stay separate from the published traveler until you review,
+privately preview and explicitly publish a version. This is local development on
+a trusted machine, with bookings and analytics disconnected and checkout not
+implemented.
+
+The [business workspace guide](docs/BUSINESS_WORKSPACE.md) includes optional
+account migration, private storage, runtime ports and verification commands.
+The original credential-free website and MCP entrypoints remain available below.
 
 ## Try it without credentials
 
@@ -72,6 +96,7 @@ The flight journey is Search → Select → Verify. Conversation carries intent 
 
 | Location | Purpose |
 | --- | --- |
+| [`apps/business-portal/`](apps/business-portal/) | Single-business owner account, configuration, reviewed versions and local publication |
 | [`apps/web/`](apps/web/) | Next.js guest website and chronological embedded conversation |
 | [`src/travel-server.ts`](src/travel-server.ts) | Shared capabilities, entrypoint profiles, assistant configuration, and state contracts |
 | [`src/views/`](src/views/) | Real flight, hotel, experience, reward, trip-review, and protection Apps |
@@ -121,6 +146,7 @@ The embed ID and service origin are public coordinates. Provider and model keys 
 
 | Command | Profile | Credentials |
 | --- | --- | --- |
+| `pnpm dev:business` | Owner portal + local traveler + reviewed runtime lifecycle | Your travel/model connections for chat; owner setup and configuration work before connecting |
 | `pnpm dev:web` | Guest website | None for the homepage; configured assistant for chat |
 | `pnpm dev:preview` | Expanded MCP preview | None; illustrative ancillary data |
 | `pnpm dev` | Minimal flights MCP shell | None; live tools explain configuration requirements |
@@ -144,6 +170,8 @@ Set `NEXT_PUBLIC_SITE_URL` to your exact website origin for canonical metadata. 
 ## Check your changes
 
 ```sh
+pnpm test:business
+pnpm test:business:runtime
 pnpm test
 pnpm test:browser
 pnpm agent:check
@@ -151,7 +179,7 @@ pnpm agent:check:preview
 pnpm check:web
 ```
 
-These commands cover fixture tests, browser components, the default and expanded-preview MCP contracts, and the website's typecheck, tests, browser tests, and build. The [CI workflow](.github/workflows/ci.yml) defines the repository gates. The build badge links to those checks; it is not a claim that a public CI run or hosted deployment has passed.
+These commands cover portal and local SDK integration fixtures, browser components, the default and expanded-preview MCP contracts, and the website's typecheck, tests, browser tests, and build. The [CI workflow](.github/workflows/ci.yml) defines the repository gates. The build badge links to those checks; it is not a claim that a public CI run or hosted deployment has passed.
 
 Run `pnpm audit:release` from this repository to check public file boundaries,
 Git history, generated guidance, dependency licenses and current advisories. See

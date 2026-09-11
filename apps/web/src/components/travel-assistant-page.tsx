@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { BusinessBrandContext } from './business-brand';
+import type { BusinessBrand } from '../lib/business-brand';
 import type { PublicAssistantRuntime } from '../lib/assistant-config';
 import { useTravelDefaults } from '../hooks/use-travel-defaults';
 import { SettingsSheet } from './settings-sheet';
@@ -12,6 +14,8 @@ import { TravelZeroState } from './travel-zero-state';
 type PageMode = 'zero' | 'starting';
 
 interface TravelAssistantPageProps {
+  readonly brand?: BusinessBrand;
+  readonly businessMode?: boolean;
   readonly initialCountry?: string;
   readonly runtime: PublicAssistantRuntime;
 }
@@ -19,6 +23,8 @@ interface TravelAssistantPageProps {
 export function TravelAssistantPage({
   initialCountry,
   runtime,
+  brand,
+  businessMode = false,
 }: Readonly<TravelAssistantPageProps>) {
   const [mode, setMode] = useState<PageMode>('zero');
   const [initialPrompt, setInitialPrompt] = useState<string | null>(null);
@@ -28,11 +34,16 @@ export function TravelAssistantPage({
   const heroInputRef = useRef<HTMLTextAreaElement>(null);
   const { setCurrency, ...defaults } = useTravelDefaults({
     country: initialCountry,
+    businessCurrency: brand?.currency,
   });
 
   useEffect(() => {
     setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (brand) document.title = `${brand.name} — Travel planning`;
+  }, [brand]);
 
   function reset() {
     setMode('zero');
@@ -57,10 +68,11 @@ export function TravelAssistantPage({
   }
 
   return (
-    <>
+    <BusinessBrandContext value={brand}>
       {mode === 'zero' || !initialPrompt || runtime.status !== 'ready' ? (
         <div
           className="travel-workspace"
+          data-business-brand={brand ? 'true' : undefined}
           data-app-ready={hydrated ? 'true' : undefined}
         >
           <a className="skip-link" href="#travel-canvas">
@@ -78,7 +90,8 @@ export function TravelAssistantPage({
             <TravelZeroState
               defaults={defaults}
               inputRef={heroInputRef}
-              launchError={launchError}
+              disabled={businessMode && runtime.status !== 'ready'}
+              launchError={launchError || (businessMode && runtime.status !== 'ready' ? runtime.message : null)}
               onStart={startConversation}
             />
           </main>
@@ -87,6 +100,7 @@ export function TravelAssistantPage({
       ) : (
         <div
           className="travel-workspace"
+          data-business-brand={brand ? 'true' : undefined}
           data-app-ready={hydrated ? 'true' : undefined}
           inert={settingsOpen || undefined}
         >
@@ -115,6 +129,6 @@ export function TravelAssistantPage({
         onClearConversation={reset}
         onClose={() => setSettingsOpen(false)}
       />
-    </>
+    </BusinessBrandContext>
   );
 }

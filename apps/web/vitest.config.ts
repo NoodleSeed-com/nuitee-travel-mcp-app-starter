@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
-    exclude: [...configDefaults.exclude, 'test/browser/**'],
+    exclude: [...configDefaults.exclude, 'test/browser/**', 'test/business-browser/**'],
     setupFiles: ['./vitest.setup.ts'],
   },
 });

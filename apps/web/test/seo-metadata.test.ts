@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 async function pageMetadata(path: string) {
-  const page = await import(/* @vite-ignore */ path) as { metadata?: Metadata };
-  return page.metadata;
+  const page = await import(/* @vite-ignore */ path) as { metadata?: Metadata; generateMetadata?: () => Promise<Metadata> };
+  return page.generateMetadata ? page.generateMetadata() : page.metadata;
 }
 
 describe('Wayfare rendered metadata contract', () => {

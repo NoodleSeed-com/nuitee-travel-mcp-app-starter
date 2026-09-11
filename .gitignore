@@ -27,3 +27,7 @@ test/browser/__screenshots__/
 /docs/superpowers/
 /IMPLEMENTATION_PLAN.md
 /design/
+
+# Private local business state and generated SDK entrypoints
+.local/
+src/.business-runtime*

@@ -6,6 +6,7 @@ import { BorderBeam } from './ui/border-beam-search';
 
 interface TravelComposerProps {
   readonly animatedPlaceholders?: readonly string[];
+  readonly disabled?: boolean;
   readonly busy?: boolean;
   readonly error?: boolean;
   readonly formLabel?: string;
@@ -29,6 +30,7 @@ interface TravelComposerProps {
 export function TravelComposer({
   animatedPlaceholders = [],
   busy = false,
+  disabled = false,
   error = false,
   formLabel = 'Start a trip',
   inputId,
@@ -117,7 +119,7 @@ export function TravelComposer({
     event.preventDefault();
     if (busy) return;
     const prompt = draft.trim();
-    if (!prompt) return;
+    if (disabled || !prompt) return;
     onSubmit(prompt);
     setDraft('');
   }
@@ -173,6 +175,7 @@ export function TravelComposer({
               aria-label="Ask the travel assistant"
               className="travel-composer__input"
               id={inputId}
+              disabled={disabled}
               onBlur={() => setFocused(false)}
               onChange={(event) => setDraft(event.currentTarget.value)}
               onFocus={() => setFocused(true)}
@@ -214,7 +217,7 @@ export function TravelComposer({
               <button
                 aria-label={submitLabel}
                 className="travel-composer__send"
-                disabled={!draft.trim()}
+                disabled={disabled || !draft.trim()}
                 type="submit"
               >
                 <ArrowUpIcon aria-hidden="true" />

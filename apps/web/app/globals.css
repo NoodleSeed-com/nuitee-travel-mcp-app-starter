@@ -3202,3 +3202,14 @@ code {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Business presentation follows the approved Wayfare geometry and state colors. */
+.business-initials { display: inline-grid; place-items: center; min-width: 24px; min-height: 24px; font-size: 14px; font-weight: 600; line-height: 1; }
+.business-preview-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 24px; padding: 12px 24px; background: #f7f7f7; color: #0d0d0d; font-size: 13px; }
+.business-preview-banner a { color: inherit; display: inline-flex; align-items: center; min-height: 44px; border: 1px solid #e8e8e8; border-radius: 999px; padding: 0 18px; text-decoration: none; }
+.business-preview-status { max-width: 720px; padding: 60px 24px; margin: 0 auto; }
+.business-preview-status h1 { font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.05; margin-bottom: 24px; }
+
+.travel-workspace[data-business-brand] .travel-wordmark { min-width: 0; }
+.travel-workspace[data-business-brand] .travel-wordmark > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.travel-workspace[data-business-brand] .travel-hero__copy h1 { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }

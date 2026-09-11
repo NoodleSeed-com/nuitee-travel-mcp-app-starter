@@ -9,7 +9,29 @@ import './travel.css';
 import { CardCarousel } from './card-carousel.js';
 
 type HomeState = 'loading' | 'error' | 'malformed';
-type TravelHomeOutput = HomeOutput | DemoHomeOutput;
+interface BusinessHomeOutput {
+  readonly status: 'ready';
+  readonly brand: string;
+  readonly message: string;
+  readonly disclosure: string;
+  readonly fallback: string;
+  readonly domains: readonly {
+    readonly name: keyof typeof domainIcons;
+    readonly availability: 'available' | 'illustrative' | 'coming_soon';
+    readonly label: string;
+  }[];
+  readonly business: {
+    readonly releaseId: string;
+    readonly sourceRevision: number;
+    readonly currency: 'CAD' | 'USD' | 'GBP' | 'EUR';
+    readonly adults: 1 | 2;
+    readonly nights: 1 | 2 | 3;
+    readonly language: 'English' | 'French' | 'Spanish';
+    readonly tone: 'Warm and helpful' | 'Concise and practical' | 'Thoughtful and detailed';
+    readonly capabilities: { readonly flights: boolean; readonly hotels: boolean; readonly experiences: boolean; readonly cars: boolean; readonly checkout: false };
+  };
+}
+type TravelHomeOutput = HomeOutput | DemoHomeOutput | BusinessHomeOutput;
 
 const domainIcons = {
   Flights: PlaneIcon,
@@ -19,9 +41,42 @@ const domainIcons = {
   Experiences: CompassIcon,
 } as const;
 
+const record = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
+const exactKeys = (value: Record<string, unknown>, keys: readonly string[]) => Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
+const boundedText = (value: unknown, max: number): value is string => typeof value === 'string' && value.length > 0 && value.length <= max && value === value.trim() && !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value);
+
+function isBusinessHome(value: Record<string, unknown>): value is BusinessHomeOutput & Record<string, unknown> {
+  if (!exactKeys(value, ['status', 'brand', 'message', 'disclosure', 'fallback', 'domains', 'business']) || value.status !== 'ready'
+    || !boundedText(value.brand, 40) || !boundedText(value.message, 90) || !boundedText(value.disclosure, 320) || !boundedText(value.fallback, 700)) return false;
+  const business = value.business;
+  if (!record(business) || !exactKeys(business, ['releaseId', 'sourceRevision', 'currency', 'adults', 'nights', 'language', 'tone', 'capabilities'])
+    || typeof business.releaseId !== 'string' || !/^r_[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(business.releaseId)
+    || !Number.isSafeInteger(business.sourceRevision) || Number(business.sourceRevision) < 1
+    || typeof business.currency !== 'string' || !['CAD', 'USD', 'GBP', 'EUR'].includes(business.currency)
+    || ![1, 2].includes(business.adults as number) || ![1, 2, 3].includes(business.nights as number)
+    || typeof business.language !== 'string' || !['English', 'French', 'Spanish'].includes(business.language)
+    || typeof business.tone !== 'string' || !['Warm and helpful', 'Concise and practical', 'Thoughtful and detailed'].includes(business.tone)) return false;
+  const enabled = business.capabilities;
+  if (!record(enabled) || !exactKeys(enabled, ['flights', 'hotels', 'experiences', 'cars', 'checkout'])
+    || !Object.values(enabled).every(value => typeof value === 'boolean') || enabled.checkout !== false
+    || enabled.hotels && business.currency === 'GBP') return false;
+  const expected = [
+    ['Flights', enabled.flights ? 'available' : 'coming_soon'],
+    ['Stays', enabled.hotels ? 'available' : 'coming_soon'],
+    ['Loyalty', 'illustrative'],
+    ['Ground travel', enabled.cars ? 'illustrative' : 'coming_soon'],
+    ['Experiences', enabled.experiences ? 'illustrative' : 'coming_soon'],
+  ];
+  return Array.isArray(value.domains) && value.domains.length === expected.length && value.domains.every((domain, index) =>
+    record(domain) && exactKeys(domain, ['name', 'availability', 'label']) && domain.name === expected[index][0]
+    && domain.availability === expected[index][1] && boundedText(domain.label, 80));
+}
+
 export function isHome(value: unknown): value is TravelHomeOutput {
-  if (value === null || typeof value !== 'object') return false;
-  const candidate = value as Partial<TravelHomeOutput>;
+  if (!record(value)) return false;
+  // A malformed business result must not fall through to the legacy demo path.
+  if (Object.hasOwn(value, 'business')) return isBusinessHome(value);
+  const candidate = value as Partial<HomeOutput | DemoHomeOutput>;
   const expanded = Array.isArray(candidate.domains) && candidate.domains.some(
     (domain) => domain?.availability === 'illustrative',
   );
@@ -61,6 +116,7 @@ export function TravelHomeView({
 }) {
   const frameClassName = 'cc-app';
   const demo = data !== undefined && 'disclosure' in data;
+  const business = data !== undefined && 'business' in data ? data.business : undefined;
 
   if (state === 'loading') {
     return (
@@ -84,12 +140,18 @@ export function TravelHomeView({
     );
   }
 
+  const currentFlights = business?.capabilities.flights;
+  const currentHotels = business?.capabilities.hotels;
+  const BusinessIcon = currentFlights ? PlaneIcon : currentHotels ? BedIcon : CompassIcon;
+  const businessAvailability = currentFlights && currentHotels ? 'Flight and hotel search enabled'
+    : currentFlights ? 'Flight search enabled' : currentHotels ? 'Hotel search enabled' : 'Illustrative planning';
+
   return (
     <Frame
       className={frameClassName}
       displayMode="auto"
-      title={demo ? 'Plan your travel' : 'Flight search'}
-      subtitle={demo
+      title={business ? data.brand : demo ? 'Plan your travel' : 'Flight search'}
+      subtitle={business ? 'Travel services and planning ideas' : demo
         ? data.domains.find((domain) => domain.name === 'Stays')?.availability === 'available'
           ? 'Current flights and stays, with rewards guidance'
           : 'Flights, illustrative stays, and rewards'
@@ -97,15 +159,15 @@ export function TravelHomeView({
       data-llm={data.fallback}
     >
       <Flow variant="stack" density="comfortable">
-        <section className="cc-home-intro" aria-label="Flight availability">
-          <StatusBadge className="cc-availability-badge" tone="info"><PlaneIcon />{demo ? 'Current flights' : 'Flights available'}</StatusBadge>
+        <section className="cc-home-intro" aria-label={business ? 'Travel availability' : 'Flight availability'}>
+          <StatusBadge className="cc-availability-badge" tone="info">{business ? <BusinessIcon /> : <PlaneIcon />}{business ? businessAvailability : demo ? 'Current flights' : 'Flights available'}</StatusBadge>
           <p>{data.message}</p>
           {demo ? <p className="cc-demo-disclosure">{data.disclosure}</p> : null}
         </section>
 
         <Region
           title="Travel capabilities"
-          description={demo ? 'One conversation, with the source of every result kept visible.' : 'Only Flights is connected in version one.'}
+          description={business ? 'Enabled services and illustrative ideas for this business. Selections do not make bookings.' : demo ? 'One conversation, with the source of every result kept visible.' : 'Only Flights is connected in version one.'}
         >
           <CardCarousel label="Travel capability availability" itemName="capability" className="cc-domain-grid">
             {data.domains.map((domain) => {

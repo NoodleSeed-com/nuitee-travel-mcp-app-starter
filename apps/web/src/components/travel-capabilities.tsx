@@ -1,3 +1,5 @@
+'use client';
+
 import {
   BuildingOffice2Icon,
   ClipboardDocumentCheckIcon,
@@ -5,8 +7,10 @@ import {
   PaperAirplaneIcon,
   StarIcon,
   TicketIcon,
+  TruckIcon,
 } from '@heroicons/react/24/outline';
 import { WayfareLiquidIcon } from './wayfare-liquid-icon';
+import { useBusinessBrand } from './business-brand';
 
 const capabilities = [
   {
@@ -41,14 +45,25 @@ const capabilities = [
   },
 ] as const;
 
-export function TravelCapabilities(): React.JSX.Element {
+export function TravelCapabilities({ disabled = false }: { readonly disabled?: boolean }): React.JSX.Element | null {
+  const brand = useBusinessBrand();
+  if (disabled) return null;
+  const visible = brand ? [
+    ...(brand.capabilities.flights ? [capabilities[0]] : []),
+    ...(brand.capabilities.hotels ? [capabilities[1]] : []),
+    ...(brand.capabilities.experiences ? [{ ...capabilities[2], description: 'Explore fictional activity ideas around your itinerary.' }] : []),
+    ...(brand.capabilities.cars ? [{ title: 'Cars', icon: TruckIcon, description: 'Explore fictional rental-car ideas for your plan.' }] : []),
+    { ...capabilities[3], description: 'Explore illustrative rewards; no account access or redemption.' },
+    { ...capabilities[5], title: 'Trip review', description: 'Review selected planning choices. Nothing is booked or paid.' },
+  ] : capabilities;
+  const providerSearches = brand ? [brand.capabilities.flights && 'Flight', brand.capabilities.hotels && 'Hotel'].filter(Boolean).join(' and ').toLowerCase() : '';
   return (
     <section
-      aria-label="Wayfare capabilities"
+      aria-label={`${brand?.name || 'Wayfare'} capabilities`}
       className="travel-capabilities travel-landing__section"
     >
       <ul className="travel-capabilities__grid">
-        {capabilities.map(({ description, icon: Icon, title }) => (
+        {visible.map(({ description, icon: Icon, title }) => (
           <li key={title}>
             <span className="travel-capabilities__icon">
               <WayfareLiquidIcon icon={Icon} />
@@ -61,8 +76,10 @@ export function TravelCapabilities(): React.JSX.Element {
         ))}
       </ul>
       <p className="travel-capabilities__note">
-        Live flight results come from the connected provider. The starter’s
-        other capabilities use clearly labeled Wayfare demo data.
+        {brand
+          ? `${providerSearches ? `${providerSearches[0].toUpperCase()}${providerSearches.slice(1)} searches use the connected provider. ` : ''}Other travel examples are illustrative. No booking, payment, reservation or redemption is available.`
+          : <>Live flight results come from the connected provider. The starter’s
+            other capabilities use clearly labeled Wayfare demo data.</>}
       </p>
     </section>
   );

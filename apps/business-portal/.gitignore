@@ -1,0 +1,9 @@
+.local/
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+installation.key
+node_modules/

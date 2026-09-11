@@ -116,6 +116,75 @@ const sampleSearchOutput = {
 };
 
 describe('TravelHome', () => {
+  const businessHome = (enabled = { flights: false, hotels: true, experiences: true, cars: true, checkout: false }) => ({
+    status: 'ready', brand: 'North Star Travel', message: 'Plan a thoughtful trip.',
+    disclosure: 'Flight and hotel searches use the connected sandbox provider. Experiences, cars, rewards and protection are illustrative. Selections never book, reserve, pay or issue tickets.',
+    fallback: 'Supported searches and illustrative planning only. Selections never book, reserve, pay or issue tickets.',
+    business: {
+      releaseId: 'r_22222222-2222-4222-8222-222222222222', sourceRevision: 4, currency: 'EUR',
+      adults: 2, nights: 3, language: 'French', tone: 'Concise and practical', capabilities: enabled,
+    },
+    domains: [
+      { name: 'Flights', availability: enabled.flights ? 'available' : 'coming_soon', label: enabled.flights ? 'Current provider fares; no booking' : 'Disabled by this business' },
+      { name: 'Stays', availability: enabled.hotels ? 'available' : 'coming_soon', label: enabled.hotels ? 'Current provider rates; no reservation' : 'Disabled by this business' },
+      { name: 'Loyalty', availability: 'illustrative', label: 'Illustrative rewards; no account access' },
+      { name: 'Ground travel', availability: enabled.cars ? 'illustrative' : 'coming_soon', label: enabled.cars ? 'Fictional rental-car ideas' : 'Disabled by this business' },
+      { name: 'Experiences', availability: enabled.experiences ? 'illustrative' : 'coming_soon', label: enabled.experiences ? 'Fictional Lisbon and Tokyo ideas' : 'Disabled by this business' },
+    ],
+  });
+
+  it('renders a custom business home with disabled flights and enabled hotel/illustrative services', () => {
+    const result = businessHome();
+    expect(isHome(result)).toBe(true);
+    if (!isHome(result)) throw new Error('Business home rejected');
+    const html = renderToStaticMarkup(<TravelHomeView data={result} theme="light" onDemoPrompt={vi.fn()} />);
+    expect(html).toContain('<h1>North Star Travel</h1>');
+    expect(html).toContain('Plan a thoughtful trip.');
+    expect(html).toContain('Hotel search enabled');
+    expect(html).toContain('Disabled by this business');
+    expect(html).toContain('Fictional rental-car ideas');
+    expect(html).toContain('Search stays');
+    expect(html).not.toContain('Flights available');
+    expect(html).not.toContain('Current flights');
+    expect(html).not.toContain('Flight availability');
+    expect(html).not.toContain('Flight search enabled');
+    expect(html).not.toContain('Only Flights is connected');
+  });
+
+  it.each([false, true])('accepts every business capability combination with flights=%s', flights => {
+    for (const hotels of [false, true]) for (const experiences of [false, true]) for (const cars of [false, true]) {
+      const result = businessHome({ flights, hotels, experiences, cars, checkout: false });
+      expect(isHome(result)).toBe(true);
+      if (!isHome(result)) throw new Error('Business capability combination rejected');
+      const html = renderToStaticMarkup(<TravelHomeView data={result} theme="light" onDemoPrompt={vi.fn()} />);
+      if (!hotels) expect(html).not.toContain('>Search stays</button>');
+      if (!flights && !hotels) expect(html).toContain('Illustrative planning');
+    }
+  });
+
+  it('rejects malformed business metadata and contradictory or unbounded domain cards', () => {
+    const result = businessHome();
+    const withBusiness = (fields: Record<string, unknown>) => ({ ...result, business: { ...result.business, ...fields } });
+    for (const malformed of [
+      { ...result, brand: 'x'.repeat(41) }, { ...result, message: 'x'.repeat(91) },
+      { ...result, disclosure: 'x'.repeat(321) }, { ...result, fallback: 'x'.repeat(701) },
+      withBusiness({ releaseId: 'not-a-release' }), withBusiness({ sourceRevision: 0 }), withBusiness({ sourceRevision: 1.5 }),
+      withBusiness({ currency: ['EUR'] }), withBusiness({ language: ['French'] }), withBusiness({ tone: ['Concise and practical'] }),
+      withBusiness({ adults: '2' }), withBusiness({ nights: 4 }), withBusiness({ currency: 'GBP' }),
+      withBusiness({ capabilities: { ...result.business.capabilities, flights: 'false' } }),
+      withBusiness({ capabilities: { ...result.business.capabilities, checkout: true } }),
+      withBusiness({ capabilities: { ...result.business.capabilities, unexpected: false } }),
+      { ...result, domains: result.domains.toReversed() },
+      ...result.domains.map((domain, index) => ({ ...result, domains: result.domains.map((item, current) => current === index ? { ...domain, availability: 'available' } : item) })).filter(item => JSON.stringify(item) !== JSON.stringify(result)),
+      { ...result, domains: result.domains.map(domain => ({ ...domain, label: 'x'.repeat(81) })) },
+      { ...result, domains: result.domains.map(({ label: _label, ...domain }) => domain) },
+      { ...result, business: undefined }, { ...result, business: { ...result.business, apiKey: 'not-allowed' } },
+    ]) expect(isHome(malformed)).toBe(false);
+    const { business: _business, ...unbound } = result;
+    expect(isHome(unbound)).toBe(false);
+    // A legacy brand must not allow an invalid business payload to bypass this branch.
+    expect(isHome({ ...home, business: {} })).toBe(false);
+  });
   it('accepts current stays alongside illustrative rewards in the live expanded home', () => {
     const liveHome = {
       ...home,
