@@ -15,6 +15,7 @@ describe('safe starter customization', () => {
     expect(starterConfig.embeddedAssistant.origins).toEqual([
       'http://localhost:3000',
       'http://localhost:3001',
+      'https://gowayfare.io',
     ]);
     expect(starterConfig.prompts).toHaveLength(3);
     expect(starterConfig.website.developerPath).toBe('/developers');
