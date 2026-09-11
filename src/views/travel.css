@@ -2288,6 +2288,10 @@
   .cc-shimmer {
     animation: none;
   }
+
+  .cc-carousel-slide {
+    animation: none;
+  }
 }
 
 .cc-insurance-results {
