@@ -2,9 +2,10 @@
 
 Checkpoint date: September 11, 2026. Branch: `feat/business-portal-workspace`.
 The integration is based on freshly fetched main at
-`52469fa8d581f75b52bca8b0ea458ba02e7de6b2`. This checkpoint is part of the local
-implementation commit. Use `git log -1 --oneline` for the latest checkpoint and
-`git log --oneline --grep="business portal"` for the implementation commit.
+`52469fa8d581f75b52bca8b0ea458ba02e7de6b2`. Implementation commit: `a2ea949` (`feat: connect business portal and storefront
+in one workspace`). Use `git log -1 --oneline` for the latest documentation
+checkpoint. The worktree now lives in the starter repository’s permanent
+`.worktrees/business-portal-workspace` directory.
 No push or PR has been made; owner acceptance testing comes next.
 
 ## Accepted scope
@@ -46,9 +47,15 @@ the database and matching installation key together.
 
 ## Verification
 
+The committed implementation was verified again from an independent clean local
+clone: frozen offline installation, full `pnpm ci:offline`, `pnpm test:business`,
+`pnpm test:business:runtime` (2 tests), and `pnpm test:business:browser` all passed.
+That clone contained no local data, credentials, generated guidance or untracked
+application files. The public source exporter also passed for `a2ea949`.
+
 - `pnpm ci:offline` passed: TypeScript, customization validation, history and
-  license checks, 709 core tests, official Noodle checks, the embedded-host
-  tests/build, and 312 web unit tests plus the production Next build.
+  license checks, 713 core tests, official Noodle checks, the embedded-host
+  tests/build, and 313 web unit tests plus the production Next build.
 - All 30 portal tests passed, including real HTTP authentication/CSRF, encrypted
   versioned credentials, one-use private preview links, concurrent stop handling,
   stale revisions, failed-publication preservation, restart and checked migration.
