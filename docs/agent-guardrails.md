@@ -20,9 +20,8 @@ connectors, input schemas, and caller-scoped expiring selection state remain
 the executable controls. App-only helper visibility is presentation metadata,
 not authorization. Never make a privilege decision from model text.
 
-Chat-turn limits are a separate infrastructure protection reported as already
-in place by the project owner. This change does not configure or verify their
-deployed values. A turn cap does not itself enforce topic scope, bound every
+Chat-turn limits are a separate infrastructure protection. Prompt policy does
+not configure or verify their deployed values. A turn cap does not itself enforce topic scope, bound every
 response's token count, or stop abuse across new sessions. Runtime budgets and
 admission controls must remain outside the prompt.
 
