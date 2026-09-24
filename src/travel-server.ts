@@ -10,6 +10,7 @@ import {
   when,
   z,
 } from '@noodleseed/one';
+import { publicTravelAssistantPolicy, withTravelAgentPolicy } from './agent-policy.js';
 import { createDemoCapabilities } from './demo-capabilities.js';
 import { travelCompanionDemoConfig } from './demo-config.js';
 import { demoGateway } from './demo-connectors.js';
@@ -290,7 +291,7 @@ const travelCompanionDemoAgentGuide = {
       boundary !== 'Do not imply booking, payment, ticketing, cancellation, loyalty, hotel, car, or transaction support.'),
     'Treat capability choice as internal orchestration. Never ask the traveler to choose Flights, Stays, Rewards, or Travel Protection before describing the trip.',
     'Keep a focused request focused. Do not turn a flight-only, stay-only, rewards-only, or protection-only request into a full-trip questionnaire.',
-    'Reuse route, dates, travelers, preferences, and selections already established by explicit traveler statements or structured tool results. An explicit traveler instruction always wins.',
+    'Reuse route, dates, travelers, preferences, and selections already established by explicit traveler statements or structured tool results. An explicit traveler instruction always wins over travel defaults, never over scope, safety, or authorization boundaries.',
     'After a successful result or selection, offer at most one contextually relevant next step. Do not fan out into every available domain or call unrelated tools speculatively.',
     'Call only capabilities registered in the active profile. If a requested capability is unavailable, say so directly and continue with supported parts of the trip.',
     'Flight and hotel results come from connected Nuitee provider searches; loyalty, reward flights, and travel protection remain illustrative. State this boundary compactly whenever presenting those domains.',
@@ -685,6 +686,7 @@ export function createTravelServer(
         access: publicWebsite({
           origins: [...starterConfig.embeddedAssistant.origins],
           capabilities: [...capabilities.publicSurface],
+          instructions: publicTravelAssistantPolicy,
         }),
         layout: { mode: 'inline' },
       })
@@ -812,7 +814,11 @@ export function createTravelServer(
 
   return server(
     'nuitee_travel_mcp_app_starter',
-    { ...options, ...(demo ? {handoff:{allowedDomains:['https://commons.wikimedia.org','https://creativecommons.org']}} : {}), instructions: `${options.instructions} ${flightResultsPresentation}` },
+    {
+      ...options,
+      ...(demo ? { handoff: { allowedDomains: ['https://commons.wikimedia.org', 'https://creativecommons.org'] } } : {}),
+      instructions: withTravelAgentPolicy(`${options.instructions} ${flightResultsPresentation}`),
+    },
     capabilities.all,
   );
 }
