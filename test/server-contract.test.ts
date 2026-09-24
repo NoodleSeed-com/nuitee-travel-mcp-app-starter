@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import embeddedApp from '../src/embedded-server.js';
+import { publicTravelAssistantPolicy } from '../src/agent-policy.js';
 import {
   flightPlanDatesSchema,
   flightPlanInputSchema,
@@ -343,6 +344,7 @@ describe('server contract', () => {
     expect(manifest.server.assistant.surfaces).toEqual([
       {
         mode: 'public',
+        instructions: publicTravelAssistantPolicy,
         origins: [...starterConfig.embeddedAssistant.origins],
         capabilities: [
           { kind: 'tool', name: 'open_travel_starter' },

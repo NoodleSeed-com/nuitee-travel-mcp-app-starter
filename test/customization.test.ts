@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { applyCustomization, renderStarterConfig, validateStarterConfig } from '../scripts/customize.mjs';
 import { starterConfig } from '../starter.config.js';
 import { createTravelServer } from '../src/travel-server.js';
+import { publicTravelAssistantPolicy } from '../src/agent-policy.js';
 
 describe('safe starter customization', () => {
   it('accepts the shipped presentation config and renders it deterministically', () => {
@@ -227,6 +228,7 @@ describe('safe starter customization', () => {
     expect(manifest.server.assistant.surfaces).toEqual([
       {
         mode: 'public',
+        instructions: publicTravelAssistantPolicy,
         origins: [...starterConfig.embeddedAssistant.origins],
         capabilities: [
           { kind: 'tool', name: 'open_travel_starter' },

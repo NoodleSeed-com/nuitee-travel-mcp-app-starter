@@ -9,7 +9,7 @@ const rootFiles = new Set([
 ]);
 const publicDocs = new Set([
   'FLY_DEPLOYMENT.md', 'EMBEDDED_ASSISTANT.md', 'WAYFARE_TRAVEL_COMPANION.md',
-  'architecture.md', 'canonical-domain.md', 'customization.md', 'fixture-safety.md',
+  'agent-guardrails.md', 'architecture.md', 'canonical-domain.md', 'customization.md', 'fixture-safety.md',
   'generated-agent-guidance.md', 'nuitee-flights-contract.md', 'oauth.md',
   'privacy.md', 'session-foundation.md', 'troubleshooting.md', 'public-template-release.md',
 ]);
