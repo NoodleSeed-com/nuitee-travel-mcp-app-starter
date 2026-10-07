@@ -549,16 +549,9 @@ describe('real-browser widget readiness', () => {
     expect(row.getBoundingClientRect().left).toBeGreaterThan(skeleton.getBoundingClientRect().left + 1);
   });
 
-  it('waits 60 seconds for an explicit retry and does not submit twice', async () => {
-    const now = Date.now();
-    const clock = vi.spyOn(Date, 'now').mockReturnValue(now);
+  it('allows an explicit retry immediately after a transient failure and does not submit twice', async () => {
     const retry = vi.fn(async () => {});
     mount(<FlightResultsView state="malformed" displayMode="inline" onVerify={vi.fn()} onRetry={retry} />);
-    await expect.element(page.getByRole('button', { name: 'Try again in 60s' })).toBeDisabled();
-    expect(retry).not.toHaveBeenCalled();
-    clock.mockReturnValue(now + 59_000);
-    await expect.element(page.getByRole('button', { name: 'Try again in 1s' })).toBeDisabled();
-    clock.mockReturnValue(now + 60_000);
     const button = page.getByRole('button', { name: 'Try again', exact: true });
     await expect.element(button).toBeEnabled();
     expect(retry).not.toHaveBeenCalled();
@@ -568,18 +561,21 @@ describe('real-browser widget readiness', () => {
   });
 
   it('restarts the cooldown if requesting a retry fails', async () => {
-    const now = Date.now();
-    const clock = vi.spyOn(Date, 'now').mockReturnValue(now);
     const retry = vi.fn(async () => { throw new Error('Transport failed'); });
     mount(<FlightResultsView state="malformed" displayMode="inline" onVerify={vi.fn()} onRetry={retry} />);
-    await expect.element(page.getByRole('button', { name: 'Try again in 60s' })).toBeDisabled();
-    clock.mockReturnValue(now + 60_000);
     const button = page.getByRole('button', { name: 'Try again', exact: true });
     await expect.element(button).toBeEnabled();
     await button.click();
     await expect.element(page.getByText('The retry didn’t go through. Please wait a moment before trying again.')).toBeVisible();
     await expect.element(page.getByRole('button', { name: 'Try again in 60s' })).toBeDisabled();
     expect(retry).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps a cooldown for rate limiting without automatically retrying', async () => {
+    const retry = vi.fn(async () => {});
+    mount(<FlightResultsView result={{ ...search, status: 'error', itineraries: [], error: { code: 'rate_limited', message: 'Rate limited', retryable: true } }} displayMode="inline" onVerify={vi.fn()} onRetry={retry} />);
+    await expect.element(page.getByRole('button', { name: 'Try again in 60s' })).toBeDisabled();
+    expect(retry).not.toHaveBeenCalled();
   });
 
   it('offers editing instead of retrying an invalid search', async () => {

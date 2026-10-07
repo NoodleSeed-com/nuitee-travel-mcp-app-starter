@@ -261,6 +261,7 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
     if (status === 404 && kind === 'verify') return 'expired_offer';
     if (status === 429) return 'rate_limited';
     if (status === 503) return 'service_unavailable';
+    if (status === 504) return 'timeout';
     if (status === 502 || (status !== undefined && status >= 500)) return 'provider_error';
     if (signal.includes('credential') || signal.includes('secret') || signal.includes('api key')) return 'configuration_required';
     if (signal.includes('timeout') || signal.includes('timed out') || signal.includes('abort')) return 'timeout';
