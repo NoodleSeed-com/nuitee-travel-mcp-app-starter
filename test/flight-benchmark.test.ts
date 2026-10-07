@@ -1,7 +1,23 @@
 import { describe, expect, it } from 'vitest';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { createScenarios, summarizeRuns } from '../scripts/benchmark-flight-search.mjs';
 
 describe('flight latency benchmark', () => {
+  it.each([
+    { args: [], missing: '--url, --start-date' },
+    { args: ['--url', 'http://localhost:3001'], missing: '--start-date' },
+    { args: ['--start-date', '2027-01-12'], missing: '--url' },
+  ])('reports missing required arguments without starting a browser: $missing', ({ args, missing }) => {
+    const result = spawnSync(process.execPath, [
+      fileURLToPath(new URL('../scripts/benchmark-flight-search.mjs', import.meta.url)),
+      '--confirm-live', ...args,
+    ], { encoding: 'utf8' });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(`Missing required arguments: ${missing}`);
+    expect(result.stdout).toBe('');
+  });
+
   it('keeps errors and empty searches in the timely-fare denominator', () => {
     expect(summarizeRuns([
       { outcome: 'success', firstFareMs: 10_000, turnMs: 40_000 },

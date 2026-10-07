@@ -142,6 +142,24 @@ describe('guest travel conversation lifecycle', () => {
     expect(screen.queryByText('This search is taking longer than expected.')).toBeNull();
   });
 
+  it('does not invent a submission deadline when mounting an existing transcript', async () => {
+    vi.useFakeTimers();
+    assistantMock.useNoodleAssistant.mockReturnValue({
+      client, status: 'streaming',
+      messages: [{ id: 'existing-user', role: 'user', parts: [{ type: 'text', text: 'Flights to Rome' }] }],
+    });
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Flights to Rome');
+    await act(async () => {});
+    act(() => { vi.advanceTimersByTime(20_000); });
+    expect(screen.queryByText('This search is taking longer than expected.')).toBeNull();
+    act(() => client.emit({ event: 'tool_started', data: { id: 'new-search', tool: 'search_flights' } }));
+    act(() => { vi.advanceTimersByTime(19_999); });
+    expect(screen.queryByText('This search is taking longer than expected.')).toBeNull();
+    act(() => { vi.advanceTimersByTime(1); });
+    expect(conversationStatus()).toHaveTextContent('This search is taking longer than expected.');
+  });
+
   it('stops the slow timer on Stop and ignores late activity', async () => {
     vi.useFakeTimers();
     assistantMock.useNoodleAssistant.mockReturnValue({ client, messages: [], status: 'streaming' });
@@ -212,6 +230,7 @@ describe('guest travel conversation lifecycle', () => {
     const view = render(<TravelAssistantPage runtime={readyRuntime} />);
     submitPrompt('Flights to Rome');
     await act(async () => {});
+    act(() => client.emit({ event: 'tool_started', data: { id: 'flight-1', tool: 'search_flights' } }));
     act(() => { vi.advanceTimersByTime(20_000); });
     expect(conversationStatus()).toHaveTextContent('This search is taking longer than expected.');
     assistantMock.useNoodleAssistant.mockReturnValue({ client, status: 'streaming', messages: [first, { ...first, id: 'user-2', parts: [{ type: 'text', text: 'Search tomorrow instead' }] }] });

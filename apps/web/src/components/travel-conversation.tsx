@@ -211,7 +211,7 @@ export function TravelConversation({
   const [stopRequested, setStopRequested] = useState(false);
   const stopRequestedRef = useRef(false);
   const latestTraveler = messages.findLast(message => message.role === 'user');
-  const [submittedAt, setSubmittedAt] = useState<number | null>(() => Date.now());
+  const [submittedAt, setSubmittedAt] = useState<number | null>(() => latestTraveler ? null : Date.now());
   const [slowResponse, setSlowResponse] = useState(false);
   const submissionPendingRef = useRef(!latestTraveler);
   const busy = status === 'submitted' || status === 'streaming';

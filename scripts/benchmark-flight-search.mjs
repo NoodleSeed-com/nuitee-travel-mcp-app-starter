@@ -80,6 +80,12 @@ export async function runBrowserScenario(page, scenario, timeoutMs = 120_000) {
 
 async function main() {
   const { values } = parseArgs({ options: { url: { type: 'string' }, 'start-date': { type: 'string' }, limit: { type: 'string', default: '30' }, 'confirm-live': { type: 'boolean', default: false } } });
+  const missing = ['url', 'start-date'].filter(name => !values[name]);
+  if (missing.length) {
+    console.error(`Missing required arguments: ${missing.map(name => `--${name}`).join(', ')}`);
+    process.exitCode = 1;
+    return;
+  }
   if (!values['confirm-live']) throw new Error('Explicit --confirm-live required after approval of the target and request count');
   const url = new URL(values.url);
   if (url.username || url.password || url.search || url.hash || url.pathname !== '/') throw new Error('Use a root site URL without credentials, query or fragment');
