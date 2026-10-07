@@ -40,6 +40,7 @@ describe('plain-language assistant activity', () => {
     })).toEqual({
       label: 'Searching current flights',
       phase: 'searching',
+      skeleton: 'flights',
     });
     expect(progressForEvent({
       event: 'tool_started',
