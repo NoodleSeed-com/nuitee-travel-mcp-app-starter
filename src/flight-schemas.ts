@@ -10,6 +10,7 @@ export const errorCodeSchema = z.enum([
   'rate_limited',
   'timeout',
   'provider_error',
+  'execution_error',
   'malformed_response',
   'oversized_response',
   'service_unavailable',

@@ -31,6 +31,43 @@ function searchResponseWithEncodedBytes(bytes: number) {
   return { ...response, padding: 'x'.repeat(bytes - fixedBytes) };
 }
 
+describe('unattributed flight execution failures', () => {
+  it.each([
+    ['internal failure', new Error('Internal connector execution failed')],
+    ['missing operation', { code: 'connector_operation_not_found' }],
+    ['connection reset', Object.assign(new Error('Connection reset'), { code: 'ECONNRESET' })],
+    ['non-HTTP numeric code', { code: 500 }],
+    ['non-HTTP string code', { code: '401' }],
+    ['opaque failure', { details: { body: 'private-upstream-body' } }],
+  ])('does not blame the provider for %s in search or verification', (_label, caught) => {
+    for (const input of [
+      { kind: 'search' as const, search: validSearchInput, today, requestedAt: now },
+      { kind: 'verify' as const, selectionId: selectionState.records[0].selectionId, state: selectionState, requestedAt: now },
+    ]) {
+      const callOperation = vi.fn(() => { throw caught; });
+      const result = gatewayWithoutDate()(input, { callOperation });
+      expect(result).toMatchObject({ status: 'error', error: { code: 'execution_error', retryable: true } });
+      expect(result.message).not.toMatch(/nuitee|provider/i);
+      expect(JSON.stringify(result)).not.toContain('private-upstream-body');
+      expect(gatewayOutputSchema.safeParse(result).success).toBe(true);
+      expect(callOperation).toHaveBeenCalledTimes(1);
+      if (input.kind === 'search') {
+        expect(result.itineraries).toEqual([]);
+        expect(result.records).toEqual([]);
+      }
+    }
+  });
+
+  it('does not attribute a connector deadline to the provider', () => {
+    const result = runNuiteeGateway(
+      { kind: 'search', search: validSearchInput, today, requestedAt: now },
+      { callOperation: () => { throw new Error('connector timeout'); } },
+    );
+    expect(result.error?.code).toBe('timeout');
+    expect(result.message).not.toMatch(/nuitee|provider/i);
+  });
+});
+
 describe('Nuitee gateway search preparation', () => {
   it('retains explicit activity dates for trip discovery without sending them to the flight provider', () => {
     const activityDates = { startDate: '2030-04-21', endDate: '2030-04-24' };
@@ -551,7 +588,7 @@ describe('Nuitee gateway verification', () => {
     [502, 'provider_error'],
     [503, 'service_unavailable'],
     [504, 'timeout'],
-  ])('classifies provider status %i without leaking its body', (status, code) => {
+  ])('classifies HTTP status %i without leaking its body or attributing an unproven source', (status, code) => {
     const callOperation = vi.fn(() => {
       throw Object.assign(new Error('secret-provider-body'), { status });
     });
@@ -560,6 +597,7 @@ describe('Nuitee gateway verification', () => {
       { callOperation },
     );
     expect(result.error?.code).toBe(code);
+    expect(result.message).not.toMatch(/nuitee|provider/i);
     expect(JSON.stringify(result)).not.toContain('secret-provider-body');
   });
 

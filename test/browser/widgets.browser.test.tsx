@@ -571,6 +571,21 @@ describe('real-browser widget readiness', () => {
     expect(retry).toHaveBeenCalledTimes(1);
   });
 
+  it('replaces an unattributed execution failure with usable fares after a user retry', async () => {
+    const retry = vi.fn(async () => {});
+    mount(<FlightResultsView result={{ ...search, status: 'error', itineraries: [], error: { code: 'execution_error', message: 'The flight request could not be completed. Try again.', retryable: true } }} displayMode="inline" onVerify={vi.fn()} onRetry={retry} />);
+    await expect.element(page.getByRole('button', { name: 'Try again', exact: true })).toBeEnabled();
+    expect(retry).not.toHaveBeenCalled();
+    expect(document.querySelector('.cc-search-recovery')?.textContent).not.toMatch(/nuitee|provider/i);
+    await page.getByRole('button', { name: 'Try again', exact: true }).click();
+    expect(retry).toHaveBeenCalledTimes(1);
+    root?.render(<FlightResultsView result={search} displayMode="inline" onSelect={vi.fn()} onVerify={vi.fn()} onRetry={retry} />);
+    await expect.element(page.getByRole('button', { name: /Select fare from QZX to QZY/ })).toBeEnabled();
+    expect(document.querySelector('.cc-search-recovery')).toBeNull();
+    expect(document.querySelector('.cc-skeleton-fare')).toBeNull();
+    expect(retry).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps a cooldown for rate limiting without automatically retrying', async () => {
     const retry = vi.fn(async () => {});
     mount(<FlightResultsView result={{ ...search, status: 'error', itineraries: [], error: { code: 'rate_limited', message: 'Rate limited', retryable: true } }} displayMode="inline" onVerify={vi.fn()} onRetry={retry} />);

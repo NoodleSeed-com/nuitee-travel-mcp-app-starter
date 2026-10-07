@@ -600,6 +600,7 @@ describe('FlightResults', () => {
     })).toBe(true);
     expect(isVerification({ status: 'success', selectionId: itinerary.selectionId, availability: 'available', priceChanged: false })).toBe(false);
     expect(isGatewayError({ code: 'timeout', message: 'Timed out', retryable: true })).toBe(true);
+    expect(isGatewayError({ code: 'execution_error', message: 'Request failed', retryable: true })).toBe(true);
     expect(isGatewayError({ code: 'made_up', message: 'No', retryable: true })).toBe(false);
   });
 

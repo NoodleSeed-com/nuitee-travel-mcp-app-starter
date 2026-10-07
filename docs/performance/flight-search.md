@@ -58,6 +58,20 @@ The SDK's delivered/ok outcome is not proof that a fare search succeeded.
   guidance, not a deterministic runtime retry budget.
 - Flight presentation instructions are shorter while preserving partial-result,
   verification, selection and text-only-host boundaries.
+- Unknown connector exceptions and browser verification transport failures use
+  `execution_error`, not `provider_error`. Numeric internal `code` fields are
+  not HTTP statuses. Deadline copy does not identify an unproven failing layer.
+  Raw exception messages and bodies never enter the public result.
+  Existing HTTP error categories remain compatible, but their messages do not
+  attribute an upstream status to a particular provider without provenance.
+
+Recovery copy follows the truthful-state and voice requirements in
+[`docs/brand/wayfare-brand-guidelines.md`](../brand/wayfare-brand-guidelines.md).
+Error classification is not root-cause telemetry: the installed compute host
+exposes `callOperation` but no logger, clock or invocation context. The assistant
+authoring API also exposes no per-turn duplicate-search guard. Those platform
+capabilities remain separate work; do not simulate them with raw-error output,
+an extra connector call, or a global cache.
 
 ## Evidence-gated next steps
 

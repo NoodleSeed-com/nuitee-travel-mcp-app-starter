@@ -7,6 +7,7 @@ export type ErrorCode =
   | 'rate_limited'
   | 'timeout'
   | 'provider_error'
+  | 'execution_error'
   | 'malformed_response'
   | 'oversized_response'
   | 'service_unavailable'
@@ -110,7 +111,7 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
       retryable: false,
     },
     invalid_request: {
-      message: 'Nuitee rejected the flight request as invalid. Check the airports, dates, passengers, cabin, currency, and point of sale.',
+      message: 'The flight request was rejected as invalid. Check the airports, dates, passengers, cabin, currency, and point of sale.',
       retryable: false,
     },
     configuration_required: {
@@ -118,23 +119,27 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
       retryable: false,
     },
     authentication: {
-      message: 'Nuitee rejected the server credential. A deployment owner should check the managed API key.',
+      message: 'The flight request could not be authenticated. A deployment owner should check the server access configuration.',
       retryable: false,
     },
     entitlement: {
-      message: 'This Nuitee account does not currently have access to the requested Flights capability.',
+      message: 'The flight request was denied. A deployment owner should check the configured access permissions.',
       retryable: false,
     },
     rate_limited: {
-      message: 'Nuitee is receiving too many requests. Wait briefly before trying again.',
+      message: 'Flight requests are temporarily rate limited. Wait briefly before trying again.',
       retryable: true,
     },
     timeout: {
-      message: 'The flight provider did not respond before the request deadline. Try again.',
+      message: 'The flight request did not complete before its deadline. Try again.',
       retryable: true,
     },
     provider_error: {
-      message: 'A flight provider could not complete the request. Try again or adjust the search.',
+      message: 'The flight service could not complete the request. Try again later.',
+      retryable: true,
+    },
+    execution_error: {
+      message: 'The flight request could not be completed. Try again, or continue planning in the conversation.',
       retryable: true,
     },
     malformed_response: {
@@ -146,7 +151,7 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
       retryable: true,
     },
     service_unavailable: {
-      message: 'The Nuitee Flights service is temporarily unavailable. Try again later.',
+      message: 'The flight service is temporarily unavailable. Try again later.',
       retryable: true,
     },
     expired_offer: {
@@ -229,7 +234,7 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
     if (depth > 4) return undefined;
     const candidate = object(value);
     if (!candidate) return undefined;
-    for (const key of ['status', 'statusCode', 'httpStatus', 'code']) {
+    for (const key of ['status', 'statusCode', 'httpStatus']) {
       const direct = finiteNumber(candidate[key]);
       if (direct !== undefined && direct >= 100 && direct <= 599) return direct;
       if (typeof candidate[key] === 'string' && /^\d{3}$/.test(candidate[key])) return Number(candidate[key]);
@@ -266,7 +271,7 @@ export function runNuiteeGateway(input: GatewayInput, context: GatewayContext): 
     if (signal.includes('credential') || signal.includes('secret') || signal.includes('api key')) return 'configuration_required';
     if (signal.includes('timeout') || signal.includes('timed out') || signal.includes('abort')) return 'timeout';
     if (signal.includes('too large') || signal.includes('oversize') || signal.includes('body size') || signal.includes('response size')) return 'oversized_response';
-    return 'provider_error';
+    return 'execution_error';
   };
 
   const hash = (value: string, seed: number): string => {

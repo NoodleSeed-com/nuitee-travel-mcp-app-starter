@@ -37,7 +37,7 @@ type TravelView = 'search' | 'results' | 'review';
 
 const errorCodes = new Set([
   'invalid_search', 'invalid_request', 'configuration_required', 'authentication', 'entitlement', 'rate_limited',
-  'timeout', 'provider_error', 'malformed_response', 'oversized_response', 'service_unavailable',
+  'timeout', 'provider_error', 'execution_error', 'malformed_response', 'oversized_response', 'service_unavailable',
   'expired_offer', 'unavailable_offer', 'unknown_or_stale_selection',
 ]);
 const amenityCategories = new Set(['wifi', 'power', 'entertainment', 'food', 'seat_comfort']);
@@ -1023,7 +1023,7 @@ export default function FlightResults({ tripReviewEnabled = false }: { readonly 
   const verification = isVerification(verifyContent?.verification) ? verifyContent.verification : savedVerification;
   const structuredError = isGatewayError(verifyContent?.error) ? verifyContent.error : undefined;
   const transportError: GatewayError | undefined = verify.status === 'error'
-    ? { code: 'provider_error', message: 'Fare verification could not be completed. Try again.', retryable: true }
+    ? { code: 'execution_error', message: 'Fare verification could not be completed. Try again.', retryable: true }
     : undefined;
   const selectedItinerary = result?.itineraries.find((itinerary) => itinerary.selectionId === selected);
   const selectedVerification = verification?.selectionId === selected ? verification : undefined;
