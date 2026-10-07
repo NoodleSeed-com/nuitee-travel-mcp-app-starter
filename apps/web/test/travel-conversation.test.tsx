@@ -237,6 +237,34 @@ describe('guest travel conversation lifecycle', () => {
     expect(document.querySelector('.travel-flight-loading')).toBeNull();
   });
 
+  it('restores the slow-search deadline for a second search in the same turn', async () => {
+    vi.useFakeTimers();
+    assistantMock.useNoodleAssistant.mockReturnValue({client,messages:[],status:'streaming'});
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Flights to Rome');
+    await act(async () => {});
+    act(() => client.emit({event:'tool_started',data:{id:'flight-a',tool:'search_flights'}}));
+    act(() => client.emit({event:'tool_completed',data:{id:'flight-a',tool:'search_flights',result:{status:'partial'}}}));
+    act(() => client.emit({event:'tool_started',data:{id:'flight-b',tool:'search_flights'}}));
+    expect(document.querySelector('.travel-flight-loading')).not.toBeNull();
+    act(() => vi.advanceTimersByTime(20_000));
+    expect(conversationStatus()).toHaveTextContent('This search is taking longer than expected.');
+    expect(client.sendMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the deadline while an overlapping flight search is still running', async () => {
+    vi.useFakeTimers();
+    assistantMock.useNoodleAssistant.mockReturnValue({client,messages:[],status:'streaming'});
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Flights to Rome');
+    await act(async () => {});
+    act(() => client.emit({event:'tool_started',data:{id:'flight-a',tool:'search_flights'}}));
+    act(() => client.emit({event:'tool_started',data:{id:'flight-b',tool:'search_flights'}}));
+    act(() => client.emit({event:'tool_completed',data:{id:'flight-a',tool:'search_flights',result:{status:'partial'}}}));
+    act(() => vi.advanceTimersByTime(20_000));
+    expect(conversationStatus()).toHaveTextContent('This search is taking longer than expected.');
+  });
+
   it('does not automatically resend a rejected initial prompt on rerender', async () => {
     client.sendMessage.mockRejectedValueOnce(new Error('Fictional service failure'));
     const view = render(<TravelAssistantPage runtime={readyRuntime} />);

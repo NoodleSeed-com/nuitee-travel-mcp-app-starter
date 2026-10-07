@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { runBrowserScenario } from '../../../../scripts/benchmark-flight-search.mjs';
 
 test('flight loading settles before final prose and slow searches do not resend', async ({ page }) => {
+  if (test.info().project.name === 'mobile-chromium') await page.setViewportSize({width:320,height:844});
   await page.addInitScript(() => {
     const nativeFetch = window.fetch.bind(window);
     const fixture = window as typeof window & { flightEvent: (event: string, data: unknown) => void };
@@ -53,6 +54,12 @@ test('flight loading settles before final prose and slow searches do not resend'
   await expect(page.getByText('This search is taking longer than expected.')).toHaveCount(0);
   await expect(skeleton).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Travel conversation' })).toHaveAttribute('aria-busy', 'true');
+  await page.evaluate(() => (window as typeof window & { flightEvent: (event: string, data: unknown) => void }).flightEvent('tool_started', {id:'flight-2',tool:'search_flights'}));
+  await expect(skeleton).toBeVisible();
+  await page.clock.fastForward(20_000);
+  await expect(page.getByRole('status')).toHaveText('This search is taking longer than expected.');
+  await page.evaluate(() => (window as typeof window & { flightEvent: (event: string, data: unknown) => void }).flightEvent('tool_completed', {id:'flight-2',tool:'search_flights',result:{status:'success'}}));
+  await expect(page.getByText('This search is taking longer than expected.')).toHaveCount(0);
   await page.evaluate(() => (window as typeof window & { flightEvent: (event: string, data: unknown) => void }).flightEvent('done', {}));
 });
 

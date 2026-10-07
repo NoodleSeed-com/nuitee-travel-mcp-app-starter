@@ -408,6 +408,7 @@ export function TravelConversation({
         activeActivities.delete(event.data.id);
         activeActivities.set(event.data.id, progress);
         setActivity(progress);
+        if (event.data.tool === 'search_flights') setSubmittedAt(current => current ?? Date.now());
         return;
       }
       // The linked App may arrive before tool_completed while the assistant
@@ -415,7 +416,8 @@ export function TravelConversation({
       if (event.event === 'tool_completed'
         || (event.event === 'view_available' && isInlineTravelView(event.data))) {
         const matched = activeActivities.delete(event.data.id);
-        if (matched && event.data.tool === 'search_flights') setSubmittedAt(null);
+        if (matched && event.data.tool === 'search_flights'
+          && !Array.from(activeActivities.values()).some(active => active.skeleton === 'flights')) setSubmittedAt(null);
         setActivity(newestActivity(activeActivities));
         if (activeActivities.size === 0) {
           initialPromptAcceptedRef.current = true;
