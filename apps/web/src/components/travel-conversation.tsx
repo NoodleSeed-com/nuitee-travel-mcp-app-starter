@@ -210,6 +210,10 @@ export function TravelConversation({
   >('pending');
   const [stopRequested, setStopRequested] = useState(false);
   const stopRequestedRef = useRef(false);
+  const latestTraveler = messages.findLast(message => message.role === 'user');
+  const [submittedAt, setSubmittedAt] = useState<number | null>(() => Date.now());
+  const [slowResponse, setSlowResponse] = useState(false);
+  const submissionPendingRef = useRef(!latestTraveler);
   const busy = status === 'submitted' || status === 'streaming';
   const terminal = status === 'error' || Boolean(error);
   const terminalRef = useRef(terminal);
@@ -219,11 +223,14 @@ export function TravelConversation({
   // Widget follow-ups use the SDK directly, bypassing the website composer.
   // A new traveler turn is explicit intent to continue; assistant-only growth
   // must still respect a reader who has scrolled back through the transcript.
-  const latestTraveler = messages.findLast(message => message.role === 'user');
   const lastTravelerIdRef = useRef(latestTraveler?.id);
   useEffect(() => {
     if (!latestTraveler || lastTravelerIdRef.current === latestTraveler.id) return;
     lastTravelerIdRef.current = latestTraveler.id;
+    // Bind optimistic submissions without restarting their clock; widget
+    // follow-ups enter here directly through the SDK's canonical transcript.
+    if (!submissionPendingRef.current) setSubmittedAt(Date.now());
+    submissionPendingRef.current = false;
     const prompt = latestTraveler.parts.filter(part => part.type === 'text').map(part => part.text).join('\n');
     if (prompt.trim()) lastPromptRef.current = prompt;
     followLatestRef.current = true;
@@ -288,6 +295,8 @@ export function TravelConversation({
       || promptRequestIdRef.current === promptRequest.id
     ) return;
     promptRequestIdRef.current = promptRequest.id;
+    setSubmittedAt(Date.now());
+    submissionPendingRef.current = true;
     lastPromptRef.current = promptRequest.prompt;
     followLatestRef.current = true;
     void client.sendMessage(promptRequest.prompt).catch(() => undefined);
@@ -405,7 +414,8 @@ export function TravelConversation({
       // continues writing. Its matching invocation no longer needs a skeleton.
       if (event.event === 'tool_completed'
         || (event.event === 'view_available' && isInlineTravelView(event.data))) {
-        activeActivities.delete(event.data.id);
+        const matched = activeActivities.delete(event.data.id);
+        if (matched && event.data.tool === 'search_flights') setSubmittedAt(null);
         setActivity(newestActivity(activeActivities));
         if (activeActivities.size === 0) {
           initialPromptAcceptedRef.current = true;
@@ -414,6 +424,7 @@ export function TravelConversation({
         return;
       }
       if (event.event === 'done' || event.event === 'error') {
+        setSubmittedAt(null);
         activeActivities.clear();
         setActivity(null);
         initialPromptAcceptedRef.current = true;
@@ -450,6 +461,8 @@ export function TravelConversation({
     && visibleMessages.every((message) => message.role === 'user');
 
   function sendFollowUp(prompt: string) {
+    setSubmittedAt(Date.now());
+    submissionPendingRef.current = true;
     followLatestRef.current = true;
     scrollToLatestRef.current();
     lastPromptRef.current = prompt;
@@ -474,6 +487,8 @@ export function TravelConversation({
   function retryInitialPrompt() {
     if (initialPromptSendingRef.current) return;
     if (status === 'error') client.resetSession();
+    setSubmittedAt(Date.now());
+    submissionPendingRef.current = true;
     setInitialPromptState('pending');
   }
 
@@ -489,7 +504,7 @@ export function TravelConversation({
     && (initialPromptProgress || Boolean(activity) || busy);
   const statusLabel = terminal || stopRequested || !responseInProgress
     ? ''
-    : activity?.skeleton === 'hotels' ? 'Finding stays…' : activity?.skeleton === 'cars' ? 'Finding your kind of drive…' : 'Thinking…';
+    : activity?.skeleton ? `${activity.label}…` : 'Thinking…';
   let activityInsertionIndex = visibleMessages.length;
   for (let index = visibleMessages.length - 1; index >= 0; index -= 1) {
     if (visibleMessages[index]?.role === 'user') {
@@ -497,6 +512,17 @@ export function TravelConversation({
       break;
     }
   }
+  const hasCurrentResult = visibleMessages.slice(activityInsertionIndex).some(message =>
+    message.parts.some(part => (part.type === 'data-view' || part.type === 'data-tool-result')
+      && part.data.tool !== 'plan_flight_search' && part.data.tool !== 'open_travel_starter'));
+  const waitingForResult = responseInProgress && !terminal && !hasCurrentResult && submittedAt !== null;
+  useEffect(() => {
+    setSlowResponse(false);
+    if (!waitingForResult || submittedAt === null) return;
+    const timer = setTimeout(() => setSlowResponse(true), Math.max(0, 20_000 - (Date.now() - submittedAt)));
+    return () => clearTimeout(timer);
+  }, [submittedAt, waitingForResult]);
+  const showSlowResponse = waitingForResult && slowResponse;
   const waitingForFollowUp = !terminal && responseInProgress
     && visibleMessages.filter(message => message.role === 'user').length > 1
     && !visibleMessages.slice(activityInsertionIndex).some(message => message.role === 'assistant'
@@ -510,7 +536,7 @@ export function TravelConversation({
     <li
       className="travel-conversation__activity"
       data-active={statusLabel ? 'true' : 'false'}
-      data-skeleton={statusLabel ? activity?.skeleton : undefined}
+      data-skeleton={statusLabel && !showSlowResponse ? activity?.skeleton : undefined}
       key="assistant-activity"
     >
       <p
@@ -518,8 +544,18 @@ export function TravelConversation({
         className="travel-conversation__activity-status"
         role="status"
       >
-        {statusLabel ? <TextShimmer>{statusLabel}</TextShimmer> : null}
+        {showSlowResponse ? 'This search is taking longer than expected.' : statusLabel === 'Thinking…' ? <TextShimmer>{statusLabel}</TextShimmer> : statusLabel}
       </p>
+      {statusLabel && !showSlowResponse && activity?.skeleton === 'flights' ? (
+        <div className="travel-flight-loading" aria-hidden="true">
+          <div className="travel-flight-loading__heading"><span /><span /></div>
+          <div className="travel-flight-loading__card">
+            <span />
+            <div className="travel-flight-loading__route"><span /><span /><span /></div>
+            <span /><span />
+          </div>
+        </div>
+      ) : null}
       {statusLabel && activity?.skeleton === 'cars' ? <div className="travel-car-loading" aria-hidden="true"><div className="travel-car-loading__heading"><span/><span/></div><div className="travel-car-loading__track">{[0,1,2].map(index=><div className="travel-car-loading__card" key={index}><div/><span/><span/><span/><b/></div>)}</div></div> : null}
       {statusLabel && activity?.skeleton === 'hotels' ? (
         <div className="travel-hotel-loading" aria-hidden="true">

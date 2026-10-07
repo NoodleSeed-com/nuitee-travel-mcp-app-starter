@@ -97,12 +97,127 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   delete document.documentElement.dataset.theme;
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
 describe('guest travel conversation lifecycle', () => {
+  it('shows flight skeletons only until the matching result arrives, before final prose', async () => {
+    assistantMock.useNoodleAssistant.mockReturnValue({ client, messages: [], status: 'streaming' });
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('LHR to FCO on November 12');
+    await act(async () => {});
+    expect(document.querySelector('.travel-flight-loading')).toBeNull();
+    act(() => client.emit({ event: 'tool_started', data: { id: 'flight-1', tool: 'search_flights' } }));
+    expect(document.querySelector('.travel-flight-loading')).toHaveAttribute('aria-hidden', 'true');
+    expect(conversationStatus()).toHaveTextContent('Searching current flights');
+    act(() => client.emit({ event: 'tool_completed', data: { id: 'other', tool: 'search_flights', result: {} } }));
+    expect(document.querySelector('.travel-flight-loading')).not.toBeNull();
+    act(() => client.emit({ event: 'view_available', data: { id: 'flight-1', tool: 'search_flights', resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget', result: { status: 'partial' } } }));
+    expect(document.querySelector('.travel-flight-loading')).toBeNull();
+    expect(screen.getByRole('region', { name: 'Travel conversation' })).toHaveAttribute('aria-busy', 'true');
+  });
+
+  it('shows plain slow-search copy at 20 seconds including session time, without retrying', async () => {
+    vi.useFakeTimers();
+    assistantMock.useNoodleAssistant.mockReturnValue({ client, messages: [], status: 'submitted' });
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('LHR to FCO on November 12');
+    await act(async () => {});
+    act(() => { vi.advanceTimersByTime(10_000); });
+    act(() => client.emit({ event: 'tool_started', data: { id: 'flight-1', tool: 'search_flights' } }));
+    act(() => { vi.advanceTimersByTime(9_999); });
+    expect(screen.queryByText('This search is taking longer than expected.')).toBeNull();
+    act(() => { vi.advanceTimersByTime(1); });
+    expect(conversationStatus()).toHaveTextContent('This search is taking longer than expected.');
+    expect(conversationStatus().querySelector('.text-shimmer')).toBeNull();
+    expect(document.querySelector('.travel-flight-loading')).toBeNull();
+    expect(client.sendMessage).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Stop generating' })).toBeEnabled();
+    act(() => client.emit({ event: 'view_available', data: { id: 'flight-1', tool: 'search_flights', resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget', result: { status: 'success' } } }));
+    expect(screen.queryByText('This search is taking longer than expected.')).toBeNull();
+    act(() => { vi.advanceTimersByTime(20_000); });
+    expect(screen.queryByText('This search is taking longer than expected.')).toBeNull();
+  });
+
+  it('stops the slow timer on Stop and ignores late activity', async () => {
+    vi.useFakeTimers();
+    assistantMock.useNoodleAssistant.mockReturnValue({ client, messages: [], status: 'streaming' });
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('LHR to FCO on November 12');
+    await act(async () => {});
+    fireEvent.click(screen.getByRole('button', { name: 'Stop generating' }));
+    act(() => { vi.advanceTimersByTime(25_000); });
+    act(() => client.emit({ event: 'tool_started', data: { id: 'late', tool: 'search_flights' } }));
+    expect(screen.queryByText('This search is taking longer than expected.')).toBeNull();
+    expect(document.querySelector('.travel-flight-loading')).toBeNull();
+  });
+
+  it('does not restart the initial deadline when the canonical traveler message arrives', async () => {
+    vi.useFakeTimers();
+    assistantMock.useNoodleAssistant.mockReturnValue({ client, messages: [], status: 'submitted' });
+    const view = render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Flights to Rome');
+    await act(async () => {});
+    act(() => { vi.advanceTimersByTime(15_000); });
+    assistantMock.useNoodleAssistant.mockReturnValue({ client, status: 'streaming', messages: [{ id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Flights to Rome' }] }] });
+    view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
+    act(() => { vi.advanceTimersByTime(5_000); });
+    expect(conversationStatus()).toHaveTextContent('This search is taking longer than expected.');
+  });
+
+  it('does not treat a planning result as completed flight search work', async () => {
+    vi.useFakeTimers();
+    assistantMock.useNoodleAssistant.mockReturnValue({ client, status: 'streaming', messages: [] });
+    const view = render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Flights to Rome');
+    await act(async () => {});
+    act(() => client.emit({ event: 'tool_started', data: { id: 'plan-1', tool: 'plan_flight_search' } }));
+    act(() => client.emit({ event: 'tool_completed', data: { id: 'plan-1', tool: 'plan_flight_search', result: { status: 'planned' } } }));
+    assistantMock.useNoodleAssistant.mockReturnValue({ client, status: 'streaming', messages: [
+      { id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Flights to Rome' }] },
+      { id: 'assistant-1', role: 'assistant', parts: [{ type: 'data-tool-result', data: { id: 'plan-1', tool: 'plan_flight_search', result: { status: 'planned' } } }] },
+    ] });
+    view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
+    act(() => client.emit({ event: 'tool_started', data: { id: 'flight-1', tool: 'search_flights' } }));
+    act(() => { vi.advanceTimersByTime(20_000); });
+    expect(conversationStatus()).toHaveTextContent('This search is taking longer than expected.');
+  });
+
+  it('starts a new deadline for a widget follow-up without resending it', async () => {
+    vi.useFakeTimers();
+    const first = { id: 'user-1', role: 'user', parts: [{ type: 'text', text: 'Flights to Rome' }] };
+    assistantMock.useNoodleAssistant.mockReturnValue({ client, status: 'streaming', messages: [first] });
+    const view = render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Flights to Rome');
+    await act(async () => {});
+    act(() => { vi.advanceTimersByTime(20_000); });
+    expect(conversationStatus()).toHaveTextContent('This search is taking longer than expected.');
+    assistantMock.useNoodleAssistant.mockReturnValue({ client, status: 'streaming', messages: [first, { ...first, id: 'user-2', parts: [{ type: 'text', text: 'Search tomorrow instead' }] }] });
+    view.rerender(<TravelAssistantPage runtime={readyRuntime} />);
+    expect(screen.queryByText('This search is taking longer than expected.')).toBeNull();
+    act(() => { vi.advanceTimersByTime(19_999); });
+    expect(screen.queryByText('This search is taking longer than expected.')).toBeNull();
+    act(() => { vi.advanceTimersByTime(1); });
+    expect(conversationStatus()).toHaveTextContent('This search is taking longer than expected.');
+    expect(client.sendMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['success', 'partial', 'empty', 'error'])('clears the deadline on a matching %s tool result', async status => {
+    vi.useFakeTimers();
+    assistantMock.useNoodleAssistant.mockReturnValue({ client, messages: [], status: 'streaming' });
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('Flights to Rome');
+    await act(async () => {});
+    act(() => client.emit({ event: 'tool_started', data: { id: 'flight-1', tool: 'search_flights' } }));
+    act(() => client.emit({ event: 'tool_completed', data: { id: 'flight-1', tool: 'search_flights', result: { status } } }));
+    act(() => { vi.advanceTimersByTime(25_000); });
+    expect(screen.queryByText('This search is taking longer than expected.')).toBeNull();
+    expect(document.querySelector('.travel-flight-loading')).toBeNull();
+  });
+
   it('does not automatically resend a rejected initial prompt on rerender', async () => {
     client.sendMessage.mockRejectedValueOnce(new Error('Fictional service failure'));
     const view = render(<TravelAssistantPage runtime={readyRuntime} />);
@@ -1008,7 +1123,7 @@ describe('guest travel conversation lifecycle', () => {
           data: { id: 'call-search-active', tool: 'search_flights' },
         });
       });
-      expect(conversationStatus()).toHaveTextContent('Thinking…');
+      expect(conversationStatus()).toHaveTextContent('Searching current flights…');
 
       const composer = screen.getByRole('textbox', {
         name: 'Ask the travel assistant',
@@ -1108,7 +1223,7 @@ describe('guest travel conversation lifecycle', () => {
         data: { id: 'call-search-stale', tool: 'search_flights' },
       });
     });
-    expect(conversationStatus()).toHaveTextContent('Thinking…');
+    expect(conversationStatus()).toHaveTextContent('Searching current flights…');
     expect(screen.queryByText('Searching')).not.toBeInTheDocument();
 
     hookState = {
@@ -1436,7 +1551,7 @@ describe('guest travel conversation lifecycle', () => {
       });
     });
 
-    expect(activityRegion).toHaveTextContent('Thinking…');
+    expect(activityRegion).toHaveTextContent('Searching current flights…');
     expect(screen.queryByText('Searching')).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Current trip' }))
       .not.toBeInTheDocument();

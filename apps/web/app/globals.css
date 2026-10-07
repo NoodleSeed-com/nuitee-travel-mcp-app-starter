@@ -1506,6 +1506,18 @@ code {
 }
 
 .travel-conversation__activity[data-skeleton='hotels'] { padding-inline: 0; }
+.travel-conversation__activity[data-skeleton='flights'] { width: 100%; padding-inline: 0; }
+.travel-flight-loading { width: 100%; max-width: 64rem; min-width: 0; padding: 8px; }
+.travel-flight-loading__heading { display: grid; gap: 12px; padding: 14px; }
+.travel-flight-loading span { display: block; height: 16px; border-radius: 6px; background: var(--travel-boundary); }
+.travel-flight-loading__heading span:first-child { width: 35%; height: 24px; }
+.travel-flight-loading__heading span:last-child { width: 65%; }
+.travel-flight-loading__card { display: grid; gap: 24px; padding: 20px; border: 1px solid var(--travel-boundary); border-radius: 18px; }
+.travel-flight-loading__card > span:first-child { width: 30%; }
+.travel-flight-loading__route { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.travel-flight-loading__route span { height: 48px; }
+.travel-flight-loading__card > span:nth-last-child(2) { width: 25%; height: 28px; }
+.travel-flight-loading__card > span:last-child { height: 44px; border-radius: 999px; }
 /* Match the inline App's host/document inset, 14px frame padding and
    min(86%, 340px) / 14px carousel, rather than a narrower three-card grid. */
 .travel-hotel-loading { width: 100%; max-width: 64rem; min-width: 0; padding: 8px; container-type: inline-size; }
