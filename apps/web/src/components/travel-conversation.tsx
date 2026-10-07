@@ -120,10 +120,25 @@ function failedViewKey(part: AssistantUIMessage['parts'][number]) {
 function visibleConversationMessages(
   messages: readonly AssistantUIMessage[],
 ): readonly AssistantUIMessage[] {
+  // A later result resolves only that tool's earlier failures in the same turn.
+  const recoveredTools = new Set<string>();
+  const unresolved = messages.slice().reverse().map((message) => {
+    if (message.role === 'user') recoveredTools.clear();
+    const parts = message.parts.slice().reverse().filter((part) => {
+      if (part.type !== 'data-view' && part.type !== 'data-tool-result') return true;
+      const status = record(part.data.result)?.status;
+      if (status === 'error') return !recoveredTools.has(part.data.tool);
+      if (status === 'success' || status === 'partial' || status === 'empty') {
+        recoveredTools.add(part.data.tool);
+      }
+      return true;
+    }).reverse();
+    return { ...message, parts };
+  }).reverse();
   const failedViews = new Set<string>();
   const visible: AssistantUIMessage[] = [];
 
-  for (const message of messages) {
+  for (const message of unresolved) {
     if (message.role === 'user') failedViews.clear();
     const parts = message.parts.filter((part) => {
       const key = failedViewKey(part);
@@ -138,13 +153,18 @@ function visibleConversationMessages(
 }
 
 function currentTurnHasToolError(messages: readonly AssistantUIMessage[]) {
+  const resolvedTools = new Set<string>();
   for (let messageIndex = messages.length - 1; messageIndex >= 0; messageIndex -= 1) {
     const message = messages[messageIndex];
     if (!message || message.role === 'user') break;
-    for (const part of message.parts) {
-      if (failedViewKey(part)) return true;
-      if (part.type !== 'data-tool-result') continue;
-      if (record(part.data.result)?.status === 'error') return true;
+    for (const part of message.parts.slice().reverse()) {
+      if (part.type !== 'data-view' && part.type !== 'data-tool-result') continue;
+      if (resolvedTools.has(part.data.tool)) continue;
+      const status = record(part.data.result)?.status;
+      if (status === 'error') return true;
+      if (status === 'success' || status === 'partial' || status === 'empty') {
+        resolvedTools.add(part.data.tool);
+      }
     }
   }
   return false;

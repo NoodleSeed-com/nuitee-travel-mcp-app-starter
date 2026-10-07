@@ -13,8 +13,9 @@ export function FlightSearchRecovery({ error, onRetry, onEdit }: {
 }) {
   const needsEdit = error && ['invalid_search', 'invalid_request'].includes(error.code);
   const canRetry = Boolean(onRetry && (!error || error.retryable));
-  const [deadline, setDeadline] = useState(() => Date.now() + RETRY_DELAY_MS);
-  const [seconds, setSeconds] = useState(60);
+  const retryDelay = error?.code === 'rate_limited' ? RETRY_DELAY_MS : 0;
+  const [deadline, setDeadline] = useState(() => Date.now() + retryDelay);
+  const [seconds, setSeconds] = useState(retryDelay / 1000);
   const [status, setStatus] = useState<'waiting' | 'sending' | 'sent'>('waiting');
   const [retryFailed, setRetryFailed] = useState(false);
   const inFlight = useRef(false);
@@ -51,7 +52,9 @@ export function FlightSearchRecovery({ error, onRetry, onEdit }: {
       <p>{needsEdit
         ? 'Review your airports, dates, and travelers, then search again.'
         : canRetry
-          ? 'Give it a moment, then try the same search again. You can also continue in the conversation.'
+          ? error?.code === 'rate_limited'
+            ? 'Search is temporarily rate limited. Wait a moment before trying again.'
+            : 'Try the same search again, or continue planning in the conversation.'
           : 'Please try again later, or continue planning in the conversation.'}</p>
       <p className="cc-search-recovery-status" role="status">
         {status === 'sent' ? 'Search requested. New results will appear in the conversation.'

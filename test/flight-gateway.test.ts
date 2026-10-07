@@ -550,6 +550,7 @@ describe('Nuitee gateway verification', () => {
     [500, 'provider_error'],
     [502, 'provider_error'],
     [503, 'service_unavailable'],
+    [504, 'timeout'],
   ])('classifies provider status %i without leaking its body', (status, code) => {
     const callOperation = vi.fn(() => {
       throw Object.assign(new Error('secret-provider-body'), { status });

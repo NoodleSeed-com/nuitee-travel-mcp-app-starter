@@ -709,6 +709,64 @@ describe('guest travel conversation lifecycle', () => {
     })).toBeEnabled();
   });
 
+  it.each(['success', 'partial', 'empty'])('clears a recovered search error after a %s result in the same turn', async (resultStatus) => {
+    const failedView = {
+      id: 'failed-search', tool: 'search_flights',
+      resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget',
+      title: 'Flight results',
+      result: { status: 'error', error: { code: 'provider_error', retryable: true } },
+    };
+    const recoveredView = { ...failedView, id: 'recovered-search', result: {
+      status: resultStatus,
+      searchContext: { origin: 'LHR', destination: 'FCO', departureDate: '2026-11-12', adults: 1, children: 0, infants: 0 },
+      itineraries: [],
+    } };
+    assistantMock.useNoodleAssistant.mockImplementation(() => ({
+      client, status: 'ready', error: undefined,
+      messages: [
+        { id: 'attempt-one', role: 'assistant', parts: [
+          { type: 'data-tool-result', data: { id: 'failed-call', tool: 'search_flights', result: failedView.result } },
+          { type: 'data-view', data: failedView },
+        ] },
+        { id: 'attempt-two', role: 'assistant', parts: [
+          { type: 'data-tool-result', data: { id: 'recovered-call', tool: 'search_flights', result: recoveredView.result } },
+          { type: 'data-view', data: recoveredView },
+        ] },
+      ],
+    }));
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('London to Rome on November 12');
+    const conversation = await screen.findByRole('region', { name: 'Travel conversation' });
+    const views = conversation.querySelectorAll('noodle-app-view');
+    expect(views).toHaveLength(1);
+    expect(views[0]?.view).toBe(recoveredView);
+    expect(within(conversation).queryByRole('group', { name: 'Recover flight search' })).not.toBeInTheDocument();
+  });
+
+  it.each(['another-tool', 'earlier-success', 'previous-turn'])('preserves an unresolved error with %s', async (scenario) => {
+    const failedView = {
+      id: 'failed-search', tool: 'search_flights',
+      resourceUri: 'ui://nuitee_travel_mcp_app_starter/search_flights_widget',
+      title: 'Flight results',
+      result: { status: 'error', error: { code: 'provider_error', retryable: true } },
+    };
+    const failure = { id: 'failure', role: 'assistant', parts: [{ type: 'data-view', data: failedView }] };
+    const success = { id: 'success', role: 'assistant', parts: [{ type: 'data-tool-result', data: {
+      id: 'success-call', tool: scenario === 'another-tool' ? 'search_hotels' : 'search_flights', result: { status: 'success' },
+    } }] };
+    const messages = scenario === 'earlier-success' ? [success, failure]
+      : scenario === 'previous-turn' ? [failure, { id: 'new-turn', role: 'user', parts: [{ type: 'text', text: 'Try again' }] }, success]
+        : [failure, success];
+    assistantMock.useNoodleAssistant.mockImplementation(() => ({ client, messages, status: 'ready', error: undefined }));
+    render(<TravelAssistantPage runtime={readyRuntime} />);
+    submitPrompt('London to Rome on November 12');
+    const conversation = await screen.findByRole('region', { name: 'Travel conversation' });
+    expect(conversation.querySelectorAll('noodle-app-view')).toHaveLength(1);
+    if (scenario !== 'previous-turn') {
+      expect(within(conversation).getByRole('group', { name: 'Recover flight search' })).toBeVisible();
+    }
+  });
+
   it('keeps one inline App and composer in chronological keyboard order', async () => {
     const mobileView = {
       id: 'view-mobile-order',
