@@ -12,6 +12,8 @@ describe('travel policy delivery', () => {
         expect(instructions.startsWith(`${travelAgentPolicy}\n\nActive travel profile:\n`)).toBe(true);
         expect(instructions.slice(travelAgentPolicy.length).trim().length).toBeGreaterThan(100);
         expect(manifest.server.agentGuide).toBeDefined();
+        expect(instructions).toContain('including retryable errors');
+        expect(instructions).toContain('explicitly asks to retry');
 
         if (mode === 'embedded') {
           expect(manifest.server.assistant?.surfaces).toHaveLength(1);
@@ -20,6 +22,8 @@ describe('travel policy delivery', () => {
             instructions: publicTravelAssistantPolicy,
           });
           expect(publicTravelAssistantPolicy.length).toBeLessThanOrEqual(4_000);
+          expect(publicTravelAssistantPolicy).toContain('including retryable errors');
+          expect(publicTravelAssistantPolicy).toContain('explicitly asks to retry');
         } else {
           expect(manifest.server.assistant).toBeUndefined();
         }

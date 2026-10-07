@@ -10,7 +10,7 @@ import {
   when,
   z,
 } from '@noodleseed/one';
-import { publicTravelAssistantPolicy, withTravelAgentPolicy } from './agent-policy.js';
+import { flightSearchRetryPolicy, publicTravelAssistantPolicy, withTravelAgentPolicy } from './agent-policy.js';
 import { createDemoCapabilities } from './demo-capabilities.js';
 import { travelCompanionDemoConfig } from './demo-config.js';
 import { demoGateway } from './demo-connectors.js';
@@ -80,14 +80,11 @@ const previewDemoHome = {
 const flightResultsWidgetGuidance = 'Let the flight-results widget carry the fare comparison and selection. Use at most two short sentences around it; do not repeat fares or details in lists, tables, or rankings. Answer focused questions when explicitly requested, and provide useful text when widgets are unavailable.';
 
 const flightResultsPresentation = [
-  'Flight-results presentation: When search_flights returns successful or partial results and the host supports its linked widget, follow these rules.',
+  'Flight-results presentation:',
   flightResultsWidgetGuidance,
-  'The two-sentence limit covers all prose before and after the widget together: briefly acknowledge the results, add only an essential assumption or caveat missing from the widget, and offer at most one useful next step.',
-  'Do not restate the route, dates, traveler count, or currency already displayed, or enumerate airlines, prices, schedules, durations, stops, baggage, or fare conditions. Do not append a Top options list, cheapest/fastest ranking, table, or fare-by-fare recap.',
-  'A normal request to find, show, or compare flights is served by the widget; it does not itself request a duplicate textual comparison. If the traveler explicitly asks for a recommendation, textual comparison, or specific detail, answer only that question using returned facts, without recapping the other fares.',
-  'The inline carousel shows up to three of up to ten returned itineraries. Do not claim every returned fare is visible, list hidden results to compensate, or refer to an expansion control unless the host exposes one.',
-  'The tool fallback is for hosts that cannot render widgets or a reported widget failure; provide a concise, useful text comparison there. Do not paste the fallback alongside a working widget.',
-  'For empty or error results, explain the bounded issue and relevant next action instead of directing the traveler to nonexistent flight cards. Preserve partial-data and fare-verification cautions. Respect an active fare selection; do not ask the traveler to choose again unless they want to change it.',
+  'The two-sentence limit covers prose before and after the widget together: add only missing assumptions or caveats and at most one next step. Do not recap displayed trip facts or fares. A normal comparison request needs only the widget; answer explicit recommendations or detail questions from returned facts without recapping other fares.',
+  'The carousel shows up to three of up to ten itineraries. Do not claim all fares are visible, list hidden fares, or invent expansion controls. Use the text fallback only when the widget is unavailable or fails.',
+  'For empty or error results, explain the issue and next action, not nonexistent cards. Preserve partial-data and fare-verification cautions. Respect the active selection unless the traveler changes it.',
 ].join(' ');
 
 const travelAgentGuide = {
@@ -144,7 +141,7 @@ const travelAgentGuide = {
     'Ask at most one focused question at a time and only when a required value cannot be inferred safely. Prefer structured input over a Markdown questionnaire.',
     'A current-fare search is read-only. Apply the documented date, trip-type, traveler, cabin, currency, and market defaults, search immediately, and state the assumptions through the result widget. Accompanying prose adds only assumptions missing from the widget and at most one relevant next step.',
     flightResultsWidgetGuidance,
-    'Do not repeat the same search call after a non-retryable error. Explain the bounded problem and ask the traveler to adjust one relevant airport or date before searching again.',
+    flightSearchRetryPolicy,
     'Never ask the user for a point-of-sale country, provider offer identifier, credential, payment detail, or passenger document.',
     'Do not imply booking, payment, ticketing, cancellation, loyalty, hotel, car, or transaction support.',
   ],
