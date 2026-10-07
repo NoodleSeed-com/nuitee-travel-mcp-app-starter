@@ -515,7 +515,8 @@ export function TravelConversation({
   const hasCurrentResult = visibleMessages.slice(activityInsertionIndex).some(message =>
     message.parts.some(part => (part.type === 'data-view' || part.type === 'data-tool-result')
       && part.data.tool !== 'plan_flight_search' && part.data.tool !== 'open_travel_starter'));
-  const waitingForResult = responseInProgress && !terminal && !hasCurrentResult && submittedAt !== null;
+  const flightSearchPending = Array.from(activeActivitiesRef.current.values()).some(item => item.skeleton === 'flights');
+  const waitingForResult = responseInProgress && !terminal && (flightSearchPending || !hasCurrentResult) && submittedAt !== null;
   useEffect(() => {
     setSlowResponse(false);
     if (!waitingForResult || submittedAt === null) return;

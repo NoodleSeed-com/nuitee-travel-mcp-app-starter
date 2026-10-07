@@ -49,7 +49,8 @@ export async function runBrowserScenario(page, scenario, timeoutMs = 120_000) {
     while (elapsed() < timeoutMs) {
       for (const frame of page.frames()) {
         if (previousFrames.has(frame) || frame.isDetached()) continue;
-        if (await frame.getByRole('checkbox', { name: /^Select fare from / }).first().isVisible().catch(() => false)) {
+        const fare = frame.getByRole('button', { name: /^Select fare from / }).first();
+        if (await fare.isVisible().catch(() => false) && await fare.isEnabled().catch(() => false)) {
           if (run.firstFareMs === undefined) {
             run.firstFareMs = elapsed();
             const partial = await frame.getByText(/Some Provider Results Were Incomplete/i).isVisible().catch(() => false);
@@ -61,13 +62,15 @@ export async function runBrowserScenario(page, scenario, timeoutMs = 120_000) {
           run.outcome = 'empty';
         }
       }
-      if (!await page.getByRole('button', { name: 'Stop generating', exact: true }).isVisible()) {
-        run.turnMs = elapsed();
-        return run;
-      }
+      // Turn completion and nested widget rendering are independent. A done
+      // event may remove Stop before the fare controls have even mounted.
+      const conversation = page.getByRole('region', { name: 'Travel conversation', exact: true });
+      if (run.turnMs === undefined && await conversation.count()
+        && await conversation.getAttribute('aria-busy') === 'false') run.turnMs = elapsed();
+      if (run.turnMs !== undefined && run.outcome !== 'unknown') return run;
       await page.waitForTimeout(100);
     }
-    run.turnTimedOut = true;
+    run.turnTimedOut = run.turnMs === undefined;
     run.observedMs = elapsed();
     return run;
   } finally {

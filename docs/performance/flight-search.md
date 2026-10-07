@@ -35,8 +35,9 @@ Thirty observations are a pilot, not proof of an SLO.
 Output is NDJSON containing only scenario IDs, observation timestamps, session
 mode, session response timing/status when available, visible-fare time, turn
 time and outcome. It does not save tokens, prompts, page bodies or provider data.
-First fare requires a visible selection control inside a newly rendered widget,
-not just iframe insertion. A 120-second observation limit stops the benchmark
+First fare requires a visible, enabled fare button inside a newly rendered widget,
+not just iframe insertion. Turn completion is recorded independently; observation
+continues for a delayed widget within the same bounded window. A 120-second observation limit stops the benchmark
 instead of overlapping an unfinished turn. Closing the browser is not proof of
 upstream cancellation. Do not resume until the outstanding work has settled.
 
