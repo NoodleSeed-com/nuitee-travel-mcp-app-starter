@@ -66,6 +66,12 @@ export const demoHotelSearchInputSchema = z.object({
   children: z.number().int().min(0).max(6).default(0),
   rooms: z.number().int().min(1).max(4).default(1),
   currency: demoCurrencySchema.default('CAD'),
+  near: z.object({
+    landmark: z.string().trim().min(2).max(160)
+      .describe('Landmark or full address explicitly requested by the traveler; preserve it across date-only follow-ups. Do not supply invented coordinates.'),
+    maxWalkingMinutes: z.number().int().min(1).max(120).optional()
+      .describe('Maximum walking time explicitly requested by the traveler. Used to scope candidate discovery, never as proof of a walking route.'),
+  }).optional().describe('Required when the traveler asks for hotels near a named place or within a walking-time limit.'),
 }).refine(
   ({ checkInDate, checkOutDate }) => checkOutDate > checkInDate,
   { path: ['checkOutDate'], message: 'Check-out must be after check-in.' },
@@ -101,6 +107,11 @@ export const demoHotelSchema = z.object({
   nightlyPrice: demoMoneySchema,
   staySubtotal: demoMoneySchema,
   taxesAndFeesIncluded: z.boolean(),
+  taxAndFeeStatus: z.enum(['included', 'excluded', 'unknown']).optional(),
+  locationEvidence: z.object({
+    straightLineMeters: z.number().nonnegative(),
+    walkingStatus: z.literal('unverified'),
+  }).optional(),
   policySummary: z.string().trim().min(2).max(200),
   imageUrl: z.url().max(2_048).optional(),
   reviewScore: z.number().min(0).max(10).optional(),
@@ -124,6 +135,7 @@ export const hotelErrorSchema = z.object({
     'provider_error',
     'malformed_response',
     'service_unavailable',
+    'location_unresolved',
   ]),
   message: z.string().trim().min(2).max(320),
   retryable: z.boolean(),
@@ -138,6 +150,22 @@ export const demoHotelSearchOutputSchema = z.object({
   searchId: demoHotelSearchIdSchema,
   searchContext: demoHotelSearchInputSchema,
   hotels: z.array(demoHotelSchema).max(10),
+  locationAssessment: z.object({
+    landmark: z.string().min(2).max(160),
+    address: z.string().min(2).max(240),
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
+    searchRadiusMeters: z.number().int().min(1).max(10_000),
+    walkingStatus: z.literal('unverified'),
+    excludedCount: z.number().int().nonnegative(),
+    message: z.string().min(20).max(500),
+  }).optional(),
+  priceComparison: z.object({
+    scope: z.literal('returned_hotels'),
+    comparable: z.boolean(),
+    lowestDisplayedSelectionIds: z.array(demoHotelSelectionIdSchema).max(10),
+    message: z.string().min(20).max(320),
+  }).optional(),
   error: hotelErrorSchema.optional(),
 }).refine(
   ({ status, hotels }) => status === 'success' || status === 'partial' ? hotels.length > 0 : hotels.length === 0,
@@ -145,6 +173,12 @@ export const demoHotelSearchOutputSchema = z.object({
 ).refine(
   ({ status, error }) => status === 'error' ? error !== undefined : error === undefined,
   { path: ['error'], message: 'Only failed hotel searches include an error.' },
+).refine(
+  ({ status, searchContext, locationAssessment, hotels }) =>
+    !searchContext.near || (status !== 'success' && status !== 'partial')
+      || Boolean(locationAssessment && hotels.every(hotel => hotel.locationEvidence
+        && hotel.locationEvidence.straightLineMeters <= locationAssessment.searchRadiusMeters)),
+  { path: ['locationAssessment'], message: 'Landmark search candidates require a resolved search area and per-hotel location evidence.' },
 );
 
 export const demoExperienceSearchInputSchema = z.object({

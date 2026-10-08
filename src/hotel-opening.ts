@@ -25,6 +25,7 @@ export function openStoredHotel(input: Record<string, unknown>): Record<string, 
     result: {
       status: 'success', dataSource: snapshot.dataSource, searchId: snapshot.searchId,
       searchContext: snapshot.searchContext, hotels: matches,
+      ...(snapshot.locationAssessment ? { locationAssessment: snapshot.locationAssessment } : {}),
       disclosure: snapshot.dataSource === 'live_nuitee'
         ? 'Previously returned Nuitee hotel rates. Prices and availability have not been refreshed and require verification before booking; no room is held or reserved.'
         : snapshot.disclosure,

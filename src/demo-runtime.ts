@@ -353,6 +353,15 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
       destination: canonical ?? destination.trim().toUpperCase(),
     });
     const searchId = opaque('hsearch', searchFingerprint);
+    if (record(search.near)) {
+      const message = 'This fictional preview cannot resolve real landmarks or verify walking routes. No city-wide stays were substituted for your location request.';
+      return { kind: 'search', records: [], result: {
+        status: 'error', dataSource: 'illustrative',
+        disclosure: 'Illustrative stays — these fictional properties do not represent live availability. Booking is unavailable.',
+        message, fallback: message, searchId, searchContext: search, hotels: [],
+        error: { code: 'location_unresolved', message, retryable: false },
+      } };
+    }
     const fixtures = canonical ? input.catalog[canonical] ?? [] : [];
     const nights = dayNumber(checkOutDate) - dayNumber(checkInDate);
     const hotels = fixtures.slice(0, 10).map((fixtureValue) => {

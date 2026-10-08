@@ -37,7 +37,8 @@ function StayPrice({ hotel, locale }: { readonly hotel: DemoHotel; readonly loca
   return <div className="cc-stay-price">
     <strong>{money(hotel, locale)}</strong>
     <span>for {hotel.nights} night{hotel.nights === 1 ? '' : 's'}, {hotel.rooms} room{hotel.rooms === 1 ? '' : 's'}</span>
-    <small>{hotel.taxesAndFeesIncluded ? 'Shown taxes and fees included' : hotel.dataSource === 'live_nuitee' ? 'Tax and fee inclusion requires review' : 'Taxes and fees not included in shown subtotal'}</small>
+    <small>{hotel.taxesAndFeesIncluded ? 'Shown taxes and fees included' : hotel.taxAndFeeStatus === 'excluded' ? 'Some taxes and fees are excluded' : hotel.dataSource === 'live_nuitee' ? 'Tax and fee inclusion requires review' : 'Taxes and fees not included in shown subtotal'}</small>
+    {hotel.locationEvidence ? <small>{hotel.locationEvidence.straightLineMeters.toLocaleString(locale)} m in a straight line · Walking time unverified</small> : null}
   </div>;
 }
 
@@ -80,7 +81,12 @@ export function HotelJourney({ result, state, displayMode, theme = 'light', appe
   if (state === 'loading') return wrapper(<div className="cc-stay-loading" role="status" aria-busy="true"><p>Finding stays…</p><div className="cc-stay-skeletons" aria-hidden="true">{[0, 1, 2].map(index => <div className="cc-stay-skeleton" key={index}><div className="cc-stay-skeleton-photo" /><div className="cc-stay-skeleton-body"><span /><span /><span /><span /></div></div>)}</div></div>);
   if (state || !result) return wrapper(<Feedback status="error">{state === 'error' ? 'The hotel search could not load. Try again; nothing was selected.' : 'The hotel result was incomplete and could not be shown safely. Try the search again.'}</Feedback>);
   if (result.status === 'error') return wrapper(<Feedback status="error">{result.error?.message ?? result.message} No room was held or reserved.</Feedback>);
-  if (result.status === 'empty') return wrapper(<p>{result.message} Try different dates or a nearby destination.</p>, 'No stays found');
+  const locationNotice = result.searchContext.near ? <div className="cc-stay-location-note">
+    <p><strong>{result.searchContext.near.maxWalkingMinutes !== undefined ? `Requested: within ${result.searchContext.near.maxWalkingMinutes} minutes’ walk of ` : 'Requested: near '}{result.searchContext.near.landmark}</strong></p>
+    <p>{result.locationAssessment?.message ?? 'Walking times and proximity are unverified. These results have not been checked against your location requirement.'}</p>
+    {result.locationAssessment ? <p>Search center: {result.locationAssessment.landmark} · {result.locationAssessment.address}</p> : null}
+  </div> : null;
+  if (result.status === 'empty') return wrapper(<>{locationNotice}<p>{result.message} You can request a different search area or dates.</p></>, 'No stays found');
 
   const hotels = result.hotels;
   const detail = hotels.find(hotel => hotel.selectionId === current.detailId);
@@ -105,7 +111,7 @@ export function HotelJourney({ result, state, displayMode, theme = 'light', appe
   </>;
 
   if (current.screen === 'detail' && detail) return wrapper(<>
-    {disclosure}
+    {disclosure}{locationNotice}
     <article className="cc-stay-detail">
       <HotelPhoto key={detail.selectionId} hotel={detail} />
       <div className="cc-stay-detail-body">
@@ -123,7 +129,7 @@ export function HotelJourney({ result, state, displayMode, theme = 'light', appe
   </>, 'Your stay option');
 
   if (current.screen === 'explore') return wrapper(<>
-    <h2 ref={heading} tabIndex={-1}>Explore stays</h2>{disclosure}
+    <h2 ref={heading} tabIndex={-1}>Explore stays</h2>{disclosure}{locationNotice}
     {displayMode === 'fullscreen' ? <MapBoard hotels={hotels} locale={locale} theme={appearance === 'host' ? theme : 'light'} selectedId={current.mapId} onSelect={id => change({ mapId: id })}>
       {hotel => <div className="cc-stay-map-summary"><h3>{hotel.name}</h3><StayPrice hotel={hotel} locale={locale} /><Action type="button" onClick={() => change({ screen: 'detail', detailId: hotel.selectionId })}>View stay</Action></div>}
     </MapBoard> : <p>Map exploration needs an expanded view. You can still compare stays here.</p>}
@@ -138,6 +144,8 @@ export function HotelJourney({ result, state, displayMode, theme = 'light', appe
     <h2 className="cc-stay-context" ref={heading} tabIndex={-1}>{result.searchContext.destination}</h2>
     <p className="cc-stay-dates">{result.searchContext.checkInDate} to {result.searchContext.checkOutDate} · {result.searchContext.adults + result.searchContext.children} guests</p>
     {disclosure}
+    {locationNotice}
+    {result.priceComparison && !result.priceComparison.comparable ? <p className="cc-stay-source">{result.priceComparison.message}</p> : null}
     {result.status === 'partial' ? <Feedback status="partial">{result.message}</Feedback> : null}
     <CardCarousel className="cc-stay-shortlist" label="Stays" itemName="stay">
       {hotels.slice(0, current.shown).map(hotel => <article className="cc-stay-card" key={hotel.selectionId}>
@@ -151,5 +159,5 @@ export function HotelJourney({ result, state, displayMode, theme = 'light', appe
       {current.shown < hotels.length ? <Action type="button" variant="quiet" onClick={() => change({ shown: Math.min(current.shown + 3, hotels.length) })}>Show {Math.min(3, hotels.length - current.shown)} more {hotels.length - current.shown === 1 ? 'stay' : 'stays'}</Action> : null}
       <Action type="button" variant="quiet" onClick={() => { change({ screen: 'explore' }); onExpand?.(); }}>Explore stays</Action>
     </div>{feedback}
-  </>, 'Stays for your trip');
+  </>, result.searchContext.near ? 'Stay candidates near your landmark' : 'Stays for your trip');
 }

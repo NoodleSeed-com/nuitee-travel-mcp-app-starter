@@ -55,6 +55,96 @@ const response = {
 };
 
 describe('Nuitee hotel gateway', () => {
+  const nearSearch = { ...search, near: { landmark: 'Fixture Club', maxWalkingMinutes: 20 } };
+  const place = { placeId: 'fixture-place', displayName: 'Fixture Club', formattedAddress: '10 Fixture Road, Lisbon, Portugal' };
+  const location = { latitude: 38.7107, longitude: -9.1365 };
+  const addressComponents = [{ types: ['country'], shortText: 'PT' }];
+  const locatedResponse = {
+    data: ['far', 'near', 'unknown'].map((suffix) => ({ ...response.data[0], hotelId: suffix })),
+    hotels: ['far', 'near', 'unknown'].map((suffix) => ({
+      ...response.hotels[0], id: suffix, name: `Fixture ${suffix} hotel`,
+      latitude: suffix === 'far' ? 38.8 : suffix === 'unknown' ? undefined : 38.711,
+      longitude: suffix === 'unknown' ? undefined : -9.1365,
+    })),
+  };
+  function locatedOperation(name: string) {
+    return { raw: name === 'places' ? { data: [place] } : name === 'place_details' ? { data: { ...place, location, addressComponents } } : locatedResponse };
+  }
+
+  it('preserves city-wide results and provider order when no location constraint was requested', () => {
+    const callOperation = vi.fn(() => ({ raw: locatedResponse }));
+    const output = runHotelGateway({ search }, { callOperation });
+    expect(callOperation).toHaveBeenCalledTimes(1);
+    expect(callOperation).toHaveBeenCalledWith('search', expect.objectContaining({ cityName: 'Lisbon', countryCode: 'PT', latitude: undefined, longitude: undefined, radius: undefined }));
+    expect(output.result).toMatchObject({ hotels: [{ name: 'Fixture far hotel' }, { name: 'Fixture near hotel' }, { name: 'Fixture unknown hotel' }] });
+    expect((output.records as unknown[])).toHaveLength(3);
+    expect(output.result.locationAssessment).toBeUndefined();
+    expect(demoHotelSearchOutputSchema.safeParse(output.result).success).toBe(true);
+  });
+
+  it('resolves the landmark, scopes rates by coordinates and excludes distant or unlocated candidates from UI and selectable state', () => {
+    const callOperation = vi.fn(locatedOperation);
+    const output = runHotelGateway({ search: nearSearch }, { callOperation });
+    expect(callOperation).toHaveBeenCalledWith('places', expect.objectContaining({ textQuery: 'Fixture Club, Lisbon, PT' }));
+    expect(callOperation).toHaveBeenCalledWith('search', expect.objectContaining({ ...location, radius: 1600, cityName: undefined, iataCode: undefined }));
+    expect(output.result).toMatchObject({ status: 'success', hotels: [{ name: 'Fixture near hotel', locationEvidence: { walkingStatus: 'unverified' } }], locationAssessment: { excludedCount: 2, walkingStatus: 'unverified' } });
+    expect((output.result.hotels as unknown[])).toHaveLength(1);
+    expect((output.records as unknown[])).toHaveLength(1);
+    expect(demoHotelSearchOutputSchema.safeParse(output.result).success).toBe(true);
+  });
+
+  it.each([{ places: [] }, { places: [place, { ...place, placeId: 'fixture-other' }] }])('does not search the whole city when landmark lookup has no unique match: $places', ({ places }) => {
+    const callOperation = vi.fn(() => ({ raw: { data: places } }));
+    const output = runHotelGateway({ search: nearSearch }, { callOperation });
+    expect(output.result).toMatchObject({ status: 'error', error: { code: 'location_unresolved' }, hotels: [] });
+    expect(callOperation).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not invent coordinates when place details have no location', () => {
+    const callOperation = vi.fn((name: string) => ({ raw: name === 'places' ? { data: [place] } : { data: place } }));
+    expect(runHotelGateway({ search: nearSearch }, { callOperation }).result).toMatchObject({ status: 'error', error: { code: 'location_unresolved' } });
+    expect(callOperation).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects a matching landmark in the wrong country without searching rates', () => {
+    const callOperation = vi.fn((name: string) => name === 'place_details'
+      ? { raw: { data: { ...place, location, addressComponents: [{ types: ['country'], shortText: 'US' }] } } }
+      : locatedOperation(name));
+    expect(runHotelGateway({ search: nearSearch }, { callOperation }).result).toMatchObject({ status: 'error', error: { code: 'location_unresolved' } });
+    expect(callOperation).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not declare that missing taxes are excluded or rank mixed currencies as comparable', () => {
+    const raw = { data: [response.data[0], { ...response.data[0], hotelId: 'usd', roomTypes: [{ ...response.data[0]!.roomTypes[0], offerRetailRate: [{ amount: 400, currency: 'USD' }] }] }], hotels: [response.hotels[0], { ...response.hotels[0], id: 'usd' }] };
+    expect(runHotelGateway({ search }, { callOperation: () => ({ raw }) }).result.priceComparison)
+      .toMatchObject({ comparable: false, lowestDisplayedSelectionIds: [] });
+  });
+
+  it('returns a truthful empty scoped result without silently broadening the search', () => {
+    const callOperation = vi.fn((name: string) => name === 'search' ? { raw: { data: [locatedResponse.data[0]], hotels: [locatedResponse.hotels[0]] } } : locatedOperation(name));
+    const output = runHotelGateway({ search: nearSearch }, { callOperation });
+    expect(output.result).toMatchObject({ status: 'empty', hotels: [], locationAssessment: { excludedCount: 1 } });
+    expect(output.result.fallback).toContain('No candidates');
+    expect(callOperation).toHaveBeenCalledTimes(3);
+    expect(demoHotelSearchOutputSchema.safeParse(output.result).success).toBe(true);
+  });
+
+  it('distinguishes unknown taxes from confirmed exclusion', () => {
+    const output = runHotelGateway({ search }, { callOperation: () => ({ raw: { ...response, data: [{ ...response.data[0], roomTypes: [{ ...response.data[0]!.roomTypes[0], rates: [{ ...response.data[0]!.roomTypes[0]!.rates[0], retailRate: {} }] }] }] } }) });
+    expect(output.result).toMatchObject({ hotels: [{ taxesAndFeesIncluded: false, taxAndFeeStatus: 'unknown' }] });
+    expect(output.result.priceComparison).toMatchObject({ comparable: false, scope: 'returned_hotels' });
+  });
+
+  it('does not pretend that fictional stays satisfy a real landmark constraint', () => {
+    const output = runDemoGateway({ kind: 'search', search: nearSearch, catalog: {}, aliases: {} });
+    expect(output.result).toMatchObject({ status: 'error', error: { code: 'location_unresolved' }, hotels: [] });
+    expect(demoHotelSearchOutputSchema.safeParse(output.result).success).toBe(true);
+  });
+
+  it('keeps landmark resolution and distance filtering compatible with the compute sandbox', () => {
+    const sandboxed = runInNewContext(`(${runHotelGateway.toString()})`, { Date: undefined, URL: undefined, Map: undefined, Set: undefined }) as typeof runHotelGateway;
+    expect(sandboxed({ search: nearSearch }, { callOperation: locatedOperation }).result).toMatchObject({ status: 'success', hotels: [{ name: 'Fixture near hotel' }] });
+  });
   it.each(['https://static.cupid.travel', 'https://snaphotelapi.com'])('preserves provider photos from %s', (origin) => {
     const raw = { ...response, hotels: [{ ...response.hotels[0], thumbnail: `${origin}/fixture-thumbnail.jpg`, main_photo: `${origin}/fixture-main.jpg` }] };
     const output = runHotelGateway({ search }, { callOperation: () => ({ raw }) });

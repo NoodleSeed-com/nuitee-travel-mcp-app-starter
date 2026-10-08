@@ -36,6 +36,24 @@ function mount(props: Partial<Parameters<typeof HotelResultsView>[0]> = {}) {
 const globals = globalThis as unknown as Record<string, unknown>;
 afterEach(() => { root?.unmount(); document.body.innerHTML = ''; delete globals.__noodleReactBridge; delete globals.__noodleState; delete globals.__noodleReactVersion; });
 
+it('keeps the landmark requirement and unverified walking evidence visible through stay inspection', async () => {
+  const scoped: DemoHotelSearchOutput = { ...result, dataSource: 'live_nuitee',
+    searchContext: { ...result.searchContext, near: { landmark: 'Fixture Club', maxWalkingMinutes: 20 } },
+    locationAssessment: { landmark: 'Fixture Club', address: '10 Fictional Road, Lisbon', latitude: 38.71, longitude: -9.13, searchRadiusMeters: 1600, walkingStatus: 'unverified', excludedCount: 1, message: 'Candidates in a straight-line search area. Walking routes and times are unavailable; these are not confirmed matches.' },
+    hotels: [{ ...result.hotels[0]!, dataSource: 'live_nuitee', taxAndFeeStatus: 'unknown', locationEvidence: { straightLineMeters: 250, walkingStatus: 'unverified' } }],
+  };
+  await page.viewport(390, 1100);
+  mount({ result: scoped });
+  await expect.element(page.getByText('Requested: within 20 minutes’ walk of Fixture Club', { exact: true })).toBeVisible();
+  await expect.element(page.getByText(/250 m in a straight line/)).toBeVisible();
+  await expect.element(page.getByText(scoped.locationAssessment!.message, { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'View stay: Lantern Hotel 1' }).click();
+  await expect.element(page.getByRole('button', { name: 'Choose this stay', exact: true })).toBeVisible();
+  await expect.element(page.getByText('Requested: within 20 minutes’ walk of Fixture Club', { exact: true })).toBeVisible();
+  expect(document.querySelector('.cc-stay-location-note')!.getBoundingClientRect().width).toBeLessThanOrEqual(390);
+  expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(390);
+});
+
 it('keeps photo failures truthful and tries a changed URL without losing the stay', async () => {
   const imageUrl = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
   const withPhoto = { ...result, hotels: [{ ...result.hotels[0]!, imageUrl }] };

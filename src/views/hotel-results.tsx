@@ -35,6 +35,7 @@ function isDemoMoney(value: unknown) {
 
 function isDemoHotel(value: unknown): value is DemoHotel {
   const hotel = record(value);
+  const location = record(hotel?.locationEvidence);
   return Boolean(
     hotel &&
     typeof hotel.selectionId === 'string' &&
@@ -66,6 +67,9 @@ function isDemoHotel(value: unknown): value is DemoHotel {
     isDemoMoney(hotel.nightlyPrice) &&
     isDemoMoney(hotel.staySubtotal) &&
     typeof hotel.taxesAndFeesIncluded === 'boolean' &&
+    (hotel.taxAndFeeStatus === undefined || ['included', 'excluded', 'unknown'].includes(String(hotel.taxAndFeeStatus))) &&
+    (hotel.locationEvidence === undefined || Boolean(location && typeof location.straightLineMeters === 'number'
+      && Number.isFinite(location.straightLineMeters) && location.straightLineMeters >= 0 && location.walkingStatus === 'unverified')) &&
     boundedString(hotel.policySummary, 2, 200) &&
     (hotel.imageUrl === undefined || (boundedString(hotel.imageUrl, 1, 2_048) && /^https:\/\/(?:snaphotelapi\.com|static\.cupid\.travel)\//i.test(hotel.imageUrl))) &&
     (hotel.reviewScore === undefined || (typeof hotel.reviewScore === 'number' && hotel.reviewScore >= 0 && hotel.reviewScore <= 10)) &&
@@ -75,6 +79,7 @@ function isDemoHotel(value: unknown): value is DemoHotel {
 
 function isSearchContext(value: unknown) {
   const context = record(value);
+  const near = record(context?.near);
   return Boolean(
     context &&
     boundedString(context.destination, 2, 80) &&
@@ -86,7 +91,9 @@ function isSearchContext(value: unknown) {
     boundedInteger(context.adults, 1, 8) &&
     boundedInteger(context.children, 0, 6) &&
     boundedInteger(context.rooms, 1, 4) &&
-    (context.currency === 'CAD' || context.currency === 'USD' || context.currency === 'EUR')
+    (context.currency === 'CAD' || context.currency === 'USD' || context.currency === 'EUR') &&
+    (context.near === undefined || Boolean(near && boundedString(near.landmark, 2, 160)
+      && (near.maxWalkingMinutes === undefined || boundedInteger(near.maxWalkingMinutes, 1, 120))))
   );
 }
 
@@ -108,7 +115,22 @@ export function isDemoHotelSearchOutput(value: unknown): value is DemoHotelSearc
   ) return false;
 
   const hasResults = result.status === 'success' || result.status === 'partial';
+  const hotels = result.hotels;
   if (hasResults !== (result.hotels.length > 0)) return false;
+  const assessment = record(result.locationAssessment);
+  if (result.locationAssessment !== undefined && !(assessment
+    && boundedString(assessment.landmark, 2, 160) && boundedString(assessment.address, 2, 240)
+    && typeof assessment.latitude === 'number' && Number.isFinite(assessment.latitude) && Math.abs(assessment.latitude) <= 90
+    && typeof assessment.longitude === 'number' && Number.isFinite(assessment.longitude) && Math.abs(assessment.longitude) <= 180
+    && boundedInteger(assessment.searchRadiusMeters, 1, 10_000) && assessment.walkingStatus === 'unverified'
+    && boundedInteger(assessment.excludedCount, 0, Number.MAX_SAFE_INTEGER) && boundedString(assessment.message, 20, 500))) return false;
+  if (hasResults && record(result.searchContext)?.near && (!assessment || !result.hotels.every((hotel: DemoHotel) =>
+    hotel.locationEvidence && hotel.locationEvidence.straightLineMeters <= Number(assessment.searchRadiusMeters)))) return false;
+  const prices = record(result.priceComparison);
+  if (result.priceComparison !== undefined && !(prices && prices.scope === 'returned_hotels'
+    && typeof prices.comparable === 'boolean' && boundedString(prices.message, 20, 320)
+    && Array.isArray(prices.lowestDisplayedSelectionIds) && prices.lowestDisplayedSelectionIds.length <= 10
+    && prices.lowestDisplayedSelectionIds.every(id => hotels.some((hotel: DemoHotel) => hotel.selectionId === id)))) return false;
   if (result.status === 'error') {
     const error = record(result.error);
     return Boolean(error && boundedString(error.code, 2, 80) && boundedString(error.message, 2, 320) && typeof error.retryable === 'boolean');
@@ -192,6 +214,9 @@ export function HotelSelectionJourney({ toolName = 'search_hotels', toolInfo, on
     void updateModelContext({
       content: [{ type: 'text', text: chosen ? `Selected stay: ${chosen.name}. Nothing booked, held, or paid.` : 'Hotel options remain unselected.' }],
       structuredContent: { hotelSearchId: result.searchId, hotelSearchContext: result.searchContext,
+        locationAssessment: result.locationAssessment ?? null,
+        priceComparison: result.priceComparison ?? null,
+        visibleHotelNames: result.hotels.slice(0, journey?.shown ?? 3).map(hotel => hotel.name),
         ...(tripReview ? { tripPlanning: { ...tripPlanningSnapshot(tripReview),
           ...(chosen && chosen.selectionId !== tripReview.stay?.selectionId ? { protection: null, planningEstimate: null, estimateStatus: 'Refresh trip review for the updated estimate.' } : {}),
           staySelectionId: chosen?.selectionId ?? tripReview.stay?.selectionId ?? null,
@@ -200,7 +225,7 @@ export function HotelSelectionJourney({ toolName = 'search_hotels', toolInfo, on
         inspectedHotel: inspected ? { selectionId: inspected.selectionId, name: inspected.name } : null,
         comparingHotelIds: journey?.compareIds ?? [] },
     }).catch(() => { /* Host context delivery is optional; server selections remain authoritative. */ });
-  }, [showTripReview, ready, result?.searchId, chosen?.selectionId, inspected?.selectionId, comparisonIds, layout.supports?.modelContext, updateModelContext]);
+  }, [showTripReview, ready, result?.searchId, chosen?.selectionId, inspected?.selectionId, comparisonIds, journey?.shown, layout.supports?.modelContext, updateModelContext]);
 
   if (!pending && !toolInfo.isError && opened && opened.status !== 'ready') return <Frame
     className={`cc-app cc-hotel-results cc-hotel-journey${layout.host === 'chatgpt' ? ' cc-host-styled' : ''}`}
