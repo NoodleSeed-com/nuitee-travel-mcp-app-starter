@@ -43,6 +43,16 @@ it('refuses to overwrite an existing destination', () => {
   expect(run(source, out).code).toBe(1);
   expect(readFileSync(join(out, 'keep.txt'), 'utf8')).toBe('keep');
 });
+it('includes the public hotel location testing guide while keeping operational notes private', () => {
+  const { source, out } = fixture({
+    'README.md': 'Approved',
+    'docs/hotel-location-local-testing.md': 'Public hotel location testing guidance.',
+    'docs/internal/hotel-operator-notes.md': 'Internal operational notes.',
+  });
+  expect(run(source, out).code).toBe(0);
+  expect(readFileSync(join(out, 'docs/hotel-location-local-testing.md'), 'utf8')).toBe('Public hotel location testing guidance.');
+  expect(existsSync(join(out, 'docs/internal/hotel-operator-notes.md'))).toBe(false);
+});
 it('rejects tracked environment secrets without printing their contents', () => {
   const { source, out } = fixture({ 'README.md': 'Approved', 'apps/web/.env.local': 'SENTINEL_PRIVATE_VALUE' });
   const result = run(source, out);
