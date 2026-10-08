@@ -433,7 +433,7 @@ export function runHotelGateway(
     lowestDisplayedSelectionIds: sameCurrency ? normalized.filter(hotel => Number(object(hotel.staySubtotal)?.amount) === lowest).map(hotel => hotel.selectionId) : [],
     message: sameCurrency && sameTaxBasis
       ? `Lowest displayed rate among these returned ${center ? 'candidates' : 'hotels'} on the same reported tax basis.${center ? ' Walking eligibility is unverified.' : ''}`
-      : 'Tax inclusion is unknown or differs, or currencies differ. Displayed amounts are not a comparable final-price ranking; do not claim a cheapest qualifying hotel.',
+      : 'Tax inclusion is unknown or differs, or currencies differ. Displayed amounts are not comparable final prices. Review each stay’s tax and fee details before comparing total costs.',
   };
   return {
     result: {
