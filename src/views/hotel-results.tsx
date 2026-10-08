@@ -92,8 +92,8 @@ function isSearchContext(value: unknown) {
     boundedInteger(context.children, 0, 6) &&
     boundedInteger(context.rooms, 1, 4) &&
     (context.currency === 'CAD' || context.currency === 'USD' || context.currency === 'EUR') &&
-    (context.near === undefined || Boolean(near && boundedString(near.landmark, 2, 160)
-      && (near.maxWalkingMinutes === undefined || boundedInteger(near.maxWalkingMinutes, 1, 120))))
+    (context.near == null || Boolean(near && boundedString(near.landmark, 2, 160)
+      && (near.maxWalkingMinutes == null || boundedInteger(near.maxWalkingMinutes, 1, 120))))
   );
 }
 

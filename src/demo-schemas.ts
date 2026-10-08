@@ -69,9 +69,9 @@ export const demoHotelSearchInputSchema = z.object({
   near: z.object({
     landmark: z.string().trim().min(2).max(160)
       .describe('Landmark or full address explicitly requested by the traveler; preserve it across date-only follow-ups. Do not supply invented coordinates.'),
-    maxWalkingMinutes: z.number().int().min(1).max(120).optional()
-      .describe('Maximum walking time explicitly requested by the traveler. Used to scope candidate discovery, never as proof of a walking route.'),
-  }).optional().describe('Required when the traveler asks for hotels near a named place or within a walking-time limit.'),
+    maxWalkingMinutes: z.number().int().min(1).max(120).nullable().optional()
+      .describe('Maximum walking time explicitly requested by the traveler. Send null or omit when none was requested; never use a schema bound as a default. Candidate discovery only, not proof of a walking route.'),
+  }).nullable().optional().describe('Send null or omit near for ordinary city-wide searches. A destination city alone is not a landmark request. Only supply an object for a landmark/address explicitly requested by the traveler. Never invent a place or walking limit to fill this optional field.'),
 }).refine(
   ({ checkInDate, checkOutDate }) => checkOutDate > checkInDate,
   { path: ['checkOutDate'], message: 'Check-out must be after check-in.' },

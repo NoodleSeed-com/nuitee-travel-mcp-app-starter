@@ -341,7 +341,8 @@ export function runDemoGateway(input: DemoGatewayInput): DemoGatewayResult {
   }
 
   if (input.kind === 'search') {
-    const search = record(input.search) ?? {};
+    const search = { ...(record(input.search) ?? {}) };
+    if (search.near === null) delete search.near;
     const destination = string(search.destination) ?? '';
     const checkInDate = string(search.checkInDate) ?? '';
     const checkOutDate = string(search.checkOutDate) ?? '';

@@ -82,6 +82,41 @@ describe('Nuitee hotel gateway', () => {
     expect(demoHotelSearchOutputSchema.safeParse(output.result).success).toBe(true);
   });
 
+  it('accepts an explicit null location without inventing or filtering a landmark', () => {
+    const callOperation = vi.fn(() => ({ raw: locatedResponse }));
+    const output = runHotelGateway({ search: { ...search, near: null } }, { callOperation });
+    expect(callOperation).toHaveBeenCalledTimes(1);
+    expect(output.result).toMatchObject({ status: 'success', hotels: [{ name: 'Fixture far hotel' }, { name: 'Fixture near hotel' }, { name: 'Fixture unknown hotel' }] });
+    expect((output.result.searchContext as Record<string, unknown>).near).toBeUndefined();
+    expect(demoHotelSearchOutputSchema.safeParse(output.result).success).toBe(true);
+  });
+
+  it('does not default a null walking limit to a schema bound', () => {
+    const output = runHotelGateway({ search: { ...nearSearch, near: { landmark: 'Fixture Club', maxWalkingMinutes: null } } }, { callOperation: locatedOperation });
+    expect(output.result).toMatchObject({ status: 'success', locationAssessment: { searchRadiusMeters: 1500 } });
+    expect((output.result.searchContext as Record<string, any>).near.maxWalkingMinutes).toBeUndefined();
+  });
+
+  it('resolves a formal landmark name without repeating its city suffix in autocomplete', () => {
+    const requested = { ...nearSearch, near: { landmark: 'Fixture Club of Lisbon City', maxWalkingMinutes: 20 } };
+    const callOperation = vi.fn((name: string, args: Readonly<Record<string, unknown>>) => name === 'places' && args.textQuery !== 'fixture club, Lisbon, PT'
+      ? { raw: { data: [] } } : locatedOperation(name));
+    const output = runHotelGateway({ search: requested }, { callOperation });
+    expect(callOperation).toHaveBeenCalledWith('places', expect.objectContaining({ textQuery: 'fixture club, Lisbon, PT' }));
+    expect(output.result).toMatchObject({ status: 'success', searchContext: { near: requested.near }, hotels: [{ name: 'Fixture near hotel' }] });
+    expect(demoHotelSearchOutputSchema.safeParse(output.result).success).toBe(true);
+  });
+
+  it('normalizes the New York City alias while verifying the actual returned city and country', () => {
+    const requested = { ...nearSearch, destination: 'New York City', countryCode: 'US', near: { landmark: 'Fixture Club of New York City', maxWalkingMinutes: 20 } };
+    const callOperation = vi.fn((name: string) => name === 'places'
+      ? { raw: { data: [{ ...place, formattedAddress: '10 Fictional Road, New York, NY, USA' }] } }
+      : name === 'place_details' ? { raw: { data: { ...place, location, addressComponents: [{ types: ['country'], shortText: 'US' }] } } }
+      : locatedOperation(name));
+    expect(runHotelGateway({ search: requested }, { callOperation }).result.status).toBe('success');
+    expect(callOperation).toHaveBeenCalledWith('places', expect.objectContaining({ textQuery: 'fixture club, New York, US' }));
+  });
+
   it('resolves the landmark, scopes rates by coordinates and excludes distant or unlocated candidates from UI and selectable state', () => {
     const callOperation = vi.fn(locatedOperation);
     const output = runHotelGateway({ search: nearSearch }, { callOperation });

@@ -82,7 +82,7 @@ export function HotelJourney({ result, state, displayMode, theme = 'light', appe
   if (state || !result) return wrapper(<Feedback status="error">{state === 'error' ? 'The hotel search could not load. Try again; nothing was selected.' : 'The hotel result was incomplete and could not be shown safely. Try the search again.'}</Feedback>);
   if (result.status === 'error') return wrapper(<Feedback status="error">{result.error?.message ?? result.message} No room was held or reserved.</Feedback>);
   const locationNotice = result.searchContext.near ? <div className="cc-stay-location-note">
-    <p><strong>{result.searchContext.near.maxWalkingMinutes !== undefined ? `Requested: within ${result.searchContext.near.maxWalkingMinutes} minutes’ walk of ` : 'Requested: near '}{result.searchContext.near.landmark}</strong></p>
+    <p><strong>{typeof result.searchContext.near.maxWalkingMinutes === 'number' ? `Requested: within ${result.searchContext.near.maxWalkingMinutes} minutes’ walk of ` : 'Requested: near '}{result.searchContext.near.landmark}</strong></p>
     <p>{result.locationAssessment?.message ?? 'Walking times and proximity are unverified. These results have not been checked against your location requirement.'}</p>
     {result.locationAssessment ? <p>Search center: {result.locationAssessment.landmark} · {result.locationAssessment.address}</p> : null}
   </div> : null;

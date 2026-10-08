@@ -143,7 +143,14 @@ export function runHotelGateway(
     return /^https:\/\/(?:snaphotelapi\.com|static\.cupid\.travel)\//i.test(candidate) ? candidate : undefined;
   };
 
-  const search = object(input.search) ?? {};
+  const search = { ...(object(input.search) ?? {}) };
+  if (search.near === null) delete search.near;
+  const requestedNear = object(search.near);
+  if (requestedNear?.maxWalkingMinutes === null) {
+    const normalizedNear = { ...requestedNear };
+    delete normalizedNear.maxWalkingMinutes;
+    search.near = normalizedNear;
+  }
   const destination = string(search.destination, 80) ?? '';
   const destinationCode = string(search.countryCode, 2)?.toUpperCase();
   const checkInDate = string(search.checkInDate, 10) ?? '';
@@ -200,17 +207,32 @@ export function runHotelGateway(
     // Resolve through the fixed provider. Never trust model-authored coordinates
     // or replace an ambiguous/failed landmark lookup with a broad city search.
     const words = (value: string) => value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim().split(/\s+/).filter(word => word && word !== 'the');
-    const requestedWords = words(landmark);
+    // Place autocomplete can return nothing for a formal name with an echoed
+    // destination suffix ("Club of New York City, New York"). Keep the original
+    // request, but search its identifying name with the city supplied once.
+    const cityLabel = destination.toUpperCase() === 'NEW YORK CITY' ? 'New York' : destination;
+    const cityWords = words(cityLabel);
+    const originalWords = words(landmark);
+    let requestedWords = originalWords.slice();
+    const endsInCity = (parts: readonly string[]) => parts.length >= cityWords.length
+      && cityWords.every((word, index) => parts[parts.length - cityWords.length + index] === word);
+    if (requestedWords[requestedWords.length - 1] === 'city' && endsInCity(requestedWords.slice(0, -1))) requestedWords.pop();
+    if (endsInCity(requestedWords)) {
+      requestedWords = requestedWords.slice(0, -cityWords.length);
+      while (['of', 'in', 'near'].includes(requestedWords[requestedWords.length - 1] ?? '')) requestedWords.pop();
+    }
+    if (!requestedWords.length) return fail('location_unresolved');
+    const queryLandmark = requestedWords.length === originalWords.length ? landmark : requestedWords.join(' ');
     try {
       const places = unwrap(context.callOperation('places', {
-        textQuery: `${landmark}, ${destination}${countryCode ? `, ${countryCode}` : ''}`,
+        textQuery: `${queryLandmark}, ${cityLabel}${countryCode ? `, ${countryCode}` : ''}`,
         type: 'establishment,point_of_interest', language: 'en',
       }));
       const matches = array(places?.data).map(object).filter((place) => {
         const nameWords = words(string(place?.displayName, 160) ?? '');
         const addressWords = words(string(place?.formattedAddress, 240) ?? '');
         return requestedWords.length > 0 && requestedWords.every(word => nameWords.includes(word) || addressWords.includes(word))
-          && words(destination).every(word => addressWords.includes(word));
+          && cityWords.every(word => addressWords.includes(word));
       });
       if (matches.length !== 1) return fail('location_unresolved');
       const place = matches[0]!;

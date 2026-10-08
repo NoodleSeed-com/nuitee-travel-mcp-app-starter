@@ -4,7 +4,7 @@ Branch: `fix/hotel-location-constraints`. This change stays local until reviewed
 
 ## Behavior
 
-- Without `near`, hotels retain the existing city-wide request, provider order,
+- Without `near` (or with `near: null`), hotels retain the existing city-wide request, provider order,
   and result limit. No proximity filtering is applied.
 - With `near.landmark`, the server resolves a unique provider place in the
   requested city and verifies its country and coordinates. It searches rates
@@ -19,6 +19,10 @@ Branch: `fix/hotel-location-constraints`. This change stays local until reviewed
   area afterward when necessary.
 - Ambiguous, missing, wrong-country, or incomplete landmark evidence fails
   without silently substituting a city-wide search.
+- A redundant city suffix in a formal landmark name is removed from the
+  autocomplete query only. The original requested constraint is retained, and
+  the returned place still needs matching city and country evidence. For
+  example, “Yale Club of New York City” searches for “yale club, New York, US.”
 - Cards show the requested landmark, walking limit, resolved search center,
   straight-line distance, and “Walking time unverified.” Named-hotel inspection
   preserves this evidence.
@@ -34,8 +38,10 @@ Branch: `fix/hotel-location-constraints`. This change stays local until reviewed
 Verified walking eligibility still requires a walking-route integration. This
 branch implements location-scoped discovery and truthful presentation; it does
 not add that integration or claim measured walking times. Provider place lookup
-and rates mapping are covered by synthetic tests and official documentation,
-not by a live-provider probe in this change.
+and scoped rates were exercised with the public Yale Club query during local
+debugging. The long formal-name query returned no autocomplete candidates,
+while the shortened query resolved the landmark and returned nine nearby stays.
+Synthetic tests preserve that query behavior without live requests.
 
 Provider contracts: [place search](https://docs.liteapi.travel/reference/get_data-places),
 [place details](https://docs.liteapi.travel/reference/get_data-places-placeid),
@@ -90,7 +96,7 @@ pnpm exec noodle check src/demo-embedded-server.ts --target embedded-assistant -
 ```
 
 Tests cover constrained and unconstrained results, missing/ambiguous landmark
-lookup, wrong country, coordinate availability, no broad fallback, isolated
+lookup, formal-name city suffixes, null location inputs, wrong country, coordinate availability, no broad fallback, isolated
 compute execution, tax uncertainty, mixed currencies, named-hotel reopening,
 and mobile candidate disclosure through inspection. They use fictional data
 and make no live hotel or model requests.
