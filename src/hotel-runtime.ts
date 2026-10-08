@@ -13,7 +13,7 @@ export type HotelGatewayResult = Readonly<Record<string, unknown>>;
 export function runHotelGateway(
   input: HotelGatewayInput,
   context: {
-    callOperation: (name: 'search', args: Readonly<Record<string, unknown>>) => unknown;
+    callOperation: (name: 'search' | 'places' | 'place_details', args: Readonly<Record<string, unknown>>) => unknown;
   },
 ): HotelGatewayResult {
   const object = (value: unknown): Record<string, unknown> | undefined =>
@@ -104,6 +104,10 @@ export function runHotelGateway(
         message: 'The hotel provider returned an incomplete result that could not be shown safely.',
         retryable: true,
       },
+      location_unresolved: {
+        message: 'I could not verify one landmark location in this destination. Please give its full name or street address; no city-wide search was substituted.',
+        retryable: false,
+      },
     };
     return { code, ...(errors[code] ?? errors.provider_error!) };
   };
@@ -139,7 +143,14 @@ export function runHotelGateway(
     return /^https:\/\/(?:snaphotelapi\.com|static\.cupid\.travel)\//i.test(candidate) ? candidate : undefined;
   };
 
-  const search = object(input.search) ?? {};
+  const search = { ...(object(input.search) ?? {}) };
+  if (search.near === null) delete search.near;
+  const requestedNear = object(search.near);
+  if (requestedNear?.maxWalkingMinutes === null) {
+    const normalizedNear = { ...requestedNear };
+    delete normalizedNear.maxWalkingMinutes;
+    search.near = normalizedNear;
+  }
   const destination = string(search.destination, 80) ?? '';
   const destinationCode = string(search.countryCode, 2)?.toUpperCase();
   const checkInDate = string(search.checkInDate, 10) ?? '';
@@ -180,6 +191,78 @@ export function runHotelGateway(
   if (!iataCode && !countryCode) return fail('invalid_request');
   if (rooms > adults) return fail('invalid_request');
 
+  const unwrap = (value: unknown) => {
+    const wrapper = object(value);
+    return object(wrapper && Object.prototype.hasOwnProperty.call(wrapper, 'raw') ? wrapper.raw : value);
+  };
+  const near = object(search.near);
+  const landmark = string(near?.landmark, 160);
+  let locationAssessment: Record<string, unknown> | undefined;
+  let center: { latitude: number; longitude: number; radius: number } | undefined;
+  if (near && !landmark) return fail('location_unresolved');
+  // A landmark needs a city/country, rather than an airport whose place name
+  // might be matched in another region. Ask for clarification instead.
+  if (near && iataCode) return fail('location_unresolved');
+  if (landmark) {
+    // Resolve through the fixed provider. Never trust model-authored coordinates
+    // or replace an ambiguous/failed landmark lookup with a broad city search.
+    const words = (value: string) => value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim().split(/\s+/).filter(word => word && word !== 'the');
+    // Place autocomplete can return nothing for a formal name with an echoed
+    // destination suffix ("Club of New York City, New York"). Keep the original
+    // request, but search its identifying name with the city supplied once.
+    const cityLabel = destination.toUpperCase() === 'NEW YORK CITY' ? 'New York' : destination;
+    const cityWords = words(cityLabel);
+    const originalWords = words(landmark);
+    let requestedWords = originalWords.slice();
+    const endsInCity = (parts: readonly string[]) => parts.length >= cityWords.length
+      && cityWords.every((word, index) => parts[parts.length - cityWords.length + index] === word);
+    if (requestedWords[requestedWords.length - 1] === 'city' && endsInCity(requestedWords.slice(0, -1))) requestedWords.pop();
+    if (endsInCity(requestedWords)) {
+      requestedWords = requestedWords.slice(0, -cityWords.length);
+      while (['of', 'in', 'near'].includes(requestedWords[requestedWords.length - 1] ?? '')) requestedWords.pop();
+    }
+    if (!requestedWords.length) return fail('location_unresolved');
+    const queryLandmark = requestedWords.length === originalWords.length ? landmark : requestedWords.join(' ');
+    try {
+      const places = unwrap(context.callOperation('places', {
+        textQuery: `${queryLandmark}, ${cityLabel}${countryCode ? `, ${countryCode}` : ''}`,
+        type: 'establishment,point_of_interest', language: 'en',
+      }));
+      const matches = array(places?.data).map(object).filter((place) => {
+        const nameWords = words(string(place?.displayName, 160) ?? '');
+        const addressWords = words(string(place?.formattedAddress, 240) ?? '');
+        return requestedWords.length > 0 && requestedWords.every(word => nameWords.includes(word) || addressWords.includes(word))
+          && cityWords.every(word => addressWords.includes(word));
+      });
+      if (matches.length !== 1) return fail('location_unresolved');
+      const place = matches[0]!;
+      const placeId = string(place?.placeId, 256);
+      if (!placeId || !/^[A-Za-z0-9_-]{1,256}$/.test(placeId)) return fail('location_unresolved');
+      const detailsResponse = unwrap(context.callOperation('place_details', { placeId, language: 'en' }));
+      const details = object(detailsResponse?.data) ?? detailsResponse;
+      const location = object(details?.location);
+      const returnedCountry = array(details?.addressComponents).map(object)
+        .find(component => array(component?.types).includes('country'));
+      if (countryCode && string(returnedCountry?.shortText, 2)?.toUpperCase() !== countryCode) return fail('location_unresolved');
+      const latitude = number(location?.latitude);
+      const longitude = number(location?.longitude);
+      const address = string(place?.formattedAddress, 240);
+      if (latitude === undefined || longitude === undefined || Math.abs(latitude) > 90 || Math.abs(longitude) > 180 || !address) return fail('location_unresolved');
+      // 80 m/min is only a candidate-discovery radius. It is not a walking
+      // duration or proof of eligibility: roads, barriers and pace are unknown.
+      const minutes = number(near?.maxWalkingMinutes);
+      const radius = Math.min(10_000, Math.max(1, Math.round(minutes === undefined ? 1500 : minutes * 80)));
+      center = { latitude, longitude, radius };
+      locationAssessment = {
+        landmark: string(place?.displayName, 160) ?? landmark, address,
+        latitude, longitude, searchRadiusMeters: radius, walkingStatus: 'unverified', excludedCount: 0,
+        message: `Candidates within a ${radius}-meter straight-line search area around ${landmark}. ${minutes === undefined ? 'Proximity' : `Your ${minutes}-minute walking limit`} is not verified: walking routes and times are unavailable. These are candidates, not confirmed matches.`,
+      };
+    } catch (caught) {
+      return fail(classify(caught));
+    }
+  }
+
   const occupancies = Array.from({ length: rooms }, (_, index) => ({
     rooms: 1,
     adults: 1 + (index === 0 ? adults - rooms : 0),
@@ -189,9 +272,12 @@ export function runHotelGateway(
   let operationResult: unknown;
   try {
     operationResult = context.callOperation('search', {
-      cityName: iataCode ? undefined : destination,
-      countryCode: iataCode ? undefined : countryCode,
-      iataCode,
+      cityName: center || iataCode ? undefined : destination,
+      countryCode: center || iataCode ? undefined : countryCode,
+      iataCode: center ? undefined : iataCode,
+      latitude: center?.latitude,
+      longitude: center?.longitude,
+      radius: center ? Math.max(1000, center.radius) : undefined,
       occupancies,
       currency,
       guestNationality: currency === 'CAD' ? 'CA' : currency === 'EUR' ? 'PT' : 'US',
@@ -251,6 +337,8 @@ export function runHotelGateway(
         : 'Provider cancellation terms apply; verify before booking.';
     const taxes = array(object(rate.retailRate)?.taxesAndFees).map(object).filter(Boolean);
     const taxesAndFeesIncluded = taxes.length > 0 && taxes.every((tax) => tax?.included === true);
+    const taxAndFeeStatus = taxesAndFeesIncluded ? 'included'
+      : taxes.length > 0 && taxes.every(tax => typeof tax?.included === 'boolean') ? 'excluded' : 'unknown';
     const selectionId = opaque('hsel', `${searchId}:${hotelId}:${offerId}`);
     const hotel = {
       selectionId,
@@ -273,6 +361,7 @@ export function runHotelGateway(
       nightlyPrice: { amount: Math.round((total / nights) * 100) / 100, currency: totalCurrency },
       staySubtotal: { amount: total, currency: totalCurrency },
       taxesAndFeesIncluded,
+      taxAndFeeStatus,
       policySummary,
       ...(boundedHttpsImage(content.thumbnail) ?? boundedHttpsImage(content.main_photo)
         ? { imageUrl: boundedHttpsImage(content.thumbnail) ?? boundedHttpsImage(content.main_photo) }
@@ -298,25 +387,61 @@ export function runHotelGateway(
   }
 
   if (normalized.length === 0 && response.data.length > 0) return fail('malformed_response');
+  if (center && locationAssessment) {
+    const radians = (degrees: number) => degrees * Math.PI / 180;
+    const distance = (lat: number, lng: number) => {
+      const deltaLat = radians(lat - center!.latitude);
+      const deltaLng = radians(lng - center!.longitude);
+      const a = Math.sin(deltaLat / 2) ** 2 + Math.cos(radians(center!.latitude)) * Math.cos(radians(lat)) * Math.sin(deltaLng / 2) ** 2;
+      return 6_371_000 * 2 * Math.asin(Math.sqrt(Math.min(1, Math.max(0, a))));
+    };
+    for (let index = normalized.length - 1; index >= 0; index -= 1) {
+      const hotel = normalized[index]!;
+      const lat = number(hotel.lat);
+      const lng = number(hotel.lng);
+      const meters = lat === undefined || lng === undefined ? undefined : distance(lat, lng);
+      if (meters === undefined || meters > center.radius) {
+        normalized.splice(index, 1);
+        records.splice(index, 1);
+        locationAssessment.excludedCount = Number(locationAssessment.excludedCount) + 1;
+      } else {
+        hotel.locationEvidence = { straightLineMeters: Math.round(meters), walkingStatus: 'unverified' };
+      }
+    }
+    normalized.sort((first, second) => Number(object(first.locationEvidence)?.straightLineMeters) - Number(object(second.locationEvidence)?.straightLineMeters));
+    Object.assign(baseResult, { locationAssessment });
+  }
   if (normalized.length === 0) {
     return {
       result: {
         status: 'empty',
-        message: `No current hotel rates were returned for ${destination}.`,
-        fallback: `No current Nuitee hotel rates were returned for ${destination} from ${checkInDate} to ${checkOutDate}. Try different dates or a nearby destination.`,
+        message: center ? 'No candidates with usable coordinates were returned inside the landmark search area. The walking limit remains unverified.' : `No current hotel rates were returned for ${destination}.`,
+        fallback: center ? 'No candidates with usable coordinates were returned inside the landmark search area. The walking limit remains unverified; no city-wide results were substituted.' : `No current Nuitee hotel rates were returned for ${destination} from ${checkInDate} to ${checkOutDate}. Try different dates or a nearby destination.`,
         hotels: [],
         ...baseResult,
       },
       records: [],
     };
   }
-  const partial = normalized.length < response.data.length;
+  const partial = normalized.length + Number(locationAssessment?.excludedCount ?? 0) < response.data.length;
+  const amounts = normalized.map(hotel => object(hotel.staySubtotal)!);
+  const sameCurrency = amounts.every(amount => amount.currency === amounts[0]!.currency);
+  const sameTaxBasis = normalized.every(hotel => hotel.taxAndFeeStatus !== 'unknown' && hotel.taxAndFeeStatus === normalized[0]!.taxAndFeeStatus);
+  const lowest = Math.min(...amounts.map(amount => Number(amount.amount)));
+  const priceComparison = {
+    scope: 'returned_hotels', comparable: sameCurrency && sameTaxBasis,
+    lowestDisplayedSelectionIds: sameCurrency ? normalized.filter(hotel => Number(object(hotel.staySubtotal)?.amount) === lowest).map(hotel => hotel.selectionId) : [],
+    message: sameCurrency && sameTaxBasis
+      ? `Lowest displayed rate among these returned ${center ? 'candidates' : 'hotels'} on the same reported tax basis.${center ? ' Walking eligibility is unverified.' : ''}`
+      : 'Tax inclusion is unknown or differs, or currencies differ. Displayed amounts are not comparable final prices. Review each stay’s tax and fee details before comparing total costs.',
+  };
   return {
     result: {
       status: partial ? 'partial' : 'success',
-      message: `${normalized.length} current hotel option${normalized.length === 1 ? '' : 's'} found for ${destination}.`,
-      fallback: `${normalized.length} current Nuitee hotel option${normalized.length === 1 ? '' : 's'} for ${destination}, ${checkInDate} to ${checkOutDate}. Prices and availability can change; no room was held or reserved.`,
+      message: locationAssessment ? `${normalized.length} nearby candidates found. Walking routes and the requested walking limit remain unverified.` : `${normalized.length} current hotel option${normalized.length === 1 ? '' : 's'} found for ${destination}.`,
+      fallback: locationAssessment ? String(locationAssessment.message) : `${normalized.length} current Nuitee hotel option${normalized.length === 1 ? '' : 's'} for ${destination}, ${checkInDate} to ${checkOutDate}. Prices and availability can change; no room was held or reserved.`,
       hotels: normalized,
+      priceComparison,
       ...baseResult,
     },
     records,

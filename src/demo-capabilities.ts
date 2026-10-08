@@ -130,7 +130,7 @@ function searchDemoHotels(viewPolicy: Readonly<Record<string, unknown>>) {
   return tool('search_hotels', {
     title: 'Compare hotels',
     description:
-      'Compare deterministic illustrative hotel options for Wayfare. This never checks live hotel availability and cannot reserve or book. Reuse the known destination and dates. Resolve next week as the same local weekday seven days later. If omitted, browse 1 night, 1 adult and 1 room, with visible adjustable assumptions. Pass resolved exact stay dates.',
+      'Compare deterministic illustrative hotel options for Wayfare. This never checks live hotel availability and cannot reserve or book. Reuse the known destination and dates. Preserve a requested landmark and walking limit in near, including after date-only replies. The fictional preview cannot resolve real landmarks and must not claim proximity. Resolve next week as the same local weekday seven days later. If omitted, browse 1 night, 1 adult and 1 room, with visible adjustable assumptions. Pass resolved exact stay dates.',
     annotations: annotations.readOnly(),
     input: demoHotelSearchInputSchema,
     output: demoHotelSearchOutputSchema,
@@ -161,6 +161,7 @@ function searchDemoHotels(viewPolicy: Readonly<Record<string, unknown>>) {
         searchId: gateway['result.searchId'],
         searchContext: gateway['result.searchContext'],
         hotels: gateway['result.hotels'],
+        error: gateway['result.error'].optional(),
       };
     },
     viewTitle: 'Hotel results',
@@ -176,7 +177,7 @@ function searchLiveHotels(viewPolicy: Readonly<Record<string, unknown>>) {
   return tool('search_hotels', {
     title: 'Search hotels',
     description:
-      'Search current Nuitee hotel rates and availability. Reuse destination and dates from the conversation; never ask for them again after a date-only reply. Resolve next week as the same local weekday seven days later. If omitted, browse 1 night, 1 adult and 1 room, showing adjustable assumptions without asking for confirmation. Preserve explicit dates, nights, guests and rooms. Pass exact stay dates and a city with its two-letter country code, or an IATA airport code. Results are read-only, can change, and do not hold or reserve a room.',
+      'Search current Nuitee hotel rates and availability. Reuse destination and dates; never ask for them again after a date-only reply. Omit near for ordinary city-wide searches; never invent a landmark or walking limit. Preserve only explicitly requested location constraints across follow-ups. Landmark results are straight-line candidates, not verified walking matches. Use locationAssessment and priceComparison; never invent walking times or a separate prose shortlist. Resolve next week as the same local weekday seven days later. If omitted, browse 1 night, 1 adult and 1 room with visible adjustable assumptions without asking for confirmation. Preserve explicit dates, nights, guests and rooms. Pass exact dates and a city/country or IATA code. No room is held or reserved.',
     annotations: annotations.readOnly(),
     input: demoHotelSearchInputSchema,
     output: demoHotelSearchOutputSchema,
@@ -205,6 +206,8 @@ function searchLiveHotels(viewPolicy: Readonly<Record<string, unknown>>) {
         searchId: gateway['result.searchId'],
         searchContext: gateway['result.searchContext'],
         hotels: gateway['result.hotels'],
+        locationAssessment: gateway['result.locationAssessment'].optional(),
+        priceComparison: gateway['result.priceComparison'].optional(),
         error: gateway['result.error'],
       };
     },

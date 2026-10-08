@@ -149,6 +149,26 @@ describe('Wayfare conversational hotel widget', () => {
     expect(html).toContain('Tax and fee inclusion requires review');
     expect(html).not.toContain('Taxes and fees not included');
   });
+  it('shows the requested walking limit and honest candidate evidence in cards and detail', () => {
+    const scoped: DemoHotelSearchOutput = {
+      ...result, dataSource: 'live_nuitee',
+      searchContext: { ...result.searchContext, near: { landmark: 'Fixture Club', maxWalkingMinutes: 20 } },
+      locationAssessment: { landmark: 'Fixture Club', address: '10 Fictional Road, Lisbon', latitude: 38.71, longitude: -9.13, searchRadiusMeters: 1600, walkingStatus: 'unverified', excludedCount: 1, message: 'Candidates in a straight-line search area. Walking routes and times are unavailable; these are not confirmed matches.' },
+      hotels: [{ ...hotel(0), dataSource: 'live_nuitee', locationEvidence: { straightLineMeters: 250, walkingStatus: 'unverified' }, taxAndFeeStatus: 'unknown' }],
+      priceComparison: { scope: 'returned_hotels', comparable: false, lowestDisplayedSelectionIds: [hotel(0).selectionId], message: 'Tax inclusion is unknown; displayed amounts are not comparable final prices.' },
+    };
+    expect(isDemoHotelSearchOutput(scoped)).toBe(true);
+    for (const experience of [undefined, { searchId: scoped.searchId, screen: 'detail' as const, detailId: hotel(0).selectionId, compareIds: [], shown: 3 }]) {
+      const html = render({ result: scoped, displayMode: 'inline', experience });
+      expect(html).toContain('Requested: within 20 minutes’ walk of');
+      expect(html).toContain('Walking time unverified');
+      expect(html).toContain('250 m in a straight line');
+      expect(html).toContain(scoped.locationAssessment!.message);
+      expect(html).not.toContain('Tagus Lantern Hotel 2');
+    }
+    expect(isDemoHotelSearchOutput({ ...scoped, locationAssessment: undefined })).toBe(false);
+    expect(isDemoHotelSearchOutput({ ...scoped, hotels: [{ ...scoped.hotels[0], locationEvidence: undefined }] })).toBe(false);
+  });
   it('restores focused details with the full returned amenities', () => {
     const html = render({ result, displayMode: 'inline', experience: { searchId: result.searchId, screen: 'detail', detailId: hotel(0).selectionId, compareIds: [], shown: 3 }, onAdd: vi.fn() });
     expect(html).toContain('Lantern king room');

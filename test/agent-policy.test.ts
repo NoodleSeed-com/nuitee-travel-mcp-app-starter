@@ -14,6 +14,11 @@ describe('travel policy delivery', () => {
         expect(manifest.server.agentGuide).toBeDefined();
         expect(instructions).toContain('including retryable errors');
         expect(instructions).toContain('explicitly asks to retry');
+        expect(instructions).toContain('search_hotels.near across follow-ups');
+        expect(instructions).toContain('never invent minutes or claim eligibility');
+        expect(instructions).toContain('Unknown taxes are not excluded');
+        expect(instructions).toContain('Omit near for city-wide searches');
+        expect(instructions).toContain('never invent a landmark or walking limit');
 
         if (mode === 'embedded') {
           expect(manifest.server.assistant?.surfaces).toHaveLength(1);

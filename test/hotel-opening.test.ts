@@ -10,6 +10,19 @@ const state = { searchId: result.searchId, updatedAt: '2030-04-01T12:00:00Z', se
 const open = (hotelName: string, hotelState: unknown = state, readOk = true) => openHotelOutputSchema.parse(openStoredHotel({ hotelName, hotelState, readOk }));
 
 describe('reopening a returned hotel', () => {
+  it('preserves landmark evidence when a named candidate is reopened without a new search', () => {
+    const locationAssessment = { landmark: 'Fixture Club', address: '10 Fictional Road, Lisbon', latitude: 38.71, longitude: -9.13, searchRadiusMeters: 1600, walkingStatus: 'unverified', excludedCount: 2, message: 'Candidates in a straight-line search area. Walking routes and times are unavailable; these are not confirmed matches.' };
+    const scoped = { ...state, searchResult: { ...state.searchResult,
+      searchContext: { ...result.searchContext, near: { landmark: 'Fixture Club', maxWalkingMinutes: 20 } },
+      locationAssessment,
+      hotels: hotels.map(hotel => ({ ...hotel, locationEvidence: { straightLineMeters: 250, walkingStatus: 'unverified' } })),
+    } };
+    const opened = open('Mundial', scoped);
+    expect(opened.status).toBe('ready');
+    expect(opened.result!.locationAssessment).toEqual(locationAssessment);
+    expect(opened.result!.hotels).toHaveLength(1);
+    expect(opened.result!.hotels[0]!.locationEvidence?.walkingStatus).toBe('unverified');
+  });
   it('opens a hotel beyond the first three without a new search or selecting it', () => {
     const before = structuredClone(state);
     const opened = open('Hotel Mundial');
